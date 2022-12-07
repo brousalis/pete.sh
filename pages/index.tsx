@@ -1,6 +1,7 @@
-import Head from 'next/head'
+import React from 'react';
+import Head from 'next/head';
 
-import CreateLink from '../components/CreateLink'
+import CreateLink from '../components/CreateLink';
 
 export default function Home() {
   return (
@@ -15,12 +16,10 @@ export default function Home() {
           <span className="text-gray-900">pete.sh</span>
           <span className="text-gray-500">ort</span>
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          a really good url shortener
-        </p>
+        <p className="mt-2 text-center text-sm text-gray-600">a really good url shortener</p>
       </div>
 
       <CreateLink />
     </div>
-  )
+  );
 }
