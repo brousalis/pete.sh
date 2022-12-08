@@ -7,8 +7,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     data = await prisma.link.create({
       data: {
-        slug: req.query.slug,
-        url: req.query.url,
+        slug: req.query?.slug,
+        url: req.query?.url,
       },
     });
   } catch (error) {
