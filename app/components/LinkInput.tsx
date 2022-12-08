@@ -1,5 +1,5 @@
 import Input from './Input';
-import { generateLinkSlug } from 'lib/slug';
+import { generateLinkSlug } from 'app/lib/slug';
 import React from 'react';
 
 function LinkInput({

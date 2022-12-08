@@ -1,4 +1,4 @@
-import '../styles/globals.css';
+import '../app/styles/globals.css';
 import React from 'react';
 
 function MyApp({ Component, pageProps }) {
