@@ -7,11 +7,16 @@ import React from 'react';
 function LinkInput({
   form,
   setForm,
+  setResponse,
+  error,
 }: {
   form: LinkFormState;
+  error?: string;
   setForm: (form: LinkFormState) => void;
+  setResponse: (form: LinkFormState) => void;
 }) {
   const handleUrlChange = (e) => {
+    setResponse(null);
     if (e.target.value === '' || !e.target.value) {
       setForm({ ...form, url: '', slug: '' });
     } else {
@@ -29,7 +34,8 @@ function LinkInput({
       placeholder="url to shorten"
       className="pr-[112px]"
       onChange={handleUrlChange}
-      defaultValue={form.url}
+      value={form.url}
+      error={error}
     >
       <SlugType form={form} setForm={setForm} />
     </Input>

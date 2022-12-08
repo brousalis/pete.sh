@@ -2,9 +2,11 @@ import Alert from './Alert';
 import Button from './Button';
 import LinkInput from './LinkInput';
 import SlugInput from './SlugInput';
+import axios from 'axios';
 import clsx from 'clsx';
-import { RequestState } from 'pages';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+export type RequestState = '' | 'loading' | 'success' | 'error';
 
 export interface LinkFormState {
   url?: string;
@@ -12,42 +14,75 @@ export interface LinkFormState {
   slug_type?: string;
 }
 
-export default function LinkForm({
-  children,
-  onSubmit,
-  requestState,
-}: {
-  children?: React.ReactNode;
-  onSubmit: (HTMLElement) => void;
-  requestState?: RequestState;
-}) {
-  const [form, setForm] = useState<LinkFormState>({
-    url: '',
-    slug: '',
-    slug_type: 'hash',
-  });
+export const LinkFormInitialState = {
+  url: '',
+  slug: '',
+  slug_type: 'hash',
+};
+
+export default function LinkForm() {
+  const [form, setForm] = useState<LinkFormState>(LinkFormInitialState);
+  const [loading, setLoading] = useState(null);
+  const [response, setResponse] = useState(null);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const { url, slug } = event.target;
+    setLoading(true);
+    try {
+      const res = await axios.post('/api/shorten', {
+        url: url?.value,
+        slug: slug?.value,
+      });
+
+      setResponse(res.data);
+    } catch (error) {
+      setResponse({ error: 'invalid attempt' });
+    }
+
+    setLoading(false);
+  };
 
   return (
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
       <div
         className={clsx(
           'h-1 rounded-t-md ',
-          {
-            loading: 'bg-gray-500',
-            success: 'bg-green-500',
-            error: 'bg-red-500',
-          }[requestState] || 'bg-indigo-500'
+          loading && 'bg-gray-500',
+          response?.error && 'bg-red-500',
+          !response?.error && 'bg-green-500',
+          !response && 'bg-indigo-500'
         )}
       />
       <div className="bg-white p-8 shadow sm:rounded-lg">
-        <form className="space-y-6" onSubmit={onSubmit} noValidate>
-          <LinkInput form={form} setForm={setForm} />
+        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+          <LinkInput
+            form={form}
+            setForm={setForm}
+            setResponse={setResponse}
+            error={response?.error && 'invalid link'}
+          />
           <SlugInput form={form} setForm={setForm} />
-          <Button requestState={requestState} type="submit">
-            {requestState === 'success' ? 'success 🎉️' : 'shorten ✂️'}
+          <Button
+            color={response?.error ? 'error' : response ? 'success' : ''}
+            type="submit"
+          >
+            {response?.status === 200 ? 'success 🎉️' : 'shorten ✂️'}
           </Button>
         </form>
-        {children}
+
+        {response && !response?.error && (
+          <Alert
+            title="link shortened"
+            onClose={() => {
+              setResponse(null);
+            }}
+          >
+            <a href={response.slug_url} rel="noreferrer" target="_blank">
+              {response.slug_url}
+            </a>
+          </Alert>
+        )}
       </div>
     </div>
   );

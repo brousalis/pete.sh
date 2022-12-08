@@ -8,7 +8,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   if (!slug) {
-    res.status(404).json({ error: 'Invalid request' });
+    res.status(404).json({ error: 'invalid_request' });
     return;
   }
 
@@ -17,7 +17,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   if (!data) {
-    res.status(404).json({ error: 'Invalid link' });
+    res.status(404).json({ error: 'invalid_link' });
     return;
   }
 

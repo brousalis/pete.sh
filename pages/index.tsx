@@ -4,37 +4,7 @@ import axios from 'axios';
 import Head from 'next/head';
 import React, { useState } from 'react';
 
-export type RequestState = '' | 'loading' | 'success' | 'error';
-
 export default function HomeView() {
-  const [requestState, setRequestState] = useState<RequestState>('');
-  const [shortenedUrl, setShortenedUrl] = useState(null);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setRequestState('loading');
-
-    try {
-      const res = await axios.post('/api/shorten', {
-        url: event.target.url?.value,
-        slug: event.target.slug?.value,
-      });
-
-      setRequestState('success');
-      setShortenedUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/${res.data.slug}`);
-    } catch (error) {
-      setRequestState('error');
-      setShortenedUrl(null);
-      console.error(error);
-    }
-    console.log(event);
-  };
-
-  const handleCloseAlert = () => {
-    setRequestState('');
-    setShortenedUrl(null);
-  };
-
   return (
     <div className="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
       <Head>
@@ -52,11 +22,7 @@ export default function HomeView() {
         </p>
       </div>
 
-      <LinkForm requestState={requestState} onSubmit={handleSubmit}>
-        {requestState === 'success' && (
-          <Alert shortenedUrl={shortenedUrl} onClose={handleCloseAlert} />
-        )}
-      </LinkForm>
+      <LinkForm />
     </div>
   );
 }

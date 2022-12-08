@@ -15,7 +15,7 @@ function SlugInput({ setForm, form }) {
       name="slug"
       prepend="https://pete.sh/"
       className="pl-[115px]"
-      defaultValue={form.slug}
+      value={form.slug}
       onChange={handleChange}
     />
   );
