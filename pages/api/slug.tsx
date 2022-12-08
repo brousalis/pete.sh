@@ -1,7 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const slug = req.query.slug;
 
   res.setHeader('Content-Type', 'application/json');
@@ -24,4 +24,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   res.json(data);
 
   return;
-};
+}
+
+export default handler;

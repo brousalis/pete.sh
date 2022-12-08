@@ -13,16 +13,24 @@ const SlugView: NextPage<SlugViewProps> = ({ error }) => {
   return <div>loading</div>;
 };
 
-SlugView.getInitialProps = async ({ query }) => {
+SlugView.getInitialProps = async ({ res, query }) => {
   const { slug } = query;
   try {
-    const response = await axios.get(`/api/slug?slug=${slug}`);
-    // res.writeHead(302)
-    // res.end();
-    window.location.replace(response?.data?.url);
+    const response = await axios.get('http://localhost:3000/api/slug', {
+      params: { slug: slug },
+    });
+
+    const url = response?.data?.url;
+    if (typeof window === 'undefined') {
+      res.writeHead(302, { location: url });
+      res.end();
+    } else {
+      window.location.replace(url);
+    }
   } catch (err) {
     return { error: err.response?.data?.error };
   }
+
   return {};
 };
 
