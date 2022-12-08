@@ -43,6 +43,7 @@ export default function LinkForm() {
     setLoading(false);
   };
 
+  console.log(response);
   return (
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
       <div
@@ -67,12 +68,13 @@ export default function LinkForm() {
             color={response?.error ? 'error' : response ? 'success' : ''}
             type="submit"
           >
-            {response?.status === 200 ? 'success 🎉️' : 'shorten ✂️'}
+            {response?.success ? 'success 🎉️' : 'shorten ✂️'}
           </Button>
         </form>
 
         {response && !response?.error && (
           <Alert
+            shortenedUrl={response.slug_url}
             title="link shortened"
             onClose={() => {
               setResponse(null);

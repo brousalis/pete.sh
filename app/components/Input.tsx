@@ -61,7 +61,10 @@ export default function Input({
         {children}
       </div>
       {!!error && (
-        <p className="absolute text-xs text-red-600" id={`${name}-error`}>
+        <p
+          className="absolute text-center text-xs text-red-600"
+          id={`${name}-error`}
+        >
           {error}
         </p>
       )}
