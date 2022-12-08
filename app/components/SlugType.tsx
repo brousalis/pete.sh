@@ -13,8 +13,8 @@ function SlugType({
     if (form.url !== '' || form.url !== undefined) {
       setForm({
         ...form,
-        slug_type: e.target.value,
         slug: generateLinkSlug(e.target.value),
+        slug_type: e.target.value,
       });
     }
   };

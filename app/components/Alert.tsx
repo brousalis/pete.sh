@@ -25,7 +25,7 @@ function Alert({
         <div className="ml-3 flex flex-1 flex-col">
           <h3 className="text-sm font-medium text-green-800">{title}</h3>
           <div className="mt-2 text-sm text-green-700">{children}</div>
-          <div className="ml-auto mt-4">
+          <div className="ml-auto mt-2">
             <div className="-mx-2 -my-1.5 flex">
               <CopyButton text={shortenedUrl} />
               <button

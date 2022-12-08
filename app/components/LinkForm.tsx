@@ -65,10 +65,13 @@ export default function LinkForm() {
           />
           <SlugInput form={form} setForm={setForm} />
           <Button
+            loading={loading}
             color={response?.error ? 'error' : response ? 'success' : ''}
             type="submit"
           >
-            {response?.success ? 'success 🎉️' : 'shorten ✂️'}
+            <div className="animate__animated animate__bounce">
+              {response?.success ? 'success 🎉️' : 'shorten ✂️'}
+            </div>
           </Button>
         </form>
 
