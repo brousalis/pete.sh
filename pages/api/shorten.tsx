@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   let data;
 
   res.setHeader('Content-Type', 'application/json');
@@ -17,6 +17,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   } catch (error) {
     console.error('POST error', error);
     res.status(500).json({ error: 'Error creating link' });
+    return;
   }
 
   if (!data) {
@@ -24,8 +25,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     return;
   }
 
-
   res.json(data);
 
   return;
-};
+}
+
+export default handler;

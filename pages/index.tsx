@@ -1,9 +1,24 @@
-import React from 'react';
+import LinkForm from '../components/LinkForm';
+import axios from 'axios';
 import Head from 'next/head';
-
-import CreateLink from '../components/CreateLink';
+import React from 'react';
 
 export default function HomeView() {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const res = await axios.post('/api/shorten', {
+        url: event.target.url?.value,
+        slug: event.target.slug?.value,
+      });
+
+      console.log(res);
+    } catch (error) {
+      console.error(error);
+    }
+    console.log(event);
+  };
+
   return (
     <div className="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
       <Head>
@@ -19,7 +34,7 @@ export default function HomeView() {
         <p className="mt-2 text-center text-sm text-gray-600">a really good url shortener</p>
       </div>
 
-      <CreateLink />
+      <LinkForm onSubmit={handleSubmit} />
     </div>
   );
 }
