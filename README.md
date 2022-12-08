@@ -1,4 +1,6 @@
 # pete.sh
+![image](https://user-images.githubusercontent.com/163537/206514273-6589ed91-6660-4450-a96e-8a863115ac51.png)
+
 
 ```bash
 yarn install
