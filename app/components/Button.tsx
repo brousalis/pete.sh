@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { RequestState } from 'pages';
 import React, { ButtonHTMLAttributes } from 'react';
 
 const COLORS = {
@@ -13,7 +14,7 @@ export default function Button({
   ...props
 }: {
   className?: string;
-  requestState?: 'success' | 'error' | 'loading';
+  requestState?: RequestState;
   children: React.ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (

@@ -1,12 +1,14 @@
+import Alert from '../app/components/Alert';
 import LinkForm from '../app/components/LinkForm';
 import axios from 'axios';
 import Head from 'next/head';
 import React, { useState } from 'react';
 
+export type RequestState = '' | 'loading' | 'success' | 'error';
+
 export default function HomeView() {
-  const [requestState, setRequestState] = useState<
-    '' | 'loading' | 'success' | 'error'
-  >('');
+  const [requestState, setRequestState] = useState<RequestState>('');
+  const [shortenedUrl, setShortenedUrl] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -19,12 +21,18 @@ export default function HomeView() {
       });
 
       setRequestState('success');
-      console.log(res);
+      setShortenedUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/${res.data.slug}`);
     } catch (error) {
       setRequestState('error');
+      setShortenedUrl(null);
       console.error(error);
     }
     console.log(event);
+  };
+
+  const handleCloseAlert = () => {
+    setRequestState('');
+    setShortenedUrl(null);
   };
 
   return (
@@ -44,7 +52,11 @@ export default function HomeView() {
         </p>
       </div>
 
-      <LinkForm requestState={requestState} onSubmit={handleSubmit} />
+      <LinkForm requestState={requestState} onSubmit={handleSubmit}>
+        {requestState === 'success' && (
+          <Alert shortenedUrl={shortenedUrl} onClose={handleCloseAlert} />
+        )}
+      </LinkForm>
     </div>
   );
 }

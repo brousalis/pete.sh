@@ -1,26 +1,30 @@
+import Alert from './Alert';
 import Button from './Button';
 import LinkInput from './LinkInput';
 import SlugInput from './SlugInput';
 import clsx from 'clsx';
+import { RequestState } from 'pages';
 import React, { useState } from 'react';
 
-const REQUEST_STATE_COLORS = {
-  loading: 'bg-gray-500',
-  success: 'bg-green-500',
-  error: 'bg-red-500',
-};
+export interface LinkFormState {
+  url?: string;
+  slug?: string;
+  slug_type?: string;
+}
 
 export default function LinkForm({
+  children,
   onSubmit,
-  requestState = 'success',
+  requestState,
 }: {
+  children?: React.ReactNode;
   onSubmit: (HTMLElement) => void;
-  requestState?: 'success' | 'error' | 'loading';
+  requestState?: RequestState;
 }) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<LinkFormState>({
     url: '',
     slug: '',
-    slug_type: '',
+    slug_type: 'hash',
   });
 
   return (
@@ -28,17 +32,22 @@ export default function LinkForm({
       <div
         className={clsx(
           'h-1 rounded-t-md ',
-          REQUEST_STATE_COLORS[requestState] || 'bg-indigo-500'
+          {
+            loading: 'bg-gray-500',
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+          }[requestState] || 'bg-indigo-500'
         )}
-      ></div>
+      />
       <div className="bg-white p-8 shadow sm:rounded-lg">
         <form className="space-y-6" onSubmit={onSubmit} noValidate>
           <LinkInput form={form} setForm={setForm} />
           <SlugInput form={form} setForm={setForm} />
           <Button requestState={requestState} type="submit">
-            shorten
+            {requestState === 'success' ? 'success 🎉️' : 'shorten ✂️'}
           </Button>
         </form>
+        {children}
       </div>
     </div>
   );
