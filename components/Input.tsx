@@ -3,18 +3,20 @@ import clsx from 'clsx';
 import React from 'react';
 
 export default function Input({
+  children,
+  className,
+  error,
   label,
   name,
-  error,
   prepend,
-  className,
   ...props
 }: {
+  children?: React.ReactNode;
+  className?: string;
+  error?: string;
   label?: string;
   name: string;
-  error?: string;
   prepend?: string;
-  className?: string;
 } & React.HTMLAttributes<HTMLInputElement>) {
   return (
     <div>
@@ -25,17 +27,17 @@ export default function Input({
       )}
       <div className="relative mt-1 flex rounded-md shadow-sm">
         {prepend && (
-          <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
-            {prepend}
-          </span>
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span className="text-gray-500 sm:text-sm">{prepend}</span>
+          </div>
         )}
         <input
           name={name}
           id={name}
           autoComplete="off"
           className={clsx(
-            'block w-full appearance-none border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm',
-            prepend ? 'rounded-none rounded-r-md' : 'rounded-md',
+            'block w-full appearance-none rounded-md border border-gray-300 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm',
+            prepend ? 'pl-[113px]' : 'px-3',
             error &&
               'border-red-300 text-red-900 placeholder-red-300  focus:border-red-500 focus:outline-none focus:ring-red-500'
           )}
@@ -48,6 +50,7 @@ export default function Input({
             <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
           </div>
         )}
+        {children}
       </div>
       {error && (
         <p className="mt-2 text-sm text-red-600" id={`${name}-error`}>
