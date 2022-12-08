@@ -21,14 +21,17 @@ export default function Input({
   return (
     <div>
       {label && (
-        <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor={name}
+          className="block text-sm font-medium text-gray-700"
+        >
           {label}
         </label>
       )}
       <div className="relative mt-1 flex rounded-md shadow-sm">
         {prepend && (
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-gray-500 sm:text-sm">{prepend}</span>
+            <span className="text-gray-400 sm:text-sm">{prepend}</span>
           </div>
         )}
         <input
@@ -36,10 +39,10 @@ export default function Input({
           id={name}
           autoComplete="off"
           className={clsx(
-            'block w-full appearance-none rounded-md border border-gray-300 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm',
-            prepend ? 'pl-[113px]' : 'px-3',
+            'block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm',
             error &&
-              'border-red-300 text-red-900 placeholder-red-300  focus:border-red-500 focus:outline-none focus:ring-red-500'
+              'border-red-300 text-red-900 placeholder-red-300  focus:border-red-500 focus:outline-none focus:ring-red-500',
+            className
           )}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `"${name}-error` : name}
@@ -47,7 +50,10 @@ export default function Input({
         />
         {error && (
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
+            <ExclamationCircleIcon
+              className="h-5 w-5 text-red-500"
+              aria-hidden="true"
+            />
           </div>
         )}
         {children}

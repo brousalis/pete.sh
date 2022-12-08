@@ -9,7 +9,7 @@ export default class MyDocument extends Document {
 
   render() {
     return (
-      <Html className="h-full bg-gray-200" lang="en">
+      <Html className="h-full bg-gray-100" lang="en">
         <Head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" />
