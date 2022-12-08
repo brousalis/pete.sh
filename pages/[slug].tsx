@@ -16,9 +16,12 @@ const SlugView: NextPage<SlugViewProps> = ({ error }) => {
 SlugView.getInitialProps = async ({ res, query }) => {
   const { slug } = query;
   try {
-    const response = await axios.get('http://localhost:3000/api/slug', {
-      params: { slug: slug },
-    });
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/slug`,
+      {
+        params: { slug: slug },
+      }
+    );
 
     const url = response?.data?.url;
     if (typeof window === 'undefined') {
