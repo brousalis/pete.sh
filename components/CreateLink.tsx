@@ -1,14 +1,25 @@
+import axios from 'axios';
 import React from 'react';
 
 export default function CreateLink() {
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const res = await axios.post('/api/shorten', { 
+        url: event.target.url?.value, 
+        slug: event.target.slug?.value
+      })
+      console.log(res)
+    } catch (error) {
+      console.error(error)
+    }
     console.log(event);
   };
 
   return (
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
           <div className="mt-1">
             <label htmlFor="url" className="block text-sm font-medium text-gray-700">
               <input
