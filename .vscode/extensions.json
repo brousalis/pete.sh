@@ -1,0 +1,50 @@
+{
+  "recommendations": [
+    // Essential for Next.js/React/TypeScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    
+    // TypeScript & JavaScript
+    "ms-vscode.vscode-typescript-next",
+    
+    // React & Next.js
+    "dsznajder.es7-react-js-snippets",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    
+    // Code Quality
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    
+    // Productivity
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-markdown",
+    "yzhang.markdown-all-in-one",
+    
+    // Import Management
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    
+    // Testing (for future use)
+    "orta.vscode-jest",
+    
+    // Debugging
+    "ms-vscode.vscode-json",
+    
+    // Theme (optional but nice)
+    "pkief.material-icon-theme",
+    
+    // Cursor-specific
+    "cursor.cursor-ai"
+  ],
+  "unwantedRecommendations": [
+    "hookyqr.beautify",
+    "ms-vscode.vscode-typescript"
+  ]
+}

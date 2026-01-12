@@ -1,0 +1,91 @@
+# Petehome - Smart Home Dashboard
+
+## Project Context
+This is a Next.js 15 TypeScript React application for a smart home dashboard called "petehome". The project uses:
+- Next.js 15 with App Router
+- React 19
+- TypeScript 5
+- Tailwind CSS 4
+- shadcn/ui components
+- Radix UI primitives
+
+## Code Style Guidelines
+
+### TypeScript
+- Use TypeScript strict mode
+- Prefer explicit types for function parameters and return types when not obvious
+- Use interfaces for object shapes, types for unions/intersections
+- Avoid `any` - use `unknown` when type is truly unknown
+- Use type guards for runtime type checking
+
+### React
+- Use functional components with hooks
+- Prefer named exports for components
+- Use TypeScript for prop types (not PropTypes)
+- Keep components small and focused
+- Extract custom hooks for reusable logic
+- Use React Server Components by default, add "use client" only when needed
+
+### File Organization
+- Components in `/components` directory
+- UI components in `/components/ui`
+- Custom hooks in `/hooks`
+- Utilities in `/lib`
+- Types/interfaces in `/types` or co-located with components
+- Use kebab-case for file names (e.g., `light-controls.tsx`)
+
+### Naming Conventions
+- Components: PascalCase (e.g., `LightControls`)
+- Functions: camelCase (e.g., `handleClick`)
+- Constants: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`)
+- Types/Interfaces: PascalCase (e.g., `UserProfile`)
+- Files: kebab-case (e.g., `user-profile.tsx`)
+
+### Import Organization
+1. React/Next.js imports
+2. Third-party library imports
+3. Internal imports (components, hooks, utils)
+4. Type imports (use `import type` when possible)
+5. Relative imports last
+
+### Code Quality
+- Write self-documenting code with clear variable names
+- Add JSDoc comments for complex functions
+- Keep functions small and focused (single responsibility)
+- Avoid deep nesting (max 3-4 levels)
+- Use early returns to reduce nesting
+- Prefer composition over inheritance
+
+### Performance
+- Use React.memo for expensive components
+- Use useMemo/useCallback when appropriate
+- Lazy load heavy components
+- Optimize images with Next.js Image component
+- Use dynamic imports for code splitting
+
+### Error Handling
+- Use error boundaries for React error handling
+- Handle async errors with try/catch
+- Provide meaningful error messages
+- Log errors appropriately (console.error in dev, proper logging in prod)
+
+### Testing (Future)
+- Write unit tests for utilities and hooks
+- Write integration tests for components
+- Use React Testing Library
+- Test user interactions, not implementation details
+
+## Smart Home Specific
+- Device states should be reactive and update in real-time
+- Use optimistic updates for better UX
+- Handle offline scenarios gracefully
+- Consider security for device control endpoints
+- Use WebSockets or Server-Sent Events for real-time updates
+
+## AI/LLM Guidelines
+- When suggesting code, prioritize readability and maintainability
+- Suggest TypeScript types explicitly
+- Include error handling in async operations
+- Consider edge cases and error states
+- Follow the existing code patterns and conventions
+- When refactoring, maintain backward compatibility when possible

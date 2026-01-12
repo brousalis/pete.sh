@@ -1,0 +1,103 @@
+{
+  "React Functional Component with TypeScript": {
+    "prefix": "rfc",
+    "body": [
+      "import type React from 'react'",
+      "",
+      "interface ${1:ComponentName}Props {",
+      "  $2",
+      "}",
+      "",
+      "export default function ${1:ComponentName}({ $3 }: ${1:ComponentName}Props) {",
+      "  return (",
+      "    <div>",
+      "      $0",
+      "    </div>",
+      "  )",
+      "}"
+    ],
+    "description": "React Functional Component with TypeScript"
+  },
+  "React Server Component": {
+    "prefix": "rsc",
+    "body": [
+      "export default function ${1:ComponentName}() {",
+      "  return (",
+      "    <div>",
+      "      $0",
+      "    </div>",
+      "  )",
+      "}"
+    ],
+    "description": "React Server Component"
+  },
+  "React Client Component": {
+    "prefix": "rcc",
+    "body": [
+      "'use client'",
+      "",
+      "import type React from 'react'",
+      "",
+      "interface ${1:ComponentName}Props {",
+      "  $2",
+      "}",
+      "",
+      "export default function ${1:ComponentName}({ $3 }: ${1:ComponentName}Props) {",
+      "  return (",
+      "    <div>",
+      "      $0",
+      "    </div>",
+      "  )",
+      "}"
+    ],
+    "description": "React Client Component with TypeScript"
+  },
+  "Next.js API Route": {
+    "prefix": "api",
+    "body": [
+      "import { NextRequest, NextResponse } from 'next/server'",
+      "",
+      "export async function ${1|GET,POST,PUT,DELETE,PATCH|}(request: NextRequest) {",
+      "  try {",
+      "    $0",
+      "    return NextResponse.json({ success: true })",
+      "  } catch (error) {",
+      "    return NextResponse.json(",
+      "      { error: 'Internal Server Error' },",
+      "      { status: 500 }",
+      "    )",
+      "  }",
+      "}"
+    ],
+    "description": "Next.js API Route Handler"
+  },
+  "Custom Hook": {
+    "prefix": "hook",
+    "body": [
+      "import { useState, useEffect } from 'react'",
+      "",
+      "export function use${1:HookName}() {",
+      "  $0",
+      "  return {",
+      "  }",
+      "}"
+    ],
+    "description": "Custom React Hook"
+  },
+  "TypeScript Interface": {
+    "prefix": "interface",
+    "body": [
+      "interface ${1:InterfaceName} {",
+      "  $0",
+      "}"
+    ],
+    "description": "TypeScript Interface"
+  },
+  "TypeScript Type": {
+    "prefix": "type",
+    "body": [
+      "type ${1:TypeName} = $0"
+    ],
+    "description": "TypeScript Type Alias"
+  }
+}
