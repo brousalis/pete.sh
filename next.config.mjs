@@ -18,8 +18,7 @@ const nextConfig = {
   },
   // React strict mode for better development experience
   reactStrictMode: true,
-  // Enable SWC minification (default in Next.js 15)
-  swcMinify: true,
+  // SWC minification is default in Next.js 16 (no need to specify)
   // Experimental features
   experimental: {
     // Add any experimental features you want to enable
