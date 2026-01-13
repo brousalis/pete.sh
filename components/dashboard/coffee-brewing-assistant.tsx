@@ -177,7 +177,7 @@ export function CoffeeBrewingAssistant() {
   const startTimerForCurrentStep = () => {
     if (!selectedRoutine) return
     const currentStepData = selectedRoutine.steps[guidedStepIndex]
-    
+
     if (currentStepData?.timing) {
       setTimerState('running')
       setElapsedTime(0)
@@ -344,30 +344,35 @@ export function CoffeeBrewingAssistant() {
   const isLastStep =
     guidedStepIndex === (selectedRoutine?.steps.length || 0) - 1
   const isFirstStep = guidedStepIndex === 0
-  const allStepsCompleted = selectedRoutine && completedSteps.size === selectedRoutine.steps.length
+  const allStepsCompleted =
+    selectedRoutine && completedSteps.size === selectedRoutine.steps.length
 
   // Completion Screen
   if (viewMode === 'guided' && allStepsCompleted) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2">
               <Coffee className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="min-w-0">
-                <CardTitle className="text-lg sm:text-xl truncate">{selectedRoutine.name}</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Brew Complete!</CardDescription>
+                <CardTitle className="truncate text-lg sm:text-xl">
+                  {selectedRoutine.name}
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Brew Complete!
+                </CardDescription>
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('overview')}
-                className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
+                className="gap-1.5 text-xs sm:gap-2 sm:text-sm"
               >
                 <List className="size-3.5 sm:size-4" />
-                <span className="hidden xs:inline">Overview</span>
+                <span className="xs:inline hidden">Overview</span>
                 <span className="xs:hidden">View</span>
               </Button>
               <Button
@@ -384,43 +389,48 @@ export function CoffeeBrewingAssistant() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Completion Celebration */}
-          <div className="space-y-4 sm:space-y-6 rounded-xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-50/80 via-amber-100/40 to-orange-50/60 p-6 sm:p-12 text-center dark:from-amber-950/40 dark:via-amber-900/30 dark:to-orange-950/30 dark:border-amber-500/20">
+          <div className="space-y-4 rounded-xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-50/80 via-amber-100/40 to-orange-50/60 p-6 text-center sm:space-y-6 sm:p-12 dark:border-amber-500/20 dark:from-amber-950/40 dark:via-amber-900/30 dark:to-orange-950/30">
             <div className="space-y-4 sm:space-y-6">
               {/* Success Icon */}
               <div className="flex justify-center">
-                <div className="rounded-full bg-gradient-to-br from-amber-500 to-orange-600 p-4 sm:p-6 shadow-lg shadow-amber-500/30">
-                  <CheckCircle2 className="size-12 sm:size-16 text-white" />
+                <div className="rounded-full bg-gradient-to-br from-amber-500 to-orange-600 p-4 shadow-lg shadow-amber-500/30 sm:p-6">
+                  <CheckCircle2 className="size-12 text-white sm:size-16" />
                 </div>
               </div>
 
               {/* Title */}
               <div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-700 to-orange-700 bg-clip-text text-transparent dark:from-amber-400 dark:to-orange-400 mb-2">
+                <h2 className="mb-2 bg-gradient-to-r from-amber-700 to-orange-700 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl md:text-4xl dark:from-amber-400 dark:to-orange-400">
                   Brew Complete! ☕
                 </h2>
-                <p className="text-sm sm:text-base md:text-lg text-amber-900/80 dark:text-amber-200/80 px-2">
-                  You've successfully completed all {selectedRoutine.steps.length} steps
+                <p className="px-2 text-sm text-amber-900/80 sm:text-base md:text-lg dark:text-amber-200/80">
+                  You've successfully completed all{' '}
+                  {selectedRoutine.steps.length} steps
                 </p>
               </div>
 
               {/* Summary Stats */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto">
-                <div className="rounded-lg border border-amber-200/50 bg-white/60 dark:bg-amber-950/30 dark:border-amber-800/50 p-3 sm:p-4 shadow-sm">
-                  <div className="text-xl sm:text-2xl font-bold text-amber-700 dark:text-amber-400">
+              <div className="mx-auto grid max-w-md grid-cols-2 gap-3 sm:gap-4">
+                <div className="rounded-lg border border-amber-200/50 bg-white/60 p-3 shadow-sm sm:p-4 dark:border-amber-800/50 dark:bg-amber-950/30">
+                  <div className="text-xl font-bold text-amber-700 sm:text-2xl dark:text-amber-400">
                     {selectedRoutine.steps.length}
                   </div>
-                  <div className="text-xs sm:text-sm text-amber-600/80 dark:text-amber-300/80">Steps</div>
+                  <div className="text-xs text-amber-600/80 sm:text-sm dark:text-amber-300/80">
+                    Steps
+                  </div>
                 </div>
-                <div className="rounded-lg border border-amber-200/50 bg-white/60 dark:bg-amber-950/30 dark:border-amber-800/50 p-3 sm:p-4 shadow-sm">
-                  <div className="text-xl sm:text-2xl font-bold text-amber-700 dark:text-amber-400">
+                <div className="rounded-lg border border-amber-200/50 bg-white/60 p-3 shadow-sm sm:p-4 dark:border-amber-800/50 dark:bg-amber-950/30">
+                  <div className="text-xl font-bold text-amber-700 sm:text-2xl dark:text-amber-400">
                     {selectedRoutine.batchSize}
                   </div>
-                  <div className="text-xs sm:text-sm text-amber-600/80 dark:text-amber-300/80">Batch Size</div>
+                  <div className="text-xs text-amber-600/80 sm:text-sm dark:text-amber-300/80">
+                    Batch Size
+                  </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 sm:gap-4 pt-4">
+              <div className="flex flex-col flex-wrap items-stretch justify-center gap-3 pt-4 sm:flex-row sm:items-center sm:gap-4">
                 <Button
                   onClick={() => {
                     setCompletedSteps(new Set())
@@ -431,7 +441,7 @@ export function CoffeeBrewingAssistant() {
                     alertShownRef.current.clear()
                   }}
                   size="lg"
-                  className="gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg shadow-amber-500/30 w-full sm:w-auto sm:min-w-[160px]"
+                  className="w-full gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30 hover:from-amber-700 hover:to-orange-700 sm:w-auto sm:min-w-[160px]"
                 >
                   <RotateCcw className="size-5" />
                   Start New Brew
@@ -440,7 +450,7 @@ export function CoffeeBrewingAssistant() {
                   onClick={() => setViewMode('overview')}
                   variant="outline"
                   size="lg"
-                  className="gap-2 w-full sm:w-auto sm:min-w-[160px] border-amber-300/50 hover:bg-amber-50 dark:border-amber-700/50 dark:hover:bg-amber-950/30"
+                  className="w-full gap-2 border-amber-300/50 hover:bg-amber-50 sm:w-auto sm:min-w-[160px] dark:border-amber-700/50 dark:hover:bg-amber-950/30"
                 >
                   <List className="size-5" />
                   View Overview
@@ -449,7 +459,7 @@ export function CoffeeBrewingAssistant() {
                   onClick={() => setSelectedRoutine(null)}
                   variant="outline"
                   size="lg"
-                  className="gap-2 w-full sm:w-auto sm:min-w-[160px] border-amber-300/50 hover:bg-amber-50 dark:border-amber-700/50 dark:hover:bg-amber-950/30"
+                  className="w-full gap-2 border-amber-300/50 hover:bg-amber-50 sm:w-auto sm:min-w-[160px] dark:border-amber-700/50 dark:hover:bg-amber-950/30"
                 >
                   <Coffee className="size-5" />
                   Change Routine
@@ -459,19 +469,19 @@ export function CoffeeBrewingAssistant() {
           </div>
 
           {/* All Steps Completed Indicator */}
-          <div className="rounded-lg border border-amber-200/30 bg-gradient-to-br from-amber-50/40 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/20 dark:border-amber-800/30 p-3 sm:p-4">
-            <div className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80 mb-2 sm:mb-3 text-center">
+          <div className="rounded-lg border border-amber-200/30 bg-gradient-to-br from-amber-50/40 to-orange-50/30 p-3 sm:p-4 dark:border-amber-800/30 dark:from-amber-950/20 dark:to-orange-950/20">
+            <div className="mb-2 text-center text-xs font-medium text-amber-700/80 sm:mb-3 dark:text-amber-300/80">
               All Steps Completed
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {selectedRoutine.steps.map((step, idx) => (
                 <div
                   key={step.id}
-                  className="rounded-lg bg-white/70 dark:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/50 p-2 text-left text-xs shadow-sm"
+                  className="rounded-lg border border-amber-200/50 bg-white/70 p-2 text-left text-xs shadow-sm dark:border-amber-800/50 dark:bg-amber-900/30"
                 >
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <span className="font-medium text-amber-800 dark:text-amber-200 truncate">
+                    <span className="truncate font-medium text-amber-800 dark:text-amber-200">
                       {step.title}
                     </span>
                   </div>
@@ -492,25 +502,27 @@ export function CoffeeBrewingAssistant() {
     return (
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2">
               <Coffee className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="min-w-0">
-                <CardTitle className="text-lg sm:text-xl truncate">{selectedRoutine.name}</CardTitle>
+                <CardTitle className="truncate text-lg sm:text-xl">
+                  {selectedRoutine.name}
+                </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
                   Step {guidedStepIndex + 1} of {selectedRoutine.steps.length}
                 </CardDescription>
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('overview')}
-                className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
+                className="gap-1.5 text-xs sm:gap-2 sm:text-sm"
               >
                 <List className="size-3.5 sm:size-4" />
-                <span className="hidden xs:inline">Overview</span>
+                <span className="xs:inline hidden">Overview</span>
                 <span className="xs:hidden">View</span>
               </Button>
               <Button
@@ -527,25 +539,25 @@ export function CoffeeBrewingAssistant() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Current Step - Large Focused View */}
-          <div className="space-y-4 sm:space-y-6 rounded-xl border-2 border-amber-500/50 bg-amber-50/50 p-4 sm:p-6 md:p-8 text-center dark:bg-amber-950/20">
+          <div className="space-y-4 rounded-xl border-2 border-amber-500/50 bg-amber-50/50 p-4 text-center sm:space-y-6 sm:p-6 md:p-8 dark:bg-amber-950/20">
             <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-center gap-2 sm:gap-3">
                 {isCompleted ? (
-                  <CheckCircle2 className="size-8 sm:size-10 md:size-12 text-green-500 shrink-0" />
+                  <CheckCircle2 className="size-8 shrink-0 text-green-500 sm:size-10 md:size-12" />
                 ) : (
-                  <Circle className="size-8 sm:size-10 md:size-12 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <Circle className="size-8 shrink-0 text-amber-600 sm:size-10 md:size-12 dark:text-amber-400" />
                 )}
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
+                <h2 className="text-xl font-bold sm:text-2xl md:text-3xl">
                   {currentGuidedStep.title}
                 </h2>
               </div>
 
-              <p className="text-foreground mx-auto max-w-2xl text-base sm:text-lg md:text-xl font-medium leading-relaxed px-2">
+              <p className="text-foreground mx-auto max-w-2xl px-2 text-base leading-relaxed font-medium sm:text-lg md:text-xl">
                 {currentGuidedStep.description}
               </p>
 
               {currentGuidedStep.action && (
-                <div className="bg-muted/40 rounded-lg border border-border/50 p-3">
+                <div className="bg-muted/40 border-border/50 rounded-lg border p-3">
                   <p className="text-muted-foreground text-sm">
                     → {currentGuidedStep.action}
                   </p>
@@ -564,14 +576,14 @@ export function CoffeeBrewingAssistant() {
               {/* Timer Display for Steps with Timing */}
               {hasTiming && (
                 <div className="flex flex-col items-center justify-center gap-3 sm:gap-4">
-                  <div className="bg-background rounded-lg border-2 border-amber-500 p-4 sm:p-6 w-full max-w-sm">
+                  <div className="bg-background w-full max-w-sm rounded-lg border-2 border-amber-500 p-4 sm:p-6">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <Timer className="size-6 sm:size-8 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <Timer className="size-6 shrink-0 text-amber-600 sm:size-8 dark:text-amber-400" />
                       <div className="min-w-0 flex-1">
                         <div className="text-muted-foreground text-xs">
                           Timer
                         </div>
-                        <div className="font-mono text-2xl sm:text-3xl md:text-4xl font-bold">
+                        <div className="font-mono text-2xl font-bold sm:text-3xl md:text-4xl">
                           {formatTime(elapsedTime)}
                         </div>
                         {currentGuidedStep.timing?.alert && (
@@ -647,13 +659,13 @@ export function CoffeeBrewingAssistant() {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 sm:gap-4 pt-4 sm:pt-6">
+            <div className="flex flex-col flex-wrap items-stretch justify-center gap-3 pt-4 sm:flex-row sm:items-center sm:gap-4 sm:pt-6">
               <Button
                 onClick={previousStep}
                 disabled={isFirstStep}
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto sm:min-w-[120px] gap-2"
+                className="w-full gap-2 sm:w-auto sm:min-w-[120px]"
               >
                 <ChevronLeft className="size-5" />
                 Previous
@@ -663,7 +675,7 @@ export function CoffeeBrewingAssistant() {
                 <Button
                   onClick={completeCurrentStep}
                   size="lg"
-                  className="h-12 w-full sm:w-auto sm:min-w-[180px] gap-2 bg-amber-600 text-base font-semibold text-white shadow-lg hover:bg-amber-700"
+                  className="h-12 w-full gap-2 bg-amber-600 text-base font-semibold text-white shadow-lg hover:bg-amber-700 sm:w-auto sm:min-w-[180px]"
                 >
                   <CheckCircle2 className="size-5" />
                   Complete
@@ -673,7 +685,7 @@ export function CoffeeBrewingAssistant() {
                   onClick={nextStep}
                   disabled={isLastStep}
                   size="lg"
-                  className="w-full sm:w-auto sm:min-w-[120px] gap-2"
+                  className="w-full gap-2 sm:w-auto sm:min-w-[120px]"
                 >
                   Next
                   <ChevronRight className="size-5" />
@@ -685,7 +697,7 @@ export function CoffeeBrewingAssistant() {
                   onClick={nextStep}
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto sm:min-w-[120px] gap-2"
+                  className="w-full gap-2 sm:w-auto sm:min-w-[120px]"
                 >
                   Skip
                   <ChevronRight className="size-5" />
@@ -708,10 +720,10 @@ export function CoffeeBrewingAssistant() {
 
           {/* Step List Preview */}
           <div className="bg-muted/30 rounded-lg border p-3 sm:p-4">
-            <div className="text-muted-foreground mb-2 sm:mb-3 text-xs font-medium">
+            <div className="text-muted-foreground mb-2 text-xs font-medium sm:mb-3">
               All Steps
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {selectedRoutine.steps.map((step, idx) => {
                 const stepCompleted = completedSteps.has(idx)
                 const isCurrent = idx === guidedStepIndex
@@ -749,23 +761,27 @@ export function CoffeeBrewingAssistant() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
             <Coffee className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
             <div className="min-w-0">
-              <CardTitle className="text-lg sm:text-xl truncate">{selectedRoutine.name}</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">{selectedRoutine.description}</CardDescription>
+              <CardTitle className="truncate text-lg sm:text-xl">
+                {selectedRoutine.name}
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                {selectedRoutine.description}
+              </CardDescription>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 gap-2">
             <Button
               variant="default"
               size="sm"
               onClick={startGuidedBrew}
-              className="gap-1.5 sm:gap-2 bg-amber-600 hover:bg-amber-700 text-xs sm:text-sm flex-1 sm:flex-initial"
+              className="flex-1 gap-1.5 bg-amber-600 text-xs hover:bg-amber-700 sm:flex-initial sm:gap-2 sm:text-sm"
             >
               <Navigation className="size-3.5 sm:size-4" />
-              <span className="hidden xs:inline">Start Guided</span>
+              <span className="xs:inline hidden">Start Guided</span>
               <span className="xs:hidden">Start</span>
             </Button>
             <Button
@@ -783,7 +799,7 @@ export function CoffeeBrewingAssistant() {
       <CardContent className="space-y-4">
         {/* Quick Reference */}
         <div className="bg-muted/30 rounded-lg border p-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
               <div>
                 <span className="text-muted-foreground">Coffee:</span>
@@ -821,11 +837,11 @@ export function CoffeeBrewingAssistant() {
         </div>
 
         {/* Timer Controls */}
-        <div className="bg-muted/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4">
+        <div className="bg-muted/30 flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2">
-              <Timer className="size-4 sm:size-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="font-mono text-xl sm:text-2xl font-bold">
+              <Timer className="size-4 shrink-0 text-amber-600 sm:size-5 dark:text-amber-400" />
+              <span className="font-mono text-xl font-bold sm:text-2xl">
                 {formatTime(elapsedTime)}
               </span>
             </div>

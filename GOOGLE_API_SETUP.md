@@ -5,6 +5,7 @@ This guide will help you set up Google API credentials for Petehome's Calendar a
 ## Required APIs
 
 Petehome uses the following Google APIs:
+
 - **Google Calendar API** - For calendar event integration
 - **Google Maps Platform APIs** - For location search, place details, autocomplete, and directions
 
@@ -100,12 +101,14 @@ GOOGLE_API_KEY=your-api-key-here
 When deploying to production, make sure to:
 
 1. Update the redirect URI in your Google Cloud Console to match your production domain
-2. Set the `NEXT_PUBLIC_APP_URL` environment variable to your production URL, or set `GOOGLE_REDIRECT_URI` explicitly
+2. Set the `NEXT_PUBLIC_APP_URL` environment variable to your production URL, or set
+   `GOOGLE_REDIRECT_URI` explicitly
 3. The redirect URI will automatically use the correct domain based on your environment variables
 
 ## Step 7: Test the Configuration
 
 1. Start your development server:
+
    ```bash
    npm run dev
    # or
@@ -125,21 +128,26 @@ When deploying to production, make sure to:
 ## Troubleshooting
 
 ### "Google Calendar not configured" error
-- Verify all three environment variables are set: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_API_KEY`
+
+- Verify all three environment variables are set: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
+  `GOOGLE_API_KEY`
 - Restart your development server after adding environment variables
 - Check that the Google Calendar API is enabled in your project
 
 ### "Google Maps API key not configured" error
+
 - Verify `GOOGLE_API_KEY` is set in your `.env.local` file
 - Check that the Maps APIs are enabled in Google Cloud Console
 - Verify API key restrictions allow your domain
 
 ### OAuth redirect errors
+
 - Ensure the redirect URI in Google Cloud Console exactly matches the one in your code
 - For production, update both the Google Cloud Console and the code if needed
 - Check that your OAuth consent screen is properly configured
 
 ### API quota/billing issues
+
 - Google Cloud projects have free tier limits
 - You may need to enable billing for higher quotas
 - Check your API usage in the Google Cloud Console

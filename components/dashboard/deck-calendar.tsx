@@ -15,7 +15,7 @@ export function DeckCalendar() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/calendar/upcoming?hours=24")
+      const response = await fetch("/api/calendar/upcoming?maxResults=3")
       if (!response.ok) {
         if (response.status === 400) {
           setError("Not configured")

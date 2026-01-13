@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Calendar, Clock, Cloud, CloudRain, CloudSnow, Sun, Thermometer, MapPin } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, differenceInHours, isToday, isTomorrow } from 'date-fns'
 import type { WeatherObservation } from '@/lib/types/weather.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 
@@ -29,12 +29,29 @@ export function TodayHero() {
       })
       .catch(() => {})
 
-    // Fetch next event
-    fetch('/api/calendar/upcoming?hours=24')
+    // Fetch next event (within 24 hours)
+    fetch('/api/calendar/upcoming?maxResults=10')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.success && data.data?.[0]) {
-          setNextEvent(data.data[0])
+        if (data?.success && data.data) {
+          const now = new Date()
+          const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+          
+          // Find first event within 24 hours
+          const eventIn24Hours = data.data.find((event: CalendarEvent) => {
+            const startTime = event.start.dateTime
+              ? parseISO(event.start.dateTime)
+              : event.start.date
+                ? parseISO(event.start.date)
+                : null
+            
+            if (!startTime) return false
+            return startTime >= now && startTime <= twentyFourHoursLater
+          })
+          
+          if (eventIn24Hours) {
+            setNextEvent(eventIn24Hours)
+          }
         }
       })
       .catch(() => {})
@@ -64,6 +81,13 @@ export function TodayHero() {
 
   const tempC = weather?.properties.temperature.value
   const tempF = tempC ? Math.round((tempC * 9) / 5 + 32) : null
+
+  // Calculate "feels like" from heat index or wind chill
+  const heatIndexC = weather?.properties.heatIndex?.value
+  const windChillC = weather?.properties.windChill?.value
+  const feelsLikeC = heatIndexC ?? windChillC ?? null
+  const feelsLikeF = feelsLikeC !== null ? Math.round((feelsLikeC * 9) / 5 + 32) : null
+  const showFeelsLike = feelsLikeF !== null && tempF !== null && feelsLikeF !== tempF
 
   if (!mounted) {
     return (
@@ -103,7 +127,7 @@ export function TodayHero() {
           <div className="flex flex-col gap-4 md:items-end">
             {/* Weather */}
             {weather && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm">
                 {getWeatherIcon()}
                 <div className="text-right">
                   <div className="flex items-baseline gap-1">
@@ -112,7 +136,12 @@ export function TodayHero() {
                     </span>
                     <span className="text-lg text-white/50">°F</span>
                   </div>
-                  <p className="text-sm text-white/60">
+                  {showFeelsLike && (
+                    <p className="text-xs text-white/50">
+                      Feels like {feelsLikeF}°
+                    </p>
+                  )}
+                  <p className="text-xs text-white/60 font-medium">
                     {weather.properties.textDescription || 'Weather'}
                   </p>
                 </div>
@@ -120,28 +149,45 @@ export function TodayHero() {
             )}
 
             {/* Next Event */}
-            {nextEvent && (
-              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-brand/20">
-                  <Calendar className="size-4 text-brand" />
+            {nextEvent && (() => {
+              const startTime = nextEvent.start.dateTime
+                ? parseISO(nextEvent.start.dateTime)
+                : nextEvent.start.date
+                  ? parseISO(nextEvent.start.date)
+                  : null
+              
+              const isAllDay = !nextEvent.start.dateTime && !!nextEvent.start.date
+              const timeDisplay = startTime
+                ? isToday(startTime)
+                  ? `Today, ${format(startTime, 'h:mm a')}`
+                  : isTomorrow(startTime)
+                    ? `Tomorrow, ${format(startTime, 'h:mm a')}`
+                    : isAllDay
+                      ? format(startTime, 'EEE, MMM d')
+                      : `${format(startTime, 'EEE, MMM d')}, ${format(startTime, 'h:mm a')}`
+                : 'All day'
+              
+              return (
+                <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-brand/20">
+                    <Calendar className="size-4 text-brand" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">
+                      {nextEvent.summary}
+                    </p>
+                    <p className="text-xs text-white/50">
+                      {timeDisplay}
+                      {nextEvent.location && (
+                        <span className="ml-2">
+                          <MapPin className="mb-0.5 inline size-3" /> {nextEvent.location.split(',')[0]}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
-                    {nextEvent.summary}
-                  </p>
-                  <p className="text-xs text-white/50">
-                    {nextEvent.start.dateTime
-                      ? format(parseISO(nextEvent.start.dateTime), 'h:mm a')
-                      : 'All day'}
-                    {nextEvent.location && (
-                      <span className="ml-2">
-                        <MapPin className="mb-0.5 inline size-3" /> {nextEvent.location.split(',')[0]}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       </div>

@@ -1,12 +1,12 @@
 'use client'
 
-import { Sidebar } from '@/components/sidebar'
 import { MobileBottomNav } from '@/components/mobile-bottom-nav'
+import { Sidebar } from '@/components/sidebar'
+import { Button } from '@/components/ui/button'
+import { Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import type React from 'react'
 import { useState } from 'react'
-import { Menu } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 export default function DashboardLayout({
   children,
@@ -42,7 +42,7 @@ export default function DashboardLayout({
           )}
 
           {/* Mobile Header */}
-          <div className="lg:hidden sticky top-0 z-30 bg-card border-b border-border/50 px-4 py-3 flex items-center justify-between">
+          <div className="bg-card border-border/50 sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 lg:hidden">
             <Button
               variant="ghost"
               size="sm"
@@ -52,7 +52,7 @@ export default function DashboardLayout({
               <Menu className="size-5" />
               <span className="font-semibold">Menu</span>
             </Button>
-            <div className="text-lg font-bold bg-gradient-to-r from-brand via-brand/90 to-brand bg-clip-text text-transparent">
+            <div className="from-brand via-brand/90 to-brand bg-gradient-to-r bg-clip-text text-lg font-bold text-transparent">
               petehome
             </div>
             <div className="w-[73px]"></div> {/* Spacer for centering */}
@@ -65,7 +65,7 @@ export default function DashboardLayout({
               <Sidebar onClose={() => setSidebarOpen(false)} />
             </div>
 
-            <main className="bg-muted w-full flex-1 overflow-auto rounded-b-3xl p-3 sm:p-5 md:px-7 md:py-7 lg:w-auto lg:rounded-r-3xl lg:rounded-bl-none xl:pt-0 xl:pb-7 pb-20 lg:pb-7">
+            <main className="bg-muted w-full flex-1 overflow-auto rounded-b-3xl p-3 pb-20 sm:p-5 md:px-7 md:py-7 lg:w-auto lg:rounded-r-3xl lg:rounded-bl-none lg:pb-7 xl:pt-0 xl:pb-7">
               {children}
             </main>
           </div>

@@ -220,14 +220,14 @@ export function HomeEnvironmentCard() {
       {activeTab === 'lights' && (
         <div className="space-y-2">
           {lightsError ? (
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <AlertCircle className="size-4" />
-              {lightsError}
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 p-6 text-center">
+              <AlertCircle className="size-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">{lightsError}</p>
             </div>
           ) : zones.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <Lightbulb className="size-4" />
-              No light zones found
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 p-6 text-center">
+              <Lightbulb className="size-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">No light zones found</p>
             </div>
           ) : (
             zones.map(zone => {
@@ -281,14 +281,14 @@ export function HomeEnvironmentCard() {
       {activeTab === 'music' && (
         <div className="space-y-3">
           {musicError ? (
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <AlertCircle className="size-4" />
-              {musicError}
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 p-6 text-center">
+              <AlertCircle className="size-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">{musicError}</p>
             </div>
           ) : players.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <Music className="size-4" />
-              No Sonos players found
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 p-6 text-center">
+              <Music className="size-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">No Sonos players found</p>
             </div>
           ) : (
             players.map(player => {

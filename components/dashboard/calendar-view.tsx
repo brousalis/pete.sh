@@ -15,7 +15,7 @@ export function CalendarView() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/calendar/upcoming?hours=24")
+      const response = await fetch("/api/calendar/upcoming?maxResults=20")
       if (!response.ok) {
         if (response.status === 400) {
           setError("Google Calendar not configured")

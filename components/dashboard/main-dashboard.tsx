@@ -1,46 +1,55 @@
-import { TodayHero } from '@/components/dashboard/today-hero'
-import { CoffeeCard } from '@/components/dashboard/coffee-card'
+'use client'
+
 import { CalendarCard } from '@/components/dashboard/calendar-card'
-import { TransportationCard } from '@/components/dashboard/transportation-card'
+import { CoffeeCard } from '@/components/dashboard/coffee-card'
 import { HomeEnvironmentCard } from '@/components/dashboard/home-environment-card'
+import { TodayHero } from '@/components/dashboard/today-hero'
+import { TransportationCard } from '@/components/dashboard/transportation-card'
 import { WeatherCard } from '@/components/dashboard/weather-card'
+import Masonry from 'react-masonry-css'
 
 export function MainDashboard() {
+  const breakpointColumnsObj = {
+    default: 2,
+    640: 1, // 1 column on mobile (screens < 640px)
+  }
+
   return (
     <div className="space-y-5">
       {/* Hero: Today at a Glance */}
       <TodayHero />
 
-      {/* Row 1: Weather + Getting Around (Above the fold) */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* Masonry Grid */}
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="-ml-5 flex w-auto"
+        columnClassName="pl-5 bg-clip-padding"
+      >
         {/* Weather */}
-        <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
           <WeatherCard />
         </section>
 
         {/* Transportation */}
-        <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
           <TransportationCard />
-        </section>
-      </div>
-
-      {/* Row 2: Home Controls + Calendar */}
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* Home Controls */}
-        <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
-          <HomeEnvironmentCard />
         </section>
 
         {/* Calendar */}
-        <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
           <CalendarCard />
         </section>
-      </div>
 
-      {/* Row 3: Coffee */}
-      <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
-        <CoffeeCard />
-      </section>
+        {/* Coffee */}
+        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+          <CoffeeCard />
+        </section>
+
+        {/* Home Controls */}
+        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+          <HomeEnvironmentCard />
+        </section>
+      </Masonry>
     </div>
   )
 }

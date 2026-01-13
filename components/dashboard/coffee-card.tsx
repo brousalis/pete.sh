@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Coffee, ArrowRight, Scale, Droplets, Timer, Thermometer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
 import { CoffeeService } from '@/lib/services/coffee.service'
 import type { CoffeeRoutine } from '@/lib/types/coffee.types'
+import {
+  ArrowRight,
+  Coffee,
+  Droplets,
+  Scale,
+  Thermometer,
+  Timer,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 const coffeeService = new CoffeeService()
 
@@ -19,102 +25,88 @@ export function CoffeeCard() {
       const recommended = coffeeService.getRoutineByType(recommendedType)
       if (recommended) {
         setRoutine(recommended)
+        return
       }
+    }
+    // Fallback: if no recommendation, use morning routine as default
+    const defaultRoutine = coffeeService.getRoutineByType('morning')
+    if (defaultRoutine) {
+      setRoutine(defaultRoutine)
     }
   }, [])
 
   if (!routine) {
     return (
-      <div className="rounded-2xl bg-card p-5 ring-1 ring-border">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Coffee className="size-5" />
-          <span className="text-sm">Loading coffee routine...</span>
-        </div>
+      <div className="text-muted-foreground flex items-center gap-2">
+        <Coffee className="size-5 animate-pulse" />
+        <span className="text-sm">Loading coffee routine...</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground">Coffee</h3>
-        </div>
-        <Link href="/coffee">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-            Brew Guide
-            <ArrowRight className="size-3.5" />
-          </Button>
-        </Link>
-      </div>
-
-      {/* Recommended Routine */}
-      <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="font-semibold">{routine.name}</h4>
-              <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
+    <div className="flex flex-col gap-4">
+      {/* Top: Title + Description + Stats */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* Left: Title + Description */}
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+            <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-foreground leading-tight font-semibold">
+                {routine.name}
+              </h3>
+              {/* <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
                 Recommended
-              </Badge>
+              </span> */}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{routine.description}</p>
+            {/* <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+              {routine.description}
+            </p> */}
           </div>
         </div>
 
-        {/* Quick Reference */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="flex items-center gap-2 rounded-lg bg-background/60 p-2">
+        {/* Right: Quick Stats */}
+        <div className="flex flex-wrap items-center gap-4 text-sm sm:gap-x-6">
+          <div className="flex items-center gap-1.5">
             <Scale className="size-4 text-amber-600" />
-            <div>
-              <p className="text-xs text-muted-foreground">Coffee</p>
-              <p className="text-sm font-semibold">{routine.coffee}g</p>
-            </div>
+            <span className="font-semibold">{routine.coffee}g</span>
+            <span className="text-muted-foreground">coffee</span>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-background/60 p-2">
-            <Droplets className="size-4 text-blue-500" />
-            <div>
-              <p className="text-xs text-muted-foreground">Water</p>
-              <p className="text-sm font-semibold">{routine.water}g</p>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <Droplets className="size-4 text-blue-400" />
+            <span className="font-semibold">{routine.water}g</span>
+            <span className="text-muted-foreground">water</span>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-background/60 p-2">
-            <Timer className="size-4 text-slate-500" />
-            <div>
-              <p className="text-xs text-muted-foreground">Grinder</p>
-              <p className="text-sm font-semibold">
-                {routine.grinder === 'ode' ? 'Ode' : 'S3'} @ {routine.grinderSetting}
-              </p>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <Timer className="size-4 text-slate-400" />
+            <span className="font-semibold">
+              {routine.grinder === 'ode' ? 'Ode' : 'S3'} @{' '}
+              {routine.grinderSetting}
+            </span>
           </div>
           {routine.waterTemp && (
-            <div className="flex items-center gap-2 rounded-lg bg-background/60 p-2">
-              <Thermometer className="size-4 text-red-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Temp</p>
-                <p className="text-sm font-semibold">{routine.waterTemp}°F</p>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <Thermometer className="size-4 text-red-400" />
+              <span className="font-semibold">{routine.waterTemp}°F</span>
             </div>
           )}
         </div>
-
-        {/* Batch Info */}
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            Makes <span className="font-medium text-foreground">{routine.batchSize}</span>
-          </p>
-          <Link href="/coffee">
-            <Button
-              size="sm"
-              className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              <Coffee className="size-4" />
-              Start Brewing
-            </Button>
-          </Link>
-        </div>
       </div>
+
+      {/* Bottom: CTA */}
+      <Link href="/coffee" className="w-full sm:w-auto">
+        <Button
+          size="sm"
+          className="w-full gap-2 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
+        >
+          <Coffee className="size-4" />
+          Start Brewing
+          <ArrowRight className="size-3.5" />
+        </Button>
+      </Link>
     </div>
   )
 }

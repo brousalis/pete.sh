@@ -57,13 +57,13 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
     : CTA_COLORS.bus
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card/50 p-3">
+    <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-3 hover:bg-muted/50 transition-colors">
       {/* Route Badge */}
-      <div className={`flex items-center justify-center rounded-md ${colors.bg} ${colors.text} min-w-[44px] px-2 py-1.5`}>
+      <div className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} min-w-[44px] h-10 px-2`}>
         {type === 'train' ? (
-          <Train className="size-4" />
+          <Train className="size-5" />
         ) : (
-          <span className="text-sm font-bold">{route}</span>
+          <span className="text-base font-bold">{route}</span>
         )}
       </div>
 
@@ -75,9 +75,11 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
               {lineName}
             </span>
           )}
-          <span className="truncate text-sm font-medium text-foreground">
-            {type === 'bus' ? `Bus ${route}` : ''}
-          </span>
+          {type === 'bus' && (
+            <span className="text-sm font-semibold text-foreground">
+              Bus {route}
+            </span>
+          )}
         </div>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
           to {destination}
@@ -87,7 +89,7 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
       {/* Arrival Times */}
       <div className="flex items-center gap-1.5">
         {arrivals.length > 0 ? (
-          arrivals.slice(0, 3).map((time, idx) => (
+          arrivals.slice(0, 2).map((time, idx) => (
             <ArrivalBadge
               key={idx}
               minutes={time}
@@ -95,7 +97,7 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
             />
           ))
         ) : (
-          <span className="text-xs text-muted-foreground">No arrivals</span>
+          <span className="text-xs text-muted-foreground italic">No arrivals</span>
         )}
       </div>
     </div>

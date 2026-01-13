@@ -70,7 +70,18 @@ export class CalendarService {
       throw new Error("Google Calendar not configured")
     }
 
+    console.log("[CalendarService] Setting credentials:", {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+    })
+
     this.oauth2Client.setCredentials(tokens)
+    
+    // Ensure calendar client uses the updated credentials
+    // The calendar client should automatically use the oauth2Client, but let's verify
+    if (this.calendar) {
+      this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client })
+    }
   }
 
   /**
@@ -127,45 +138,96 @@ export class CalendarService {
 
   /**
    * Get upcoming events
+   * Returns the next N upcoming events regardless of how far in the future
    */
-  async getUpcomingEvents(calendarId: string = "primary", hours: number = 24): Promise<CalendarEvent[]> {
+  async getUpcomingEvents(calendarId: string = "primary", maxResults: number = 10): Promise<CalendarEvent[]> {
     if (!this.isConfigured()) {
       throw new Error("Google Calendar not configured")
     }
 
+    if (!this.calendar) {
+      throw new Error("Calendar client not initialized")
+    }
+
+    if (!this.oauth2Client.credentials?.access_token) {
+      throw new Error("No access token available. Please authenticate.")
+    }
+
     try {
       const now = new Date()
-      const later = new Date(now.getTime() + hours * 60 * 60 * 1000)
+
+      console.log("[CalendarService] Fetching upcoming events:", {
+        calendarId,
+        timeMin: now.toISOString(),
+        maxResults,
+        note: "No timeMax - showing all future events",
+      })
 
       const response = await this.calendar.events.list({
         calendarId,
         timeMin: now.toISOString(),
-        timeMax: later.toISOString(),
-        maxResults: 10,
+        // No timeMax - get all future events
+        maxResults,
         singleEvents: true,
         orderBy: "startTime",
+        showDeleted: false, // Don't show deleted events
       })
 
-      return response.data.items || []
+      console.log("[CalendarService] API response:", {
+        itemsCount: response.data.items?.length || 0,
+        hasItems: !!response.data.items,
+        responseKeys: Object.keys(response.data || {}),
+        calendarSummary: response.data.summary,
+        calendarTimeZone: response.data.timeZone,
+        fullResponse: JSON.stringify(response.data, null, 2),
+      })
+
+      const events = response.data.items || []
+      
+      // Filter out cancelled events
+      const activeEvents = events.filter((e: CalendarEvent) => e.status !== "cancelled")
+      
+      console.log("[CalendarService] Event filtering:", {
+        totalEvents: events.length,
+        cancelledEvents: events.filter((e: CalendarEvent) => e.status === "cancelled").length,
+        activeEvents: activeEvents.length,
+        summaries: activeEvents.map((e: CalendarEvent) => ({
+          summary: e.summary,
+          start: e.start.dateTime || e.start.date,
+          status: e.status,
+        })),
+      })
+
+      return activeEvents
     } catch (error: any) {
+      console.error("[CalendarService] Error in getUpcomingEvents:", {
+        error: error.message,
+        code: error.code,
+        response: error.response?.data,
+        hasRefreshToken: !!this.oauth2Client.credentials.refresh_token,
+      })
+
       // Handle token refresh if needed
       if (error.code === 401 && this.oauth2Client.credentials.refresh_token) {
+        console.log("[CalendarService] Attempting token refresh")
         try {
           const { credentials } = await this.oauth2Client.refreshAccessToken()
           this.oauth2Client.setCredentials(credentials)
+          console.log("[CalendarService] Token refreshed successfully, retrying request")
           // Retry the request
           const now = new Date()
-          const later = new Date(now.getTime() + hours * 60 * 60 * 1000)
           const response = await this.calendar.events.list({
             calendarId,
             timeMin: now.toISOString(),
-            timeMax: later.toISOString(),
-            maxResults: 10,
+            // No timeMax - get all future events
+            maxResults,
             singleEvents: true,
             orderBy: "startTime",
           })
-          return response.data.items || []
-        } catch (refreshError) {
+          const events = response.data.items || []
+          return events.filter((e: CalendarEvent) => e.status !== "cancelled")
+        } catch (refreshError: any) {
+          console.error("[CalendarService] Token refresh failed:", refreshError)
           throw new Error(`Google Calendar API error: Token refresh failed. Please re-authenticate.`)
         }
       }

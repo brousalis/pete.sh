@@ -1,10 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { RefreshCw, Droplets, Wind, Gauge, Eye, Cloud, CloudRain, CloudSnow, Sun, Cloudy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import type {
+  WeatherForecast,
+  WeatherObservation,
+} from '@/lib/types/weather.types'
 import { format } from 'date-fns'
-import type { WeatherObservation, WeatherForecast } from '@/lib/types/weather.types'
+import {
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  Cloudy,
+  Droplets,
+  Eye,
+  RefreshCw,
+  Sun,
+  Wind,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export function WeatherCard() {
   const [current, setCurrent] = useState<WeatherObservation | null>(null)
@@ -59,10 +72,12 @@ export function WeatherCard() {
 
   if (loading && !current) {
     return (
-      <div className="rounded-2xl bg-card p-5 ring-1 ring-border">
+      <div className="bg-card ring-border rounded-2xl p-5 ring-1">
         <div className="flex items-center gap-2">
-          <RefreshCw className="size-5 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading weather...</span>
+          <RefreshCw className="text-muted-foreground size-5 animate-spin" />
+          <span className="text-muted-foreground text-sm">
+            Loading weather...
+          </span>
         </div>
       </div>
     )
@@ -77,52 +92,62 @@ export function WeatherCard() {
   const visMiles = visibility ? (visibility / 1609.34).toFixed(1) : null
 
   // Get 5-day forecast (daytime only)
-  const forecastDays = forecast?.properties.periods
-    .filter(p => p.isDaytime)
-    .slice(0, 5) || []
+  const forecastDays =
+    forecast?.properties.periods.filter(p => p.isDaytime).slice(0, 5) || []
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Weather</h3>
-        <Button variant="ghost" size="sm" onClick={fetchData} disabled={loading}>
+        <h3 className="text-foreground text-sm font-semibold">Weather</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
       {/* Current Conditions */}
       {current && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="flex items-center gap-2 rounded-xl bg-muted/50 p-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
             <Droplets className="size-4 text-blue-500" />
             <div>
-              <p className="text-xs text-muted-foreground">Humidity</p>
-              <p className="font-semibold">{humidity ? `${Math.round(humidity)}%` : '--'}</p>
+              <p className="text-muted-foreground text-xs">Humidity</p>
+              <p className="font-semibold">
+                {humidity ? `${Math.round(humidity)}%` : '--'}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-muted/50 p-3">
+          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
             <Wind className="size-4 text-slate-500" />
             <div>
-              <p className="text-xs text-muted-foreground">Wind</p>
-              <p className="font-semibold">{windMph ? `${windMph} mph` : '--'}</p>
+              <p className="text-muted-foreground text-xs">Wind</p>
+              <p className="font-semibold">
+                {windMph ? `${windMph} mph` : '--'}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-muted/50 p-3">
+          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
             <Eye className="size-4 text-cyan-500" />
             <div>
-              <p className="text-xs text-muted-foreground">Visibility</p>
-              <p className="font-semibold">{visMiles ? `${visMiles} mi` : '--'}</p>
+              <p className="text-muted-foreground text-xs">Visibility</p>
+              <p className="font-semibold">
+                {visMiles ? `${visMiles} mi` : '--'}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-muted/50 p-3">
+          {/* <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
             <Gauge className="size-4 text-purple-500" />
             <div>
-              <p className="text-xs text-muted-foreground">Condition</p>
+              <p className="text-muted-foreground text-xs">Condition</p>
               <p className="truncate text-sm font-semibold">
                 {current.properties.textDescription || '--'}
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -133,17 +158,19 @@ export function WeatherCard() {
             <div
               key={day.number}
               className={`flex flex-col items-center rounded-xl p-3 text-center transition-colors ${
-                idx === 0 ? 'bg-brand/10 ring-1 ring-brand/30' : 'bg-muted/30'
+                idx === 0
+                  ? 'bg-brand/10 border-brand/20 border-2'
+                  : 'bg-muted/30'
               }`}
             >
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-muted-foreground text-xs font-medium">
                 {idx === 0 ? 'Today' : format(new Date(day.startTime), 'EEE')}
               </p>
               <div className="my-2">
                 {getConditionIcon(day.shortForecast, 'size-6')}
               </div>
               <p className="text-lg font-bold">{day.temperature}°</p>
-              <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground leading-tight">
+              <p className="text-muted-foreground mt-1 line-clamp-2 text-[10px] leading-tight">
                 {day.shortForecast}
               </p>
             </div>
