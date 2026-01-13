@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable ESLint during builds (removed ignoreDuringBuilds for better code quality)
-  eslint: {
-    dirs: ['app', 'components', 'lib', 'hooks'],
-  },
   // Enable TypeScript type checking during builds
   typescript: {
     // Set to true only if you want to ignore type errors during build
@@ -13,7 +9,7 @@ const nextConfig = {
   // Image optimization
   images: {
     remotePatterns: [
-      // Add remote image patterns as needed for your smart home app
+      // Add remote image patterns as needed for Petehome
     ],
   },
   // React strict mode for better development experience

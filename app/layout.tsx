@@ -6,12 +6,11 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
-import ButtonDownload from '@/components/button-download';
 
 export const metadata: Metadata = {
-  title: "Smart Home Dashboard",
-  description: "This is a modern, customizable smart home dashboard built with Next.js, React, and Tailwind CSS. It provides a beautiful interface to monitor and control smart home devices, view statistics, manage user profiles, and more.",
-  generator: "Smart Home Dashboard",
+  title: "Petehome",
+  description: "Petehome - Your modern smart home control center. Monitor and control your smart home devices, view statistics, manage profiles, and more.",
+  generator: "Petehome",
 }
 
 export default function RootLayout({
@@ -26,13 +25,12 @@ export default function RootLayout({
       // Put font variables and antialiasing on html so they apply before hydration.
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       // Ensure a default brand so color theming is active before hydration.
-      data-brand="purple"
+      data-brand="yellow"
     >
       <body className="font-sans">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Suspense fallback={null}>
             {children}
-            <ButtonDownload />
             <Analytics />
           </Suspense>
         </ThemeProvider>

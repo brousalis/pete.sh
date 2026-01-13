@@ -8,13 +8,14 @@ const BRANDS = [
   { key: "teal", label: "Teal", color: "hsl(174, 63%, 45%)" },
   { key: "orange", label: "Orange", color: "hsl(32, 100%, 50%)" },
   { key: "pink", label: "Pink", color: "hsl(320, 72%, 66%)" },
+  { key: "yellow", label: "Yellow", color: "hsl(48, 96%, 53%)" },
 ] as const
 
 export function ColorThemePicker() {
-  const [current, setCurrent] = useState<string>("purple")
+  const [current, setCurrent] = useState<string>("yellow")
 
   useEffect(() => {
-    const saved = localStorage.getItem("brand") || "purple"
+    const saved = localStorage.getItem("brand") || "yellow"
     setCurrent(saved)
     document.documentElement.setAttribute("data-brand", saved)
   }, [])

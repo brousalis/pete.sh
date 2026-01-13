@@ -1,0 +1,122 @@
+/**
+ * Configuration utility for environment variables
+ * Validates and provides typed access to environment variables
+ */
+
+import { z } from 'zod'
+
+// Schema for environment variables
+const envSchema = z.object({
+  // HUE Bridge
+  HUE_BRIDGE_IP: z.string().ip().optional(),
+  HUE_BRIDGE_USERNAME: z.string().optional(),
+
+  // Sonos
+  SONOS_API_URL: z
+    .string()
+    .url()
+    .optional()
+    .or(z.string().startsWith('http://localhost')),
+
+  // Lyft
+  LYFT_CLIENT_ID: z.string().optional(),
+  LYFT_CLIENT_SECRET: z.string().optional(),
+
+  // Google
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
+  GOOGLE_CALENDAR_ID: z.string().optional(),
+
+  // Weather
+  WEATHER_LATITUDE: z
+    .string()
+    .regex(/^-?\d+\.?\d*$/)
+    .optional(),
+  WEATHER_LONGITUDE: z
+    .string()
+    .regex(/^-?\d+\.?\d*$/)
+    .optional(),
+
+  // CTA
+  CTA_API_KEY: z.string().optional(),
+  CTA_TRAIN_API_KEY: z.string().optional(),
+
+  // Desktop Features
+  NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES: z.string().optional(),
+})
+
+// Parse and validate environment variables
+const parseEnv = () => {
+  const parsed = envSchema.safeParse(process.env)
+
+  if (!parsed.success) {
+    console.warn(
+      'Environment variable validation warnings:',
+      parsed.error.format()
+    )
+  }
+
+  return parsed.success ? parsed.data : {}
+}
+
+const env = parseEnv()
+
+/**
+ * Configuration object with typed environment variables
+ */
+export const config = {
+  hue: {
+    bridgeIp: env.HUE_BRIDGE_IP,
+    username: env.HUE_BRIDGE_USERNAME,
+    isConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME),
+  },
+  sonos: {
+    apiUrl: env.SONOS_API_URL || 'http://localhost:5005',
+    isConfigured: Boolean(env.SONOS_API_URL),
+  },
+  lyft: {
+    clientId: env.LYFT_CLIENT_ID,
+    clientSecret: env.LYFT_CLIENT_SECRET,
+    isConfigured: Boolean(env.LYFT_CLIENT_ID && env.LYFT_CLIENT_SECRET),
+  },
+  google: {
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
+    apiKey: env.GOOGLE_API_KEY,
+    calendarId: env.GOOGLE_CALENDAR_ID || 'primary',
+    isConfigured: Boolean(
+      env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_API_KEY
+    ),
+  },
+  weather: {
+    latitude: env.WEATHER_LATITUDE ? parseFloat(env.WEATHER_LATITUDE) : 41.8781, // Chicago default
+    longitude: env.WEATHER_LONGITUDE
+      ? parseFloat(env.WEATHER_LONGITUDE)
+      : -87.6298, // Chicago default
+  },
+  cta: {
+    apiKey: env.CTA_API_KEY,
+    trainApiKey: env.CTA_TRAIN_API_KEY,
+    isConfigured: Boolean(env.CTA_API_KEY),
+    isTrainConfigured: Boolean(env.CTA_TRAIN_API_KEY),
+  },
+  desktop: {
+    enabled: env.NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES === 'true',
+  },
+} as const
+
+/**
+ * Check if running in development mode
+ */
+export const isDev = process.env.NODE_ENV === 'development'
+
+/**
+ * Check if running on localhost
+ */
+export const isLocalhost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.'))

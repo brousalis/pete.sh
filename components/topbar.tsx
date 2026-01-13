@@ -1,7 +1,6 @@
 "use client"
 
-import { Bell, Search, Settings, User, Menu } from "lucide-react"
-import { useState } from "react"
+import { Bell, Settings, Menu } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ColorThemePicker } from "@/components/color-theme"
 
 interface TopbarProps {
@@ -19,43 +17,25 @@ interface TopbarProps {
 }
 
 export function Topbar({ onMenuClick }: TopbarProps) {
-  const [q, setQ] = useState("")
-
   return (
-    <header className="lg:-mx-7 sticky top-0 z-30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border mb-6 rounded-xl lg:rounded-none">
-      <div className="h-16 px-4 md:px-7  flex items-center justify-between gap-3">
+    <header className="lg:-mx-7 sticky top-0 z-30 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border-b border-border/50 mb-6 rounded-xl lg:rounded-none shadow-sm">
+      <div className="h-16 px-4 md:px-7 flex items-center justify-between gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden rounded-full p-2 hover:bg-muted focus:outline-none focus:ring-2"
+          className="lg:hidden rounded-lg p-2 hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors"
           aria-label="Open menu"
         >
-          <Menu className="size-5" />
+          <Menu className="size-5 text-muted-foreground" />
         </button>
 
-        {/* Search */}
-        <div className="flex-1 max-w-xl">
-          <label className="relative block">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <Search className="size-4" />
-            </span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search rooms, devices, or users..."
-              className="w-full rounded-full border bg-background pl-9 pr-3 py-2 text-sm"
-              aria-label="Search"
-            />
-          </label>
-        </div>
-
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 ml-auto">
           {/* Notifications */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="relative rounded-full p-2 hover:bg-muted focus:outline-none focus:ring-2">
-              <Bell className="size-5" aria-hidden />
+            <DropdownMenuTrigger className="relative rounded-lg p-2 hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors">
+              <Bell className="size-5 text-muted-foreground" aria-hidden />
               <span className="sr-only">Open notifications</span>
-              <span className="absolute right-1 top-1 inline-flex items-center justify-center text-[10px] bg-red-500 text-white rounded-full h-4 min-w-4 px-1">
+              <span className="absolute right-1 top-1 inline-flex items-center justify-center text-[10px] font-medium bg-red-500 text-white rounded-full h-4 min-w-4 px-1.5 shadow-sm">
                 3
               </span>
             </DropdownMenuTrigger>
@@ -72,8 +52,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
           {/* Settings */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-full p-2 hover:bg-muted focus:outline-none focus:ring-2">
-              <Settings className="size-5" aria-hidden />
+            <DropdownMenuTrigger className="rounded-lg p-2 hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors">
+              <Settings className="size-5 text-muted-foreground" aria-hidden />
               <span className="sr-only">Open settings</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -93,31 +73,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               <div className="px-2 pb-2">
                 <ColorThemePicker />
               </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* User dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-full p-1.5 hover:bg-muted focus:outline-none focus:ring-2">
-              <Avatar className="size-8">
-                <AvatarFallback>JR</AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Open user menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <User className="size-4" />
-                Signed in as Jennifer
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href="/profile">Profile</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href="/devices">My devices</a>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

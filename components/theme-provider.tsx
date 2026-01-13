@@ -10,7 +10,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
-      storageKey="smart-home-theme"
+      storageKey="petehome-theme"
       {...props}
     >
       {children}

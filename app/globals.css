@@ -37,8 +37,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* Default brand = purple */
-  --brand: oklch(0.61 0.24 300); /* purple */
+  /* Default brand = yellow */
+  --brand: oklch(0.85 0.18 95); /* yellow */
   --brand-2: color-mix(in oklab, var(--brand) 85%, white 15%);
 }
 
@@ -93,6 +93,9 @@
 }
 [data-brand="pink"] {
   --brand: oklch(0.71 0.28 360);
+}
+[data-brand="yellow"] {
+  --brand: oklch(0.85 0.18 95);
 }
 
 @theme inline {
@@ -252,5 +255,25 @@
   .recharts-radial-bar-background-sector,
   .recharts-radial-bar-background-sector path {
     fill: var(--muted) !important;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

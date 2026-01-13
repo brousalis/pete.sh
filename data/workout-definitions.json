@@ -1,0 +1,394 @@
+{
+  "monday": {
+    "id": "monday-density-strength",
+    "name": "Density Strength",
+    "focus": "strength",
+    "day": "monday",
+    "goal": "Build wire-strong muscle density. Stop sets 1 rep before failure.",
+    "warmup": {
+      "name": "The Armor Warm-up",
+      "duration": 8,
+      "exercises": [
+        {
+          "id": "warmup-1",
+          "name": "5 min Rower or Elliptical",
+          "duration": 300,
+          "notes": "Light sweat"
+        },
+        {
+          "id": "warmup-2",
+          "name": "Finger Extensions",
+          "sets": 2,
+          "reps": 25,
+          "notes": "Use rubber band; open hand wide. Crucial for elbow recovery."
+        },
+        {
+          "id": "warmup-3",
+          "name": "Scapular Pull-ups",
+          "sets": 2,
+          "reps": 10,
+          "notes": "Hang straight, shrug shoulders down. SKIP if painful; do Wall Slides instead."
+        },
+        {
+          "id": "warmup-4",
+          "name": "Warm-up Sets",
+          "notes": "1x15 Straight-Arm Pulldowns (Light), 1x5 Light Press"
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "monday-a1",
+        "name": "Weighted Neutral-Grip Pull-ups",
+        "sets": 3,
+        "reps": 5,
+        "rest": 120,
+        "isStandard": true,
+        "form": "Standard pull-up form",
+        "alternative": {
+          "name": "Straight-Arm Cable Pulldowns",
+          "sets": 3,
+          "reps": 15,
+          "form": "Keep arms locked straight. Push bar to thighs using lats. Zero elbow bending."
+        },
+        "isElbowSafe": false
+      },
+      {
+        "id": "monday-a2",
+        "name": "DB Push Press",
+        "sets": 3,
+        "reps": 6,
+        "rest": 120,
+        "form": "Slight leg dip to drive up, 3-sec slow lower."
+      },
+      {
+        "id": "monday-b1",
+        "name": "Romanian Deadlift (RDL)",
+        "sets": 3,
+        "reps": 6,
+        "rest": 90,
+        "form": "Hips back. Use Straps to protect your elbow."
+      },
+      {
+        "id": "monday-b2",
+        "name": "DB Reverse Lunges",
+        "sets": 3,
+        "reps": 10,
+        "rest": 90,
+        "form": "Step back far. Drive through the front heel.",
+        "notes": "8-10 reps per leg"
+      },
+      {
+        "id": "monday-c",
+        "name": "Heavy Farmer's Carry",
+        "isStandard": true,
+        "alternative": {
+          "name": "Bear Hug Carry",
+          "sets": 3,
+          "form": "Hug a heavy plate or sandbag to your chest. Squeeze tight with arms, not hands."
+        },
+        "notes": "Max Time",
+        "isElbowSafe": false
+      },
+      {
+        "id": "monday-d",
+        "name": "Cable Pull-Throughs",
+        "sets": 3,
+        "reps": 20,
+        "form": "Face away from machine. Rope between legs. Hinge hips back, snap forward."
+      }
+    ],
+    "notes": [
+      "Add 1/2 tsp salt to your water for every workout",
+      "Stop sets 1 rep before failure"
+    ]
+  },
+  "tuesday": {
+    "id": "tuesday-core-posture",
+    "name": "Waist, Core & Posture",
+    "focus": "core",
+    "day": "tuesday",
+    "goal": "Shrink waist diameter and improve posture.",
+    "warmup": {
+      "name": "The Warm-up",
+      "duration": 5,
+      "exercises": [
+        {
+          "id": "tue-warmup-1",
+          "name": "5 min Incline Walk"
+        },
+        {
+          "id": "tue-warmup-2",
+          "name": "Cat-Cow Stretches",
+          "sets": 2,
+          "reps": 10
+        },
+        {
+          "id": "tue-warmup-3",
+          "name": "World's Greatest Stretch",
+          "sets": 2,
+          "reps": 5
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "tuesday-a1",
+        "name": "Cable Pallof Press",
+        "sets": 3,
+        "reps": 12,
+        "form": "Anti-rotation",
+        "notes": "12 reps/side"
+      },
+      {
+        "id": "tuesday-a2",
+        "name": "Ab Rollouts",
+        "sets": 3,
+        "reps": 10,
+        "form": "Pause at full extension"
+      },
+      {
+        "id": "tuesday-b",
+        "name": "Hanging Knee Raises",
+        "sets": 3,
+        "reps": 15,
+        "isStandard": true,
+        "alternative": {
+          "name": "Lying Leg Raises",
+          "sets": 3,
+          "reps": 15,
+          "form": "Lie on floor. Lift legs straight up. Do not let lower back arch."
+        },
+        "isElbowSafe": false
+      },
+      {
+        "id": "tuesday-c",
+        "name": "Stomach Vacuums",
+        "sets": 3,
+        "duration": 20,
+        "form": "Exhale all air, suck navel to spine",
+        "notes": "20-sec hold"
+      },
+      {
+        "id": "tuesday-d",
+        "name": "Face Pulls",
+        "sets": 3,
+        "reps": 15,
+        "form": "Rope to forehead. Light weight. Squeeze rear delts."
+      }
+    ]
+  },
+  "wednesday": {
+    "id": "wednesday-fat-incinerator",
+    "name": "Fat Incinerator",
+    "focus": "cardio",
+    "day": "wednesday",
+    "goal": "Glycogen Depletion -> Fat Oxidation.",
+    "warmup": {
+      "name": "The Warm-up",
+      "duration": 5,
+      "exercises": [
+        {
+          "id": "wed-warmup-1",
+          "name": "Calf Pumps",
+          "sets": 1,
+          "reps": 20,
+          "notes": "Wall stretch"
+        },
+        {
+          "id": "wed-warmup-2",
+          "name": "Glute Bridges",
+          "sets": 2,
+          "reps": 15
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "wed-phase1",
+        "name": "The Run",
+        "duration": 1200,
+        "form": "Zone 2 breathing. Save your knees. Cushioned Shoes.",
+        "notes": "Exactly 2 Miles @ 10:00-10:30 pace"
+      },
+      {
+        "id": "wed-phase2",
+        "name": "The Hike",
+        "duration": 1200,
+        "form": "HANDS OFF RAILS.",
+        "notes": "Immediately switch to 15% Incline Walk @ 3.0 mph for 20 mins"
+      }
+    ],
+    "finisher": [
+      {
+        "id": "wed-prehab-1",
+        "name": "Tibialis Raises",
+        "sets": 3,
+        "reps": 25,
+        "notes": "Wall leans"
+      },
+      {
+        "id": "wed-prehab-2",
+        "name": "Pigeon Pose",
+        "duration": 60,
+        "notes": "Hold 60 seconds per side"
+      }
+    ],
+    "notes": [
+      "Cushioned Running shoes required"
+    ]
+  },
+  "thursday": {
+    "id": "thursday-active-recovery",
+    "name": "Active Recovery",
+    "focus": "recovery",
+    "day": "thursday",
+    "goal": "No gym. Walking only.",
+    "exercises": [
+      {
+        "id": "thu-walk",
+        "name": "10,000 Steps",
+        "notes": "Walk outside. No running."
+      }
+    ]
+  },
+  "friday": {
+    "id": "friday-climber-circuit",
+    "name": "The Climber's Circuit",
+    "focus": "conditioning",
+    "day": "friday",
+    "goal": "Metabolic conditioning. High speed. Zero Rest.",
+    "warmup": {
+      "name": "The Warm-up",
+      "duration": 5,
+      "exercises": [
+        {
+          "id": "fri-warmup-1",
+          "name": "5 min Rowing Machine"
+        },
+        {
+          "id": "fri-warmup-2",
+          "name": "Reverse Wrist Curls",
+          "sets": 2,
+          "reps": 15,
+          "form": "Palms down, lift knuckles",
+          "notes": "Crucial for elbow"
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "friday-circuit-a",
+        "name": "Inverted Rows",
+        "isStandard": true,
+        "alternative": {
+          "name": "TRX \"Y\" Flys",
+          "reps": 15,
+          "form": "Lean back on straps. Keep arms straight. Open arms into a \"Y\" overhead."
+        },
+        "notes": "12-15 reps",
+        "isElbowSafe": false
+      },
+      {
+        "id": "friday-circuit-b",
+        "name": "Push-ups",
+        "reps": 20,
+        "form": "Fast tempo",
+        "notes": "15-20 reps"
+      },
+      {
+        "id": "friday-circuit-c",
+        "name": "Dumbbell Rows",
+        "isStandard": true,
+        "alternative": {
+          "name": "Chest-Supported Row (Machine)",
+          "reps": 15,
+          "form": "Use a machine where your chest rests on a pad. Use a neutral grip (palms facing each other). Go light."
+        },
+        "notes": "12-15 reps",
+        "isElbowSafe": false
+      },
+      {
+        "id": "friday-circuit-d",
+        "name": "Jump Rope",
+        "duration": 60
+      }
+    ],
+    "finisher": [
+      {
+        "id": "fri-finisher",
+        "name": "Dead Hang",
+        "isStandard": true,
+        "alternative": {
+          "name": "Walking",
+          "duration": 300,
+          "notes": "5 mins of Walking instead"
+        },
+        "notes": "SKIP until elbow is healed",
+        "isElbowSafe": false
+      }
+    ],
+    "notes": [
+      "4 Rounds: Perform A -> B -> C -> D with Zero Rest. Rest 2 mins after D. Repeat 4x"
+    ]
+  },
+  "saturday": {
+    "id": "saturday-hiit-sprints",
+    "name": "HIIT Sprints",
+    "focus": "hiit",
+    "day": "saturday",
+    "goal": "EPOC (Afterburn).",
+    "warmup": {
+      "name": "The Warm-up",
+      "duration": 5,
+      "exercises": [
+        {
+          "id": "sat-warmup-1",
+          "name": "5 min Jog",
+          "notes": "0% Incline, slow"
+        },
+        {
+          "id": "sat-warmup-2",
+          "name": "Dynamic Drills",
+          "notes": "High Knees, Butt Kicks"
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "sat-intervals",
+        "name": "HIIT Intervals",
+        "duration": 1200,
+        "form": "0-1% Incline only. (Achilles safety). Cushioned Shoes.",
+        "notes": "30 seconds Sprint (9.0+ mph) / 90 seconds Walk (3.0 mph). 20 Mins total"
+      }
+    ],
+    "finisher": [
+      {
+        "id": "sat-finisher",
+        "name": "Stomach Vacuums",
+        "sets": 4,
+        "duration": 20,
+        "notes": "4 sets x 20-sec holds"
+      }
+    ],
+    "notes": [
+      "Cushioned Running shoes required",
+      "0-1% Incline only for Achilles safety"
+    ]
+  },
+  "sunday": {
+    "id": "sunday-active-recovery",
+    "name": "Active Recovery",
+    "focus": "recovery",
+    "day": "sunday",
+    "goal": "No gym. Walking only.",
+    "exercises": [
+      {
+        "id": "sun-walk",
+        "name": "10,000 Steps",
+        "notes": "Walk outside. No running."
+      }
+    ]
+  }
+}
