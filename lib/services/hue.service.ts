@@ -123,6 +123,32 @@ export class HueService {
   }
 
   /**
+   * Set brightness for a zone/group
+   */
+  async setZoneBrightness(zoneId: string, brightness: number): Promise<unknown> {
+    if (!this.isConfigured()) {
+      throw new Error("HUE bridge not configured")
+    }
+
+    if (brightness < 1 || brightness > 254) {
+      throw new Error("Brightness must be between 1 and 254")
+    }
+
+    try {
+      const response = await axios.put(`${this.baseUrl}/groups/${zoneId}/action`, {
+        bri: brightness,
+      })
+
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`HUE API error: ${error.message}`)
+      }
+      throw error
+    }
+  }
+
+  /**
    * Get all scenes
    */
   async getScenes(): Promise<Record<string, HueScene>> {
