@@ -11,21 +11,19 @@ export default async function WorkoutDetailPage({
 }) {
   const { day } = await params
   const dayLower = day.toLowerCase() as DayOfWeek
+  const dayName = dayLower.charAt(0).toUpperCase() + dayLower.slice(1)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-4">
+      {/* Compact header */}
+      <div className="flex items-center gap-3">
         <Link href="/fitness">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 size-4" />
-            Back
+          <Button variant="ghost" size="icon" className="size-8">
+            <ArrowLeft className="size-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Workout</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Follow along and track your progress
-          </p>
+          <h1 className="text-xl font-bold text-foreground">{dayName} Workout</h1>
         </div>
       </div>
 

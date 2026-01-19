@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function UsersWidget() {
   return (
-    <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+    <section className="rounded-2xl bg-card p-5 shadow-sm ">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Users</h3>
 

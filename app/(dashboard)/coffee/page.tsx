@@ -1,17 +1,27 @@
-import { CoffeeBrewingAssistant } from "@/components/dashboard/coffee-brewing-assistant"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Coffee, BookOpen, Timer } from "lucide-react"
+import { CoffeeBrewingAssistant } from '@/components/dashboard/coffee-brewing-assistant'
+import { CoffeeStopwatch } from '@/components/dashboard/coffee-stopwatch'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { BookOpen, Timer } from 'lucide-react'
 
 export default function CoffeePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Coffee</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-foreground text-3xl font-bold">Coffee</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Your brewing routines, timing guides, and coffee assistant
         </p>
       </div>
+
+      {/* Stopwatch */}
+      <CoffeeStopwatch />
 
       {/* Main Coffee Brewing Assistant */}
       <CoffeeBrewingAssistant />
@@ -20,32 +30,38 @@ export default function CoffeePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Timer className="size-5 text-amber-600 dark:text-amber-400" />
-              Quick Ratios
+              Cheat Sheet
             </CardTitle>
-            <CardDescription>Standard brewing ratios</CardDescription>
+            <CardDescription>Quick reference for daily use</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs text-muted-foreground mb-1">Base Ratio</div>
-              <div className="text-sm font-medium">1:16</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Coffee to water ratio
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="text-muted-foreground mb-1 text-xs">
+                Morning Batch (7:00 AM)
+              </div>
+              <div className="text-sm font-medium">59g : 1000g (1:17)</div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Ode Setting 9 • Moccamaster • Smooth & Sweet
               </div>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs text-muted-foreground mb-1">Morning Batch</div>
-              <div className="text-sm font-medium">62.5g : 1000g</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                1 Liter
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="text-muted-foreground mb-1 text-xs">
+                Afternoon Cup (2:00 PM)
+              </div>
+              <div className="text-sm font-medium">18.8g : 300g (1:16)</div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                S3 Setting 7.5 • Hario Switch • 200°F • High Clarity
               </div>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs text-muted-foreground mb-1">Afternoon Cup</div>
-              <div className="text-sm font-medium">18.8g : 300g</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                300 ml
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="text-muted-foreground mb-1 text-xs">
+                Sunday Theater (Brunch)
+              </div>
+              <div className="text-sm font-medium">62.5g : 1000g (1:16)</div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Ode Setting 10 • Manual Switch • 212°F • Rich Body
               </div>
             </div>
           </CardContent>
@@ -53,29 +69,35 @@ export default function CoffeePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <BookOpen className="size-5 text-amber-600 dark:text-amber-400" />
-              Pro Tips
+              Golden Rules
             </CardTitle>
-            <CardDescription>Key reminders</CardDescription>
+            <CardDescription>These apply to every cup</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs font-medium mb-1">Third Wave Water</div>
-              <div className="text-xs text-muted-foreground">
-                ALWAYS use for afternoon cup. Optional for morning batch.
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="mb-1 text-xs font-medium">RDT Spray is Mandatory</div>
+              <div className="text-muted-foreground text-xs">
+                Always spray beans with one spritz of water before grinding. Shake to coat. Prevents static and mess.
               </div>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs font-medium mb-1">RDT (Ross Droplet Technique)</div>
-              <div className="text-xs text-muted-foreground">
-                Spray beans with one spritz before grinding to reduce static.
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="mb-1 text-xs font-medium">Filter Hygiene</div>
+              <div className="text-muted-foreground text-xs">
+                Paper filters taste like cardboard. ALWAYS rinse every filter with hot water before adding coffee.
               </div>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs font-medium mb-1">Heat Management</div>
-              <div className="text-xs text-muted-foreground">
-                Rinse Hario Switch with hot water for 10s to pre-heat.
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="mb-1 text-xs font-medium">Water Chemistry</div>
+              <div className="text-muted-foreground text-xs">
+                Morning: Filtered tap water is fine. Afternoon & Sunday: Use Third Wave Water for HD fruit flavors.
+              </div>
+            </div>
+            <div className="bg-muted/30 rounded-lg border p-3">
+              <div className="mb-1 text-xs font-medium">Bean Storage</div>
+              <div className="text-muted-foreground text-xs">
+                Keep in original bag, squeezed tight, in cupboard. Freeze if not finishing within 3 weeks.
               </div>
             </div>
           </CardContent>

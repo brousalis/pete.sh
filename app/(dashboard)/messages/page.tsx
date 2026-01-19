@@ -6,7 +6,7 @@ export default function MessagesPage() {
     { id: 4, name: "Kitchen Lights", preview: "Turned on via scene", time: "3h", badge: "Lighting" },
   ]
   return (
-    <section className="rounded-2xl bg-card p-6 md:p-8 shadow-sm ring-1 ring-border">
+    <section className="rounded-2xl bg-card p-6 md:p-8 shadow-sm ">
       <h1 className="text-balance text-2xl font-semibold text-foreground">Messages</h1>
       <p className="mt-2 text-muted-foreground">Your latest conversations and system alerts.</p>
 

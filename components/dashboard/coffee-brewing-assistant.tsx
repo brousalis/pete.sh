@@ -22,6 +22,8 @@ import {
   Coffee,
   Info,
   List,
+  Maximize,
+  Minimize,
   Navigation,
   Pause,
   Play,
@@ -75,6 +77,7 @@ export function CoffeeBrewingAssistant() {
   const [timerState, setTimerState] = useState<TimerState>('idle')
   const [elapsedTime, setElapsedTime] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const alertShownRef = useRef<Set<number>>(new Set())
   const timerStartedForStepRef = useRef<Set<number>>(new Set())
@@ -166,6 +169,7 @@ export function CoffeeBrewingAssistant() {
     setViewMode('guided')
     setGuidedStepIndex(0)
     setCompletedSteps(new Set())
+    setIsFullscreen(false)
     alertShownRef.current.clear()
     timerStartedForStepRef.current.clear()
     setTimerState('idle')
@@ -368,7 +372,10 @@ export function CoffeeBrewingAssistant() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setViewMode('overview')}
+                onClick={() => {
+                  setIsFullscreen(false)
+                  setViewMode('overview')
+                }}
                 className="gap-1.5 text-xs sm:gap-2 sm:text-sm"
               >
                 <List className="size-3.5 sm:size-4" />
@@ -378,7 +385,10 @@ export function CoffeeBrewingAssistant() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedRoutine(null)}
+                onClick={() => {
+                  setIsFullscreen(false)
+                  setSelectedRoutine(null)
+                }}
                 className="text-xs sm:text-sm"
               >
                 <span className="hidden sm:inline">Change Routine</span>
@@ -433,6 +443,7 @@ export function CoffeeBrewingAssistant() {
               <div className="flex flex-col flex-wrap items-stretch justify-center gap-3 pt-4 sm:flex-row sm:items-center sm:gap-4">
                 <Button
                   onClick={() => {
+                    setIsFullscreen(false)
                     setCompletedSteps(new Set())
                     setGuidedStepIndex(0)
                     setTimerState('idle')
@@ -447,7 +458,10 @@ export function CoffeeBrewingAssistant() {
                   Start New Brew
                 </Button>
                 <Button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => {
+                    setIsFullscreen(false)
+                    setViewMode('overview')
+                  }}
                   variant="outline"
                   size="lg"
                   className="w-full gap-2 border-amber-300/50 hover:bg-amber-50 sm:w-auto sm:min-w-[160px] dark:border-amber-700/50 dark:hover:bg-amber-950/30"
@@ -456,7 +470,10 @@ export function CoffeeBrewingAssistant() {
                   View Overview
                 </Button>
                 <Button
-                  onClick={() => setSelectedRoutine(null)}
+                  onClick={() => {
+                    setIsFullscreen(false)
+                    setSelectedRoutine(null)
+                  }}
                   variant="outline"
                   size="lg"
                   className="w-full gap-2 border-amber-300/50 hover:bg-amber-50 sm:w-auto sm:min-w-[160px] dark:border-amber-700/50 dark:hover:bg-amber-950/30"
@@ -499,6 +516,208 @@ export function CoffeeBrewingAssistant() {
     const isCompleted = completedSteps.has(guidedStepIndex)
     const hasTiming = currentGuidedStep.timing !== undefined
 
+    // Fullscreen View
+    if (isFullscreen) {
+      return (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
+          {/* Exit Fullscreen Button */}
+          <div className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6 lg:top-8 lg:right-8">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => setIsFullscreen(false)}
+              className="h-12 w-12 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 sm:h-14 sm:w-14 lg:h-16 lg:w-16"
+            >
+              <Minimize className="size-6 sm:size-7 lg:size-8" />
+              <span className="sr-only">Exit fullscreen</span>
+            </Button>
+          </div>
+
+          {/* Main Content - Centered and Large */}
+          <div className="flex flex-1 flex-col items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 xl:p-20">
+            <div className="w-full max-w-4xl xl:max-w-5xl 2xl:max-w-6xl space-y-8 sm:space-y-10 md:space-y-12 lg:space-y-14 text-center">
+              {/* Step Progress */}
+              <div className="text-muted-foreground text-lg sm:text-xl md:text-2xl lg:text-3xl">
+                Step {guidedStepIndex + 1} of {selectedRoutine.steps.length}
+              </div>
+
+              {/* Step Icon and Title */}
+              <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8">
+                {isCompleted ? (
+                  <CheckCircle2 className="size-20 text-green-500 sm:size-24 md:size-28 lg:size-32 xl:size-36" />
+                ) : (
+                  <Circle className="size-20 text-amber-600 sm:size-24 md:size-28 lg:size-32 xl:size-36 dark:text-amber-400" />
+                )}
+                <h1 className="text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl">
+                  {currentGuidedStep.title}
+                </h1>
+              </div>
+
+              {/* Description */}
+              <p className="text-foreground mx-auto max-w-3xl xl:max-w-4xl 2xl:max-w-5xl text-xl leading-relaxed sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">
+                {currentGuidedStep.description}
+              </p>
+
+              {/* Action */}
+              {currentGuidedStep.action && (
+                <div className="bg-muted/40 border-border/50 mx-auto max-w-2xl xl:max-w-3xl 2xl:max-w-4xl rounded-xl border p-6 sm:p-8 md:p-10 lg:p-12">
+                  <p className="text-muted-foreground text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl">
+                    → {currentGuidedStep.action}
+                  </p>
+                </div>
+              )}
+
+              {/* Tips */}
+              {currentGuidedStep.tips && currentGuidedStep.tips.length > 0 && (
+                <div className="bg-muted/50 mx-auto flex max-w-2xl xl:max-w-3xl 2xl:max-w-4xl items-start justify-center gap-3 sm:gap-4 md:gap-5 rounded-xl p-6 sm:p-8 md:p-10 lg:p-12">
+                  <Info className="mt-1 size-8 shrink-0 text-amber-600 sm:size-10 md:size-12 lg:size-14 dark:text-amber-400" />
+                  <p className="text-muted-foreground text-left text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl">
+                    {currentGuidedStep.tips[0]}
+                  </p>
+                </div>
+              )}
+
+              {/* Timer Display for Steps with Timing */}
+              {hasTiming && (
+                <div className="mx-auto w-full max-w-md xl:max-w-lg 2xl:max-w-xl space-y-6 sm:space-y-8 md:space-y-10">
+                  <div className="bg-background rounded-2xl border-2 border-amber-500 p-8 sm:p-10 md:p-12 lg:p-16 shadow-lg">
+                    <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8">
+                      <Timer className="size-12 text-amber-600 sm:size-16 md:size-20 lg:size-24 dark:text-amber-400" />
+                      <div className="font-mono text-5xl font-bold sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl">
+                        {formatTime(elapsedTime)}
+                      </div>
+                      {currentGuidedStep.timing?.alert && (
+                        <div className="text-muted-foreground text-lg sm:text-xl md:text-2xl lg:text-3xl">
+                          Alert at {formatTime(currentGuidedStep.timing.start)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {timerState === 'idle' && (
+                    <Button
+                      onClick={startTimerForCurrentStep}
+                      size="lg"
+                      className="h-16 w-full gap-3 bg-amber-600 text-xl hover:bg-amber-700 sm:h-20 sm:text-2xl md:h-24 md:text-3xl lg:h-28 lg:text-4xl"
+                    >
+                      <Play className="size-8 sm:size-10 md:size-12" />
+                      Start Timer
+                    </Button>
+                  )}
+                  {timerState === 'running' && (
+                    <div className="flex gap-4 sm:gap-6">
+                      <Button
+                        onClick={pauseBrew}
+                        variant="outline"
+                        size="lg"
+                        className="h-16 flex-1 gap-3 text-lg sm:h-20 sm:text-xl md:h-24 md:text-2xl lg:h-28 lg:text-3xl"
+                      >
+                        <Pause className="size-6 sm:size-8 md:size-10" />
+                        Pause
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setTimerState('idle')
+                          setElapsedTime(0)
+                        }}
+                        variant="outline"
+                        size="lg"
+                        className="h-16 flex-1 gap-3 text-lg sm:h-20 sm:text-xl md:h-24 md:text-2xl lg:h-28 lg:text-3xl"
+                      >
+                        <RotateCcw className="size-6 sm:size-8 md:size-10" />
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                  {timerState === 'paused' && (
+                    <div className="flex gap-4 sm:gap-6">
+                      <Button
+                        onClick={resumeBrew}
+                        size="lg"
+                        className="h-16 flex-1 gap-3 bg-amber-600 text-lg hover:bg-amber-700 sm:h-20 sm:text-xl md:h-24 md:text-2xl lg:h-28 lg:text-3xl"
+                      >
+                        <Play className="size-6 sm:size-8 md:size-10" />
+                        Resume
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setTimerState('idle')
+                          setElapsedTime(0)
+                        }}
+                        variant="outline"
+                        size="lg"
+                        className="h-16 flex-1 gap-3 text-lg sm:h-20 sm:text-xl md:h-24 md:text-2xl lg:h-28 lg:text-3xl"
+                      >
+                        <RotateCcw className="size-6 sm:size-8 md:size-10" />
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Navigation Buttons - Large and Easy to Tap */}
+              <div className="flex flex-col gap-4 pt-8 sm:flex-row sm:justify-center sm:gap-6 md:gap-8 lg:gap-10 md:pt-10 lg:pt-12">
+                <Button
+                  onClick={previousStep}
+                  disabled={isFirstStep}
+                  variant="outline"
+                  size="lg"
+                  className="h-16 min-w-[200px] gap-3 text-lg sm:h-20 sm:min-w-[240px] sm:text-xl md:h-24 md:min-w-[280px] md:text-2xl lg:h-28 lg:min-w-[320px] lg:text-3xl"
+                >
+                  <ChevronLeft className="size-8 sm:size-10 md:size-12" />
+                  Previous
+                </Button>
+
+                {!isCompleted ? (
+                  <Button
+                    onClick={completeCurrentStep}
+                    size="lg"
+                    className="h-16 min-w-[200px] gap-3 bg-amber-600 text-lg font-semibold text-white shadow-lg hover:bg-amber-700 sm:h-20 sm:min-w-[240px] sm:text-xl md:h-24 md:min-w-[280px] md:text-2xl lg:h-28 lg:min-w-[320px] lg:text-3xl"
+                  >
+                    <CheckCircle2 className="size-8 sm:size-10 md:size-12" />
+                    Complete
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={nextStep}
+                    disabled={isLastStep}
+                    size="lg"
+                    className="h-16 min-w-[200px] gap-3 text-lg sm:h-20 sm:min-w-[240px] sm:text-xl md:h-24 md:min-w-[280px] md:text-2xl lg:h-28 lg:min-w-[320px] lg:text-3xl"
+                  >
+                    Next
+                    <ChevronRight className="size-8 sm:size-10 md:size-12" />
+                  </Button>
+                )}
+
+                {!isLastStep && !isCompleted && (
+                  <Button
+                    onClick={nextStep}
+                    variant="outline"
+                    size="lg"
+                    className="h-16 min-w-[200px] gap-3 text-lg sm:h-20 sm:min-w-[240px] sm:text-xl md:h-24 md:min-w-[280px] md:text-2xl lg:h-28 lg:min-w-[320px] lg:text-3xl"
+                  >
+                    Skip
+                    <ChevronRight className="size-8 sm:size-10 md:size-12" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Progress Indicator */}
+              <div className="mx-auto w-full max-w-2xl xl:max-w-3xl 2xl:max-w-4xl space-y-3 sm:space-y-4 md:space-y-5 pt-4 sm:pt-6 md:pt-8">
+                <div className="flex items-center justify-between text-lg sm:text-xl md:text-2xl lg:text-3xl">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-semibold">
+                    {completedSteps.size} / {selectedRoutine.steps.length} steps
+                  </span>
+                </div>
+                <Progress value={progress} className="h-3 sm:h-4 md:h-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <Card>
         <CardHeader>
@@ -518,7 +737,21 @@ export function CoffeeBrewingAssistant() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setViewMode('overview')}
+                onClick={() => setIsFullscreen(true)}
+                className="gap-1.5 text-xs sm:gap-2 sm:text-sm"
+                title="Fullscreen"
+              >
+                <Maximize className="size-3.5 sm:size-4" />
+                <span className="xs:inline hidden">Fullscreen</span>
+                <span className="xs:hidden">Full</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsFullscreen(false)
+                  setViewMode('overview')
+                }}
                 className="gap-1.5 text-xs sm:gap-2 sm:text-sm"
               >
                 <List className="size-3.5 sm:size-4" />
@@ -528,7 +761,10 @@ export function CoffeeBrewingAssistant() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedRoutine(null)}
+                onClick={() => {
+                  setIsFullscreen(false)
+                  setSelectedRoutine(null)
+                }}
                 className="text-xs sm:text-sm"
               >
                 <span className="hidden sm:inline">Change Routine</span>

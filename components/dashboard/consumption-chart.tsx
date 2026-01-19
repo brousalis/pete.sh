@@ -15,7 +15,7 @@ const data = [
 
 export function ConsumptionChart() {
   return (
-    <section className="min-w-0 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+    <section className="min-w-0 rounded-2xl bg-card p-5 shadow-sm ">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground dark:text-muted-foreground">Consumption</h3>
 

@@ -53,18 +53,26 @@ export interface Exercise {
   form?: string
   isElbowSafe?: boolean
   isStandard?: boolean
+  youtubeVideoId?: string // YouTube video ID for exercise demonstration
   alternative?: {
     name: string
     sets?: number
     reps?: number
     form?: string
+    youtubeVideoId?: string // YouTube video ID for alternative exercise
   }
 }
 
 export interface Warmup {
   name: string
   exercises: Exercise[]
-  duration: number // in minutes
+  duration?: number // in minutes
+}
+
+export interface WorkoutSection {
+  name: string
+  duration?: number // in minutes
+  exercises: Exercise[]
 }
 
 export interface Workout {
@@ -77,6 +85,8 @@ export interface Workout {
   warmup?: Warmup
   exercises: Exercise[]
   finisher?: Exercise[]
+  metabolicFlush?: WorkoutSection // Post-lift cardio (bike, incline walk)
+  mobility?: WorkoutSection // Deep stretching (frog, pigeon, lizard)
   duration?: number // in minutes
   completed?: boolean
   completedAt?: string
@@ -100,13 +110,11 @@ export interface DailyRoutine {
   completedAt?: string
 }
 
-export interface WeeklySchedule {
-  [key in DayOfWeek]: {
-    focus: string
-    goal: string
-    workout?: Workout
-  }
-}
+export type WeeklySchedule = Record<DayOfWeek, {
+  focus: string
+  goal: string
+  workout?: Workout
+}>
 
 export interface WeeklyRoutine {
   id: string

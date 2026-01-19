@@ -43,7 +43,7 @@ export function DeckTransit() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <AlertCircle className="size-5 text-destructive" />
           <div className="text-xs font-medium text-destructive">{error}</div>
@@ -60,7 +60,7 @@ export function DeckTransit() {
     if (type === "bus") {
       const routeData = busData[route]
       const predictions = routeData?.["bustime-response"]?.prd || []
-      if (predictions.length > 0) {
+      if (predictions.length > 0 && predictions[0]) {
         const minutes = parseInt(predictions[0].prdctdn, 10)
         return isNaN(minutes) ? "DUE" : `${minutes}m`
       }
@@ -85,7 +85,7 @@ export function DeckTransit() {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ring-1 ring-border">
+    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="rounded-lg bg-orange-500/20 p-1.5">

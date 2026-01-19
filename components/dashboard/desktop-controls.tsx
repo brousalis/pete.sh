@@ -94,7 +94,7 @@ export function DesktopControls() {
 
   if (error && !volume && !performance) {
     return (
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border h-full">
+      <div className="rounded-2xl bg-card p-5 shadow-sm  h-full">
         <div className="flex items-center gap-2">
           <Laptop className="size-5 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">Desktop</h3>
@@ -108,7 +108,7 @@ export function DesktopControls() {
   }
 
   return (
-    <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border h-full">
+    <div className="rounded-2xl bg-card p-5 shadow-sm  h-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Laptop className="size-5 text-purple-500" />

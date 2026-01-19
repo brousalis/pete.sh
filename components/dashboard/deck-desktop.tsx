@@ -53,7 +53,7 @@ export function DeckDesktop() {
   }
 
   const handleVolumeChange = async (newVolume: number[]) => {
-    const vol = newVolume[0]
+    const vol = newVolume[0] ?? 0
     setVolume((prev) => (prev ? { ...prev, volume: vol } : { volume: vol, muted: false }))
     try {
       const response = await fetch("/api/desktop/volume", {
@@ -82,7 +82,7 @@ export function DeckDesktop() {
 
   if (!available) {
     return (
-      <div className="rounded-2xl bg-card p-4 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-4 shadow-lg ">
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <Monitor className="size-6 text-muted-foreground" />
           <div className="text-xs text-muted-foreground">Not available</div>
@@ -93,7 +93,7 @@ export function DeckDesktop() {
 
   if (error && !volume && !performance) {
     return (
-      <div className="rounded-2xl bg-card p-4 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-4 shadow-lg ">
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <AlertCircle className="size-6 text-destructive" />
           <div className="text-xs font-medium text-destructive">{error}</div>
@@ -103,7 +103,7 @@ export function DeckDesktop() {
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-card to-card/80 p-4 shadow-lg ring-1 ring-border">
+    <div className="rounded-2xl bg-gradient-to-br from-card to-card/80 p-4 shadow-lg ">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-blue-500/20 p-2">

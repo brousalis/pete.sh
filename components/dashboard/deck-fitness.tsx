@@ -62,7 +62,7 @@ export function DeckFitness() {
 
   if (loading || !routine) {
     return (
-      <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="flex items-center justify-center py-2">
           <RefreshCw className="size-4 animate-spin text-muted-foreground" />
         </div>
@@ -81,7 +81,7 @@ export function DeckFitness() {
   const workoutCompleted = todayData?.workout?.completed || false
 
   return (
-    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ring-1 ring-border">
+    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="rounded-lg bg-red-500/20 p-1.5">

@@ -13,7 +13,6 @@ import {
   Home,
   Lightbulb,
   Music,
-  TabletSmartphone,
   X,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -35,7 +34,6 @@ const items: Item[] = [
   { href: '/transit', label: 'Transit', icon: Bus },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/coffee', label: 'Coffee', icon: Coffee },
-  { href: '/devices', label: 'Devices', icon: TabletSmartphone },
 ]
 
 interface SidebarProps {

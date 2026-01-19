@@ -74,7 +74,7 @@ export default function EnergyWidget({ className }: { className?: string }) {
 
   return (
     <section
-      className={cn("rounded-2xl bg-card p-4 md:p-6 ring-1 ring-border", "grid md:grid-cols-2 gap-6", className)}
+      className={cn("rounded-2xl bg-card p-4 md:p-6 ", "grid md:grid-cols-2 gap-6", className)}
       aria-label="Energy control"
     >
       <div className="flex flex-col items-center justify-center">

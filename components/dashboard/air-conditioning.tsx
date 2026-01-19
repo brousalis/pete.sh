@@ -8,7 +8,7 @@ export function AirConditioning() {
   const level = on ? 0.66 : 0 // 66% when on, 0% when off
 
   return (
-    <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+    <section className="rounded-2xl bg-card p-5 shadow-sm ">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Air Conditioning</h3>

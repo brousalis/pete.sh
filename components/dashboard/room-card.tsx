@@ -26,7 +26,7 @@ export function RoomCard({ title }: { title: string }) {
   const Icon = getRoomIcon(title)
 
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border">
+    <div className="rounded-2xl bg-card p-4 shadow-sm ">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span aria-hidden className="grid size-8 place-items-center rounded-xl bg-brand text-white">

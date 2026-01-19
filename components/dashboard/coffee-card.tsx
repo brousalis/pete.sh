@@ -6,7 +6,6 @@ import type { CoffeeRoutine } from '@/lib/types/coffee.types'
 import {
   ArrowRight,
   Coffee,
-  Droplets,
   Scale,
   Thermometer,
   Timer,
@@ -73,12 +72,8 @@ export function CoffeeCard() {
           <div className="flex items-center gap-1.5">
             <Scale className="size-4 text-amber-600" />
             <span className="font-semibold">{routine.coffee}g</span>
-            <span className="text-muted-foreground">coffee</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Droplets className="size-4 text-blue-400" />
-            <span className="font-semibold">{routine.water}g</span>
-            <span className="text-muted-foreground">water</span>
+            <span className="text-muted-foreground">: {routine.water}g</span>
+            <span className="text-muted-foreground/70 text-xs">({routine.ratio})</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Timer className="size-4 text-slate-400" />

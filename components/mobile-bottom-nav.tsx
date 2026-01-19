@@ -11,7 +11,6 @@ import {
   Bus,
   Dumbbell,
   Coffee,
-  TabletSmartphone,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,7 +20,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
 }
 
-// Mobile nav items - excluding Deck and Devices for single-row layout
+// Mobile nav items - excluding Deck for single-row layout
 const mobileNavItems: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/lights", label: "Lights", icon: Lightbulb },

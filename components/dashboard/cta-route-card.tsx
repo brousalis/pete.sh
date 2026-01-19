@@ -3,17 +3,21 @@
 import { Bus, Train, Clock, AlertCircle } from "lucide-react"
 import type { CTABusPrediction } from "@/lib/types/cta.types"
 
+// Minimal prediction type that the component actually uses
+// Accepts either full CTABusPrediction or just the fields we need
+type PredictionDisplay = Pick<CTABusPrediction, "prdctdn" | "stpnm">
+
 interface CTARouteCardProps {
   route: string
   type: "bus" | "train"
-  predictions: CTABusPrediction[]
+  predictions: (CTABusPrediction | PredictionDisplay)[]
   error?: string
 }
 
 export function CTARouteCard({ route, type, predictions, error }: CTARouteCardProps) {
   if (error) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-4" />
           <p className="text-xs">{error}</p>
@@ -25,7 +29,7 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
   const Icon = type === "bus" ? Bus : Train
 
   return (
-    <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+    <div className="rounded-xl bg-background p-4 ">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="size-5 text-brand" />
         <span className="font-semibold text-foreground">{type === "bus" ? `Bus ${route}` : `${route} Line`}</span>

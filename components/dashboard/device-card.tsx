@@ -20,7 +20,7 @@ export function DeviceCard({ title, icon = "pc" }: Props) {
   const [on, setOn] = useState(false)
   const Icon = IconMap[icon]
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border">
+    <div className="rounded-2xl bg-card p-4 shadow-sm ">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="text-xs font-semibold text-foreground">{title}</h4>
         <span className="text-[10px] text-muted-foreground">{on ? "ON" : "OFF"}</span>

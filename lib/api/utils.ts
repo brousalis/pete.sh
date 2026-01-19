@@ -27,15 +27,20 @@ export function errorResponse(
 ): NextResponse<ApiResponse> {
   const errorObj = typeof error === "string" ? { code: "UNKNOWN", message: error } : error
 
-  return NextResponse.json(
-    {
-      success: false,
-      error: errorObj.message,
-      ...(errorObj.code && { code: errorObj.code }),
-      ...(errorObj.details && { details: errorObj.details }),
-    },
-    { status }
-  )
+  const response: ApiResponse = {
+    success: false,
+    error: errorObj.message,
+  }
+  
+  if (errorObj.code) {
+    response.code = errorObj.code
+  }
+  
+  if (errorObj.details) {
+    response.details = errorObj.details
+  }
+
+  return NextResponse.json(response, { status })
 }
 
 /**

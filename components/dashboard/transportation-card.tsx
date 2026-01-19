@@ -226,7 +226,7 @@ export function TransportationCard() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-5 ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm">{error}</p>

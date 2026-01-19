@@ -42,32 +42,32 @@
   },
   "schedule": {
     "monday": {
-      "focus": "Strength & Density",
-      "goal": "Heavy lifting (modified for elbow)"
+      "focus": "Strength",
+      "goal": "Lift (Elbow Safe) + 40m Bike + Deep Stretch"
     },
     "tuesday": {
-      "focus": "Core & Posture",
-      "goal": "Waist control"
+      "focus": "Core/Posture",
+      "goal": "Core Routine + 45m Steep Hike + Deep Stretch"
     },
     "wednesday": {
-      "focus": "Hybrid Cardio",
-      "goal": "Fat Incineration"
+      "focus": "Hybrid",
+      "goal": "Run (2mi) + Hike (45-60m) + Tibialis Work"
     },
     "thursday": {
-      "focus": "Active Recovery",
-      "goal": "No gym. Walking only"
+      "focus": "Endurance",
+      "goal": "Run (4mi Slow) + 20m Recovery Spin"
     },
     "friday": {
-      "focus": "Climber Circuit",
-      "goal": "Conditioning (modified for elbow)"
+      "focus": "Circuit",
+      "goal": "Circuit (Elbow Safe) + 30m Bike + Deep Stretch"
     },
     "saturday": {
-      "focus": "HIIT Sprints",
-      "goal": "Max calorie burn"
+      "focus": "HIIT",
+      "goal": "Sprints (20m) + 20m Walk + Deep Stretch"
     },
     "sunday": {
-      "focus": "Active Recovery",
-      "goal": "No gym. Walking only"
+      "focus": "Rest",
+      "goal": "10k Steps (No Gym)"
     }
   },
   "dailyRoutines": {
@@ -134,10 +134,21 @@
   },
   "weeks": [
     {
-      "weekNumber": 3,
-      "startDate": "2026-01-12T06:00:00.000Z",
+      "weekNumber": 4,
+      "startDate": "2026-01-19T06:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-01-19T20:03:05.089Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-01-19T20:15:10.522Z"
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -147,5 +158,5 @@
       }
     }
   ],
-  "updatedAt": "2026-01-13T04:12:01.236Z"
+  "updatedAt": "2026-01-19T20:23:37.322Z"
 }

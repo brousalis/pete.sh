@@ -2,7 +2,7 @@ import { Sunrise, Moon } from "lucide-react"
 
 function Scene({ icon: Icon, title }: { icon: any; title: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border">
+    <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-sm ">
       <Icon className="size-6 text-brand dark:text-white transition-colors" />
       <div>
         <div className="text-sm font-semibold text-foreground">{title}</div>

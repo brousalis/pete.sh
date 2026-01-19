@@ -116,7 +116,7 @@ export function FitnessCard() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-card p-5 ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 ">
         <div className="h-40 animate-pulse rounded-lg bg-muted" />
       </div>
     )

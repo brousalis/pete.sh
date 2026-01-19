@@ -64,7 +64,7 @@ export function LyftRequest() {
   }
 
   return (
-    <div className="space-y-4 rounded-xl bg-background p-4 ring-1 ring-border">
+    <div className="space-y-4 rounded-xl bg-background p-4 ">
       <div className="flex items-center gap-2">
         <Car className="size-5 text-brand" />
         <h3 className="font-semibold text-foreground">Request a Lyft</h3>

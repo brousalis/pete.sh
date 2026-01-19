@@ -1,6 +1,6 @@
 /**
  * TypeScript types for Coffee Brewing Assistant feature
- * Based on coffee.md - comprehensive coffee routine system
+ * Based on coffee.md - The Chicago Studio Coffee Manual (2026 House p)
  */
 
 export type CoffeeRoutineType = "morning" | "afternoon" | "sunday"
@@ -13,15 +13,27 @@ export interface CoffeeRoutine {
   name: string
   description: string
   batchSize: string
+  ratio: string // e.g. "1:17" or "1:16"
+  ratioNote?: string // e.g. "Smooth & Sweet" or "High Clarity"
   water: number // in grams
   coffee: number // in grams
   grinder: GrinderType
   grinderSetting: string
   filter: string
   waterTemp?: number // in Fahrenheit
+  waterNote?: string // e.g. "Default Machine Temp" or "Cooler = Sweeter"
   steps: BrewStep[]
   totalTime?: number // in seconds
   tips?: string[]
+  beanRecommendation?: BeanRecommendation
+}
+
+export interface BeanRecommendation {
+  source: string // e.g. "Metric Coffee"
+  location?: string // e.g. "West Fulton Market"
+  type: string // e.g. "Single Origin Washed Process"
+  origins?: string[] // e.g. ["Peru", "Colombia", "Honduras"]
+  flavor: string // e.g. "Clean, chocolate, citrus, structured"
 }
 
 export interface BrewStep {

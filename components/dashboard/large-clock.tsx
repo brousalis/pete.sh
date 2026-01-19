@@ -17,7 +17,7 @@ export function LargeClock() {
 
   if (!mounted) {
     return (
-      <div className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-8 shadow-sm ">
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="h-24 w-64 animate-pulse rounded-lg bg-muted" />
           <div className="h-8 w-48 animate-pulse rounded-lg bg-muted" />
@@ -39,7 +39,7 @@ export function LargeClock() {
   })
 
   return (
-    <div className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-border">
+    <div className="rounded-2xl bg-card p-8 shadow-sm ">
       <div className="flex flex-col items-center justify-center space-y-4">
         <div className="text-center">
           <div className="text-7xl font-bold tracking-tight text-foreground lg:text-8xl">

@@ -33,7 +33,7 @@ export function DeckWeather() {
 
   if (loading && !weather) {
     return (
-      <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="flex items-center justify-center gap-2">
           <RefreshCw className="size-4 animate-spin text-muted-foreground" />
         </div>
@@ -43,7 +43,7 @@ export function DeckWeather() {
 
   if (!weather) {
     return (
-      <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="text-sm text-muted-foreground">No weather data</div>
       </div>
     )
@@ -56,7 +56,7 @@ export function DeckWeather() {
   const windSpeedMph = windSpeed ? Math.round(windSpeed * 2.237) : null
 
   return (
-    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ring-1 ring-border">
+    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="flex items-start justify-between mb-1">
         <div className="flex-1">
           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">

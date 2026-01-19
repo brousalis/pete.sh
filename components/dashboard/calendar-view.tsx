@@ -49,7 +49,7 @@ export function CalendarView() {
     const isNotAuthenticated = error === "not_authenticated" || error.includes("Not authenticated")
 
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="size-5" />
@@ -76,7 +76,7 @@ export function CalendarView() {
 
   if (loading && events.length === 0) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2">
           <RefreshCw className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading calendar events...</p>
@@ -87,7 +87,7 @@ export function CalendarView() {
 
   if (events.length === 0) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="size-5" />
           <p className="text-sm">No upcoming events</p>
@@ -118,7 +118,7 @@ export function CalendarView() {
               : null
 
           return (
-            <div key={event.id} className="rounded-lg bg-card p-3 ring-1 ring-border">
+            <div key={event.id} className="rounded-lg bg-card p-3 ">
               <div className="flex items-start gap-3">
                 <div className="flex size-10 items-center justify-center rounded-lg bg-brand/10">
                   <Calendar className="size-5 text-brand" />

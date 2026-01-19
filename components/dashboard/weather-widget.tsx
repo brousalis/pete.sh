@@ -36,7 +36,7 @@ export function WeatherWidget() {
 
   if (loading && !current) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2">
           <RefreshCw className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading weather...</p>
@@ -47,7 +47,7 @@ export function WeatherWidget() {
 
   if (error || !current) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm">{error || "No weather data"}</p>
@@ -62,7 +62,7 @@ export function WeatherWidget() {
   const windSpeed = current.properties.windSpeed?.value
 
   return (
-    <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+    <div className="rounded-xl bg-background p-4 ">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-foreground">Current Weather</h3>
         <Button variant="ghost" size="sm" onClick={fetchCurrent} disabled={loading} className="gap-2">

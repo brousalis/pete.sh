@@ -1,13 +1,13 @@
-import { NextRequest } from "next/server"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { DesktopService } from "@/lib/services/desktop.service"
+import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
+import { DesktopService } from '@/lib/services/desktop.service'
+import { NextRequest } from 'next/server'
 
 const desktopService = new DesktopService()
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     if (!desktopService.isAvailable()) {
-      return errorResponse("Desktop features not available", 400)
+      return errorResponse('Desktop features not available', 400)
     }
 
     const volume = await desktopService.getVolume()
@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     if (!desktopService.isAvailable()) {
-      return errorResponse("Desktop features not available", 400)
+      return errorResponse('Desktop features not available', 400)
     }
 
     const body = await request.json()
     const { volume } = body
 
     if (volume === undefined || volume < 0 || volume > 100) {
-      return errorResponse("Volume must be between 0 and 100", 400)
+      return errorResponse('Volume must be between 0 and 100', 400)
     }
 
     await desktopService.setVolume(volume)

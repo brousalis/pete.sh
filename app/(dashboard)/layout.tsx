@@ -49,10 +49,10 @@ export default function DashboardLayout({
               onClick={() => setSidebarOpen(true)}
               className="gap-2"
             >
-              <Menu className="size-5" />
-              <span className="font-semibold">Menu</span>
+              <Menu className="size-5 pt-1" />
+              {/* <span className="font-semibold">Menu</span> */}
             </Button>
-            <div className="from-brand via-brand/90 to-brand bg-gradient-to-r bg-clip-text text-lg font-bold text-transparent">
+            <div className="from-brand via-brand/90 to-brand bg-gradient-to-r bg-clip-text text-lg font-bold">
               petehome
             </div>
             <div className="w-[73px]"></div> {/* Spacer for centering */}
@@ -65,7 +65,7 @@ export default function DashboardLayout({
               <Sidebar onClose={() => setSidebarOpen(false)} />
             </div>
 
-            <main className="bg-muted w-full flex-1 overflow-auto rounded-b-3xl p-3 pb-20 sm:p-5 md:px-7 md:py-7 lg:w-auto lg:rounded-r-3xl lg:rounded-bl-none lg:pb-7 xl:pt-0 xl:pb-7">
+            <main className="bg-muted w-full flex-1 overflow-auto rounded-b-3xl p-3 pb-20 sm:p-5 md:px-7 md:py-7 lg:w-auto lg:rounded-r-3xl lg:rounded-bl-none lg:pb-7 xl:pt-1 xl:pb-7">
               {children}
             </main>
           </div>

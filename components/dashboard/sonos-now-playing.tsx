@@ -14,7 +14,7 @@ export function SonosNowPlaying({ state, onPlay, onPause }: SonosNowPlayingProps
   const isPlaying = playbackState === "PLAYING"
 
   return (
-    <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+    <div className="rounded-xl bg-background p-4 ">
       <div className="flex items-center gap-4">
         <div className="flex size-12 items-center justify-center rounded-lg bg-brand/10">
           {currentTrack.albumArtUri ? (

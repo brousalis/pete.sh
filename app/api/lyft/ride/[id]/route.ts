@@ -1,16 +1,16 @@
-import { NextRequest } from "next/server"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { LyftService } from "@/lib/services/lyft.service"
+import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
+import { LyftService } from '@/lib/services/lyft.service'
+import { NextRequest } from 'next/server'
 
 const lyftService = new LyftService()
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!lyftService.isConfigured()) {
-      return errorResponse("Lyft API not configured", 400)
+      return errorResponse('Lyft API not configured', 400)
     }
 
     const { id } = await params

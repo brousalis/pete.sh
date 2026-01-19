@@ -48,7 +48,12 @@ export class LyftService {
         }
       )
 
-      this.accessToken = response.data.access_token
+      const accessToken = response.data.access_token
+      if (!accessToken || typeof accessToken !== "string") {
+        throw new Error("Invalid access token received from Lyft API")
+      }
+      
+      this.accessToken = accessToken
       this.tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000 // Refresh 1 min early
 
       return this.accessToken

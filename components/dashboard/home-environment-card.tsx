@@ -171,7 +171,7 @@ export function HomeEnvironmentCard() {
 
   // Count active zones
   const activeZones = zones.filter(z => z.state?.any_on).length
-  const playingRooms = players.filter(p => p.state === 'PLAYING').length
+  const playingRooms = players.filter(p => p.state?.playbackState === 'PLAYING').length
 
   return (
     <div className="space-y-4">
@@ -259,7 +259,7 @@ export function HomeEnvironmentCard() {
                     <Sun className={`size-3.5 ${isOn ? 'text-brand' : 'text-muted-foreground/50'}`} />
                     <Slider
                       value={[brightness]}
-                      onValueChange={([v]) => handleBrightnessChange(zone.id, v)}
+                      onValueChange={([v]) => handleBrightnessChange(zone.id, v ?? 50)}
                       min={1}
                       max={100}
                       step={5}
@@ -292,8 +292,8 @@ export function HomeEnvironmentCard() {
             </div>
           ) : (
             players.map(player => {
-              const isPlaying = player.state === 'PLAYING'
-              const currentTrack = player.currentTrack
+              const isPlaying = player.state?.playbackState === 'PLAYING'
+              const currentTrack = player.state?.currentTrack
 
               return (
                 <div
@@ -386,8 +386,8 @@ export function HomeEnvironmentCard() {
                         <div className="ml-2 flex flex-1 items-center gap-2">
                           <Volume2 className="size-4 text-muted-foreground" />
                           <Slider
-                            value={[player.volume || 20]}
-                            onValueChange={([v]) => handleVolume(player.roomName, v)}
+                            value={[player.state?.volume || 20]}
+                            onValueChange={([v]) => handleVolume(player.roomName, v ?? 20)}
                             min={0}
                             max={100}
                             step={5}

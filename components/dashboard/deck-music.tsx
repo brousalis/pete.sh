@@ -80,7 +80,7 @@ export function DeckMusic() {
 
   const handleVolumeChange = async (newVolume: number[]) => {
     if (!activePlayer) return
-    const vol = newVolume[0]
+    const vol = newVolume[0] ?? 0
     setVolume(vol)
     try {
       const response = await fetch(`/api/sonos/players/${activePlayer.uuid}/volume`, {
@@ -97,7 +97,7 @@ export function DeckMusic() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <AlertCircle className="size-5 text-destructive" />
           <div className="text-xs font-medium text-destructive">{error}</div>
@@ -111,7 +111,7 @@ export function DeckMusic() {
   const artist = state?.currentTrack?.artist || ""
 
   return (
-    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ring-1 ring-border">
+    <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className={`rounded-lg p-1.5 ${isPlaying ? "bg-green-500/20" : "bg-muted"}`}>

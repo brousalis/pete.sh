@@ -85,7 +85,7 @@ export function HueZoneCard({ zone, scenes = [], onToggle, onActivateScene }: Hu
   }
 
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border">
+    <div className="rounded-2xl bg-card p-4 shadow-sm ">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span aria-hidden className="grid size-8 place-items-center rounded-xl bg-brand text-white">
@@ -126,7 +126,7 @@ export function HueZoneCard({ zone, scenes = [], onToggle, onActivateScene }: Hu
 
       <p className="text-xs leading-5 text-muted-foreground">Light</p>
       <div className="mt-2">
-        <ToggleSwitch checked={on} onCheckedChange={handleToggle} disabled={loading} />
+        <ToggleSwitch checked={on} onCheckedChange={handleToggle} />
       </div>
       <div className="mt-3 text-xs text-brand">
         {zone.lights.length} {zone.lights.length === 1 ? "device" : "devices"}▾

@@ -1,25 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import type { CalendarEvent } from '@/lib/types/calendar.types'
+import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import {
+  differenceInMinutes,
+  format,
+  isToday,
+  isTomorrow,
+  parseISO,
+} from 'date-fns'
+import {
+  AlertCircle,
+  ArrowRight,
   Calendar,
+  CalendarDays,
   Clock,
   MapPin,
   RefreshCw,
-  AlertCircle,
-  ArrowRight,
-  CalendarDays,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import {
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import * as TooltipPrimitive from '@radix-ui/react-tooltip'
-import { format, parseISO, isToday, isTomorrow, differenceInMinutes, formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
-import type { CalendarEvent } from '@/lib/types/calendar.types'
+import { useEffect, useState } from 'react'
 
 export function CalendarCard() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -30,10 +32,16 @@ export function CalendarCard() {
     try {
       setLoading(true)
       setError(null)
-      console.log('[CalendarCard] Fetching events from /api/calendar/upcoming?maxResults=10')
+      console.log(
+        '[CalendarCard] Fetching events from /api/calendar/upcoming?maxResults=10'
+      )
       const response = await fetch('/api/calendar/upcoming?maxResults=10')
-      console.log('[CalendarCard] Response status:', response.status, response.statusText)
-      
+      console.log(
+        '[CalendarCard] Response status:',
+        response.status,
+        response.statusText
+      )
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error('[CalendarCard] Error response:', {
@@ -47,7 +55,7 @@ export function CalendarCard() {
         }
         throw new Error(errorData.error || 'Failed to fetch events')
       }
-      
+
       const data = await response.json()
       console.log('[CalendarCard] Response data:', {
         success: data.success,
@@ -56,7 +64,7 @@ export function CalendarCard() {
         dataLength: Array.isArray(data.data) ? data.data.length : 'N/A',
         fullData: data,
       })
-      
+
       if (data.success && data.data) {
         console.log('[CalendarCard] Setting events:', data.data)
         setEvents(data.data)
@@ -88,7 +96,20 @@ export function CalendarCard() {
     if (event.start.date) {
       // Parse as UTC to avoid timezone issues with all-day events
       const dateStr = event.start.date
-      const [year, month, day] = dateStr.split('-').map(Number)
+      const parts = dateStr.split('-').map(Number)
+      const year = parts[0]
+      const month = parts[1]
+      const day = parts[2]
+      if (
+        year === undefined ||
+        month === undefined ||
+        day === undefined ||
+        isNaN(year) ||
+        isNaN(month) ||
+        isNaN(day)
+      ) {
+        return null
+      }
       return new Date(Date.UTC(year, month - 1, day))
     }
     // For timed events, parse the ISO dateTime string
@@ -138,7 +159,7 @@ export function CalendarCard() {
     if (minutesUntil > 0 && minutesUntil <= 60) {
       return {
         display: `in ${minutesUntil} min`,
-        full: format(startTime, 'EEEE, MMMM d, yyyy \'at\' h:mm a'),
+        full: format(startTime, "EEEE, MMMM d, yyyy 'at' h:mm a"),
       }
     }
 
@@ -146,12 +167,12 @@ export function CalendarCard() {
     if (isToday(startTime)) {
       return {
         display: `Today, ${format(startTime, 'h:mm a')}`,
-        full: format(startTime, 'EEEE, MMMM d, yyyy \'at\' h:mm a'),
+        full: format(startTime, "EEEE, MMMM d, yyyy 'at' h:mm a"),
       }
     } else if (isTomorrow(startTime)) {
       return {
         display: `Tomorrow, ${format(startTime, 'h:mm a')}`,
-        full: format(startTime, 'EEEE, MMMM d, yyyy \'at\' h:mm a'),
+        full: format(startTime, "EEEE, MMMM d, yyyy 'at' h:mm a"),
       }
     } else {
       // Show: "Mon, Jan 13, 7:30 PM" or "Mon, Jan 13, 2025, 7:30 PM" if different year
@@ -159,7 +180,7 @@ export function CalendarCard() {
         display: showYear
           ? `${format(startTime, 'EEE, MMM d, yyyy')}, ${format(startTime, 'h:mm a')}`
           : `${format(startTime, 'EEE, MMM d')}, ${format(startTime, 'h:mm a')}`,
-        full: format(startTime, 'EEEE, MMMM d, yyyy \'at\' h:mm a'),
+        full: format(startTime, "EEEE, MMMM d, yyyy 'at' h:mm a"),
       }
     }
   }
@@ -178,12 +199,12 @@ export function CalendarCard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Calendar className="size-5 text-brand" />
-            <h3 className="text-sm font-semibold text-foreground">Calendar</h3>
+            <Calendar className="text-brand size-5" />
+            <h3 className="text-foreground text-sm font-semibold">Calendar</h3>
           </div>
         </div>
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="bg-muted/30 rounded-lg border p-4">
+          <div className="text-muted-foreground flex items-center gap-2">
             <AlertCircle className="size-4" />
             <p className="text-sm">Google Calendar not connected</p>
           </div>
@@ -204,8 +225,8 @@ export function CalendarCard() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="size-5 text-brand" />
-          <h3 className="text-sm font-semibold text-foreground">Calendar</h3>
+          <Calendar className="text-brand size-5" />
+          <h3 className="text-foreground text-sm font-semibold">Calendar</h3>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/calendar">
@@ -226,17 +247,21 @@ export function CalendarCard() {
       </div>
 
       {loading && events.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-lg bg-muted/30 p-4 text-sm text-muted-foreground">
+        <div className="bg-muted/30 text-muted-foreground flex items-center gap-2 rounded-lg p-4 text-sm">
           <RefreshCw className="size-4 animate-spin" />
           Loading events...
         </div>
       ) : events.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 p-8 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-muted/50">
-            <Calendar className="size-6 text-muted-foreground" />
+        <div className="bg-muted/20 flex flex-col items-center justify-center rounded-xl p-8 text-center">
+          <div className="bg-muted/50 flex size-12 items-center justify-center rounded-full">
+            <Calendar className="text-muted-foreground size-6" />
           </div>
-          <p className="mt-3 text-sm font-medium text-muted-foreground">No upcoming events</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">Your schedule is clear</p>
+          <p className="text-muted-foreground mt-3 text-sm font-medium">
+            No upcoming events
+          </p>
+          <p className="text-muted-foreground/70 mt-1 text-xs">
+            Your schedule is clear
+          </p>
         </div>
       ) : (
         <TooltipProvider delayDuration={300}>
@@ -249,9 +274,9 @@ export function CalendarCard() {
               return (
                 <div
                   key={event.id}
-                  className={`group flex items-start gap-3 rounded-lg border p-3.5 transition-all hover:border-border/80 hover:shadow-sm ${
+                  className={`group hover:border-border/80 flex items-start gap-3 rounded-lg border p-3.5 transition-all hover:shadow-sm ${
                     isSoon
-                      ? 'border-brand/50 bg-brand/5 ring-1 ring-brand/20'
+                      ? 'border-brand/50 bg-brand/5 ring-brand/20 ring-1'
                       : isAllDay
                         ? 'border-border/60 bg-card/40'
                         : 'border-border bg-card/50'
@@ -284,14 +309,14 @@ export function CalendarCard() {
                     <div className="flex items-start justify-between gap-2">
                       <TooltipPrimitive.Root>
                         <TooltipPrimitive.Trigger asChild>
-                          <h4 className="truncate text-sm font-semibold text-foreground cursor-help leading-tight">
+                          <h4 className="text-foreground cursor-help truncate text-sm leading-tight font-semibold">
                             {event.summary}
                           </h4>
                         </TooltipPrimitive.Trigger>
                         <TooltipPrimitive.Portal>
                           <TooltipPrimitive.Content
                             side="top"
-                            className="z-50 max-w-xs rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+                            className="bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 max-w-xs rounded-md px-3 py-1.5 text-xs shadow-md"
                           >
                             <p className="font-medium">{event.summary}</p>
                             {event.description && (
@@ -302,14 +327,14 @@ export function CalendarCard() {
                           </TooltipPrimitive.Content>
                         </TooltipPrimitive.Portal>
                       </TooltipPrimitive.Root>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         {isSoon && (
-                          <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-medium text-white">
+                          <span className="bg-brand rounded-full px-2 py-0.5 text-[10px] font-medium text-white">
                             Soon
                           </span>
                         )}
                         {isAllDay && !isSoon && (
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">
                             All day
                           </span>
                         )}
@@ -318,7 +343,7 @@ export function CalendarCard() {
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                       <TooltipPrimitive.Root>
                         <TooltipPrimitive.Trigger asChild>
-                          <span className="flex items-center gap-1.5 text-muted-foreground cursor-help font-medium">
+                          <span className="text-muted-foreground flex cursor-help items-center gap-1.5 font-medium">
                             {isAllDay ? (
                               <CalendarDays className="size-3.5 shrink-0" />
                             ) : (
@@ -328,9 +353,7 @@ export function CalendarCard() {
                           </span>
                         </TooltipPrimitive.Trigger>
                         <TooltipPrimitive.Portal>
-                          <TooltipPrimitive.Content
-                            className="z-50 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow-md animate-in fade-in-0 zoom-in-95"
-                          >
+                          <TooltipPrimitive.Content className="bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 rounded-md px-3 py-1.5 text-xs shadow-md">
                             <p>{timeInfo.full}</p>
                           </TooltipPrimitive.Content>
                         </TooltipPrimitive.Portal>
@@ -338,7 +361,7 @@ export function CalendarCard() {
                       {event.location && (
                         <TooltipPrimitive.Root>
                           <TooltipPrimitive.Trigger asChild>
-                            <span className="flex items-center gap-1.5 truncate max-w-[200px] text-muted-foreground cursor-help">
+                            <span className="text-muted-foreground flex max-w-[200px] cursor-help items-center gap-1.5 truncate">
                               <MapPin className="size-3.5 shrink-0" />
                               <span className="truncate">
                                 {event.location.split(',')[0]}
@@ -346,9 +369,7 @@ export function CalendarCard() {
                             </span>
                           </TooltipPrimitive.Trigger>
                           <TooltipPrimitive.Portal>
-                            <TooltipPrimitive.Content
-                              className="z-50 max-w-xs rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow-md animate-in fade-in-0 zoom-in-95"
-                            >
+                            <TooltipPrimitive.Content className="bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 max-w-xs rounded-md px-3 py-1.5 text-xs shadow-md">
                               <p>{event.location}</p>
                             </TooltipPrimitive.Content>
                           </TooltipPrimitive.Portal>

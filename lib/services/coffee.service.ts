@@ -1,7 +1,16 @@
 /**
  * Coffee Service
  * Handles coffee routine logic and detection
- * Based on coffee.md - comprehensive coffee routine system
+ * Based on coffee.md - The Chicago Studio Coffee Manual (2026 House p)
+ * 
+ * Equipment:
+ * - Machine: Technivorm Moccamaster KBGV Select (Matte Black)
+ * - Batch Grinder: Fellow Ode Gen 2
+ * - Solo Grinder: Timemore S3
+ * - Brewer: Hario Switch (Size 03)
+ * - Server: Hario V60 Glass Server (1000ml)
+ * - Scale: Acaia Pearl
+ * - Kettle: Fellow Stagg EKG
  */
 
 import type { CoffeeRoutine, CoffeeRoutineType } from "@/lib/types/coffee.types"
@@ -12,52 +21,57 @@ export class CoffeeService {
    */
   getRoutines(): CoffeeRoutine[] {
     return [
+      // ROUTINE A: THE MORNING BATCH (7:00 AM)
       {
-        id: "morning-household",
+        id: "morning-batch",
         type: "morning",
-        name: "7:00 AM Household Split",
-        description: "Fast, high-volume, consistently excellent",
+        name: "Morning Batch",
+        description: "Smooth, sweet, large batch to start the day",
         batchSize: "1 Liter",
+        ratio: "1:17",
+        ratioNote: "Smooth & Sweet",
         water: 1000,
-        coffee: 62.5,
+        coffee: 59,
         grinder: "ode",
-        grinderSetting: "8",
-        filter: "Moccamaster/Filpa No. 4",
+        grinderSetting: "9",
+        filter: "No. 4 Paper Filter",
+        waterNote: "Default Machine Temp",
         steps: [
           {
             id: "water",
             order: 1,
-            title: "Measure Water",
-            description: "Place carafe on scale. Tare. Fill to 1000g. Pour into reservoir.",
+            title: "Prepare the Water",
+            description: "Place the glass carafe on your scale and press 'Tare' (Zero). Fill with cold water until the scale reads 1000g. Pour this into the machine reservoir.",
             action: "Fill reservoir with 1000g water",
           },
           {
             id: "filter",
             order: 2,
-            title: "Prepare Filter",
-            description: "Fold No. 4 filter edges. Place in basket. Rinse with hot water. Dump water from carafe.",
+            title: "Prepare the Filter",
+            description: "Take a No. 4 Paper Filter. Fold the crimped seams (bottom and side) firmly to create a crease. Place in the basket and rinse with hot water. Dump the rinse water out of the carafe.",
             action: "Rinse filter and dump water",
+            tips: ["Paper filters taste like cardboard - ALWAYS rinse before brewing"],
           },
           {
             id: "machine-setup",
             order: 3,
             title: "Machine Setup",
-            description: "Set switch to Full Jug (Open Circle). Ensure carafe is fully pressed in.",
-            action: "Configure machine settings",
+            description: "Set the basket switch to the Open Circle (Full Jug). Push the carafe firmly against the button at the base.",
+            action: "Set to Full Jug mode",
           },
           {
             id: "grind",
             order: 4,
-            title: "Grind Coffee",
-            description: "Weigh 62.5g. Grind in Ode (Setting 8). Load basket. Shake to level.",
-            action: "Grind 62.5g at setting 8",
-            tips: ["Spray beans with one spritz of water before grinding (RDT)"],
+            title: "Grind (Ode Setting 9)",
+            description: "Weigh 59g of beans. Spray with one spritz of water (RDT). Shake the cup to coat them. Grind on Ode Setting 9. Pour into the basket and shake to level.",
+            action: "Grind 59g at setting 9",
+            tips: ["RDT (spray) is MANDATORY - prevents static and mess"],
           },
           {
             id: "brew-start",
             order: 5,
-            title: "Start Brew",
-            description: "Turn on machine. Watch basket fill.",
+            title: "The Brew",
+            description: "Turn the machine ON. Watch the water fill the basket.",
             action: "Turn on Moccamaster",
             timing: {
               start: 0,
@@ -67,7 +81,7 @@ export class CoffeeService {
             id: "stir",
             order: 6,
             title: "The Barista Stir",
-            description: "At 0:45, grounds should be fully submerged. Stir slurry gently with spoon (3 circles) to break up dry clumps.",
+            description: "At the 0:45 mark, use a spoon to gently stir the wet grounds (3 circles) to break up any dry crust.",
             action: "Stir gently (3 circles)",
             timing: {
               start: 45,
@@ -77,153 +91,160 @@ export class CoffeeService {
           {
             id: "finish",
             order: 7,
-            title: "Finish & Serve",
-            description: "When machine gurgles, remove carafe, swirl, and serve.",
+            title: "Finish",
+            description: "When the machine stops gurgling, remove the carafe, swirl it to mix the layers, and serve.",
             action: "Swirl and serve",
+            tips: ["Pro Tip: For max 10 cups (1.25L), use 73.5g coffee and coarsen to Setting 10"],
           },
         ],
         tips: [
-          "Optional: Use Third Wave Water to prevent limescale buildup",
-          "Spray beans with water before grinding to reduce static (RDT)",
+          "Filtered tap water is fine for morning batch",
+          "RDT spray is MANDATORY before grinding",
         ],
+        beanRecommendation: {
+          source: "Metric Coffee",
+          location: "West Fulton Market",
+          type: "Single Origin Washed Process",
+          origins: ["Peru", "Colombia", "Honduras"],
+          flavor: "Clean, chocolate, citrus, structured",
+        },
       },
+      // ROUTINE B: THE AFTERNOON CUP (2:00 PM) - "Sweet Hybrid" Method
       {
-        id: "afternoon-god-switch",
+        id: "afternoon-cup",
         type: "afternoon",
-        name: "2:00 PM God Switch",
-        description: "The dedicated solo ritual. Uses the S3.",
+        name: "Afternoon Cup",
+        description: "Solo, high-clarity coffee emphasizing fruit and sweetness",
         batchSize: "300 ml",
+        ratio: "1:16",
+        ratioNote: "High Clarity",
         water: 300,
         coffee: 18.8,
         grinder: "s3",
-        grinderSetting: "6.0",
-        filter: "Cafec Abaca (Yellow Bag)",
-        waterTemp: 205,
-        totalTime: 210, // 3:30 target
+        grinderSetting: "7.5",
+        filter: "Cafec Abaca",
+        waterTemp: 200,
+        waterNote: "Cooler = Sweeter",
+        totalTime: 150, // 2:30 target
         steps: [
           {
-            id: "setup",
+            id: "heat-prep",
             order: 1,
-            title: "Setup Switch",
-            description: "Place Switch on Hario Server. Insert Cafec Abaca filter. Rinse & dump.",
+            title: "Heat & Prep",
+            description: "Set Kettle to 200°F. Place Hario Switch on the server. Insert Cafec Abaca filter. Rinse and dump the water.",
             action: "Rinse filter and dump water",
-            tips: ["Rinse with hot water for 10s to pre-heat"],
-          },
-          {
-            id: "mode",
-            order: 2,
-            title: "Set Mode",
-            description: "Flip Switch Lever UP (CLOSED) for immersion mode.",
-            action: "Flip lever UP (closed)",
+            tips: ["IMPORTANT: Flip the Switch Lever DOWN (OPEN)"],
           },
           {
             id: "grind",
-            order: 3,
-            title: "Grind Coffee",
-            description: "Weigh 18.8g. Set Timemore S3 external dial to 6.0. Grind beans (~30 seconds).",
-            action: "Grind 18.8g at setting 6.0",
+            order: 2,
+            title: "Grind (Timemore S3 Setting 7.5)",
+            description: "Weigh 18.8g of beans. Spray with one spritz of water (RDT). Grind on S3 Setting 7.5.",
+            action: "Grind 18.8g at setting 7.5",
+            tips: ["Hold the grinder at a 45-degree angle while grinding for more consistent particle size"],
           },
           {
-            id: "pour",
-            order: 4,
-            title: "Pour Water",
-            description: "Start timer. Pour 300g of 205°F water. Pour fast to create turbulence.",
-            action: "Pour 300g at 205°F",
+            id: "phase-1",
+            order: 3,
+            title: "Phase 1: The Flush (0:00 - 0:45)",
+            description: "Place everything on the scale and Tare. Start Timer. Pour 60g of water vigorously and fast. Let it drain completely.",
+            action: "Pour 60g fast, let drain",
             timing: {
               start: 0,
             },
-            tips: ["ALWAYS use Third Wave Water for afternoon cup"],
+            tips: ["WHY: This washes away the sour fines and dust"],
           },
           {
-            id: "stir-crust",
-            order: 5,
-            title: "Stir Crust",
-            description: "At 2:00, gently stir the crust.",
-            action: "Gently stir crust",
+            id: "phase-2",
+            order: 4,
+            title: "Phase 2: The Sugar Bath (0:45 - 2:30)",
+            description: "Flip the Switch Lever UP (CLOSED). Pour remaining water until scale reads 300g total. Give the brewer one gentle swirl (3 seconds). DO NOT STIR. Let it steep undisturbed.",
+            action: "Close lever, pour to 300g, swirl once",
             timing: {
-              start: 120,
+              start: 45,
               alert: true,
             },
+            tips: ["DO NOT STIR - just one gentle swirl"],
           },
           {
-            id: "flip-switch",
-            order: 6,
-            title: "Open Switch",
-            description: "At 2:15, flip Switch Lever DOWN (OPEN) to drain.",
+            id: "release",
+            order: 5,
+            title: "The Release (2:30)",
+            description: "At 2:30, flip the Lever DOWN (OPEN). Let it drain.",
             action: "Flip lever DOWN (open)",
             timing: {
-              start: 135,
+              start: 150,
               alert: true,
             },
           },
           {
             id: "finish",
-            order: 7,
+            order: 6,
             title: "Finish",
-            description: "Let it drain. Target time: 3:00-3:30 total. Swirl and drink.",
-            action: "Swirl and serve",
-            timing: {
-              start: 180,
-              duration: 30,
-            },
+            description: "Let it drain completely. Swirl and enjoy.",
+            action: "Swirl and enjoy",
           },
         ],
         tips: [
-          "ALWAYS use Third Wave Water for the afternoon cup",
-          "Ensure S3 dial '0' means burrs are touching (closed)",
+          "ALWAYS use distilled water with Third Wave Water mineral packets",
+          "Third Wave Water unlocks 'High Definition' fruit flavors",
         ],
+        beanRecommendation: {
+          source: "Dark Matter or Dayglow",
+          type: "Natural or Anaerobic Process",
+          origins: ["Ethiopia", "Costa Rica"],
+          flavor: "Berry jam, wine, tropical fruit, funk",
+        },
       },
+      // ROUTINE C: THE SUNDAY THEATER (BRUNCH)
       {
-        id: "sunday-brunch",
+        id: "sunday-theater",
         type: "sunday",
-        name: "Sunday Brunch",
-        description: "The theater of pour-over for a crowd.",
+        name: "Sunday Theater",
+        description: "Manual brewing a large 1L batch for guests",
         batchSize: "1 Liter",
+        ratio: "1:16",
+        ratioNote: "Rich Body",
         water: 1000,
         coffee: 62.5,
         grinder: "ode",
-        grinderSetting: "9",
-        filter: "Hario Size 03 (White/Bleached)",
+        grinderSetting: "10",
+        filter: "Size 03 Filter",
         waterTemp: 212,
-        totalTime: 180, // ~3:00
+        waterNote: "Boiling",
+        totalTime: 300, // ~4-5 mins
         steps: [
           {
-            id: "setup",
+            id: "heat-prep",
             order: 1,
-            title: "Setup",
-            description: "Place Switch on Server. Insert Hario Size 03 Filter. Rinse thoroughly to heat heavy glass. Dump water.",
-            action: "Rinse filter and pre-heat",
-            tips: ["Rinse for 10s to pre-heat the heavy glass"],
-          },
-          {
-            id: "mode",
-            order: 2,
-            title: "Set Mode",
-            description: "Lock Switch Lever DOWN (OPEN) for pour-over mode.",
-            action: "Lock lever DOWN (open)",
+            title: "Heat & Prep",
+            description: "Set Kettle to 212°F (Boiling). Rinse the Size 03 Filter heavily with hot water to pre-heat the glass server. Dump the water.",
+            action: "Rinse filter and pre-heat server",
+            tips: ["IMPORTANT: Lock the Switch Lever DOWN (OPEN)"],
           },
           {
             id: "grind",
-            order: 3,
-            title: "Grind Coffee",
-            description: "Weigh 62.5g. Grind in Ode (Setting 9 - coarser to prevent stalling).",
-            action: "Grind 62.5g at setting 9",
+            order: 2,
+            title: "Grind (Ode Setting 10)",
+            description: "Weigh 62.5g of beans. Spray with one spritz of water (RDT). Grind on Ode Setting 10 (Texture: Kosher Salt).",
+            action: "Grind 62.5g at setting 10",
+            tips: ["WHY: We grind coarse so the deep bed of coffee doesn't clog"],
           },
           {
             id: "bloom",
-            order: 4,
-            title: "The Bloom",
-            description: "Pour 180g boiling water (212°F). Stir vigorously, digging deep to hit bottom. Wait until 0:45.",
-            action: "Pour 180g and stir vigorously",
+            order: 3,
+            title: "The Bloom (0:00)",
+            description: "Start Timer. Pour 180g water. Use a spoon to dig to the bottom of the cone to ensure all grounds are wet.",
+            action: "Pour 180g, stir to bottom",
             timing: {
               start: 0,
             },
           },
           {
             id: "pour-1",
-            order: 5,
-            title: "First Pulse Pour",
-            description: "At 0:45, pour circles until scale reads 500g.",
+            order: 4,
+            title: "First Pulse Pour (0:45)",
+            description: "At 0:45: Pour slow circles until scale reads 500g.",
             action: "Pour to 500g",
             timing: {
               start: 45,
@@ -232,9 +253,9 @@ export class CoffeeService {
           },
           {
             id: "pour-2",
-            order: 6,
-            title: "Second Pulse Pour",
-            description: "At 1:45, pour gently until scale reads 800g.",
+            order: 5,
+            title: "Second Pulse Pour (1:45)",
+            description: "At 1:45: Pour slow circles until scale reads 800g.",
             action: "Pour to 800g",
             timing: {
               start: 105,
@@ -243,9 +264,9 @@ export class CoffeeService {
           },
           {
             id: "pour-3",
-            order: 7,
-            title: "Final Pulse Pour",
-            description: "At 2:30, pour gently until scale reads 1000g.",
+            order: 6,
+            title: "Final Pulse Pour (2:30)",
+            description: "At 2:30: Pour slow circles until scale reads 1000g.",
             action: "Pour to 1000g",
             timing: {
               start: 150,
@@ -254,16 +275,23 @@ export class CoffeeService {
           },
           {
             id: "finish",
-            order: 8,
+            order: 7,
             title: "Finish",
-            description: "Give brewer a gentle 'Raft' swirl. Serve.",
+            description: "Allow it to drain (approx 4-5 mins total). Swirl and serve.",
             action: "Swirl and serve",
           },
         ],
         tips: [
-          "Use coarser grind (9) to prevent large batch from stalling",
-          "Perfect for crowd-pleasing without being boring",
+          "Use distilled water with Third Wave Water mineral packets",
+          "Coarse grind prevents the deep bed from clogging",
         ],
+        beanRecommendation: {
+          source: "Metric Coffee",
+          location: "West Fulton Market",
+          type: "Single Origin Washed Process",
+          origins: ["Peru", "Colombia", "Honduras"],
+          flavor: "Clean, chocolate, citrus, structured",
+        },
       },
     ]
   }

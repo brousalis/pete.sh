@@ -7,7 +7,7 @@ const radial = [{ name: "Intensity", value: 57, fill: "var(--brand)" }]
 export function LightPanels() {
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <h3 className="mb-2 text-sm font-semibold text-foreground dark:text-muted-foreground">Light Intensity</h3>
         <div className="h-44 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -22,7 +22,7 @@ export function LightPanels() {
         <p className="mt-2 text-center text-2xl font-bold text-brand">57%</p>
       </div>
 
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <h3 className="mb-2 text-sm font-semibold text-foreground dark:text-muted-foreground">Light Color</h3>
         <div className="grid place-items-center">
           <div

@@ -1,14 +1,14 @@
-import { NextRequest } from "next/server"
-import { successResponse, handleApiError } from "@/lib/api/utils"
-import { FitnessService } from "@/lib/services/fitness.service"
+import { handleApiError, successResponse } from '@/lib/api/utils'
+import { FitnessService } from '@/lib/services/fitness.service'
+import { NextRequest } from 'next/server'
 
 const fitnessService = new FitnessService()
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     let routine = await fitnessService.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
     return successResponse(routine)
   } catch (error) {

@@ -1,29 +1,28 @@
-import { NextRequest } from "next/server"
-import { cookies } from "next/headers"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { CalendarService } from "@/lib/services/calendar.service"
-import { google } from "googleapis"
-import { config } from "@/lib/config"
+import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
+import { config } from '@/lib/config'
+import { CalendarService } from '@/lib/services/calendar.service'
+import { google } from 'googleapis'
+import { cookies } from 'next/headers'
 
 /**
  * Debug endpoint to help diagnose calendar issues
  * Returns information about calendars, events, and configuration
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const calendarService = new CalendarService()
 
     if (!calendarService.isConfigured()) {
-      return errorResponse("Google Calendar not configured", 400)
+      return errorResponse('Google Calendar not configured', 400)
     }
 
     // Get tokens from cookies
     const cookieStore = await cookies()
-    const accessToken = cookieStore.get("google_calendar_access_token")?.value
-    const refreshToken = cookieStore.get("google_calendar_refresh_token")?.value
+    const accessToken = cookieStore.get('google_calendar_access_token')?.value
+    const refreshToken = cookieStore.get('google_calendar_refresh_token')?.value
 
     if (!accessToken) {
-      return errorResponse("Not authenticated", 401)
+      return errorResponse('Not authenticated', 401)
     }
 
     // Set credentials
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
       refresh_token: refreshToken,
     })
 
-    const calendar = google.calendar({ version: "v3", auth: oauth2Client })
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
     // Get calendar list
     const calendarList = await calendar.calendarList.list()
@@ -52,20 +51,20 @@ export async function GET(request: NextRequest) {
     const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     const allEventsResponse = await calendar.events.list({
-      calendarId: "primary",
+      calendarId: 'primary',
       timeMin: now.toISOString(),
       timeMax: oneWeekLater.toISOString(),
       maxResults: 50,
       singleEvents: true,
-      orderBy: "startTime",
+      orderBy: 'startTime',
     })
 
     const upcomingEventsResponse = await calendar.events.list({
-      calendarId: "primary",
+      calendarId: 'primary',
       timeMin: now.toISOString(),
       maxResults: 10,
       singleEvents: true,
-      orderBy: "startTime",
+      orderBy: 'startTime',
     })
 
     return successResponse({
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!refreshToken,
       },
-      calendars: calendars.map((cal) => ({
+      calendars: calendars.map(cal => ({
         id: cal.id,
         summary: cal.summary,
         description: cal.description,
@@ -90,7 +89,7 @@ export async function GET(request: NextRequest) {
       events: {
         nextWeek: {
           count: allEventsResponse.data.items?.length || 0,
-          events: (allEventsResponse.data.items || []).slice(0, 5).map((e) => ({
+          events: (allEventsResponse.data.items || []).slice(0, 5).map(e => ({
             id: e.id,
             summary: e.summary,
             start: e.start?.dateTime || e.start?.date,
@@ -99,7 +98,7 @@ export async function GET(request: NextRequest) {
         },
         upcoming: {
           count: upcomingEventsResponse.data.items?.length || 0,
-          events: (upcomingEventsResponse.data.items || []).map((e) => ({
+          events: (upcomingEventsResponse.data.items || []).map(e => ({
             id: e.id,
             summary: e.summary,
             start: e.start?.dateTime || e.start?.date,
@@ -114,7 +113,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[Calendar Debug] Error:", error)
+    console.error('[Calendar Debug] Error:', error)
     return handleApiError(error)
   }
 }

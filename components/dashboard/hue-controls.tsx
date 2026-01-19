@@ -96,7 +96,7 @@ export function HueControls() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm font-medium">{error}</p>
@@ -110,7 +110,7 @@ export function HueControls() {
 
   if (loading && zones.length === 0) {
     return (
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <div className="flex items-center gap-2">
           <RefreshCw className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading HUE zones...</p>
@@ -121,7 +121,7 @@ export function HueControls() {
 
   if (zones.length === 0) {
     return (
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <p className="text-sm text-muted-foreground">No HUE zones found</p>
       </div>
     )

@@ -69,7 +69,7 @@ export function SonosPlayerComponent({ player }: SonosPlayerProps) {
   }
 
   const handleVolumeChange = async (newVolume: number[]) => {
-    const vol = newVolume[0]
+    const vol = newVolume[0] ?? 0
     setVolume(vol)
     try {
       const response = await fetch(`/api/sonos/players/${player.uuid}/volume`, {
@@ -86,7 +86,7 @@ export function SonosPlayerComponent({ player }: SonosPlayerProps) {
 
   if (loading && !state) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2">
           <RefreshCw className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading {player.roomName}...</p>
@@ -97,7 +97,7 @@ export function SonosPlayerComponent({ player }: SonosPlayerProps) {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm">{error}</p>
@@ -111,7 +111,7 @@ export function SonosPlayerComponent({ player }: SonosPlayerProps) {
   }
 
   return (
-    <div className="space-y-4 rounded-xl bg-background p-4 ring-1 ring-border">
+    <div className="space-y-4 rounded-xl bg-background p-4 ">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-foreground">{player.roomName}</h3>
         <Button variant="ghost" size="sm" onClick={fetchState} className="gap-2">

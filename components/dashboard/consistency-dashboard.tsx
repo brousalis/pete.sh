@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Flame, TrendingUp, Calendar, Target } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Flame, Target } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
 import type { ConsistencyStats } from "@/lib/types/fitness.types"
 
 export function ConsistencyDashboard() {
@@ -34,10 +33,7 @@ export function ConsistencyDashboard() {
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Consistency</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="py-4">
           <div className="text-sm text-muted-foreground">Loading...</div>
         </CardContent>
       </Card>
@@ -50,78 +46,66 @@ export function ConsistencyDashboard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Flame className="size-5 text-orange-500" />
-          Consistency
-        </CardTitle>
-        <CardDescription>Your daily habit tracking</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Streak Display */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <CardContent className="p-3 sm:p-4">
+        {/* Compact horizontal layout */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+          {/* Streaks */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2">
               <Flame className="size-4 text-orange-500" />
-              Current Streak
+              <div>
+                <div className="text-lg font-bold leading-none">{stats.currentStreak}</div>
+                <div className="text-[10px] text-muted-foreground">Current Streak</div>
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-bold">{stats.currentStreak}</div>
-            <div className="text-xs text-muted-foreground">days</div>
-          </div>
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
               <Target className="size-4 text-blue-500" />
-              Longest Streak
+              <div>
+                <div className="text-lg font-bold leading-none">{stats.longestStreak}</div>
+                <div className="text-[10px] text-muted-foreground">Longest Streak</div>
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-bold">{stats.longestStreak}</div>
-            <div className="text-xs text-muted-foreground">days</div>
           </div>
-        </div>
 
-        {/* Completion Rates */}
-        <div className="space-y-4">
-          <div>
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Weekly Completion</span>
-              <span className="font-medium">{stats.weeklyCompletion}%</span>
-            </div>
-            <Progress value={stats.weeklyCompletion} className="h-2" />
-          </div>
-          <div>
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Monthly Completion</span>
-              <span className="font-medium">{stats.monthlyCompletion}%</span>
-            </div>
-            <Progress value={stats.monthlyCompletion} className="h-2" />
-          </div>
-        </div>
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-8 bg-border" />
 
-        {/* Routine Streaks */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Routine Streaks</h4>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg border bg-muted/30 p-3 text-center">
-              <div className="text-xs text-muted-foreground">Workouts</div>
-              <div className="mt-1 text-lg font-semibold">{stats.streaks.workouts}</div>
+          {/* Progress bars */}
+          <div className="flex-1 flex items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Week</span>
+                <span className="font-medium">{stats.weeklyCompletion}%</span>
+              </div>
+              <Progress value={stats.weeklyCompletion} className="h-1.5" />
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-center">
-              <div className="text-xs text-muted-foreground">Morning</div>
-              <div className="mt-1 text-lg font-semibold">{stats.streaks.morningRoutines}</div>
-            </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-center">
-              <div className="text-xs text-muted-foreground">Night</div>
-              <div className="mt-1 text-lg font-semibold">{stats.streaks.nightRoutines}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Month</span>
+                <span className="font-medium">{stats.monthlyCompletion}%</span>
+              </div>
+              <Progress value={stats.monthlyCompletion} className="h-1.5" />
             </div>
           </div>
-        </div>
 
-        {/* Total Activity */}
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="size-4" />
-            Total Active Days
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-8 bg-border" />
+
+          {/* Routine streaks - compact */}
+          <div className="flex items-center gap-3 text-center">
+            <div>
+              <div className="text-sm font-semibold">{stats.streaks.workouts}</div>
+              <div className="text-[10px] text-muted-foreground">Workouts</div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{stats.streaks.morningRoutines}</div>
+              <div className="text-[10px] text-muted-foreground">AM</div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{stats.streaks.nightRoutines}</div>
+              <div className="text-[10px] text-muted-foreground">PM</div>
+            </div>
           </div>
-          <div className="mt-2 text-2xl font-bold">{stats.totalDaysActive}</div>
         </div>
       </CardContent>
     </Card>

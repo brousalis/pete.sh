@@ -1,11 +1,11 @@
-import { NextRequest } from "next/server"
-import { successResponse, handleApiError } from "@/lib/api/utils"
-import { SonosService } from "@/lib/services/sonos.service"
+import { handleApiError, successResponse } from '@/lib/api/utils'
+import { SonosService } from '@/lib/services/sonos.service'
+import { NextRequest } from 'next/server'
 
 const sonosService = new SonosService()
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

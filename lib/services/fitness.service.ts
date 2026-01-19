@@ -4,17 +4,15 @@
  * Based on workout.md - comprehensive fitness tracking system
  */
 
+import type {
+    ConsistencyStats,
+    DayOfWeek,
+    FitnessProgress,
+    WeeklyRoutine,
+    Workout
+} from "@/lib/types/fitness.types"
 import { promises as fs } from "fs"
 import path from "path"
-import type {
-  WeeklyRoutine,
-  Workout,
-  FitnessProgress,
-  DayOfWeek,
-  WorkoutCompletion,
-  RoutineCompletion,
-  ConsistencyStats,
-} from "@/lib/types/fitness.types"
 
 const ROUTINE_FILE = path.join(process.cwd(), "data", "fitness-routine.json")
 const WORKOUT_DEFINITIONS_FILE = path.join(process.cwd(), "data", "workout-definitions.json")
@@ -208,7 +206,7 @@ export class FitnessService {
       throw new Error("No routine found")
     }
 
-    const week = await this.getOrCreateWeek(routine, weekNumber)
+    const week = await this.getOrCreateWeek(routine, targetWeek)
     const workoutsByDay: FitnessProgress["workoutsByDay"] = {}
 
     let completedWorkouts = 0

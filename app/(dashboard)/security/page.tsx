@@ -16,12 +16,12 @@ export default function SecurityPage() {
   ]
 
   return (
-    <section className="rounded-2xl bg-card p-6 md:p-8 shadow-sm ring-1 ring-border">
+    <section className="rounded-2xl bg-card p-6 md:p-8 shadow-sm ">
       <h1 className="text-balance text-2xl font-semibold text-foreground">Security</h1>
       <p className="mt-2 text-muted-foreground">Cameras, sensors, and alerts management.</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-background p-4 ">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lock className="size-5 text-primary" />
@@ -34,7 +34,7 @@ export default function SecurityPage() {
           </p>
         </div>
 
-        <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-background p-4 ">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Camera className="size-5 text-primary" />
@@ -47,7 +47,7 @@ export default function SecurityPage() {
           </p>
         </div>
 
-        <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-background p-4 ">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell className="size-5 text-primary" />
@@ -59,7 +59,7 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="mt-6 rounded-xl bg-background p-4 ">
         <h3 className="mb-3 font-medium text-foreground">Recent activity</h3>
         <ul className="space-y-2">
           {events.map((e) => (

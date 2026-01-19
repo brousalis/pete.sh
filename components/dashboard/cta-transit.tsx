@@ -47,7 +47,7 @@ export function CTATransit() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border">
+      <div className="rounded-2xl bg-card p-5 shadow-sm ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm font-medium">{error}</p>
@@ -72,7 +72,7 @@ export function CTATransit() {
         </Button>
       </div>
       {loading && !hasData ? (
-        <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-background p-4 ">
           <div className="flex items-center gap-2">
             <RefreshCw className="size-5 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Loading transit data...</p>

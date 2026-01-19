@@ -79,7 +79,12 @@ export class WeatherService {
         throw new Error("No observation stations found")
       }
 
-      const stationId = stationsResponse.data.features[0].properties.stationIdentifier
+      const firstFeature = stationsResponse.data.features[0]
+      if (!firstFeature) {
+        throw new Error("No observation stations found")
+      }
+
+      const stationId = firstFeature.properties.stationIdentifier
 
       // Get latest observation
       const observationResponse = await axios.get<WeatherObservation>(

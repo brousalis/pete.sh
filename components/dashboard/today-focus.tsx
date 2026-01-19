@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, CheckCircle2, Circle, AlertTriangle, Sun, Moon } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, CheckCircle2, Circle, AlertTriangle, ChevronRight } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DailyRoutineCard } from "./daily-routine-card"
 import { format } from "date-fns"
 import type { WeeklyRoutine, DayOfWeek, Workout } from "@/lib/types/fitness.types"
-import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export function TodayFocus() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -83,10 +84,7 @@ export function TodayFocus() {
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Today</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="py-6">
           <div className="text-sm text-muted-foreground">Loading...</div>
         </CardContent>
       </Card>
@@ -103,89 +101,105 @@ export function TodayFocus() {
   const todayData = week?.days[today]
   const scheduleInfo = routine.schedule[today]
   const dayName = today.charAt(0).toUpperCase() + today.slice(1)
+  const isActiveRecovery = scheduleInfo?.focus === "Active Recovery"
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <Card>
+      {/* Compact Header */}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Calendar className="size-5 text-muted-foreground" />
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="size-5" />
-                {dayName} - {format(new Date(), "MMM d")}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                {scheduleInfo?.focus} • {scheduleInfo?.goal}
-              </CardDescription>
-            </div>
-            {routine.injuryProtocol.status === "active" && (
-              <Badge variant="destructive" className="gap-1">
-                <AlertTriangle className="size-3" />
-                Injury Protocol Active
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Daily Routines */}
-          <div className="space-y-3">
-            <DailyRoutineCard
-              routine={routine.dailyRoutines.morning}
-              completion={todayData?.morningRoutine}
-              day={today}
-              onComplete={() => handleRoutineComplete("morning")}
-            />
-            <DailyRoutineCard
-              routine={routine.dailyRoutines.night}
-              completion={todayData?.nightRoutine}
-              day={today}
-              onComplete={() => handleRoutineComplete("night")}
-            />
-          </div>
-
-          {/* Today's Workout */}
-          {todayWorkout && scheduleInfo?.focus !== "Active Recovery" && (
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    {todayData?.workout?.completed ? (
-                      <CheckCircle2 className="size-5 text-green-500" />
-                    ) : (
-                      <Circle className="size-5 text-muted-foreground" />
-                    )}
-                    <h3 className="font-semibold">{todayWorkout.name}</h3>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{todayWorkout.goal}</p>
-                  {todayWorkout.exercises.length > 0 && (
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      {todayWorkout.exercises.length} exercises
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant={todayData?.workout?.completed ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => {
-                    // Navigate to workout detail
-                    window.location.href = `/fitness/workout/${today}`
-                  }}
-                >
-                  {todayData?.workout?.completed ? "View" : "Start"}
-                </Button>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{dayName}</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground text-sm">{format(new Date(), "MMM d")}</span>
               </div>
-            </div>
-          )}
-
-          {scheduleInfo?.focus === "Active Recovery" && (
-            <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-4 text-center">
               <p className="text-sm text-muted-foreground">
-                Active Recovery Day - {todayWorkout?.exercises[0]?.notes || "10,000 Steps"}
+                {scheduleInfo?.focus} • {scheduleInfo?.goal}
               </p>
             </div>
+          </div>
+          {routine.injuryProtocol.status === "active" && (
+            <Badge variant="destructive" className="gap-1 text-xs">
+              <AlertTriangle className="size-3" />
+              Injury Protocol Active
+            </Badge>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-2 pt-0">
+        {/* Daily Routines - Compact */}
+        <DailyRoutineCard
+          routine={routine.dailyRoutines.morning}
+          completion={todayData?.morningRoutine}
+          day={today}
+          onComplete={() => handleRoutineComplete("morning")}
+        />
+        <DailyRoutineCard
+          routine={routine.dailyRoutines.night}
+          completion={todayData?.nightRoutine}
+          day={today}
+          onComplete={() => handleRoutineComplete("night")}
+        />
+
+        {/* Today's Workout - Compact */}
+        {todayWorkout && !isActiveRecovery && (
+          <Link 
+            href={`/fitness/workout/${today}`}
+            className="block"
+          >
+            <div className={cn(
+              "flex items-center gap-3 p-3 rounded-lg border transition-all hover:bg-muted/50",
+              todayData?.workout?.completed 
+                ? "bg-green-500/5 border-green-500/20" 
+                : "bg-muted/30"
+            )}>
+              {todayData?.workout?.completed ? (
+                <CheckCircle2 className="size-5 text-green-500 shrink-0" />
+              ) : (
+                <Circle className="size-5 text-muted-foreground shrink-0" />
+              )}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">{todayWorkout.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {todayWorkout.exercises.length} exercises
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{todayWorkout.goal}</p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {todayData?.workout?.completed ? (
+                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                    Done
+                  </Badge>
+                ) : (
+                  <Button size="sm" variant="default" className="h-7 px-3 text-xs">
+                    Start
+                  </Button>
+                )}
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+          </Link>
+        )}
+
+        {isActiveRecovery && (
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
+            <div className="flex-1">
+              <span className="text-sm font-medium">Active Recovery</span>
+              <p className="text-xs text-muted-foreground">
+                {todayWorkout?.exercises[0]?.notes || "10,000 Steps"}
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

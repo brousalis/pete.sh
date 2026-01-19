@@ -34,7 +34,7 @@ export function WeatherForecast() {
 
   if (loading && !forecast) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2">
           <RefreshCw className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading forecast...</p>
@@ -45,7 +45,7 @@ export function WeatherForecast() {
 
   if (error || !forecast) {
     return (
-      <div className="rounded-xl bg-background p-4 ring-1 ring-border">
+      <div className="rounded-xl bg-background p-4 ">
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="size-5" />
           <p className="text-sm">{error || "No forecast data"}</p>
@@ -69,7 +69,7 @@ export function WeatherForecast() {
         {periods.map((period) => (
           <div
             key={period.number}
-            className="rounded-lg bg-card p-3 ring-1 ring-border text-center"
+            className="rounded-lg bg-card p-3  text-center"
           >
             <p className="text-xs font-medium text-foreground">
               {format(new Date(period.startTime), "EEE")}
