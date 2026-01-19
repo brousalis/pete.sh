@@ -1,11 +1,15 @@
+'use client'
+
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
+import { transitions } from '@/lib/animations'
 
 const buttonVariants = cva(
-  "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -35,25 +39,59 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : 'button'
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+interface ButtonProps
+  extends Omit<HTMLMotionProps<'button'>, 'children'>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  children?: React.ReactNode
+  /** Disable hover/tap animations */
+  disableAnimation?: boolean
 }
 
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      disableAnimation = false,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    // For asChild, use Slot without motion
+    if (asChild) {
+      return (
+        <Slot
+          data-slot="button"
+          className={cn(buttonVariants({ variant, size, className }))}
+          ref={ref as React.Ref<HTMLElement>}
+          {...(props as React.HTMLAttributes<HTMLElement>)}
+        >
+          {children}
+        </Slot>
+      )
+    }
+
+    // Standard button with motion
+    return (
+      <motion.button
+        ref={ref}
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, className }))}
+        whileHover={disableAnimation ? undefined : { scale: 1.02 }}
+        whileTap={disableAnimation ? undefined : { scale: 0.97 }}
+        transition={transitions.spring}
+        {...props}
+      >
+        {children}
+      </motion.button>
+    )
+  }
+)
+Button.displayName = 'Button'
+
 export { Button, buttonVariants }
+export type { ButtonProps }

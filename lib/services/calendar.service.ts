@@ -131,11 +131,10 @@ export class CalendarService {
 
   constructor() {
     if (config.google.isConfigured) {
-      // Use environment variable for redirect URI, fallback to localhost for development
-      const redirectUri = process.env.GOOGLE_REDIRECT_URI ||
-        (process.env.NEXT_PUBLIC_APP_URL
-          ? `${process.env.NEXT_PUBLIC_APP_URL}/api/calendar/callback`
-          : "http://localhost:3000/api/calendar/callback")
+      // Use GOOGLE_REDIRECT_URI env var, or fallback to localhost
+      // IMPORTANT: Private IPs (192.168.x.x, 10.x.x.x) don't work with Google OAuth
+      // You must use localhost for development
+      const redirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/calendar/callback"
 
       this.oauth2Client = new google.auth.OAuth2(
         config.google.clientId,

@@ -32,44 +32,28 @@ export function CalendarCard() {
     try {
       setLoading(true)
       setError(null)
-      console.log(
-        '[CalendarCard] Fetching events from /api/calendar/upcoming?maxResults=10'
-      )
       const response = await fetch('/api/calendar/upcoming?maxResults=10')
-      console.log(
-        '[CalendarCard] Response status:',
-        response.status,
-        response.statusText
-      )
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        // 401 is expected when not authenticated - handle silently
+        if (response.status === 401) {
+          setError('not_authenticated')
+          return
+        }
         console.error('[CalendarCard] Error response:', {
           status: response.status,
           statusText: response.statusText,
           errorData,
         })
-        if (response.status === 401) {
-          setError('not_authenticated')
-          return
-        }
         throw new Error(errorData.error || 'Failed to fetch events')
       }
 
       const data = await response.json()
-      console.log('[CalendarCard] Response data:', {
-        success: data.success,
-        hasData: !!data.data,
-        dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
-        dataLength: Array.isArray(data.data) ? data.data.length : 'N/A',
-        fullData: data,
-      })
 
       if (data.success && data.data) {
-        console.log('[CalendarCard] Setting events:', data.data)
         setEvents(data.data)
       } else {
-        console.warn('[CalendarCard] Unexpected response structure:', data)
         setEvents([])
       }
     } catch (err) {

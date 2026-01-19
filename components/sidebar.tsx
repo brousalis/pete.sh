@@ -26,7 +26,7 @@ type Item = {
 }
 
 const items: Item[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
+  { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/deck', label: 'Deck', icon: Grid3x3 },
   { href: '/lights', label: 'Lights', icon: Lightbulb },
   { href: '/music', label: 'Music', icon: Music },

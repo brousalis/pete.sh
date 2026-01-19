@@ -197,6 +197,34 @@ export class FitnessService {
   }
 
   /**
+   * Mark daily routine as incomplete (undo completion)
+   */
+  async markRoutineIncomplete(
+    routineType: "morning" | "night",
+    day: DayOfWeek,
+    weekNumber: number
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error("No routine found")
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      week.days[day] = {}
+    }
+
+    const routineId = routine.dailyRoutines[routineType].id
+    week.days[day]![`${routineType}Routine`] = {
+      routineId,
+      completed: false,
+      completedAt: undefined,
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
    * Get weekly progress
    */
   async getWeeklyProgress(weekNumber?: number): Promise<FitnessProgress> {

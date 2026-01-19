@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { RefreshCw, AlertCircle, Car, MapPin, Loader2, Train, Bus } from 'lucide-react'
+import { RefreshCw, AlertCircle, Car, MapPin, Loader2, Train, Bus, PersonStanding, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MapsLocationPicker } from './maps-location-picker'
 import type { CTABusResponse, CTATrainResponse } from '@/lib/types/cta.types'
+import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from '@/lib/types/cta.types'
 import type { MapsLocation } from '@/lib/types/maps.types'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 // CTA Brand Colors
 const CTA_COLORS = {
@@ -21,22 +23,61 @@ const CTA_COLORS = {
   bus: { bg: 'bg-[#565A5C]', text: 'text-white', border: 'border-[#565A5C]' },
 }
 
-interface ArrivalBadgeProps {
-  minutes: string
-  isApproaching?: boolean
+// Urgency styling
+function getUrgencyRowStyles(urgency: UrgencyLevel) {
+  switch (urgency) {
+    case 'missed':
+      return {
+        row: 'bg-muted/30 opacity-60',
+        text: 'text-muted-foreground',
+      }
+    case 'leave-now':
+      return {
+        row: 'bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800',
+        text: 'text-red-600 dark:text-red-400',
+      }
+    case 'prepare':
+      return {
+        row: 'bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800',
+        text: 'text-orange-600 dark:text-orange-400',
+      }
+    case 'upcoming':
+      return {
+        row: 'bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-800',
+        text: 'text-yellow-600 dark:text-yellow-400',
+      }
+    default:
+      return {
+        row: 'bg-muted/30',
+        text: '',
+      }
+  }
 }
 
-function ArrivalBadge({ minutes, isApproaching }: ArrivalBadgeProps) {
+interface ArrivalBadgeProps {
+  minutes: string
+  urgency: UrgencyLevel
+  isFirst?: boolean
+}
+
+function ArrivalBadge({ minutes, urgency, isFirst }: ArrivalBadgeProps) {
   const isDue = minutes === 'DUE' || minutes === '1'
+  
+  // Apply urgency styling to first badge
+  const urgencyBg = isFirst ? {
+    'missed': 'bg-gray-400 text-white line-through',
+    'leave-now': 'bg-red-500 text-white animate-pulse',
+    'prepare': 'bg-orange-500 text-white',
+    'upcoming': 'bg-yellow-500 text-black',
+    'normal': isDue ? 'animate-pulse bg-brand text-white' : 'bg-muted text-foreground',
+  }[urgency] : (isDue ? 'animate-pulse bg-brand text-white' : 'bg-muted text-foreground')
+
   return (
     <div
-      className={`flex min-w-[52px] items-center justify-center rounded-md px-2 py-1.5 font-mono text-sm font-bold tabular-nums ${
-        isDue
-          ? 'animate-pulse bg-brand text-white'
-          : isApproaching
-            ? 'bg-amber-500 text-white'
-            : 'bg-muted text-foreground'
-      }`}
+      className={cn(
+        'flex min-w-[52px] items-center justify-center rounded-md px-2 py-1.5 font-mono text-sm font-bold tabular-nums',
+        urgencyBg
+      )}
     >
       {minutes === 'DUE' ? 'DUE' : `${minutes}m`}
     </div>
@@ -56,49 +97,110 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
     ? CTA_COLORS[lineName as keyof typeof CTA_COLORS] || CTA_COLORS.bus
     : CTA_COLORS.bus
 
-  return (
-    <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-3 hover:bg-muted/50 transition-colors">
-      {/* Route Badge */}
-      <div className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} min-w-[44px] h-10 px-2`}>
-        {type === 'train' ? (
-          <Train className="size-5" />
-        ) : (
-          <span className="text-base font-bold">{route}</span>
-        )}
-      </div>
+  // Get walking time for this route
+  const walkingTime = getWalkingTime(route, type)
+  
+  // Calculate urgency based on first arrival
+  const firstArrival = arrivals[0]
+  const firstMinutes = firstArrival === 'DUE' ? 0 : parseInt(firstArrival, 10)
+  const urgency = !isNaN(firstMinutes) ? getUrgencyLevel(firstMinutes, walkingTime) : 'normal'
+  const urgencyStyles = getUrgencyRowStyles(urgency)
+  
+  // Check if any arrival is catchable
+  const hasCatchable = arrivals.some(time => {
+    const mins = time === 'DUE' ? 0 : parseInt(time, 10)
+    return !isNaN(mins) && mins >= walkingTime
+  })
 
-      {/* Route Info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          {type === 'train' && lineName && (
-            <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${colors.bg} ${colors.text}`}>
-              {lineName}
-            </span>
-          )}
-          {type === 'bus' && (
-            <span className="text-sm font-semibold text-foreground">
-              Bus {route}
-            </span>
+  return (
+    <div className={cn(
+      'rounded-lg p-3 transition-all duration-300',
+      urgencyStyles.row,
+      urgency === 'normal' && 'hover:bg-muted/50'
+    )}>
+      {/* Urgency Alert Banner */}
+      {urgency === 'leave-now' && (
+        <div className="flex items-center justify-center gap-2 rounded-md px-2 py-1 mb-2 text-xs font-bold bg-red-500 text-white animate-pulse">
+          <AlertTriangle className="size-3" />
+          LEAVE NOW!
+          <span className="font-normal">({firstMinutes}m arrival, {walkingTime}m walk)</span>
+        </div>
+      )}
+      {urgency === 'prepare' && (
+        <div className="flex items-center justify-center gap-2 rounded-md px-2 py-1 mb-2 text-xs font-bold bg-orange-500 text-white">
+          <AlertTriangle className="size-3" />
+          Get ready to leave
+          <span className="font-normal">({firstMinutes}m arrival, {walkingTime}m walk)</span>
+        </div>
+      )}
+      
+      <div className="flex items-center gap-3">
+        {/* Route Badge */}
+        <div className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} min-w-[44px] h-10 px-2`}>
+          {type === 'train' ? (
+            <Train className="size-5" />
+          ) : (
+            <span className="text-base font-bold">{route}</span>
           )}
         </div>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          to {destination}
-        </p>
-      </div>
 
-      {/* Arrival Times */}
-      <div className="flex items-center gap-1.5">
-        {arrivals.length > 0 ? (
-          arrivals.slice(0, 2).map((time, idx) => (
-            <ArrivalBadge
-              key={idx}
-              minutes={time}
-              isApproaching={parseInt(time) <= 5 && time !== 'DUE'}
-            />
-          ))
-        ) : (
-          <span className="text-xs text-muted-foreground italic">No arrivals</span>
-        )}
+        {/* Route Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {type === 'train' && lineName && (
+              <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${colors.bg} ${colors.text}`}>
+                {lineName}
+              </span>
+            )}
+            {type === 'bus' && (
+              <span className="text-sm font-semibold text-foreground">
+                Bus {route}
+              </span>
+            )}
+            {/* Walking time indicator */}
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <PersonStanding className="size-3" />
+              {walkingTime}m
+            </span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-2">
+            <p className="truncate text-xs text-muted-foreground">
+              to {destination}
+            </p>
+            {/* Catchable indicator */}
+            {arrivals.length > 0 && (
+              hasCatchable ? (
+                <span className="text-[10px] font-medium text-green-600 dark:text-green-400">
+                  Catchable
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium text-red-500">
+                  Too late
+                </span>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Arrival Times */}
+        <div className="flex items-center gap-1.5">
+          {arrivals.length > 0 ? (
+            arrivals.slice(0, 2).map((time, idx) => {
+              const mins = time === 'DUE' ? 0 : parseInt(time, 10)
+              const arrivalUrgency = !isNaN(mins) ? getUrgencyLevel(mins, walkingTime) : 'normal'
+              return (
+                <ArrivalBadge
+                  key={idx}
+                  minutes={time}
+                  urgency={arrivalUrgency}
+                  isFirst={idx === 0}
+                />
+              )
+            })
+          ) : (
+            <span className="text-xs text-muted-foreground italic">No arrivals</span>
+          )}
+        </div>
       </div>
     </div>
   )

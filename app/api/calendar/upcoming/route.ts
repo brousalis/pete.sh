@@ -9,25 +9,17 @@ import { config } from "@/lib/config"
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[Calendar Upcoming] Request received")
     const calendarService = new CalendarService()
 
     if (!calendarService.isConfigured()) {
-      console.log("[Calendar Upcoming] Google Calendar not configured")
       return errorResponse("Google Calendar not configured", 400)
     }
 
     // Load tokens from cookies and set them on the service
-    const { accessToken, refreshToken } = await loadCalendarTokensFromCookies(calendarService)
-
-    console.log("[Calendar Upcoming] Token check:", {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      accessTokenLength: accessToken?.length || 0,
-    })
+    const { accessToken } = await loadCalendarTokensFromCookies(calendarService)
 
     if (!accessToken) {
-      console.log("[Calendar Upcoming] No access token found")
+      // Not authenticated is an expected state - return 401 silently
       return errorResponse("Not authenticated. Please authorize Google Calendar access.", 401)
     }
 
@@ -36,33 +28,14 @@ export async function GET(request: NextRequest) {
     const maxResults = maxResultsParam ? parseInt(maxResultsParam) : 10
     const calendarId = searchParams.get("calendarId") || config.google.calendarId
 
-    console.log("[Calendar Upcoming] Fetching events:", {
-      maxResultsParam,
-      maxResults,
-      calendarId,
-      requestedUrl: request.url,
-      allSearchParams: Object.fromEntries(searchParams.entries()),
-      note: "No time window - showing all upcoming events",
-    })
+    const events = await calendarService.getUpcomingEvents(calendarId, maxResults)
 
-    try {
-      const events = await calendarService.getUpcomingEvents(calendarId, maxResults)
+    // Update cookies if token was refreshed
+    await updateCalendarTokenCookies(calendarService, accessToken)
 
-      console.log("[Calendar Upcoming] Events fetched:", {
-        count: events?.length || 0,
-        eventIds: events?.map((e) => e.id) || [],
-      })
-
-      // Update cookies if token was refreshed
-      await updateCalendarTokenCookies(calendarService, accessToken)
-
-      return successResponse(events)
-    } catch (error) {
-      console.error("[Calendar Upcoming] Error fetching events:", error)
-      throw error
-    }
+    return successResponse(events)
   } catch (error) {
-    console.error("[Calendar Upcoming] Unhandled error:", error)
+    console.error("[Calendar Upcoming] Error:", error instanceof Error ? error.message : error)
     return handleApiError(error)
   }
 }

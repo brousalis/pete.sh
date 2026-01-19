@@ -2,11 +2,34 @@
 
 import { CalendarCard } from '@/components/dashboard/calendar-card'
 import { CoffeeCard } from '@/components/dashboard/coffee-card'
+import { FitnessWidget } from '@/components/dashboard/fitness-widget'
 import { HomeEnvironmentCard } from '@/components/dashboard/home-environment-card'
 import { TodayHero } from '@/components/dashboard/today-hero'
 import { TransportationCard } from '@/components/dashboard/transportation-card'
 import { WeatherCard } from '@/components/dashboard/weather-card'
+import { motion } from 'framer-motion'
 import Masonry from 'react-masonry-css'
+import { staggerContainerVariants, staggerItemVariants, transitions } from '@/lib/animations'
+
+// Animated section wrapper for dashboard cards
+function DashboardCard({
+  children,
+  index,
+}: {
+  children: React.ReactNode
+  index: number
+}) {
+  return (
+    <motion.section
+      variants={staggerItemVariants}
+      whileHover={{ y: -2, scale: 1.005 }}
+      transition={transitions.springGentle}
+      className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1"
+    >
+      {children}
+    </motion.section>
+  )
+}
 
 export function MainDashboard() {
   const breakpointColumnsObj = {
@@ -15,9 +38,16 @@ export function MainDashboard() {
   }
 
   return (
-    <div className="space-y-5">
+    <motion.div
+      className="space-y-5"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainerVariants}
+    >
       {/* Hero: Today at a Glance */}
-      <TodayHero />
+      <motion.div variants={staggerItemVariants}>
+        <TodayHero />
+      </motion.div>
 
       {/* Masonry Grid */}
       <Masonry
@@ -26,30 +56,35 @@ export function MainDashboard() {
         columnClassName="pl-5 bg-clip-padding"
       >
         {/* Weather */}
-        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+        <DashboardCard index={0}>
           <WeatherCard />
-        </section>
+        </DashboardCard>
+
+        {/* Fitness */}
+        <DashboardCard index={1}>
+          <FitnessWidget />
+        </DashboardCard>
 
         {/* Transportation */}
-        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+        <DashboardCard index={2}>
           <TransportationCard />
-        </section>
+        </DashboardCard>
 
         {/* Calendar */}
-        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+        <DashboardCard index={3}>
           <CalendarCard />
-        </section>
+        </DashboardCard>
 
         {/* Coffee */}
-        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+        <DashboardCard index={4}>
           <CoffeeCard />
-        </section>
+        </DashboardCard>
 
         {/* Home Controls */}
-        <section className="bg-card ring-border mb-5 rounded-2xl p-5 shadow-sm ring-1">
+        <DashboardCard index={5}>
           <HomeEnvironmentCard />
-        </section>
+        </DashboardCard>
       </Masonry>
-    </div>
+    </motion.div>
   )
 }

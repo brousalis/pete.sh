@@ -10,6 +10,9 @@ import { config } from "@/lib/config"
  * Stores tokens in httpOnly cookies for security
  */
 export async function GET(request: NextRequest) {
+  // Get the app base URL for redirects (use NEXT_PUBLIC_APP_URL or fallback to localhost)
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+
   try {
     if (!config.google.isConfigured) {
       return NextResponse.json({ error: "Google Calendar not configured" }, { status: 400 })
@@ -22,12 +25,12 @@ export async function GET(request: NextRequest) {
     console.log("[Calendar Callback] Received:", {
       code: code ? "present" : "missing",
       error,
-      origin: request.nextUrl.origin,
+      appBaseUrl,
     })
 
     // Handle OAuth errors
     if (error) {
-      return NextResponse.redirect(new URL(`/?error=${encodeURIComponent(error)}`, request.url))
+      return NextResponse.redirect(new URL(`/?error=${encodeURIComponent(error)}`, appBaseUrl))
     }
 
     // Exchange authorization code for tokens
@@ -95,10 +98,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to home or calendar page
-    return NextResponse.redirect(new URL("/calendar?auth=success", request.url))
+    return NextResponse.redirect(new URL("/calendar?auth=success", appBaseUrl))
   } catch (error) {
     console.error("[Calendar Callback] OAuth error:", error)
     const errorMessage = error instanceof Error ? error.message : "Calendar authentication failed"
-    return NextResponse.redirect(new URL(`/calendar?error=${encodeURIComponent(errorMessage)}`, request.url))
+    return NextResponse.redirect(new URL(`/calendar?error=${encodeURIComponent(errorMessage)}`, appBaseUrl))
   }
 }

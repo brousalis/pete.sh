@@ -9,7 +9,28 @@ const nextConfig = {
   // Image optimization
   images: {
     remotePatterns: [
-      // Add remote image patterns as needed for Petehome
+      // Spotify album art and images
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+        pathname: '/image/**',
+      },
+      // Spotify user profile images
+      {
+        protocol: 'https',
+        hostname: 'mosaic.scdn.co',
+        pathname: '/**',
+      },
+      // Spotify playlist images (can be hosted on various CDNs)
+      {
+        protocol: 'https',
+        hostname: 'image-cdn-*.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wrapped-images.spotifycdn.com',
+        pathname: '/**',
+      },
     ],
   },
   // React strict mode for better development experience

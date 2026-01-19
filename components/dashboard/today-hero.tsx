@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Calendar, Clock, Cloud, CloudRain, CloudSnow, Sun, Thermometer, MapPin } from 'lucide-react'
 import { format, parseISO, differenceInHours, isToday, isTomorrow } from 'date-fns'
+import { motion } from 'framer-motion'
 import type { WeatherObservation } from '@/lib/types/weather.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import { staggerContainerVariants, staggerItemVariants, fadeUpVariants, transitions } from '@/lib/animations'
 
 export function TodayHero() {
   const [time, setTime] = useState(new Date())
@@ -102,33 +104,87 @@ export function TodayHero() {
   const dateString = format(time, 'EEEE, MMMM d')
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8">
-      {/* Decorative gradient orbs */}
-      <div className="pointer-events-none absolute -right-20 -top-20 size-60 rounded-full bg-brand/20 blur-3xl" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 size-40 rounded-full bg-blue-500/10 blur-2xl" />
+    <motion.div
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transitions.smooth}
+    >
+      {/* Decorative gradient orbs - animated */}
+      <motion.div
+        className="pointer-events-none absolute -right-20 -top-20 size-60 rounded-full bg-brand/20 blur-3xl"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ ...transitions.smooth, delay: 0.2 }}
+      />
+      <motion.div
+        className="pointer-events-none absolute -left-10 bottom-0 size-40 rounded-full bg-blue-500/10 blur-2xl"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ ...transitions.smooth, delay: 0.3 }}
+      />
 
       <div className="relative z-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between"
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainerVariants}
+        >
           {/* Left: Time & Greeting */}
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-white/60">{getGreeting()}</p>
-            <div className="flex items-baseline gap-2">
+          <motion.div className="space-y-1" variants={staggerItemVariants}>
+            <motion.p
+              className="text-sm font-medium text-white/60"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ ...transitions.smooth, delay: 0.1 }}
+            >
+              {getGreeting()}
+            </motion.p>
+            <motion.div
+              className="flex items-baseline gap-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.smooth, delay: 0.15 }}
+            >
               <span className="text-5xl font-bold tracking-tight text-white md:text-6xl tabular-nums">
                 {timeString}
               </span>
               <span className="text-2xl font-medium text-white/50 md:text-3xl">
                 {ampm}
               </span>
-            </div>
-            <p className="text-base text-white/70 md:text-lg">{dateString}</p>
-          </div>
+            </motion.div>
+            <motion.p
+              className="text-base text-white/70 md:text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ ...transitions.smooth, delay: 0.2 }}
+            >
+              {dateString}
+            </motion.p>
+          </motion.div>
 
           {/* Right: Weather + Next Event */}
-          <div className="flex flex-col gap-4 md:items-end">
+          <motion.div
+            className="flex flex-col gap-4 md:items-end"
+            variants={staggerItemVariants}
+          >
             {/* Weather */}
             {weather && (
-              <div className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm">
-                {getWeatherIcon()}
+              <motion.div
+                className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ ...transitions.smooth, delay: 0.25 }}
+                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
+              >
+                <motion.span
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ ...transitions.springBouncy, delay: 0.35 }}
+                >
+                  {getWeatherIcon()}
+                </motion.span>
                 <div className="text-right">
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-bold text-white md:text-4xl tabular-nums">
@@ -145,7 +201,7 @@ export function TodayHero() {
                     {weather.properties.textDescription || 'Weather'}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Next Event */}
@@ -168,10 +224,20 @@ export function TodayHero() {
                 : 'All day'
               
               return (
-                <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-brand/20">
+                <motion.div
+                  className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm"
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...transitions.smooth, delay: 0.3 }}
+                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                >
+                  <motion.div
+                    className="flex size-9 items-center justify-center rounded-lg bg-brand/20"
+                    whileHover={{ scale: 1.1 }}
+                    transition={transitions.spring}
+                  >
                     <Calendar className="size-4 text-brand" />
-                  </div>
+                  </motion.div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white">
                       {nextEvent.summary}
@@ -185,12 +251,12 @@ export function TodayHero() {
                       )}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               )
             })()}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }

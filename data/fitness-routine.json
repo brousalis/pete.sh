@@ -74,7 +74,7 @@
     "morning": {
       "id": "oil-the-hinge",
       "type": "morning",
-      "name": "Oil the Hinge",
+      "name": "Morning Stretch",
       "description": "Do this right after you wake up. The goal is to open up your hips and upper back, which get stiff from sleeping.",
       "duration": 3,
       "exercises": [
@@ -104,7 +104,7 @@
     "night": {
       "id": "release-the-brakes",
       "type": "night",
-      "name": "Release the Brakes",
+      "name": "Night Stretch",
       "description": "Do this 30 minutes before bed. The goal is to lengthen the muscles that tightened up during your run or lift.",
       "duration": 5,
       "exercises": [
@@ -140,13 +140,11 @@
         "monday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
-            "completed": true,
-            "completedAt": "2026-01-19T20:03:05.089Z"
+            "completed": false
           },
           "nightRoutine": {
             "routineId": "release-the-brakes",
-            "completed": true,
-            "completedAt": "2026-01-19T20:15:10.522Z"
+            "completed": false
           }
         },
         "tuesday": {},
@@ -158,5 +156,5 @@
       }
     }
   ],
-  "updatedAt": "2026-01-19T20:23:37.322Z"
+  "updatedAt": "2026-01-19T21:37:30.822Z"
 }
