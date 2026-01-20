@@ -1,21 +1,13 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { navigateDate, getViewTitle } from "@/lib/utils/calendar-utils"
-import type { CalendarViewMode } from "@/lib/types/calendar-views.types"
-import { format, startOfMonth, setMonth, setYear } from "date-fns"
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  CalendarDays,
-  Clock,
-  List,
-  Search,
-  RefreshCw,
-} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -23,12 +15,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import type { CalendarViewMode } from "@/lib/types/calendar-views.types"
+import { cn } from "@/lib/utils"
+import { getViewTitle, navigateDate } from "@/lib/utils/calendar-utils"
+import { setMonth, setYear, startOfMonth } from "date-fns"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar as CalendarPicker } from "@/components/ui/calendar"
+  Calendar,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  List,
+  RefreshCw,
+  Search,
+} from "lucide-react"
 import { useState } from "react"
 
 interface CalendarHeaderProps {
@@ -46,7 +46,7 @@ const VIEW_MODES: { value: CalendarViewMode; label: string; icon: React.ReactNod
   { value: "month", label: "Month", icon: <CalendarDays className="size-4" /> },
   { value: "week", label: "Week", icon: <Calendar className="size-4" /> },
   { value: "day", label: "Day", icon: <Clock className="size-4" /> },
-  { value: "agenda", label: "Agenda", icon: <List className="size-4" /> },
+  { value: "agenda", label: "Upcoming", icon: <List className="size-4" /> },
 ]
 
 const MONTHS = [

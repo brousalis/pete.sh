@@ -89,12 +89,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Store expiration timestamp
+    // Store expiration timestamp (keep longer so we know when to refresh even after access token expires)
     cookieStore.set("spotify_expires_at", expiresAt.toString(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: tokens.expires_in,
+      maxAge: 365 * 24 * 60 * 60, // 1 year - same as refresh token
       path: "/",
     })
 

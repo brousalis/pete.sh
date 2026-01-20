@@ -4,12 +4,13 @@ import { CalendarCard } from '@/components/dashboard/calendar-card'
 import { CoffeeCard } from '@/components/dashboard/coffee-card'
 import { FitnessWidget } from '@/components/dashboard/fitness-widget'
 import { HomeEnvironmentCard } from '@/components/dashboard/home-environment-card'
+import { SpotifyWidget } from '@/components/dashboard/spotify-widget'
 import { TodayHero } from '@/components/dashboard/today-hero'
 import { TransportationCard } from '@/components/dashboard/transportation-card'
 import { WeatherCard } from '@/components/dashboard/weather-card'
+import { staggerContainerVariants, staggerItemVariants, transitions } from '@/lib/animations'
 import { motion } from 'framer-motion'
 import Masonry from 'react-masonry-css'
-import { staggerContainerVariants, staggerItemVariants, transitions } from '@/lib/animations'
 
 // Animated section wrapper for dashboard cards
 function DashboardCard({
@@ -60,28 +61,32 @@ export function MainDashboard() {
           <WeatherCard />
         </DashboardCard>
 
-        {/* Fitness */}
-        <DashboardCard index={1}>
-          <FitnessWidget />
-        </DashboardCard>
-
         {/* Transportation */}
-        <DashboardCard index={2}>
+        <DashboardCard index={3}>
           <TransportationCard />
         </DashboardCard>
 
         {/* Calendar */}
-        <DashboardCard index={3}>
+        <DashboardCard index={4}>
           <CalendarCard />
         </DashboardCard>
 
+        {/* Spotify */}
+        <DashboardCard index={1}>
+          <SpotifyWidget />
+        </DashboardCard>
+
+        {/* Fitness */}
+        <DashboardCard index={2}>
+          <FitnessWidget />
+        </DashboardCard>
         {/* Coffee */}
-        <DashboardCard index={4}>
+        <DashboardCard index={5}>
           <CoffeeCard />
         </DashboardCard>
 
         {/* Home Controls */}
-        <DashboardCard index={5}>
+        <DashboardCard index={6}>
           <HomeEnvironmentCard />
         </DashboardCard>
       </Masonry>

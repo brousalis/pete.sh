@@ -64,6 +64,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   const [progress, setProgress] = useState(0)
   const [showPlaylists, setShowPlaylists] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [isSkipping, setIsSkipping] = useState<"next" | "previous" | null>(null)
   
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
@@ -210,16 +211,22 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   const handleSkip = async (direction: "next" | "previous") => {
     // Mark action time to debounce polling
     lastActionTime.current = Date.now()
+    // Start skip animation
+    setIsSkipping(direction)
     try {
       await fetch(`/api/spotify/player/${direction}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       })
-      // Refresh playback state after debounce period
-      setTimeout(() => fetchPlayback(true), ACTION_DEBOUNCE_MS)
+      // Refresh playback state after a short delay, then clear animation
+      setTimeout(async () => {
+        await fetchPlayback(true)
+        setIsSkipping(null)
+      }, 800)
     } catch {
-      // Silent fail
+      // Clear animation on error
+      setIsSkipping(null)
     }
   }
 
@@ -529,21 +536,55 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
 
       {/* Now Playing */}
       {currentTrack ? (
-        <div className="flex gap-3 rounded-xl bg-background/50 p-3">
-          {albumArt ? (
-            <Image
-              src={albumArt}
-              alt={currentTrack.album.name}
-              width={80}
-              height={80}
-              className="shrink-0 rounded-lg shadow-md"
-            />
-          ) : (
-            <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted">
-              <Music className="size-8 text-muted-foreground" />
+        <div 
+          className={`relative flex gap-3 overflow-hidden rounded-xl bg-background/50 p-3 transition-all duration-300 ${
+            isSkipping ? "scale-[0.98]" : ""
+          }`}
+        >
+          {/* Skip animation overlay */}
+          {isSkipping && (
+            <div 
+              className={`absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] ${
+                isSkipping === "next" ? "animate-slide-left" : "animate-slide-right"
+              }`}
+            >
+              <div className="flex items-center gap-2 text-muted-foreground">
+                {isSkipping === "previous" && <SkipBack className="size-4 animate-pulse" />}
+                <span className="text-xs font-medium">
+                  {isSkipping === "next" ? "Next track..." : "Previous track..."}
+                </span>
+                {isSkipping === "next" && <SkipForward className="size-4 animate-pulse" />}
+              </div>
             </div>
           )}
-          <div className="min-w-0 flex-1 space-y-1">
+          
+          {/* Album art with animation */}
+          <div className={`transition-all duration-300 ${isSkipping ? "opacity-50 blur-[1px]" : ""}`}>
+            {albumArt ? (
+              <Image
+                src={albumArt}
+                alt={currentTrack.album.name}
+                width={80}
+                height={80}
+                className={`shrink-0 rounded-lg shadow-md transition-transform duration-300 ${
+                  isSkipping === "next" ? "-translate-x-2" : isSkipping === "previous" ? "translate-x-2" : ""
+                }`}
+              />
+            ) : (
+              <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Music className="size-8 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          
+          {/* Track info with animation */}
+          <div 
+            className={`min-w-0 flex-1 space-y-1 transition-all duration-300 ${
+              isSkipping ? "opacity-50" : ""
+            } ${
+              isSkipping === "next" ? "-translate-x-2" : isSkipping === "previous" ? "translate-x-2" : ""
+            }`}
+          >
             <div className="truncate text-sm font-semibold text-foreground">{currentTrack.name}</div>
             <div className="truncate text-xs text-muted-foreground">
               {currentTrack.artists.map((a) => a.name).join(", ")}

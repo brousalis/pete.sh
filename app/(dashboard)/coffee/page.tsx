@@ -12,14 +12,6 @@ import { BookOpen, Timer } from 'lucide-react'
 export default function CoffeePage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-foreground text-3xl font-bold">Coffee</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Your brewing routines, timing guides, and coffee assistant
-        </p>
-      </div>
-
       {/* Stopwatch */}
       <CoffeeStopwatch />
 

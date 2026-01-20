@@ -35,7 +35,7 @@ export function DeckClock() {
   })
 
   return (
-    <div className="flex h-full rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
+    <div className="flex h-full rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 py-3.5 shadow-lg ">
       <div className="flex flex-col items-center justify-center space-y-0.5">
         <div className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl tabular-nums">
           {timeString}

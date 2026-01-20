@@ -20,12 +20,20 @@ export async function loadCalendarTokensFromCookies(
   let accessToken = cookieStore.get("google_calendar_access_token")?.value || null
   const refreshToken = cookieStore.get("google_calendar_refresh_token")?.value || null
 
+  console.log("[CalendarService] Loading tokens from cookies:", {
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+    accessTokenLength: accessToken?.length,
+    refreshTokenLength: refreshToken?.length,
+  })
+
   // If we have a refresh token but no access token (or access token expired), refresh it
   if (refreshToken && !accessToken) {
     console.log("[CalendarService] Access token missing, attempting to refresh using refresh token")
     try {
+      // Set just the refresh token first
       calendarService.setCredentials({
-        access_token: "", // Temporary, will be refreshed
+        access_token: "placeholder", // Needs something to initialize
         refresh_token: refreshToken,
       })
       
@@ -33,11 +41,19 @@ export async function loadCalendarTokensFromCookies(
       const updatedCredentials = await calendarService.refreshAccessToken()
       accessToken = updatedCredentials.access_token || null
       
+      console.log("[CalendarService] Refresh result:", {
+        gotAccessToken: !!accessToken,
+        gotRefreshToken: !!updatedCredentials.refresh_token,
+        expiryDate: updatedCredentials.expiry_date,
+      })
+      
       // Update the cookie with the new access token
       if (accessToken) {
         const expiresIn = updatedCredentials.expiry_date
           ? new Date(updatedCredentials.expiry_date)
           : new Date(Date.now() + 3600 * 1000) // 1 hour fallback
+
+        console.log("[CalendarService] Storing refreshed access token, expires:", expiresIn.toISOString())
 
         cookieStore.set("google_calendar_access_token", accessToken, {
           httpOnly: true,
@@ -47,25 +63,36 @@ export async function loadCalendarTokensFromCookies(
           path: "/",
         })
         
-        // Update refresh token cookie if it changed
-        if (updatedCredentials.refresh_token) {
-          cookieStore.set("google_calendar_refresh_token", updatedCredentials.refresh_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-            path: "/",
-          })
-        }
+        // Update refresh token cookie if it changed (extend expiry)
+        const newRefreshToken = updatedCredentials.refresh_token || refreshToken
+        cookieStore.set("google_calendar_refresh_token", newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+          path: "/",
+        })
         
-        console.log("[CalendarService] Successfully refreshed access token")
+        console.log("[CalendarService] Successfully refreshed and stored access token")
       }
-    } catch (refreshError) {
-      console.error("[CalendarService] Failed to refresh access token:", refreshError)
-      // Clear invalid refresh token
-      cookieStore.delete("google_calendar_refresh_token")
-      cookieStore.delete("google_calendar_access_token")
-      return { accessToken: null, refreshToken: null }
+    } catch (refreshError: any) {
+      console.error("[CalendarService] Failed to refresh access token:", {
+        error: refreshError?.message || refreshError,
+        code: refreshError?.code,
+      })
+      
+      // Only clear tokens if it's an auth error (invalid_grant means refresh token is revoked)
+      if (refreshError?.message?.includes("invalid_grant") || 
+          refreshError?.code === 400 || 
+          refreshError?.code === 401) {
+        console.log("[CalendarService] Clearing invalid tokens")
+        cookieStore.delete("google_calendar_refresh_token")
+        cookieStore.delete("google_calendar_access_token")
+        return { accessToken: null, refreshToken: null }
+      }
+      
+      // For other errors, keep the refresh token (might be a temporary issue)
+      return { accessToken: null, refreshToken }
     }
   }
 

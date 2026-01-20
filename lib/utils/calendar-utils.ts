@@ -3,35 +3,34 @@
  * Helper functions for calendar views and event management
  */
 
+import type { DayCell, EventPosition, TimeSlot, WeekDay } from "@/lib/types/calendar-views.types"
+import type { CalendarEvent } from "@/lib/types/calendar.types"
 import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
+  addDays,
+  addMonths,
+  addWeeks,
+  differenceInMinutes,
   eachDayOfInterval,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
   format,
-  isSameMonth,
+  getHours,
+  isAfter,
+  isBefore,
   isSameDay,
+  isSameMonth,
   isToday,
   isWeekend,
-  parseISO,
-  addDays,
-  addWeeks,
-  addMonths,
-  subDays,
-  subWeeks,
-  subMonths,
-  getHours,
-  getMinutes,
-  differenceInMinutes,
-  startOfDay,
-  endOfDay,
   isWithinInterval,
-  isBefore,
-  isAfter,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks
 } from "date-fns"
-import type { CalendarEvent } from "@/lib/types/calendar.types"
-import type { DayCell, WeekDay, TimeSlot, EventPosition } from "@/lib/types/calendar-views.types"
 
 /**
  * Get all days to display in a month view (including days from prev/next months)
@@ -153,10 +152,10 @@ export function calculateEventPositions(
     const aStart = getEventStartDate(a)
     const bStart = getEventStartDate(b)
     if (!aStart || !bStart) return 0
-    
+
     const startDiff = aStart.getTime() - bStart.getTime()
     if (startDiff !== 0) return startDiff
-    
+
     const aDuration = getEventDuration(a)
     const bDuration = getEventDuration(b)
     return bDuration - aDuration // Longer events first
@@ -319,7 +318,7 @@ export function getViewTitle(date: Date, viewMode: "month" | "week" | "day" | "a
     case "day":
       return format(date, "EEEE, MMMM d, yyyy")
     case "agenda":
-      return `Agenda - ${format(date, "MMMM yyyy")}`
+      return `Upcoming - ${format(date, "MMMM yyyy")}`
     default:
       return format(date, "MMMM yyyy")
   }

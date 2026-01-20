@@ -383,6 +383,28 @@
   }
 }
 
+@keyframes slideLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* ============================================================================
    CSS ANIMATION UTILITY CLASSES
    ============================================================================ */
@@ -408,6 +430,14 @@
   }
   .animate-slide-in-bottom {
     animation: slideInFromBottom 0.25s ease-out both;
+  }
+  
+  /* Spotify skip animations */
+  .animate-slide-left {
+    animation: slideLeft 0.3s ease-out both;
+  }
+  .animate-slide-right {
+    animation: slideRight 0.3s ease-out both;
   }
   
   /* Scale animation */

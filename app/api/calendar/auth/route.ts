@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { CalendarService } from "@/lib/services/calendar.service"
 
-const calendarService = new CalendarService()
-
 /**
  * Initiate Google Calendar OAuth flow
  * Redirects user to Google's authorization page
@@ -12,6 +10,8 @@ const calendarService = new CalendarService()
  */
 export async function GET(request: NextRequest) {
   try {
+    const calendarService = new CalendarService()
+    
     if (!calendarService.isConfigured()) {
       return NextResponse.json({ error: "Google Calendar not configured" }, { status: 400 })
     }
@@ -35,17 +35,19 @@ export async function GET(request: NextRequest) {
 
     // Check if we already have a refresh token
     const cookieStore = await cookies()
-    const hasRefreshToken = !!cookieStore.get("google_calendar_refresh_token")?.value
+    const refreshToken = cookieStore.get("google_calendar_refresh_token")?.value
+    const hasRefreshToken = !!refreshToken
 
-    // Always force consent to ensure we get a refresh token
-    // Google only returns refresh tokens when consent is explicitly granted
-    // Without this, users have to re-auth every hour when access token expires
-    const forceConsent = !hasRefreshToken || forceParam
+    // ALWAYS force consent to ensure we get a refresh token
+    // Google only returns refresh tokens on first auth or with prompt=consent
+    // This ensures tokens persist across app rebuilds/restarts
+    const forceConsent = true // Always force to guarantee refresh token
 
     console.log("[Calendar Auth] Initiating OAuth:", {
       hasRefreshToken,
       forceParam,
       forceConsent,
+      note: "Always forcing consent to ensure refresh token is obtained"
     })
 
     // Initiate OAuth flow with consent to ensure refresh token

@@ -1,25 +1,25 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import {
-  CalendarMonthGrid,
-  CalendarWeekView,
-  CalendarDayView,
   CalendarAgendaView,
+  CalendarDayView,
   CalendarEventDetail,
   CalendarHeader,
   CalendarMini,
+  CalendarMonthGrid,
+  CalendarWeekView,
 } from "@/components/calendar"
-import { filterEvents, navigateDate } from "@/lib/utils/calendar-utils"
-import type { CalendarViewMode } from "@/lib/types/calendar-views.types"
-import type { CalendarEvent } from "@/lib/types/calendar.types"
-import { useSwipe } from "@/hooks/use-swipe"
-import { AlertCircle, Calendar, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useSwipe } from "@/hooks/use-swipe"
+import type { CalendarViewMode } from "@/lib/types/calendar-views.types"
+import type { CalendarEvent } from "@/lib/types/calendar.types"
 import { cn } from "@/lib/utils"
+import { filterEvents, navigateDate } from "@/lib/utils/calendar-utils"
 import { format, isSameDay } from "date-fns"
+import { AnimatePresence, motion } from "framer-motion"
+import { AlertCircle, Calendar, RefreshCw } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
 export default function CalendarPage() {
   // State
@@ -29,7 +29,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [viewMode, setViewMode] = useState<CalendarViewMode>("month")
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("week")
   const [searchQuery, setSearchQuery] = useState("")
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [showMiniCalendar, setShowMiniCalendar] = useState(true)
@@ -238,8 +238,8 @@ export default function CalendarPage() {
         {/* Left sidebar - Mini calendar and upcoming (hidden on small screens, shown on tablet+) */}
         <aside
           className={cn(
-            "hidden shrink-0 flex-col gap-4 overflow-hidden border-r border-border/50 bg-card/30 p-4 md:flex",
-            "w-[260px] lg:w-[280px]"
+            "hidden shrink-0 flex-col gap-3 overflow-hidden border-r border-border/50 bg-card/30 p-3 md:flex",
+            "w-[250px] lg:w-[270px]"
           )}
         >
           {/* Mini Calendar */}
@@ -255,8 +255,8 @@ export default function CalendarPage() {
 
           {/* Today's Events Quick View */}
           <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/50 bg-card">
-            <div className="shrink-0 border-b border-border/50 px-4 py-3">
-              <h3 className="text-sm font-semibold">
+            <div className="shrink-0 border-b border-border/50 px-3 py-2">
+              <h3 className="text-xs font-semibold">
                 {selectedDate && isSameDay(selectedDate, new Date())
                   ? "Today's Events"
                   : selectedDate
@@ -282,19 +282,6 @@ export default function CalendarPage() {
                 onSelectEvent={handleSelectEvent}
               />
             </ScrollArea>
-          </div>
-
-          {/* Keyboard shortcuts hint */}
-          <div className="shrink-0 rounded-lg bg-muted/50 p-3 text-[10px] text-muted-foreground">
-            <div className="font-semibold mb-1">Keyboard shortcuts</div>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-              <span><kbd className="rounded bg-muted px-1">T</kbd> Today</span>
-              <span><kbd className="rounded bg-muted px-1">M</kbd> Month</span>
-              <span><kbd className="rounded bg-muted px-1">W</kbd> Week</span>
-              <span><kbd className="rounded bg-muted px-1">D</kbd> Day</span>
-              <span><kbd className="rounded bg-muted px-1">A</kbd> Agenda</span>
-              <span><kbd className="rounded bg-muted px-1">Esc</kbd> Close</span>
-            </div>
           </div>
         </aside>
 
@@ -437,7 +424,6 @@ function UpcomingEventsList({
   return (
     <div className="space-y-1">
       {events.map((event) => {
-        const isAllDay = !event.start.dateTime && !!event.start.date
         const startTime = event.start.dateTime
           ? format(new Date(event.start.dateTime), "h:mm a")
           : "All day"
@@ -447,22 +433,22 @@ function UpcomingEventsList({
             key={event.id}
             onClick={() => onSelectEvent(event)}
             className={cn(
-              "w-full rounded-lg border border-border/50 p-2.5 text-left transition-all",
+              "w-full rounded-lg border border-border/50 px-2 py-1.5 text-left transition-all",
               "hover:border-brand/30 hover:bg-muted/50"
             )}
           >
             <div className="flex items-start gap-2">
               <div
                 className={cn(
-                  "mt-0.5 size-2 shrink-0 rounded-full",
+                  "mt-1 size-1.5 shrink-0 rounded-full",
                   event.colorId ? `bg-chart-${event.colorId}` : "bg-brand"
                 )}
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">
+                <div className="truncate text-xs font-medium">
                   {event.summary}
                 </div>
-                <div className="text-xs text-muted-foreground">{startTime}</div>
+                <div className="text-[10px] text-muted-foreground">{startTime}</div>
               </div>
             </div>
           </button>

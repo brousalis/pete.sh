@@ -74,6 +74,8 @@ export async function GET(request: NextRequest) {
       ? new Date(tokens.expiry_date)
       : new Date(Date.now() + 3600 * 1000) // 1 hour fallback
 
+    console.log("[Calendar Callback] Storing access token, expires:", expiresIn.toISOString())
+
     cookieStore.set("google_calendar_access_token", tokens.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -85,16 +87,24 @@ export async function GET(request: NextRequest) {
     // Store refresh token if available (longer expiry)
     // Note: Google only provides refresh token on first authorization or when prompt=consent is used
     if (tokens.refresh_token) {
-      console.log("[Calendar Callback] Storing refresh token in cookie (1 year expiry)")
+      const refreshExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
+      console.log("[Calendar Callback] Storing refresh token in cookie, expires:", refreshExpiry.toISOString())
       cookieStore.set("google_calendar_refresh_token", tokens.refresh_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+        expires: refreshExpiry,
         path: "/",
       })
     } else {
-      console.warn("[Calendar Callback] No refresh token received! User will need to re-authenticate when access token expires. Try /api/calendar/auth?force=true to get a new refresh token.")
+      // Check if we already have a refresh token stored
+      const existingRefreshToken = cookieStore.get("google_calendar_refresh_token")?.value
+      if (existingRefreshToken) {
+        console.log("[Calendar Callback] No new refresh token, but keeping existing one")
+      } else {
+        console.warn("[Calendar Callback] WARNING: No refresh token received and none exists! User will need to re-authenticate when access token expires.")
+        console.warn("[Calendar Callback] This usually means the OAuth flow didn't use prompt=consent. The auth route should force this.")
+      }
     }
 
     // Redirect to home or calendar page

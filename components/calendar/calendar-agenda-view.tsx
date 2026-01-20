@@ -9,7 +9,7 @@ import {
 } from "@/lib/utils/calendar-utils"
 import { getEventColor } from "@/lib/types/calendar-views.types"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
-import { format, isToday, isTomorrow, parseISO, addMonths } from "date-fns"
+import { format, isToday, isTomorrow, parseISO, addYears } from "date-fns"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -33,23 +33,23 @@ export function CalendarAgendaView({
   onSelectDate,
   onSelectEvent,
 }: CalendarAgendaViewProps) {
-  // Filter events for the current month and beyond
+  // Show upcoming events for the next year
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const oneYearFromNow = addYears(today, 1)
+  
   const filteredEvents = events.filter((event) => {
     const start = getEventStartDate(event)
     if (!start) return false
-    return start >= currentDate
+    // Include events from today up to one year from now
+    return start >= today && start <= oneYearFromNow
   })
 
   // Group events by date
   const groupedEvents = groupEventsByDate(filteredEvents)
-  const sortedDates = Array.from(groupedEvents.keys()).sort()
-
-  // Get the date for next 90 days worth of display
-  const endDate = addMonths(currentDate, 3)
-  const visibleDates = sortedDates.filter((dateKey) => {
-    const date = parseISO(dateKey)
-    return date <= endDate
-  })
+  
+  // Show dates with events (up to 1 year)
+  const visibleDates = Array.from(groupedEvents.keys()).sort()
 
   if (filteredEvents.length === 0) {
     return (

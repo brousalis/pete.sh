@@ -35,36 +35,36 @@ export function CalendarMini({
   })
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card p-3">
+    <div className="shrink-0 rounded-xl border border-border/50 bg-card p-3">
       <Calendar
         mode="single"
         selected={selectedDate || undefined}
         onSelect={(date) => date && onSelectDate(date)}
         month={currentDate}
         onMonthChange={onSelectDate}
-        className="w-full"
+        className="w-full [--cell-size:30px]"
         classNames={{
           months: "flex flex-col",
           month: "space-y-2",
-          caption: "flex justify-center pt-1 relative items-center",
+          caption: "flex justify-center pt-0 relative items-center h-8",
           caption_label: "text-sm font-medium",
           nav: "space-x-1 flex items-center",
           nav_button: cn(
             "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
           ),
-          nav_button_previous: "absolute left-1",
-          nav_button_next: "absolute right-1",
+          nav_button_previous: "absolute left-0",
+          nav_button_next: "absolute right-0",
           table: "w-full border-collapse",
-          head_row: "flex",
+          head_row: "flex justify-between",
           head_cell:
-            "text-muted-foreground rounded-md w-8 font-normal text-[0.7rem]",
-          row: "flex w-full mt-1",
+            "text-muted-foreground rounded-md flex-1 font-normal text-[11px] text-center",
+          row: "flex w-full justify-between mt-1",
           cell: cn(
             "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:rounded-r-md",
             "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
           ),
           day: cn(
-            "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md"
+            "size-[30px] p-0 font-normal text-sm aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md"
           ),
           day_range_end: "day-range-end",
           day_selected:
@@ -100,7 +100,7 @@ function MiniDayButton({ day, modifiers, daysWithEvents, ...props }: MiniDayButt
       variant="ghost"
       size="icon"
       className={cn(
-        "relative h-8 w-8 p-0 font-normal",
+        "relative size-[30px] p-0 text-sm font-normal",
         isSelected && "bg-brand text-white hover:bg-brand hover:text-white",
         isToday && !isSelected && "bg-accent",
         modifiers.outside && "text-muted-foreground/50",
