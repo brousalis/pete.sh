@@ -79,8 +79,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     if (!client) return null // Supabase not configured
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+      
       // Get the routine
-      const { data: routineData, error: routineError } = await client
+      const { data: routineData, error: routineError } = await clientAny
         .from('fitness_routines')
         .select('*')
         .eq('id', this.currentRoutineId)
@@ -92,7 +95,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       }
 
       // Get weeks for this routine
-      const { data: weeksData, error: weeksError } = await client
+      const { data: weeksData, error: weeksError } = await clientAny
         .from('fitness_weeks')
         .select('*')
         .eq('routine_id', this.currentRoutineId)

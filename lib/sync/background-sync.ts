@@ -241,6 +241,7 @@ export async function syncAll(): Promise<SyncAllResult> {
   const results = await Promise.all([
     syncHue(),
     syncCTA(),
+    syncFitness(),
     // Note: Spotify and Calendar require auth context, so they may fail
     // These are better synced via their respective API calls
   ])
@@ -278,6 +279,7 @@ export async function syncUnauthenticated(): Promise<SyncAllResult> {
   const results = await Promise.all([
     syncHue(),
     syncCTA(),
+    syncFitness(),
   ])
 
   const totalRecordsWritten = results.reduce((sum, r) => sum + r.recordsWritten, 0)
