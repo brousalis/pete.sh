@@ -7,7 +7,6 @@
  */
 
 import type { SpotifyPlaybackState, SpotifyDevice, SpotifyUser } from '@/lib/types/spotify.types'
-import type { SonosState, SonosTrack } from '@/lib/types/sonos.types'
 import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { CTABusPrediction, CTATrainPrediction } from '@/lib/types/cta.types'
@@ -20,7 +19,7 @@ import type {
 } from '@/lib/types/fitness.types'
 
 // Service name type
-export type ServiceName = 'spotify' | 'sonos' | 'hue' | 'cta' | 'calendar' | 'fitness'
+export type ServiceName = 'spotify' | 'hue' | 'cta' | 'calendar' | 'fitness'
 
 // Row types for each table
 export interface SpotifyStateRow {
@@ -35,20 +34,6 @@ export interface SpotifyStateRow {
   current_track_image_url: string | null
   progress_ms: number | null
   duration_ms: number | null
-  recorded_at: string
-  created_at: string
-}
-
-export interface SonosStateRow {
-  id: string
-  player_id: string
-  player_name: string | null
-  room_name: string | null
-  state: SonosState | null
-  current_track: SonosTrack | null
-  playback_state: 'PLAYING' | 'PAUSED' | 'STOPPED' | null
-  volume: number | null
-  is_muted: boolean
   recorded_at: string
   created_at: string
 }
@@ -212,20 +197,6 @@ export interface SpotifyStateInsert {
   created_at?: string
 }
 
-export interface SonosStateInsert {
-  id?: string
-  player_id: string
-  player_name: string | null
-  room_name: string | null
-  state: SonosState | null
-  current_track: SonosTrack | null
-  playback_state: 'PLAYING' | 'PAUSED' | 'STOPPED' | null
-  volume: number | null
-  is_muted: boolean
-  recorded_at: string
-  created_at?: string
-}
-
 export interface HueLightInsert {
   id?: string
   light_id: string
@@ -377,11 +348,6 @@ export interface Database {
         Insert: SpotifyStateInsert
         Update: Partial<SpotifyStateInsert>
       }
-      sonos_state: {
-        Row: SonosStateRow
-        Insert: SonosStateInsert
-        Update: Partial<SonosStateInsert>
-      }
       hue_lights: {
         Row: HueLightRow
         Insert: HueLightInsert
@@ -440,10 +406,6 @@ export interface Database {
       get_latest_spotify_state: {
         Args: Record<string, never>
         Returns: SpotifyStateRow | null
-      }
-      get_latest_sonos_state: {
-        Args: { p_player_id: string }
-        Returns: SonosStateRow | null
       }
       get_latest_hue_status: {
         Args: Record<string, never>

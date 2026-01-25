@@ -10,7 +10,6 @@ import { isLocalMode } from '@/lib/utils/mode'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { getHueAdapter } from '@/lib/adapters/hue.adapter'
 import { getSpotifyAdapter } from '@/lib/adapters/spotify.adapter'
-import { getSonosAdapter } from '@/lib/adapters/sonos.adapter'
 import { getCTAAdapter } from '@/lib/adapters/cta.adapter'
 import { getCalendarAdapter } from '@/lib/adapters/calendar.adapter'
 import { getFitnessAdapter } from '@/lib/adapters/fitness.adapter'
@@ -99,43 +98,6 @@ export async function syncSpotify(): Promise<SyncServiceResult> {
   } catch (error) {
     return {
       service: 'spotify',
-      success: false,
-      recordsWritten: 0,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      durationMs: Date.now() - start,
-    }
-  }
-}
-
-/**
- * Sync Sonos state to Supabase
- */
-export async function syncSonos(): Promise<SyncServiceResult> {
-  const start = Date.now()
-  try {
-    const adapter = getSonosAdapter()
-    
-    if (!adapter.isConfigured()) {
-      return {
-        service: 'sonos',
-        success: false,
-        recordsWritten: 0,
-        error: 'Sonos not configured',
-        durationMs: Date.now() - start,
-      }
-    }
-
-    const result = await adapter.refreshCache()
-    return {
-      service: 'sonos',
-      success: result.success,
-      recordsWritten: result.recordsWritten,
-      error: result.error,
-      durationMs: Date.now() - start,
-    }
-  } catch (error) {
-    return {
-      service: 'sonos',
       success: false,
       recordsWritten: 0,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -278,7 +240,6 @@ export async function syncAll(): Promise<SyncAllResult> {
   // Run all syncs in parallel
   const results = await Promise.all([
     syncHue(),
-    syncSonos(),
     syncCTA(),
     // Note: Spotify and Calendar require auth context, so they may fail
     // These are better synced via their respective API calls
@@ -298,7 +259,7 @@ export async function syncAll(): Promise<SyncAllResult> {
 
 /**
  * Sync services that don't require authentication
- * (Hue, Sonos, CTA)
+ * (Hue, CTA)
  */
 export async function syncUnauthenticated(): Promise<SyncAllResult> {
   const start = Date.now()
@@ -316,7 +277,6 @@ export async function syncUnauthenticated(): Promise<SyncAllResult> {
 
   const results = await Promise.all([
     syncHue(),
-    syncSonos(),
     syncCTA(),
   ])
 

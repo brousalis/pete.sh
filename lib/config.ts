@@ -12,13 +12,6 @@ const envSchema = z.object({
   HUE_BRIDGE_USERNAME: z.string().optional(),
   HUE_CLIENT_KEY: z.string().optional(), // Required for entertainment streaming
 
-  // Sonos
-  SONOS_API_URL: z
-    .string()
-    .url()
-    .optional()
-    .or(z.string().startsWith('http://localhost')),
-
   // Google
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -46,8 +39,6 @@ const envSchema = z.object({
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
 
-  // GetSongBPM
-  GETSONGBPM_API_KEY: z.string().optional(),
 })
 
 // Parse and validate environment variables
@@ -76,10 +67,6 @@ export const config = {
     clientKey: env.HUE_CLIENT_KEY, // For entertainment streaming
     isConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME),
     isEntertainmentConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME && env.HUE_CLIENT_KEY),
-  },
-  sonos: {
-    apiUrl: env.SONOS_API_URL || 'http://localhost:5005',
-    isConfigured: Boolean(env.SONOS_API_URL),
   },
   google: {
     clientId: env.GOOGLE_CLIENT_ID,
@@ -122,11 +109,6 @@ export const config = {
       'user-read-email',
       'user-read-private',
     ],
-  },
-  getSongBpm: {
-    apiKey: env.GETSONGBPM_API_KEY,
-    baseUrl: 'https://api.getsongbpm.com',
-    isConfigured: Boolean(env.GETSONGBPM_API_KEY),
   },
 } as const
 

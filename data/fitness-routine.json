@@ -171,7 +171,20 @@
         },
         "sunday": {}
       }
+    },
+    {
+      "weekNumber": 5,
+      "startDate": "2026-01-26T06:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
+      }
     }
   ],
-  "updatedAt": "2026-01-25T04:54:25.631Z"
+  "updatedAt": "2026-01-25T06:14:49.528Z"
 }

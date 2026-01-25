@@ -15,10 +15,6 @@ export type { HueFullState, HueCachedState } from './hue.adapter'
 export { SpotifyAdapter, getSpotifyAdapter } from './spotify.adapter'
 export type { SpotifyFullState, SpotifyCachedState } from './spotify.adapter'
 
-// Sonos adapter
-export { SonosAdapter, getSonosAdapter } from './sonos.adapter'
-export type { SonosFullState, SonosCachedState } from './sonos.adapter'
-
 // Fitness adapter
 export { FitnessAdapter, getFitnessAdapter } from './fitness.adapter'
 

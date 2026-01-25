@@ -12,7 +12,7 @@
 
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { syncAll, syncUnauthenticated, syncHue, syncSonos, syncCTA, syncFitness } from "@/lib/sync/background-sync"
+import { syncAll, syncUnauthenticated, syncHue, syncCTA, syncFitness } from "@/lib/sync/background-sync"
 import { isLocalMode } from "@/lib/utils/mode"
 import { isSupabaseConfigured } from "@/lib/supabase/client"
 
@@ -25,7 +25,7 @@ export async function GET() {
       mode: isLocalMode() ? 'local' : 'production',
       supabaseConfigured: isSupabaseConfigured(),
       canSync: isLocalMode() && isSupabaseConfigured(),
-      services: ['hue', 'sonos', 'cta', 'fitness', 'spotify', 'calendar'],
+      services: ['hue', 'cta', 'fitness', 'spotify', 'calendar'],
     })
   } catch (error) {
     return handleApiError(error)
@@ -36,7 +36,7 @@ export async function GET() {
  * POST /api/sync - Trigger a sync
  * 
  * Body (optional):
- * - service: string - specific service to sync ('hue', 'sonos', 'cta', 'fitness', 'all')
+ * - service: string - specific service to sync ('hue', 'cta', 'fitness', 'all')
  * - includeAuth: boolean - include auth-required services (spotify, calendar)
  */
 export async function POST(request: NextRequest) {
@@ -59,9 +59,6 @@ export async function POST(request: NextRequest) {
       switch (service) {
         case 'hue':
           result = await syncHue()
-          break
-        case 'sonos':
-          result = await syncSonos()
           break
         case 'cta':
           result = await syncCTA()
