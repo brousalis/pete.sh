@@ -40,9 +40,11 @@ interface HueRoomCardProps {
   zone: HueZone
   scenes?: HueScene[]
   onUpdate?: () => Promise<void>
+  /** When true, all controls are disabled (production mode) */
+  isReadOnly?: boolean
 }
 
-export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
+export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }: HueRoomCardProps) {
   const [on, setOn] = useState(zone.state.any_on)
   const [brightness, setBrightness] = useState(zone.action?.bri || 127)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -75,6 +77,10 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
 
   const handleToggle = useCallback(
     async (checked: boolean) => {
+      if (isReadOnly) {
+        toast.error("Controls disabled in live view mode")
+        return
+      }
       setIsUpdating(true)
       setOn(checked)
       try {
@@ -92,15 +98,20 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate]
+    [zone.id, zone.name, onUpdate, isReadOnly]
   )
 
   const handleBrightnessChange = (values: number[]) => {
-    setBrightness(values[0] ?? brightness)
+    if (isReadOnly) return
+    setBrightness(values[0])
   }
 
   const handleBrightnessCommit = useCallback(
     async (values: number[]) => {
+      if (isReadOnly) {
+        toast.error("Controls disabled in live view mode")
+        return
+      }
       const value = values[0]
       setIsUpdating(true)
       try {
@@ -118,11 +129,15 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate]
+    [zone.id, zone.name, onUpdate, isReadOnly]
   )
 
   const handleActivateScene = useCallback(
     async (sceneId: string, sceneName: string) => {
+      if (isReadOnly) {
+        toast.error("Controls disabled in live view mode")
+        return
+      }
       setIsUpdating(true)
       try {
         const response = await fetch(
@@ -139,7 +154,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
         setIsUpdating(false)
       }
     },
-    [zone.id, onUpdate]
+    [zone.id, onUpdate, isReadOnly]
   )
 
   const handleLightUpdate = useCallback(async () => {
@@ -218,7 +233,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
               </p>
             </div>
           </div>
-          <ToggleSwitch checked={on} onCheckedChange={handleToggle} />
+          <ToggleSwitch checked={on} onCheckedChange={handleToggle} disabled={isReadOnly} />
         </div>
 
         {/* Brightness Slider */}
@@ -244,7 +259,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
                 min={1}
                 max={254}
                 step={1}
-                disabled={isUpdating}
+                disabled={isReadOnly || isUpdating}
               />
             </motion.div>
           )}
@@ -263,7 +278,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
                     variant={isFavorite ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleActivateScene(scene.id, scene.name)}
-                    disabled={isUpdating}
+                    disabled={isReadOnly || isUpdating}
                     className={cn(
                       "h-7 gap-1.5 px-2.5 text-xs",
                       isFavorite && "bg-brand hover:bg-brand/90"
@@ -328,6 +343,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
                     key={light.id}
                     light={light}
                     onUpdate={handleLightUpdate}
+                    isReadOnly={isReadOnly}
                   />
                 ))
               ) : (

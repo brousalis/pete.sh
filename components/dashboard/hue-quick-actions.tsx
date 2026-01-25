@@ -22,6 +22,8 @@ interface HueQuickActionsProps {
   scenes: HueScene[]
   onRefresh: () => Promise<void>
   favoriteSceneNames?: string[]
+  /** When true, all controls are disabled (production mode) */
+  isReadOnly?: boolean
 }
 
 const presetBrightness = [
@@ -35,6 +37,7 @@ export function HueQuickActions({
   scenes,
   onRefresh,
   favoriteSceneNames = ["pete red", "pete work"],
+  isReadOnly = false,
 }: HueQuickActionsProps) {
   const [isTogglingAll, setIsTogglingAll] = useState(false)
   const [activatingScene, setActivatingScene] = useState<string | null>(null)
@@ -54,6 +57,10 @@ export function HueQuickActions({
   )
 
   const handleToggleAll = async (on: boolean) => {
+    if (isReadOnly) {
+      toast.error("Controls disabled in live view mode")
+      return
+    }
     setIsTogglingAll(true)
     try {
       const response = await fetch("/api/hue/all", {
@@ -72,6 +79,10 @@ export function HueQuickActions({
   }
 
   const handleBrightnessPreset = async (value: number) => {
+    if (isReadOnly) {
+      toast.error("Controls disabled in live view mode")
+      return
+    }
     setBrightness(value)
     try {
       const response = await fetch("/api/hue/all", {
@@ -88,11 +99,16 @@ export function HueQuickActions({
   }
 
   const handleBrightnessChange = async (values: number[]) => {
-    const value = values[0] ?? brightness
+    if (isReadOnly) return
+    const value = values[0]
     setBrightness(value)
   }
 
   const handleBrightnessCommit = async (values: number[]) => {
+    if (isReadOnly) {
+      toast.error("Controls disabled in live view mode")
+      return
+    }
     const value = values[0]
     try {
       const response = await fetch("/api/hue/all", {
@@ -108,6 +124,10 @@ export function HueQuickActions({
   }
 
   const handleActivateScene = async (scene: HueScene) => {
+    if (isReadOnly) {
+      toast.error("Controls disabled in live view mode")
+      return
+    }
     if (!scene.group) {
       toast.error("Scene has no associated zone")
       return
@@ -185,7 +205,7 @@ export function HueQuickActions({
             variant="outline"
             size="sm"
             onClick={() => handleToggleAll(true)}
-            disabled={isTogglingAll || status?.allOn}
+            disabled={isReadOnly || isTogglingAll || status?.allOn}
             className="gap-2"
           >
             <Sun className="size-4" />
@@ -195,7 +215,7 @@ export function HueQuickActions({
             variant="outline"
             size="sm"
             onClick={() => handleToggleAll(false)}
-            disabled={isTogglingAll || !status?.anyOn}
+            disabled={isReadOnly || isTogglingAll || !status?.anyOn}
             className="gap-2"
           >
             <Moon className="size-4" />
@@ -218,13 +238,13 @@ export function HueQuickActions({
                 <motion.button
                   key={scene.id}
                   onClick={() => handleActivateScene(scene)}
-                  disabled={activatingScene === scene.id}
+                  disabled={isReadOnly || activatingScene === scene.id}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl border bg-gradient-to-br px-4 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50",
+                    "flex items-center gap-2 rounded-xl border bg-gradient-to-br px-4 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
                     colorClasses
                   )}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={isReadOnly ? {} : { scale: 1.02 }}
+                  whileTap={isReadOnly ? {} : { scale: 0.98 }}
                 >
                   <Icon className="size-4" />
                   <span className="capitalize">{scene.name}</span>
@@ -251,6 +271,7 @@ export function HueQuickActions({
                 variant={isActive ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleBrightnessPreset(preset.value)}
+                disabled={isReadOnly}
                 className="gap-2"
               >
                 <Icon className="size-4" />
@@ -271,6 +292,7 @@ export function HueQuickActions({
               min={1}
               max={254}
               step={1}
+              disabled={isReadOnly}
               className="flex-1"
             />
             <Sun className="size-4 text-muted-foreground" />

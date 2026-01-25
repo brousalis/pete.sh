@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { CTAService } from "@/lib/services/cta.service"
+import { getCTAAdapter } from "@/lib/adapters"
 import type { CTARouteConfig } from "@/lib/types/cta.types"
-
-const ctaService = new CTAService()
 
 export async function GET(request: NextRequest) {
   try {
+    const adapter = getCTAAdapter()
+    
     // Check if at least one API key is configured
     const { config } = await import("@/lib/config")
     if (!config.cta.isConfigured && !config.cta.isTrainConfigured) {
@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       ],
     }
 
-    const results = await ctaService.getAllRoutes(routeConfig)
+    // CTA adapter always tries real API first, then falls back to cache
+    const results = await adapter.getAllRoutes(routeConfig)
     return successResponse(results)
   } catch (error) {
     return handleApiError(error)

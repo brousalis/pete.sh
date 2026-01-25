@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { SyncManager } from "@/components/sync-manager"
 import { Suspense } from "react"
 
 export const metadata: Metadata = {
@@ -32,6 +33,8 @@ export default function RootLayout({
           <Suspense fallback={null}>
             {children}
             <Analytics />
+            {/* Background sync for local mode - syncs data to Supabase every 30s */}
+            <SyncManager interval={30000} debug={false} />
           </Suspense>
         </ThemeProvider>
       </body>

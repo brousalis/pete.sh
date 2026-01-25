@@ -19,6 +19,9 @@
     "pm2:status": "pm2 status",
     "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
     "deploy:bash": "./deploy.sh",
+    "sync": "node scripts/sync-worker.js --once",
+    "sync:watch": "node scripts/sync-worker.js",
+    "sync:ps": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-cron.ps1 -Interval 30",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
@@ -27,6 +30,7 @@
     "clean": "rm -rf .next out dist build .turbo"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.14",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",

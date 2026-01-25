@@ -1,24 +1,19 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
+import { LiveBadge, ReadOnlyNotice } from "@/components/ui/live-badge"
+import { useReadOnlyMode } from "@/hooks/use-deployment-mode"
 import type { HueAllLightsStatus, HueScene, HueZone } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
-import {
-  AlertCircle,
-  Briefcase,
-  Lightbulb,
-  Moon,
-  Monitor,
-  Palette,
-  Power,
-  RefreshCw,
-  Square,
-  Sun,
-} from "lucide-react"
+import { motion } from "framer-motion"
+import { AlertCircle, LayoutGrid, Lightbulb, List, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { HueCompactRoom } from "./hue-compact-room"
+import { HueQuickActions } from "./hue-quick-actions"
+import { HueRoomCard } from "./hue-room-card"
+import { HueSyncCard } from "./hue-sync-card"
+
+type ViewMode = "grid" | "list"
 
 // Room type priority for sorting
 const ROOM_PRIORITY: Record<string, number> = {
@@ -44,20 +39,19 @@ export function HueControls() {
   const [status, setStatus] = useState<HueAllLightsStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [brightness, setBrightness] = useState(127)
-  const [syncStatus, setSyncStatus] = useState<{ active: boolean; areaId?: string } | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const isReadOnly = useReadOnlyMode()
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Fetch zones, all scenes, status, and entertainment in parallel
-      const [zonesRes, scenesRes, statusRes, entertainmentRes] = await Promise.all([
+      // Fetch zones, all scenes, and status in parallel
+      const [zonesRes, scenesRes, statusRes] = await Promise.all([
         fetch("/api/hue/zones"),
         fetch("/api/hue/scenes"),
         fetch("/api/hue/all"),
-        fetch("/api/hue/entertainment"),
       ])
 
       // Handle zones response
@@ -76,7 +70,9 @@ export function HueControls() {
             ...(zone as HueZone),
             id,
           }))
+          // Filter to Room and Zone types (exclude Entertainment, Luminaire, LightSource, etc.)
           .filter((z) => z.type === "Room" || z.type === "Zone")
+          // Sort by priority
           .sort((a, b) => getRoomPriority(a.name) - getRoomPriority(b.name))
 
         setZones(zonesArray)
@@ -87,7 +83,10 @@ export function HueControls() {
             const res = await fetch(`/api/hue/zones/${zone.id}/scenes`)
             if (res.ok) {
               const data = await res.json()
-              return { zoneId: zone.id, scenes: data.success ? data.data : [] }
+              return {
+                zoneId: zone.id,
+                scenes: data.success ? data.data : [],
+              }
             }
             return { zoneId: zone.id, scenes: [] }
           } catch {
@@ -116,25 +115,6 @@ export function HueControls() {
         const statusData = await statusRes.json()
         if (statusData.success && statusData.data) {
           setStatus(statusData.data)
-          if (statusData.data.averageBrightness) {
-            setBrightness(statusData.data.averageBrightness)
-          }
-        }
-      }
-
-      // Handle entertainment areas
-      if (entertainmentRes.ok) {
-        const entertainmentData = await entertainmentRes.json()
-        if (entertainmentData.success && entertainmentData.data?.length > 0) {
-          const area = entertainmentData.data[0]
-          // Fetch status for this area
-          const statusRes2 = await fetch(`/api/hue/entertainment/${area.id}`)
-          if (statusRes2.ok) {
-            const statusData2 = await statusRes2.json()
-            if (statusData2.success) {
-              setSyncStatus({ active: statusData2.data.active, areaId: area.id })
-            }
-          }
         }
       }
     } catch (err) {
@@ -160,100 +140,20 @@ export function HueControls() {
     return () => clearInterval(interval)
   }, [fetchData])
 
-  // Poll sync status every 3 seconds
-  useEffect(() => {
-    if (!syncStatus?.areaId) return
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/hue/entertainment/${syncStatus.areaId}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success) {
-            setSyncStatus((prev) => prev ? { ...prev, active: data.data.active } : null)
-          }
-        }
-      } catch {
-        // Ignore
-      }
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [syncStatus?.areaId])
-
-  // Find favorite scenes
-  const favoriteScenes = allScenes.filter((scene) =>
-    ["pete red", "pete work"].some((name) =>
-      scene.name.toLowerCase().includes(name.toLowerCase())
-    )
-  )
-
-  const handleToggleAll = async (on: boolean) => {
-    try {
-      const response = await fetch("/api/hue/all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on }),
-      })
-      if (!response.ok) throw new Error("Failed to toggle lights")
-      toast.success(on ? "All lights on" : "All lights off")
-      await fetchData()
-    } catch {
-      toast.error("Failed to toggle lights")
-    }
-  }
-
-  const handleBrightnessCommit = async (values: number[]) => {
-    const value = values[0]
-    try {
-      const response = await fetch("/api/hue/all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on: true, brightness: value }),
-      })
-      if (!response.ok) throw new Error("Failed to set brightness")
-      await fetchData()
-    } catch {
-      toast.error("Failed to set brightness")
-    }
-  }
-
-  const handleActivateScene = async (scene: HueScene) => {
-    if (!scene.group) return
-    try {
-      const response = await fetch(`/api/hue/zones/${scene.group}/scenes/${scene.id}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to activate scene")
-      toast.success(scene.name)
-      await fetchData()
-    } catch {
-      toast.error("Failed to activate scene")
-    }
-  }
-
-  const handleStopSync = async () => {
-    if (!syncStatus?.areaId) return
-    try {
-      const response = await fetch(`/api/hue/entertainment/${syncStatus.areaId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: false }),
-      })
-      if (!response.ok) throw new Error("Failed to stop sync")
-      setSyncStatus((prev) => prev ? { ...prev, active: false } : null)
-      toast.success("Hue Sync stopped")
-    } catch {
-      toast.error("Failed to stop sync")
-    }
-  }
-
   if (error) {
     return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-        <div className="flex items-center gap-3">
-          <AlertCircle className="size-5 text-destructive" />
-          <div>
-            <p className="text-sm font-medium">{error}</p>
-            <p className="text-xs text-muted-foreground">Configure HUE bridge in .env.local</p>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10">
+              <AlertCircle className="size-5 text-destructive" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">{error}</p>
+              <p className="text-sm text-muted-foreground">
+                Please configure your HUE bridge in .env.local
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -262,20 +162,40 @@ export function HueControls() {
 
   if (loading && zones.length === 0) {
     return (
-      <div className="grid grid-cols-3 gap-3 lg:grid-cols-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-xl bg-muted/50" />
-        ))}
+      <div className="space-y-6">
+        {/* Loading skeleton for quick actions */}
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="size-10 animate-pulse rounded-xl bg-muted" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        </div>
+
+        {/* Loading skeleton for rooms */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-48 animate-pulse rounded-2xl bg-muted/50" />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (zones.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-8">
-        <Lightbulb className="size-8 text-muted-foreground" />
-        <p className="mt-2 text-sm text-muted-foreground">No rooms found</p>
-        <Button onClick={fetchData} variant="outline" size="sm" className="mt-3">
+      <div className="flex flex-col items-center justify-center rounded-2xl border bg-card p-12">
+        <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+          <Lightbulb className="size-8 text-muted-foreground" />
+        </div>
+        <h3 className="mt-4 text-lg font-medium text-foreground">No rooms found</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Configure rooms in your Philips Hue app
+        </p>
+        <Button onClick={fetchData} variant="outline" className="mt-4 gap-2">
+          <RefreshCw className="size-4" />
           Retry
         </Button>
       </div>
@@ -283,150 +203,119 @@ export function HueControls() {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Top Control Bar */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2 sm:gap-3 sm:p-3">
-        {/* Status */}
+    <div className="space-y-6">
+      {/* Read-only notice for production mode */}
+      <ReadOnlyNotice className="rounded-xl" />
+
+      {/* Header with refresh and view toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-brand/10">
+            <Lightbulb className="size-5 text-brand" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Lighting</h1>
+            <p className="text-xs text-muted-foreground">
+              {zones.length} rooms · {status?.totalLights || 0} lights
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              "flex size-8 items-center justify-center rounded-lg",
-              status?.anyOn ? "bg-brand/20 text-brand" : "bg-muted text-muted-foreground"
-            )}
+          {/* Live badge for production mode */}
+          <LiveBadge />
+
+          {/* View mode toggle */}
+          <div className="flex rounded-lg border bg-muted/50 p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                viewMode === "grid"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Grid view"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                viewMode === "list"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="List view"
+            >
+              <List className="size-4" />
+            </button>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+            className="gap-2"
           >
-            <Power className="size-4" />
-          </div>
-          <div className="text-sm">
-            <span className="font-medium">{status?.lightsOn || 0}</span>
-            <span className="text-muted-foreground">/{status?.totalLights || 0}</span>
-          </div>
+            <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+            Refresh
+          </Button>
         </div>
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-border" />
-
-        {/* All On/Off */}
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleToggleAll(true)}
-            disabled={status?.allOn}
-            className="h-8 gap-1.5 px-3"
-          >
-            <Sun className="size-3.5" />
-            On
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleToggleAll(false)}
-            disabled={!status?.anyOn}
-            className="h-8 gap-1.5 px-3"
-          >
-            <Moon className="size-3.5" />
-            Off
-          </Button>
-        </div>
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-border" />
-
-        {/* Quick Scenes */}
-        {favoriteScenes.map((scene) => (
-          <Button
-            key={scene.id}
-            variant="outline"
-            size="sm"
-            onClick={() => handleActivateScene(scene)}
-            className={cn(
-              "h-8 gap-1.5 px-3",
-              scene.name.toLowerCase().includes("red")
-                ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
-                : "border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-            )}
-          >
-            {scene.name.toLowerCase().includes("red") ? (
-              <Palette className="size-3.5" />
-            ) : (
-              <Briefcase className="size-3.5" />
-            )}
-            {scene.name}
-          </Button>
-        ))}
-
-        {/* Brightness Slider */}
-        {status?.anyOn && (
-          <>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex flex-1 items-center gap-2 min-w-[120px] max-w-[200px]">
-              <Slider
-                value={[brightness]}
-                onValueChange={(v) => setBrightness(v[0] ?? 127)}
-                onValueCommit={handleBrightnessCommit}
-                min={1}
-                max={254}
-                step={1}
-                className="flex-1"
-              />
-              <span className="w-8 text-xs tabular-nums text-muted-foreground">
-                {Math.round((brightness / 254) * 100)}%
-              </span>
-            </div>
-          </>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Hue Sync Status */}
-        {syncStatus && (
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-1.5",
-              syncStatus.active
-                ? "bg-purple-500/10 text-purple-400"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            <Monitor className="size-4" />
-            <span className="text-xs font-medium">
-              {syncStatus.active ? "Syncing" : "Sync"}
-            </span>
-            {syncStatus.active && (
-              <button
-                onClick={handleStopSync}
-                className="ml-1 rounded p-0.5 hover:bg-purple-500/20"
-              >
-                <Square className="size-3" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Refresh */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchData}
-          disabled={loading}
-          className="h-8 w-8 p-0"
-        >
-          <RefreshCw className={cn("size-4", loading && "animate-spin")} />
-        </Button>
       </div>
 
-      {/* Room Grid - 3 columns on tablet (iPad Mini), scales up on larger screens */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-6">
-        {zones.map((zone) => (
-          <HueCompactRoom
+      {/* Quick Actions */}
+      <motion.div
+        className="rounded-2xl border bg-card p-6"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <HueQuickActions
+          status={status}
+          scenes={allScenes}
+          onRefresh={fetchData}
+          favoriteSceneNames={["pete red", "pete work"]}
+          isReadOnly={isReadOnly}
+        />
+      </motion.div>
+
+      {/* Room Cards */}
+      <div
+        className={cn(
+          "grid gap-4",
+          viewMode === "grid"
+            ? "md:grid-cols-2 lg:grid-cols-3"
+            : "grid-cols-1 max-w-2xl"
+        )}
+      >
+        {zones.map((zone, index) => (
+          <motion.div
             key={zone.id}
-            zone={zone}
-            scenes={scenes[zone.id] || []}
-            onUpdate={fetchData}
-          />
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <HueRoomCard
+              zone={zone}
+              scenes={scenes[zone.id] || []}
+              onUpdate={fetchData}
+              isReadOnly={isReadOnly}
+            />
+          </motion.div>
         ))}
       </div>
+
+      {/* Hue Sync for Office */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <HueSyncCard areaName="office" onUpdate={fetchData} isReadOnly={isReadOnly} />
+      </motion.div>
+
     </div>
   )
 }

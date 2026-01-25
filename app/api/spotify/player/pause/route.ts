@@ -1,23 +1,32 @@
 import { NextRequest } from "next/server"
-import { getAuthenticatedSpotifyService, isSpotifyConfigured } from "@/lib/spotify-auth"
 import { successResponse, errorResponse } from "@/lib/api/utils"
+import { getSpotifyAdapter } from "@/lib/adapters"
+import { localModeGuard } from "@/lib/utils/mode"
 
 /**
- * Pause playback
+ * Pause playback (local mode only)
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!isSpotifyConfigured()) {
+    // Guard: Only allow in local mode
+    const guard = localModeGuard()
+    if (!guard.allowed) {
+      return errorResponse(guard.error ?? "Controls disabled in production mode", 403)
+    }
+
+    const adapter = getSpotifyAdapter()
+    
+    if (!adapter.isConfigured()) {
       return errorResponse("Spotify not configured", 400)
     }
 
-    const { service, authenticated } = await getAuthenticatedSpotifyService()
+    const { authenticated } = await adapter.initializeWithTokens()
     if (!authenticated) {
       return errorResponse("Not authenticated with Spotify", 401)
     }
 
     const body = await request.json().catch(() => ({}))
-    await service.pause(body.deviceId)
+    await adapter.pause(body.deviceId)
 
     return successResponse({ success: true })
   } catch (error) {

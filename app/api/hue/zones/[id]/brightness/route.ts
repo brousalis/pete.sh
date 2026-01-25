@@ -1,15 +1,22 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { HueService } from "@/lib/services/hue.service"
-
-const hueService = new HueService()
+import { getHueAdapter } from "@/lib/adapters"
+import { localModeGuard } from "@/lib/utils/mode"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!hueService.isConfigured()) {
+    // Guard: Only allow in local mode
+    const guard = localModeGuard()
+    if (!guard.allowed) {
+      return errorResponse(guard.error ?? "Controls disabled in production mode", 403)
+    }
+
+    const adapter = getHueAdapter()
+    
+    if (!adapter.isConfigured()) {
       return errorResponse("HUE bridge not configured", 400)
     }
 
@@ -21,7 +28,7 @@ export async function POST(
       return errorResponse("Brightness must be a number between 1 and 254", 400)
     }
 
-    const result = await hueService.setZoneBrightness(id, brightness)
+    const result = await adapter.setZoneBrightness(id, brightness)
     return successResponse(result)
   } catch (error) {
     return handleApiError(error)

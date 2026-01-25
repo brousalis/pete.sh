@@ -1,16 +1,16 @@
 import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
-import { HueService } from '@/lib/services/hue.service'
-import { NextRequest } from 'next/server'
+import { getHueAdapter } from '@/lib/adapters'
+import { isProductionMode } from '@/lib/utils/mode'
 
-const hueService = new HueService()
-
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
-    if (!hueService.isConfigured()) {
+    const adapter = getHueAdapter()
+    
+    if (!isProductionMode() && !adapter.isConfigured()) {
       return errorResponse('HUE bridge not configured', 400)
     }
 
-    const lights = await hueService.getLights()
+    const lights = await adapter.getLights()
     return successResponse(lights)
   } catch (error) {
     return handleApiError(error)

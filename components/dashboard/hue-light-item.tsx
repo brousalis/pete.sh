@@ -12,9 +12,11 @@ import { cn } from "@/lib/utils"
 interface HueLightItemProps {
   light: HueLight
   onUpdate?: () => Promise<void>
+  /** When true, all controls are disabled (production mode) */
+  isReadOnly?: boolean
 }
 
-export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
+export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightItemProps) {
   const [on, setOn] = useState(light.state.on)
   const [brightness, setBrightness] = useState(light.state.bri || 127)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -26,6 +28,10 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
 
   const handleToggle = useCallback(
     async (checked: boolean) => {
+      if (isReadOnly) {
+        toast.error("Controls disabled in live view mode")
+        return
+      }
       setIsUpdating(true)
       setOn(checked)
       try {
@@ -43,15 +49,20 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate]
+    [light.id, light.name, onUpdate, isReadOnly]
   )
 
   const handleBrightnessChange = (values: number[]) => {
-    setBrightness(values[0] ?? brightness)
+    if (isReadOnly) return
+    setBrightness(values[0])
   }
 
   const handleBrightnessCommit = useCallback(
     async (values: number[]) => {
+      if (isReadOnly) {
+        toast.error("Controls disabled in live view mode")
+        return
+      }
       const value = values[0]
       setIsUpdating(true)
       try {
@@ -69,14 +80,14 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate]
+    [light.id, light.name, onUpdate, isReadOnly]
   )
 
   // Determine light color display based on state
   const getLightColor = () => {
     if (!on || !light.state.reachable) return "bg-muted"
     const { colormode, ct, hue, sat } = light.state
-    
+
     // For color temperature lights
     if (colormode === "ct" && ct) {
       // Map color temperature to a warm-cool gradient
@@ -86,7 +97,7 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
       if (warmth > 0.3) return "bg-yellow-300"
       return "bg-white"
     }
-    
+
     // For color lights using hue
     if (colormode === "hs" && hue !== undefined) {
       // Hue is 0-65535, map to colors
@@ -99,7 +110,7 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
       if (h < 0.75) return "bg-blue-400"
       return "bg-purple-400"
     }
-    
+
     return "bg-brand"
   }
 
@@ -141,6 +152,7 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
           <ToggleSwitch
             checked={on}
             onCheckedChange={handleToggle}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -159,7 +171,7 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
               min={1}
               max={254}
               step={1}
-              disabled={isUpdating}
+              disabled={isReadOnly || isUpdating}
               className="flex-1"
             />
             <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">

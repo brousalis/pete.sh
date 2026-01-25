@@ -1,16 +1,18 @@
 import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
-import { HueService } from '@/lib/services/hue.service'
-import { NextRequest } from 'next/server'
+import { getHueAdapter } from '@/lib/adapters'
+import { isProductionMode } from '@/lib/utils/mode'
 
-const hueService = new HueService()
-
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
-    if (!hueService.isConfigured()) {
+    const adapter = getHueAdapter()
+    
+    // In production mode, we always have data from cache
+    // In local mode, check if bridge is configured
+    if (!isProductionMode() && !adapter.isConfigured()) {
       return errorResponse('HUE bridge not configured', 400)
     }
 
-    const zones = await hueService.getZones()
+    const zones = await adapter.getZones()
     return successResponse(zones)
   } catch (error) {
     return handleApiError(error)

@@ -15,12 +15,15 @@ interface HueSyncCardProps {
   areaId?: string
   /** Called when sync state changes */
   onUpdate?: () => Promise<void>
+  /** When true, all controls are disabled (production mode) */
+  isReadOnly?: boolean
 }
 
 export function HueSyncCard({
   areaName,
   areaId,
   onUpdate,
+  isReadOnly = false,
 }: HueSyncCardProps) {
   const [areas, setAreas] = useState<HueEntertainmentArea[]>([])
   const [selectedArea, setSelectedArea] = useState<HueEntertainmentArea | null>(null)
@@ -125,6 +128,11 @@ export function HueSyncCard({
 
   const handleToggle = async (active: boolean) => {
     if (!selectedArea) return
+
+    if (isReadOnly) {
+      toast.error("Controls disabled in live view mode")
+      return
+    }
 
     setToggling(true)
     try {
@@ -294,7 +302,7 @@ export function HueSyncCard({
               variant="outline"
               size="sm"
               onClick={() => handleToggle(false)}
-              disabled={toggling}
+              disabled={isReadOnly || toggling}
               className="gap-2 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400"
             >
               <Square className="size-3" />

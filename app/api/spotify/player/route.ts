@@ -1,21 +1,31 @@
-import { getAuthenticatedSpotifyService, isSpotifyConfigured } from "@/lib/spotify-auth"
 import { successResponse, errorResponse } from "@/lib/api/utils"
+import { getSpotifyAdapter } from "@/lib/adapters"
+import { isProductionMode } from "@/lib/utils/mode"
 
 /**
  * Get current playback state
  */
 export async function GET() {
   try {
-    if (!isSpotifyConfigured()) {
+    const adapter = getSpotifyAdapter()
+    
+    // In production mode, read from cache without auth
+    if (isProductionMode()) {
+      const nowPlaying = await adapter.getNowPlaying()
+      return successResponse(nowPlaying)
+    }
+
+    // In local mode, need to authenticate and fetch real data
+    if (!adapter.isConfigured()) {
       return errorResponse("Spotify not configured", 400)
     }
 
-    const { service, authenticated } = await getAuthenticatedSpotifyService()
+    const { authenticated } = await adapter.initializeWithTokens()
     if (!authenticated) {
       return errorResponse("Not authenticated with Spotify", 401)
     }
 
-    const playbackState = await service.getPlaybackState()
+    const playbackState = await adapter.getPlaybackState()
     return successResponse(playbackState)
   } catch (error) {
     console.error("[Spotify Player] Error:", error)

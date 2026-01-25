@@ -1,16 +1,23 @@
-import { NextRequest } from "next/server"
 import { successResponse } from "@/lib/api/utils"
-import { SonosService } from "@/lib/services/sonos.service"
+import { getSonosAdapter } from "@/lib/adapters"
+import { isProductionMode } from "@/lib/utils/mode"
 
-const sonosService = new SonosService()
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Check if Sonos is configured
-    if (!sonosService.isConfigured()) {
+    const adapter = getSonosAdapter()
+    
+    // In production mode, read from cache
+    if (isProductionMode()) {
+      const nowPlaying = await adapter.getAllNowPlaying()
+      return successResponse(nowPlaying)
+    }
+
+    // In local mode, check if configured and get real data
+    if (!adapter.isConfigured()) {
       return successResponse([])
     }
-    const players = await sonosService.getPlayers()
+    
+    const players = await adapter.getPlayers()
     return successResponse(players)
   } catch (error) {
     // Fail silently - return empty array if Sonos is unreachable

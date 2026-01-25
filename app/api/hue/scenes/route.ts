@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
+import { errorResponse, handleApiError, successResponse } from "@/lib/api/utils"
 import { HueService } from "@/lib/services/hue.service"
+import { NextRequest } from "next/server"
 
 const hueService = new HueService()
 
