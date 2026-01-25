@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Monitor, Play, Square, RefreshCw, Tv2, Gamepad2 } from "lucide-react"
+import { Monitor, Square, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import { toast } from "sonner"
 import type { HueEntertainmentArea, HueEntertainmentStatus } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
@@ -19,48 +18,53 @@ interface HueSyncCardProps {
 }
 
 export function HueSyncCard({
-  areaName = "office",
+  areaName,
   areaId,
   onUpdate,
 }: HueSyncCardProps) {
-  const [area, setArea] = useState<HueEntertainmentArea | null>(null)
+  const [areas, setAreas] = useState<HueEntertainmentArea[]>([])
+  const [selectedArea, setSelectedArea] = useState<HueEntertainmentArea | null>(null)
   const [status, setStatus] = useState<HueEntertainmentStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
 
-  const fetchArea = useCallback(async () => {
+  const fetchAreas = useCallback(async () => {
     try {
       setLoading(true)
 
-      // If we have an ID, use it directly
-      if (areaId) {
-        const statusRes = await fetch(`/api/hue/entertainment/${areaId}`)
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          if (statusData.success) {
-            setStatus(statusData.data)
-          }
-        }
+      // Fetch all entertainment areas
+      const response = await fetch("/api/hue/entertainment")
+      if (!response.ok) {
+        setLoading(false)
         return
       }
 
-      // Otherwise search by name
-      const response = await fetch(
-        `/api/hue/entertainment?name=${encodeURIComponent(areaName)}`
-      )
-      if (!response.ok) return
-
       const data = await response.json()
-      if (data.success && data.data) {
-        setArea(data.data)
+      if (data.success && data.data && Array.isArray(data.data)) {
+        setAreas(data.data)
 
-        // Fetch current status
-        const statusRes = await fetch(`/api/hue/entertainment/${data.data.id}`)
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          if (statusData.success) {
-            setStatus(statusData.data)
+        // If we have an ID, use it directly
+        if (areaId) {
+          const found = data.data.find((a: HueEntertainmentArea) => a.id === areaId)
+          if (found) {
+            setSelectedArea(found)
           }
+        }
+        // If we have a name preference, try to find it
+        else if (areaName) {
+          const found = data.data.find((a: HueEntertainmentArea) =>
+            a.name.toLowerCase().includes(areaName.toLowerCase())
+          )
+          if (found) {
+            setSelectedArea(found)
+          } else if (data.data.length > 0) {
+            // Fall back to first area
+            setSelectedArea(data.data[0])
+          }
+        }
+        // Otherwise use the first area
+        else if (data.data.length > 0) {
+          setSelectedArea(data.data[0])
         }
       }
     } catch {
@@ -70,20 +74,38 @@ export function HueSyncCard({
     }
   }, [areaId, areaName])
 
+  // Fetch status when selected area changes
   useEffect(() => {
-    fetchArea()
-  }, [fetchArea])
+    if (!selectedArea) return
 
-  // Poll for status while active
-  useEffect(() => {
-    if (!status?.active) return
-
-    const interval = setInterval(async () => {
-      const id = areaId || area?.id
-      if (!id) return
-
+    const fetchStatus = async () => {
       try {
-        const res = await fetch(`/api/hue/entertainment/${id}`)
+        const statusRes = await fetch(`/api/hue/entertainment/${selectedArea.id}`)
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData.success) {
+            setStatus(statusData.data)
+          }
+        }
+      } catch {
+        // Ignore status fetch errors
+      }
+    }
+
+    fetchStatus()
+  }, [selectedArea])
+
+  useEffect(() => {
+    fetchAreas()
+  }, [fetchAreas])
+
+  // Poll for status changes (detect when Hue Sync app starts/stops)
+  useEffect(() => {
+    if (!selectedArea) return
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/hue/entertainment/${selectedArea.id}`)
         if (res.ok) {
           const data = await res.json()
           if (data.success) {
@@ -93,41 +115,60 @@ export function HueSyncCard({
       } catch {
         // Ignore polling errors
       }
-    }, 5000)
+    }
+
+    // Poll every 3 seconds to detect sync app changes
+    const interval = setInterval(pollStatus, 3000)
 
     return () => clearInterval(interval)
-  }, [status?.active, areaId, area?.id])
+  }, [selectedArea])
 
   const handleToggle = async (active: boolean) => {
-    const id = areaId || area?.id
-    if (!id) return
+    if (!selectedArea) return
 
     setToggling(true)
     try {
-      const response = await fetch(`/api/hue/entertainment/${id}`, {
+      const response = await fetch(`/api/hue/entertainment/${selectedArea.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active }),
       })
 
+      const responseData = await response.json()
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to toggle Hue Sync")
+        throw new Error(responseData.error || "Failed to toggle Hue Sync")
+      }
+
+      // Check for Hue API errors even on 200 response
+      if (responseData.data && Array.isArray(responseData.data)) {
+        const hueError = responseData.data.find((r: { error?: { description?: string } }) => r?.error)
+        if (hueError?.error) {
+          throw new Error(hueError.error.description || "Hue API error")
+        }
       }
 
       setStatus((prev) => (prev ? { ...prev, active } : { active }))
       toast.success(active ? "Hue Sync started" : "Hue Sync stopped")
       onUpdate?.()
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to toggle Hue Sync"
-      )
+      const message = error instanceof Error ? error.message : "Failed to toggle Hue Sync"
+      
+      // Check if it's an authorization error
+      if (message.includes("unauthorized") || message.includes("permissions")) {
+        toast.error("Entertainment API requires special permissions", {
+          description: "Your Hue API user needs to be created with 'generateclientkey: true'",
+          duration: 8000,
+        })
+      } else {
+        toast.error(message)
+      }
     } finally {
       setToggling(false)
     }
   }
 
-  // Don't render if no entertainment area found
+  // Loading state
   if (loading) {
     return (
       <motion.div
@@ -146,11 +187,49 @@ export function HueSyncCard({
     )
   }
 
-  if (!area && !areaId) {
-    return null // No entertainment area configured
+  // Show setup guidance if no entertainment areas exist
+  if (areas.length === 0) {
+    return (
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-dashed border-muted-foreground/30 bg-card shadow-sm"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <Monitor className="size-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Hue Sync</h3>
+              <p className="text-xs text-muted-foreground">
+                Not configured
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Create an Entertainment Area in the Philips Hue app to enable screen sync.
+            Go to <span className="font-medium text-foreground">Settings → Entertainment Areas</span> in the Hue app.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchAreas}
+              className="gap-2 text-xs"
+            >
+              <RefreshCw className="size-3" />
+              Check again
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    )
   }
 
   const isActive = status?.active || false
+  const area = selectedArea
 
   return (
     <motion.div
@@ -186,77 +265,75 @@ export function HueSyncCard({
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Hue Sync</h3>
-              <p className="text-xs text-muted-foreground">
-                {area?.name || "Entertainment Area"}
-              </p>
+              {areas.length > 1 ? (
+                <select
+                  value={selectedArea?.id || ""}
+                  onChange={(e) => {
+                    const newArea = areas.find((a) => a.id === e.target.value)
+                    if (newArea) setSelectedArea(newArea)
+                  }}
+                  className="mt-0.5 w-full rounded border-none bg-transparent p-0 text-xs text-muted-foreground focus:outline-none focus:ring-0"
+                >
+                  {areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {area?.name || "Entertainment Area"}
+                </p>
+              )}
             </div>
           </div>
-          <ToggleSwitch
-            checked={isActive}
-            onCheckedChange={handleToggle}
-          />
-        </div>
 
-        {/* Status indicator */}
-        <div className="mt-4 flex items-center gap-2">
-          <div
-            className={cn(
-              "size-2 rounded-full transition-colors",
-              isActive ? "bg-green-500 animate-pulse" : "bg-muted-foreground/30"
-            )}
-          />
-          <span className="text-xs text-muted-foreground">
-            {isActive ? "Syncing with screen" : "Ready to sync"}
-          </span>
-        </div>
-
-        {/* Quick actions when active */}
-        {isActive && (
-          <motion.div
-            className="mt-4 flex gap-2"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
+          {/* Only show stop button when active */}
+          {isActive && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleToggle(false)}
               disabled={toggling}
-              className="gap-2 text-xs"
+              className="gap-2 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400"
             >
               <Square className="size-3" />
-              Stop Sync
+              Stop
             </Button>
+          )}
+        </div>
+
+        {/* Status indicator */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "size-2 rounded-full transition-colors",
+                isActive ? "bg-green-500 animate-pulse" : "bg-muted-foreground/30"
+              )}
+            />
+            <span className="text-xs text-muted-foreground">
+              {isActive ? "Syncing with screen" : "Waiting for Hue Sync app"}
+            </span>
+          </div>
+          {!isActive && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={fetchArea}
-              disabled={toggling}
-              className="gap-2 text-xs"
+              onClick={fetchAreas}
+              disabled={loading}
+              className="h-6 gap-1 px-2 text-xs text-muted-foreground"
             >
-              <RefreshCw className="size-3" />
-              Refresh
+              <RefreshCw className={cn("size-3", loading && "animate-spin")} />
             </Button>
-          </motion.div>
-        )}
+          )}
+        </div>
 
-        {/* Mode indicators */}
+        {/* Info when not active */}
         {!isActive && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
-              <Tv2 className="size-3" />
-              Movies
-            </div>
-            <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
-              <Gamepad2 className="size-3" />
-              Gaming
-            </div>
-            <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
-              <Monitor className="size-3" />
-              Desktop
-            </div>
-          </div>
+          <p className="mt-3 text-xs text-muted-foreground/70">
+            Start sync from the Hue Sync desktop app. You can stop it here.
+          </p>
         )}
       </div>
     </motion.div>

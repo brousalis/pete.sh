@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { Button } from "@/components/ui/button"
+import type { HueAllLightsStatus, HueScene, HueZone } from "@/lib/types/hue.types"
+import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { AlertCircle, LayoutGrid, Lightbulb, List, RefreshCw } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { HueQuickActions } from "./hue-quick-actions"
 import { HueRoomCard } from "./hue-room-card"
 import { HueSyncCard } from "./hue-sync-card"
-import { Button } from "@/components/ui/button"
-import { RefreshCw, AlertCircle, Lightbulb, LayoutGrid, List } from "lucide-react"
-import type { HueZone, HueScene, HueAllLightsStatus } from "@/lib/types/hue.types"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 
 type ViewMode = "grid" | "list"
 
@@ -271,15 +271,6 @@ export function HueControls() {
         />
       </motion.div>
 
-      {/* Hue Sync for Office */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <HueSyncCard areaName="office" onUpdate={fetchData} />
-      </motion.div>
-
       {/* Room Cards */}
       <div
         className={cn(
@@ -304,6 +295,16 @@ export function HueControls() {
           </motion.div>
         ))}
       </div>
+
+      {/* Hue Sync for Office */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <HueSyncCard areaName="office" onUpdate={fetchData} />
+      </motion.div>
+
     </div>
   )
 }

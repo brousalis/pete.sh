@@ -26,6 +26,9 @@ export async function GET(
 
 /**
  * POST /api/hue/entertainment/[id] - Toggle entertainment mode
+ * 
+ * Note: Entertainment streaming requires special API permissions.
+ * The API user must be created with generateclientkey: true
  */
 export async function POST(
   request: NextRequest,
@@ -45,6 +48,30 @@ export async function POST(
     }
 
     const result = await hueService.setEntertainmentMode(id, active)
+    
+    // Check for Hue API errors in the response
+    // Hue API returns 200 OK but includes error objects in the response body
+    if (Array.isArray(result)) {
+      const hueError = result.find((r: unknown) => 
+        r && typeof r === 'object' && 'error' in r
+      )
+      if (hueError && typeof hueError === 'object' && 'error' in hueError) {
+        const err = hueError.error as { type: number; description: string }
+        
+        // Type 1 = unauthorized user - needs entertainment permissions
+        if (err.type === 1 && err.description?.includes('unauthorized')) {
+          return errorResponse(
+            "Entertainment streaming requires special API permissions. " +
+            "You need to create a new Hue API user with 'generateclientkey: true'. " +
+            "See the Hue Entertainment API documentation.",
+            403
+          )
+        }
+        
+        return errorResponse(err.description || "Hue API error", 400)
+      }
+    }
+    
     return successResponse(result)
   } catch (error) {
     return handleApiError(error)

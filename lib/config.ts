@@ -10,6 +10,7 @@ const envSchema = z.object({
   // HUE Bridge
   HUE_BRIDGE_IP: z.string().ip().optional(),
   HUE_BRIDGE_USERNAME: z.string().optional(),
+  HUE_CLIENT_KEY: z.string().optional(), // Required for entertainment streaming
 
   // Sonos
   SONOS_API_URL: z
@@ -69,7 +70,9 @@ export const config = {
   hue: {
     bridgeIp: env.HUE_BRIDGE_IP,
     username: env.HUE_BRIDGE_USERNAME,
+    clientKey: env.HUE_CLIENT_KEY, // For entertainment streaming
     isConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME),
+    isEntertainmentConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME && env.HUE_CLIENT_KEY),
   },
   sonos: {
     apiUrl: env.SONOS_API_URL || 'http://localhost:5005',
