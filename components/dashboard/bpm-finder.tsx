@@ -495,7 +495,7 @@ export function BpmFinder() {
           <a
             href="https://getsongbpm.com"
             target="_blank"
-            rel="noopener nofollow"
+            rel="noopener"
             className="font-medium text-foreground underline decoration-muted-foreground/50 underline-offset-2 hover:decoration-foreground"
           >
             GetSongBPM.com
@@ -792,7 +792,7 @@ export function BpmFinder() {
         <a
           href="https://getsongbpm.com"
           target="_blank"
-          rel="noopener nofollow"
+          rel="noopener"
           className="font-medium text-foreground underline decoration-muted-foreground/50 underline-offset-2 hover:decoration-foreground"
         >
           GetSongBPM.com
