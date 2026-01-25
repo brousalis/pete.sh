@@ -10,7 +10,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "petehome",
-  description: "petehome - Your modern smart home control center. Monitor and control your smart home devices, view statistics, manage profiles, and more.",
+  description: "petehome - because pete be home sometimes",
   generator: "petehome",
 }
 
