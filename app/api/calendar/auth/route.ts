@@ -11,7 +11,7 @@ import { CalendarService } from "@/lib/services/calendar.service"
 export async function GET(request: NextRequest) {
   try {
     const calendarService = new CalendarService()
-    
+
     if (!calendarService.isConfigured()) {
       return NextResponse.json({ error: "Google Calendar not configured" }, { status: 400 })
     }

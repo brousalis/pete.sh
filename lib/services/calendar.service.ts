@@ -36,17 +36,17 @@ export async function loadCalendarTokensFromCookies(
         access_token: "placeholder", // Needs something to initialize
         refresh_token: refreshToken,
       })
-      
+
       // Refresh the access token using the public method
       const updatedCredentials = await calendarService.refreshAccessToken()
       accessToken = updatedCredentials.access_token || null
-      
+
       console.log("[CalendarService] Refresh result:", {
         gotAccessToken: !!accessToken,
         gotRefreshToken: !!updatedCredentials.refresh_token,
         expiryDate: updatedCredentials.expiry_date,
       })
-      
+
       // Update the cookie with the new access token
       if (accessToken) {
         const expiresIn = updatedCredentials.expiry_date
@@ -62,7 +62,7 @@ export async function loadCalendarTokensFromCookies(
           expires: expiresIn,
           path: "/",
         })
-        
+
         // Update refresh token cookie if it changed (extend expiry)
         const newRefreshToken = updatedCredentials.refresh_token || refreshToken
         cookieStore.set("google_calendar_refresh_token", newRefreshToken, {
@@ -72,7 +72,7 @@ export async function loadCalendarTokensFromCookies(
           expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
           path: "/",
         })
-        
+
         console.log("[CalendarService] Successfully refreshed and stored access token")
       }
     } catch (refreshError: any) {
@@ -80,17 +80,17 @@ export async function loadCalendarTokensFromCookies(
         error: refreshError?.message || refreshError,
         code: refreshError?.code,
       })
-      
+
       // Only clear tokens if it's an auth error (invalid_grant means refresh token is revoked)
-      if (refreshError?.message?.includes("invalid_grant") || 
-          refreshError?.code === 400 || 
+      if (refreshError?.message?.includes("invalid_grant") ||
+          refreshError?.code === 400 ||
           refreshError?.code === 401) {
         console.log("[CalendarService] Clearing invalid tokens")
         cookieStore.delete("google_calendar_refresh_token")
         cookieStore.delete("google_calendar_access_token")
         return { accessToken: null, refreshToken: null }
       }
-      
+
       // For other errors, keep the refresh token (might be a temporary issue)
       return { accessToken: null, refreshToken }
     }
@@ -115,15 +115,15 @@ export async function updateCalendarTokenCookies(
   originalAccessToken: string | null
 ): Promise<void> {
   const currentCredentials = calendarService.getCredentials()
-  
+
   // Update cookie if:
   // 1. Token was refreshed (different access token)
   // 2. We have credentials but no original token (token was refreshed proactively in loadCalendarTokensFromCookies)
   if (currentCredentials.access_token) {
-    const shouldUpdate = 
+    const shouldUpdate =
       !originalAccessToken || // No original token means it was refreshed proactively
       currentCredentials.access_token !== originalAccessToken // Token changed
-    
+
     if (shouldUpdate) {
       const cookieStore = await cookies()
       const expiresIn = currentCredentials.expiry_date
@@ -229,7 +229,7 @@ export class CalendarService {
     })
 
     this.oauth2Client.setCredentials(tokens)
-    
+
     // Ensure calendar client uses the updated credentials
     // The calendar client should automatically use the oauth2Client, but let's verify
     if (this.calendar) {
@@ -262,15 +262,15 @@ export class CalendarService {
     }
 
     const { credentials } = await this.oauth2Client.refreshAccessToken()
-    
+
     // Preserve refresh token if not returned in new credentials
     const updatedCredentials = {
       ...credentials,
       refresh_token: credentials.refresh_token || this.oauth2Client.credentials.refresh_token,
     }
-    
+
     this.oauth2Client.setCredentials(updatedCredentials)
-    
+
     return updatedCredentials
   }
 
@@ -367,10 +367,10 @@ export class CalendarService {
       })
 
       const events = response.data.items || []
-      
+
       // Filter out cancelled events
       const activeEvents = events.filter((e: CalendarEvent) => e.status !== "cancelled")
-      
+
       console.log("[CalendarService] Event filtering:", {
         totalEvents: events.length,
         cancelledEvents: events.filter((e: CalendarEvent) => e.status === "cancelled").length,

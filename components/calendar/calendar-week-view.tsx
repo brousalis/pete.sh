@@ -25,7 +25,7 @@ interface CalendarWeekViewProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const HOUR_HEIGHT = 60 // pixels
+const HOUR_HEIGHT = 48 // pixels - reduced for better fit on tablets
 
 export function CalendarWeekView({
   currentDate,
@@ -70,7 +70,7 @@ export function CalendarWeekView({
       {/* Header with day names */}
       <div className="flex shrink-0 border-b border-border/50">
         {/* Time column spacer */}
-        <div className="w-16 shrink-0 border-r border-border/30" />
+        <div className="w-12 shrink-0 border-r border-border/30" />
 
         {/* Day headers */}
         <div className="grid flex-1 grid-cols-7">
@@ -79,14 +79,14 @@ export function CalendarWeekView({
               key={day.date.toISOString()}
               onClick={() => onSelectDate(day.date)}
               className={cn(
-                "flex flex-col items-center gap-0.5 border-r border-border/30 py-2 transition-colors last:border-r-0",
+                "flex flex-col items-center gap-0 border-r border-border/30 py-1.5 transition-colors last:border-r-0",
                 "hover:bg-muted/50",
                 day.isSelected && "bg-brand/10"
               )}
             >
               <span
                 className={cn(
-                  "text-xs font-medium uppercase",
+                  "text-[10px] font-medium uppercase",
                   day.isToday ? "text-brand" : "text-muted-foreground"
                 )}
               >
@@ -94,7 +94,7 @@ export function CalendarWeekView({
               </span>
               <span
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-full text-sm font-semibold",
+                  "flex size-6 items-center justify-center rounded-full text-xs font-semibold",
                   day.isToday && "bg-brand text-white",
                   day.isSelected && !day.isToday && "bg-brand/20 text-brand"
                 )}
@@ -109,10 +109,10 @@ export function CalendarWeekView({
       {/* All-day events section */}
       {allDayEvents.length > 0 && (
         <div className="flex shrink-0 border-b border-border/50 bg-muted/20">
-          <div className="flex w-16 shrink-0 items-center justify-center border-r border-border/30 text-[10px] font-medium text-muted-foreground">
+          <div className="flex w-12 shrink-0 items-center justify-center border-r border-border/30 text-[9px] font-medium text-muted-foreground">
             ALL DAY
           </div>
-          <div className="grid min-h-[40px] flex-1 grid-cols-7">
+          <div className="grid min-h-[32px] flex-1 grid-cols-7">
             {weekDays.map((day) => {
               const dayAllDayEvents = allDayEvents.filter((e) =>
                 getEventsForDay(day.date, [e]).length > 0
@@ -166,11 +166,11 @@ export function CalendarWeekView({
           <ScrollArea className="h-full" ref={scrollRef}>
             <div className="flex" style={{ height: HOURS.length * HOUR_HEIGHT }}>
               {/* Time labels */}
-              <div className="relative w-16 shrink-0 border-r border-border/30">
+              <div className="relative w-12 shrink-0 border-r border-border/30">
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute left-0 right-0 -translate-y-2 pr-2 text-right text-[10px] font-medium text-muted-foreground"
+                    className="absolute left-0 right-0 -translate-y-2 pr-1 text-right text-[9px] font-medium text-muted-foreground"
                     style={{ top: hour * HOUR_HEIGHT }}
                   >
                     {format(new Date().setHours(hour, 0, 0, 0), "h a")}

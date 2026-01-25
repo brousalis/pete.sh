@@ -1,20 +1,23 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
-import { LyftService } from "@/lib/services/lyft.service"
+import { HueService } from "@/lib/services/hue.service"
 
-const lyftService = new LyftService()
+const hueService = new HueService()
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!lyftService.isConfigured()) {
-      return errorResponse("Lyft API not configured", 400)
+    if (!hueService.isConfigured()) {
+      return errorResponse("HUE bridge not configured", 400)
     }
 
     const { id } = await params
-    const result = await lyftService.cancelRide(id)
+    const body = await request.json().catch(() => ({}))
+    const { on } = body
+
+    const result = await hueService.toggleLight(id, on)
     return successResponse(result)
   } catch (error) {
     return handleApiError(error)

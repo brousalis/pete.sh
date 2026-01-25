@@ -140,7 +140,7 @@ export type UrgencyLevel = "missed" | "leave-now" | "prepare" | "upcoming" | "no
  * @param arrivalMinutes - Minutes until arrival
  * @param walkingMinutes - Minutes to walk to the stop
  * @returns Urgency level
- * 
+ *
  * Logic:
  * - buffer < 0: MISSED - impossible to catch, arrival is sooner than walk time
  * - buffer 0-1: LEAVE NOW - must leave immediately to catch it
@@ -150,7 +150,7 @@ export type UrgencyLevel = "missed" | "leave-now" | "prepare" | "upcoming" | "no
  */
 export function getUrgencyLevel(arrivalMinutes: number, walkingMinutes: number): UrgencyLevel {
   const buffer = arrivalMinutes - walkingMinutes
-  
+
   if (buffer < 0) {
     // Too late - can't make it even if you leave now
     return "missed"

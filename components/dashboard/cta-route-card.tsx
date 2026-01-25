@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect, useRef } from "react"
 import { Bus, Train, Clock, AlertCircle, PersonStanding, AlertTriangle } from "lucide-react"
 import type { CTABusPrediction } from "@/lib/types/cta.types"
 import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from "@/lib/types/cta.types"
@@ -74,9 +75,88 @@ function getUrgencyLabel(urgency: UrgencyLevel): string | null {
   }
 }
 
+interface UrgencyBannerProps {
+  urgency: 'leave-now' | 'prepare'
+  arrivalMinutes: number
+  walkingTime: number
+}
+
+/**
+ * Animated urgency banner with countdown progress bar
+ * The progress bar counts down from 100% to 0% based on remaining buffer time
+ */
+function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerProps) {
+  const [progress, setProgress] = useState(100)
+  const startTimeRef = useRef<number>(Date.now())
+  const initialBufferRef = useRef<number>(arrivalMinutes - walkingTime)
+
+  // Calculate the max buffer time for each urgency level
+  // leave-now: 0-1 min buffer, prepare: 2-3 min buffer
+  const maxBuffer = urgency === 'leave-now' ? 2 : 4 // Buffer in minutes when progress starts at 100%
+
+  useEffect(() => {
+    // Reset refs when arrival time changes significantly
+    const currentBuffer = arrivalMinutes - walkingTime
+    startTimeRef.current = Date.now()
+    initialBufferRef.current = currentBuffer
+
+    const interval = setInterval(() => {
+      const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000
+      const currentBufferSeconds = (initialBufferRef.current * 60) - elapsedSeconds
+      
+      // Calculate progress: 100% at maxBuffer minutes, 0% at 0 minutes
+      const maxBufferSeconds = maxBuffer * 60
+      const newProgress = Math.max(0, Math.min(100, (currentBufferSeconds / maxBufferSeconds) * 100))
+      
+      setProgress(newProgress)
+    }, 100) // Update every 100ms for smooth animation
+
+    return () => clearInterval(interval)
+  }, [arrivalMinutes, walkingTime, maxBuffer])
+
+  const isLeaveNow = urgency === 'leave-now'
+
+  return (
+    <div className="relative overflow-hidden rounded-md mb-3">
+      {/* Progress bar background */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-all duration-100 ease-linear",
+          isLeaveNow
+            ? "bg-red-600/80"
+            : "bg-orange-500/80"
+        )}
+        style={{ width: `${progress}%` }}
+      />
+      {/* Darker background for depleted portion */}
+      <div
+        className={cn(
+          "absolute inset-0",
+          isLeaveNow
+            ? "bg-red-900/90"
+            : "bg-orange-900/90"
+        )}
+        style={{ 
+          left: `${progress}%`,
+          width: `${100 - progress}%`
+        }}
+      />
+      {/* Content */}
+      <div className={cn(
+        "relative flex items-center justify-center gap-2 px-2 py-1.5 text-xs font-medium text-white",
+        isLeaveNow && progress < 30 && "animate-pulse"
+      )}>
+        <AlertTriangle className="size-3" />
+        {isLeaveNow ? 'LEAVE NOW!' : 'Get ready to leave'}
+        <span className="font-normal">({arrivalMinutes}m arrival, {walkingTime}m walk)</span>
+      </div>
+    </div>
+  )
+}
+
 export function CTARouteCard({ route, type, predictions, error }: CTARouteCardProps) {
   const walkingTime = getWalkingTime(route, type)
-  
+
   if (error) {
     return (
       <div className="rounded-xl bg-background p-4 ">
@@ -89,10 +169,10 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
   }
 
   const Icon = type === "bus" ? Bus : Train
-  
+
   // Calculate urgency for the first prediction (next arrival)
   const firstPrediction = predictions[0]
-  const firstArrivalMinutes = firstPrediction 
+  const firstArrivalMinutes = firstPrediction
     ? (firstPrediction.prdctdn === "DUE" ? 0 : parseInt(firstPrediction.prdctdn, 10))
     : null
   const urgency = firstArrivalMinutes !== null && !isNaN(firstArrivalMinutes)
@@ -100,7 +180,7 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
     : "normal"
   const urgencyStyles = getUrgencyStyles(urgency)
   const urgencyLabel = getUrgencyLabel(urgency)
-  
+
   // Check if there's a catchable arrival (any arrival where you can still make it)
   const hasCatchable = predictions.some((pred) => {
     const minutes = pred.prdctdn === "DUE" ? 0 : parseInt(pred.prdctdn, 10)
@@ -125,21 +205,16 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
           <span>{walkingTime}m walk</span>
         </div>
       </div>
-      
-      {/* Urgency alert banner */}
-      {urgencyLabel && (
-        <div className={cn(
-          "flex items-center justify-center gap-2 rounded-md px-2 py-1.5 mb-3 text-xs font-medium",
-          urgencyStyles.badge
-        )}>
-          {urgency === "leave-now" && <AlertTriangle className="size-3" />}
-          {urgencyLabel}
-          {urgency === "leave-now" && (
-            <span className="font-normal">({firstArrivalMinutes}m arrival, {walkingTime}m walk)</span>
-          )}
-        </div>
+
+      {/* Urgency alert banner with countdown progress */}
+      {(urgency === "leave-now" || urgency === "prepare") && firstArrivalMinutes !== null && (
+        <UrgencyBanner
+          urgency={urgency}
+          arrivalMinutes={firstArrivalMinutes}
+          walkingTime={walkingTime}
+        />
       )}
-      
+
       {predictions.length === 0 ? (
         <p className="text-xs text-muted-foreground">No predictions available</p>
       ) : (
@@ -149,10 +224,10 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
             const canMakeIt = !isNaN(minutes) && minutes >= walkingTime
             const predUrgency = !isNaN(minutes) ? getUrgencyLevel(minutes, walkingTime) : "normal"
             const predStyles = getUrgencyStyles(predUrgency)
-            
+
             return (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={cn(
                   "flex items-center gap-2 text-sm rounded-md px-2 py-1 -mx-2",
                   idx === 0 && urgency !== "normal" && "bg-background/50"
@@ -178,7 +253,7 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
           })}
         </div>
       )}
-      
+
       {/* Show next catchable if first one is missed */}
       {!hasCatchable && predictions.length > 0 && (
         <p className="mt-2 text-xs text-muted-foreground italic">

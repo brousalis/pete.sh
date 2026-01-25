@@ -43,10 +43,10 @@ interface CalendarHeaderProps {
 }
 
 const VIEW_MODES: { value: CalendarViewMode; label: string; icon: React.ReactNode }[] = [
-  { value: "month", label: "Month", icon: <CalendarDays className="size-4" /> },
-  { value: "week", label: "Week", icon: <Calendar className="size-4" /> },
-  { value: "day", label: "Day", icon: <Clock className="size-4" /> },
-  { value: "agenda", label: "Upcoming", icon: <List className="size-4" /> },
+  { value: "month", label: "Month", icon: <CalendarDays className="size-3.5" /> },
+  { value: "week", label: "Week", icon: <Calendar className="size-3.5" /> },
+  { value: "day", label: "Day", icon: <Clock className="size-3.5" /> },
+  { value: "agenda", label: "Upcoming", icon: <List className="size-3.5" /> },
 ]
 
 const MONTHS = [
@@ -106,28 +106,28 @@ export function CalendarHeader({
   const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i)
 
   return (
-    <div className="flex flex-col gap-3 border-b border-border/50 bg-card/50 p-4">
+    <div className="flex flex-col gap-2 border-b border-border/50 bg-card/50 px-3 py-2">
       {/* Top row - Navigation and title */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Left side - Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Today button */}
           <Button
             variant="outline"
             size="sm"
             onClick={handleToday}
-            className="h-9"
+            className="h-8 text-xs"
           >
             Today
           </Button>
 
           {/* Prev/Next navigation */}
-          <div className="flex items-center rounded-lg border border-border/50">
+          <div className="flex items-center rounded-md border border-border/50">
             <Button
               variant="ghost"
               size="icon"
               onClick={handlePrev}
-              className="h-9 w-9 rounded-r-none"
+              className="h-8 w-8 rounded-r-none"
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -135,7 +135,7 @@ export function CalendarHeader({
               variant="ghost"
               size="icon"
               onClick={handleNext}
-              className="h-9 w-9 rounded-l-none"
+              className="h-8 w-8 rounded-l-none"
             >
               <ChevronRight className="size-4" />
             </Button>
@@ -146,7 +146,7 @@ export function CalendarHeader({
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-9 gap-2 text-lg font-semibold"
+                className="h-8 gap-1.5 text-base font-semibold"
               >
                 <span>{title}</span>
                 <Calendar className="size-4 text-muted-foreground" />
@@ -196,16 +196,16 @@ export function CalendarHeader({
         </div>
 
         {/* Right side - View toggle and actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-9 w-[180px] pl-8 lg:w-[220px]"
+              className="h-8 w-[140px] pl-7 text-xs lg:w-[180px]"
             />
           </div>
 
@@ -215,7 +215,7 @@ export function CalendarHeader({
             size="icon"
             onClick={onRefresh}
             disabled={isLoading}
-            className="h-9 w-9"
+            className="h-8 w-8"
           >
             <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
           </Button>
@@ -225,13 +225,13 @@ export function CalendarHeader({
       {/* Bottom row - View mode switcher */}
       <div className="flex items-center justify-between">
         {/* View mode tabs */}
-        <div className="flex rounded-lg border border-border/50 bg-muted/30 p-1">
+        <div className="flex rounded-md border border-border/50 bg-muted/30 p-0.5">
           {VIEW_MODES.map((mode) => (
             <button
               key={mode.value}
               onClick={() => onViewModeChange(mode.value)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                "flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-all",
                 viewMode === mode.value
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -244,7 +244,7 @@ export function CalendarHeader({
         </div>
 
         {/* Quick date shortcuts */}
-        <div className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
+        <div className="hidden items-center gap-1 text-[11px] text-muted-foreground md:flex">
           <span>Jump to:</span>
           <button
             onClick={() => onDateChange(startOfMonth(new Date()))}

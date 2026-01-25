@@ -37,7 +37,7 @@ export function CalendarAgendaView({
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const oneYearFromNow = addYears(today, 1)
-  
+
   const filteredEvents = events.filter((event) => {
     const start = getEventStartDate(event)
     if (!start) return false
@@ -47,7 +47,7 @@ export function CalendarAgendaView({
 
   // Group events by date
   const groupedEvents = groupEventsByDate(filteredEvents)
-  
+
   // Show dates with events (up to 1 year)
   const visibleDates = Array.from(groupedEvents.keys()).sort()
 

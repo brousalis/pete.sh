@@ -3,8 +3,8 @@
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import * as React from 'react'
 
-import { cn } from '@/lib/utils'
 import { transitions } from '@/lib/animations'
+import { cn } from '@/lib/utils'
 
 interface CardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   children?: React.ReactNode
@@ -23,7 +23,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         ref={ref}
         data-slot="card"
         className={cn(
-          'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
+          'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm py-6',
           shouldAnimate && 'cursor-pointer',
           className
         )}
@@ -126,6 +126,6 @@ export {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 }
 export type { CardProps }

@@ -18,10 +18,6 @@ const envSchema = z.object({
     .optional()
     .or(z.string().startsWith('http://localhost')),
 
-  // Lyft
-  LYFT_CLIENT_ID: z.string().optional(),
-  LYFT_CLIENT_SECRET: z.string().optional(),
-
   // Google
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -78,11 +74,6 @@ export const config = {
   sonos: {
     apiUrl: env.SONOS_API_URL || 'http://localhost:5005',
     isConfigured: Boolean(env.SONOS_API_URL),
-  },
-  lyft: {
-    clientId: env.LYFT_CLIENT_ID,
-    clientSecret: env.LYFT_CLIENT_SECRET,
-    isConfigured: Boolean(env.LYFT_CLIENT_ID && env.LYFT_CLIENT_SECRET),
   },
   google: {
     clientId: env.GOOGLE_CLIENT_ID,

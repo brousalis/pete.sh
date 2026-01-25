@@ -151,10 +151,27 @@
         "wednesday": {},
         "thursday": {},
         "friday": {},
-        "saturday": {},
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-01-24T23:25:15.597Z",
+            "exercisesCompleted": [
+              "sat-intervals",
+              "sat-cooldown",
+              "sat-finisher",
+              "sat-warmup-1"
+            ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-01-24T23:28:40.726Z"
+          }
+        },
         "sunday": {}
       }
     }
   ],
-  "updatedAt": "2026-01-20T00:31:57.078Z"
+  "updatedAt": "2026-01-24T23:31:16.497Z"
 }

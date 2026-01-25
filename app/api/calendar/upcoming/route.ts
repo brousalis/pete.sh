@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies()
     const hasAccessToken = !!cookieStore.get("google_calendar_access_token")?.value
     const hasRefreshToken = !!cookieStore.get("google_calendar_refresh_token")?.value
-    
+
     console.log("[Calendar Upcoming] Cookie status:", {
       hasAccessToken,
       hasRefreshToken,

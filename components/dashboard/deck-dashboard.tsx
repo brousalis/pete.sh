@@ -7,6 +7,7 @@ import { Home } from 'lucide-react'
 import Link from 'next/link'
 import { DeckCalendar } from './deck-calendar'
 import { DeckClock } from './deck-clock'
+import { DeckCoffee } from './deck-coffee'
 import { DeckFitness } from './deck-fitness'
 import { DeckLights } from './deck-lights'
 import { DeckMusic } from './deck-music'
@@ -87,6 +88,9 @@ export function DeckDashboard() {
           </DeckCard>
           <DeckCard>
             <DeckFitness />
+          </DeckCard>
+          <DeckCard>
+            <DeckCoffee />
           </DeckCard>
         </motion.div>
       </div>

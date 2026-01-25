@@ -15,11 +15,11 @@ import { WorkoutCenter } from "@/components/dashboard/workout-center"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import type { 
-  WeeklyRoutine, 
-  DayOfWeek, 
-  Workout, 
-  ConsistencyStats 
+import type {
+  WeeklyRoutine,
+  DayOfWeek,
+  Workout,
+  ConsistencyStats
 } from "@/lib/types/fitness.types"
 
 const DAYS_OF_WEEK: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -36,10 +36,10 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
 
 /**
  * FitnessSingleView - A compact single-view fitness dashboard optimized for iPad Mini landscape.
- * 
+ *
  * Layout: 3-panel design with morning/night stretch sidebars and central workout area
  * Target: 1024 x 768px (iPad Mini landscape)
- * 
+ *
  * Features:
  * - Morning routine panel (left)
  * - Workout center (middle, larger)
@@ -271,7 +271,7 @@ export function FitnessSingleView() {
   const viewingDayName = viewingDay.charAt(0).toUpperCase() + viewingDay.slice(1)
   const hasInjuryProtocol = routine.injuryProtocol?.status === "active"
   const isViewingRestDay = viewingDaySchedule?.focus === "Rest" || viewingDaySchedule?.focus === "Active Recovery"
-  
+
   // Get the appropriate workout to display
   const displayWorkout = isViewingToday ? todayWorkout : selectedDayWorkout
 
@@ -302,15 +302,15 @@ export function FitnessSingleView() {
                   const isToday = day === today
                   const isSelected = day === viewingDay
                   const isRest = daySchedule?.focus === "Rest"
-                  
+
                   return (
                     <button
                       key={day}
                       onClick={() => handleDaySelect(day)}
                       className={cn(
                         "flex flex-col items-center p-2 rounded-md text-center transition-colors min-w-[48px]",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground" 
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted",
                         isToday && !isSelected && "ring-1 ring-primary/50"
                       )}
@@ -344,12 +344,12 @@ export function FitnessSingleView() {
               )}
             </PopoverContent>
           </Popover>
-          
+
           <span className="text-muted-foreground text-sm">·</span>
           <span className="text-muted-foreground text-sm">{format(new Date(), "MMM d")}</span>
           <span className="text-muted-foreground text-sm hidden sm:inline">·</span>
           <span className="text-sm text-foreground/80 hidden sm:inline">{viewingDaySchedule?.focus}</span>
-          
+
           {!isViewingToday && (
             <Badge variant="secondary" className="text-[10px] h-5 ml-1">
               Preview
@@ -375,8 +375,6 @@ export function FitnessSingleView() {
           onComplete={handleMorningComplete}
           onUncomplete={handleMorningUncomplete}
           isCompleting={completingMorning}
-          openVideoId={openVideoId}
-          onVideoToggle={handleVideoToggle}
         />
 
         {/* Workout Center - Shows selected day's workout */}
@@ -402,8 +400,6 @@ export function FitnessSingleView() {
           onComplete={handleNightComplete}
           onUncomplete={handleNightUncomplete}
           isCompleting={completingNight}
-          openVideoId={openVideoId}
-          onVideoToggle={handleVideoToggle}
         />
       </div>
 

@@ -1,12 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { Sun, Moon, Play, Check, Info, ChevronDown, ChevronUp, Clock } from "lucide-react"
+import { Sun, Moon, Play, Check, Info, ChevronDown, ChevronUp, Clock, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExerciseTimer } from "@/components/ui/exercise-timer"
-import { YouTubePlayer } from "@/components/ui/youtube-player"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -34,10 +39,6 @@ interface StretchPanelProps {
   onUncomplete: () => void
   /** Whether the complete action is in progress */
   isCompleting?: boolean
-  /** Currently open video ID (for single-video-at-a-time behavior) */
-  openVideoId?: string | null
-  /** Callback when a video is toggled */
-  onVideoToggle?: (exerciseId: string | null) => void
   /** Custom class name */
   className?: string
 }
@@ -53,7 +54,7 @@ interface StretchExercise {
 
 /**
  * StretchPanel - A compact vertical panel for morning/night stretch routines.
- * 
+ *
  * Features:
  * - Collapsible exercise details
  * - Integrated countdown timers with audio
@@ -67,18 +68,17 @@ export function StretchPanel({
   onComplete,
   onUncomplete,
   isCompleting = false,
-  openVideoId,
-  onVideoToggle,
   className,
 }: StretchPanelProps) {
   const [activeTimerIdx, setActiveTimerIdx] = useState<number | null>(null)
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set())
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null)
+  const [videoModal, setVideoModal] = useState<{ videoId: string; title: string } | null>(null)
 
   const isCompleted = completion?.completed || false
   const Icon = type === "morning" ? Sun : Moon
-  
-  const themeColors = type === "morning" 
+
+  const themeColors = type === "morning"
     ? {
         iconBg: "bg-amber-500/10",
         iconColor: "text-amber-500",
@@ -129,7 +129,7 @@ export function StretchPanel({
   const handleTimerComplete = (idx: number) => {
     setCompletedExercises((prev) => new Set(prev).add(idx))
     setActiveTimerIdx(null)
-    
+
     // Auto-advance to next exercise if available
     const nextIdx = idx + 1
     if (nextIdx < routine.exercises.length) {
@@ -149,13 +149,12 @@ export function StretchPanel({
     setExpandedExercise(expandedExercise === idx ? null : idx)
   }
 
-  const handleVideoToggle = (exerciseIdx: number) => {
-    const exerciseId = `${type}-${exerciseIdx}`
-    if (openVideoId === exerciseId) {
-      onVideoToggle?.(null)
-    } else {
-      onVideoToggle?.(exerciseId)
-    }
+  const openVideoModal = (videoId: string, title: string) => {
+    setVideoModal({ videoId, title })
+  }
+
+  const closeVideoModal = () => {
+    setVideoModal(null)
   }
 
   // Get YouTube video IDs for stretches (these aren't in the data, but we can add them)
@@ -201,29 +200,42 @@ export function StretchPanel({
               const isTimerActive = activeTimerIdx === idx
               const isExpanded = expandedExercise === idx
               const videoId = getVideoId(exercise.name)
-              const isVideoOpen = openVideoId === `${type}-${idx}`
 
               return (
                 <div
                   key={idx}
                   className={cn(
                     "rounded-md border transition-colors",
-                    isExerciseCompleted 
-                      ? "bg-green-500/5 border-green-500/20" 
+                    isExerciseCompleted
+                      ? "bg-green-500/5 border-green-500/20"
                       : "bg-muted/30 border-transparent",
                     isTimerActive && "ring-1 ring-blue-500/50"
                   )}
                 >
                   {/* Exercise Row */}
                   <div className="flex items-start gap-2 p-2">
-                    {/* Completion indicator */}
-                    <div className="mt-0.5 shrink-0">
+                    {/* Completion indicator - clickable */}
+                    <button
+                      className="mt-0.5 shrink-0 p-0.5 -m-0.5 rounded hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setCompletedExercises((prev) => {
+                          const newSet = new Set(prev)
+                          if (newSet.has(idx)) {
+                            newSet.delete(idx)
+                          } else {
+                            newSet.add(idx)
+                          }
+                          return newSet
+                        })
+                      }}
+                      aria-label={isExerciseCompleted ? "Mark as incomplete" : "Mark as complete"}
+                    >
                       {isExerciseCompleted ? (
                         <Check className="size-3.5 text-green-500" />
                       ) : (
-                        <div className="size-3.5 rounded-full border border-muted-foreground/30" />
+                        <div className="size-3.5 rounded-full border border-muted-foreground/30 hover:border-green-500/50" />
                       )}
-                    </div>
+                    </button>
 
                     {/* Exercise info */}
                     <div className="flex-1 min-w-0">
@@ -305,30 +317,16 @@ export function StretchPanel({
                     {/* Video button */}
                     {videoId && (
                       <Button
-                        variant={isVideoOpen ? "secondary" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         className="h-6 px-2 text-[10px] gap-1"
-                        onClick={() => handleVideoToggle(idx)}
+                        onClick={() => openVideoModal(videoId, exercise.name)}
                       >
                         <Play className="size-3" />
                         Demo
                       </Button>
                     )}
                   </div>
-
-                  {/* Inline Video */}
-                  {isVideoOpen && videoId && (
-                    <div className="px-2 pb-2">
-                      <YouTubePlayer
-                        videoId={videoId}
-                        title={exercise.name}
-                        isOpen={true}
-                        onToggle={() => handleVideoToggle(idx)}
-                        ultraCompact
-                        hideTrigger
-                      />
-                    </div>
-                  )}
                 </div>
               )
             })}
@@ -348,6 +346,43 @@ export function StretchPanel({
           </Button>
         </div>
       </CardContent>
+
+      {/* Video Modal */}
+      <Dialog open={!!videoModal} onOpenChange={(open) => !open && closeVideoModal()}>
+        <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle className="text-base">{videoModal?.title}</DialogTitle>
+          </DialogHeader>
+          {videoModal && (
+            <div className="px-4 pb-4">
+              <div className="relative overflow-hidden rounded-lg border border-border/50 bg-black shadow-lg">
+                {/* 16:9 Aspect Ratio Container */}
+                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <iframe
+                    className="absolute inset-0 size-full"
+                    src={`https://www.youtube.com/embed/${videoModal.videoId}?rel=0&modestbranding=1&autoplay=1`}
+                    title={videoModal.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+              {/* YouTube link */}
+              <div className="mt-2 flex items-center justify-end">
+                <a
+                  href={`https://www.youtube.com/watch?v=${videoModal.videoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <span>Open on YouTube</span>
+                  <ExternalLink className="size-3" />
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

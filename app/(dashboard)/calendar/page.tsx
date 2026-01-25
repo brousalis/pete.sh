@@ -220,7 +220,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="-m-3 flex h-[calc(100%+24px)] flex-col overflow-hidden sm:-m-5 sm:h-[calc(100%+40px)] md:-mx-6 md:-my-6 md:h-[calc(100%+48px)]">
       {/* Header */}
       <CalendarHeader
         currentDate={currentDate}

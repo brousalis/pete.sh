@@ -39,8 +39,8 @@ export default function DashboardLayout({
           </div>
 
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
-          <main className="scrollbar-hide bg-muted min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 md:px-6 md:py-6">
-            <PageTransitionProvider>
+          <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 md:px-6 md:py-6">
+            <PageTransitionProvider className="h-full">
               {children}
             </PageTransitionProvider>
           </main>

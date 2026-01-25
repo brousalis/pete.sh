@@ -64,7 +64,7 @@ function TabsTrigger({
       }
     }
     checkActive()
-    
+
     // Use MutationObserver to watch for data-state changes
     const observer = new MutationObserver(checkActive)
     if (ref.current) {

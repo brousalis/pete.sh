@@ -1,11 +1,64 @@
 /**
- * TypeScript types for Coffee Brewing Assistant feature
- * Based on coffee.md - The Chicago Studio Coffee Manual (2026 House p)
+ * TypeScript types for Coffee Guide feature
+ * Based on coffee-v2.md - The Chicago Studio Coffee Guide (2026)
  */
 
-export type CoffeeRoutineType = "morning" | "afternoon" | "sunday"
+export type BrewMethod = 'switch' | 'moccamaster'
+export type RoastLevel = 'light' | 'medium' | 'dark'
+export type CupSize = '1-cup' | '2-cup' | '3-4-cup' | '8-cup' | '10-cup'
 
-export type GrinderType = "ode" | "s3"
+export interface CoffeeRecipe {
+  id: string
+  method: BrewMethod
+  cupSize: CupSize
+  cupSizeLabel: string
+  waterMl: number
+  roast: RoastLevel
+  ratio: string
+  coffee: number // grams
+  temp: string // temperature description
+  technique: string // agitation/stirring notes
+  switchSetting?: 'open' | 'closed' | 'hybrid' // for Hario Switch
+  moccaSetting?: 'half' | 'full' // for Moccamaster (Half Jug / Full Jug)
+  timingCues?: TimingCue[]
+}
+
+export interface TimingCue {
+  time: number // seconds
+  label: string
+  action: string
+}
+
+export interface RoastStrategy {
+  roast: RoastLevel
+  goal: string
+  temp: string
+  technique: string
+  ratio: string
+}
+
+export interface QuickDose {
+  label: string
+  grams: number
+  note?: string
+}
+
+export interface CoffeeGuideData {
+  roastStrategies: RoastStrategy[]
+  switchRecipes: CoffeeRecipe[]
+  moccamasterRecipes: CoffeeRecipe[]
+  switchDoses: QuickDose[]
+  moccamasterDoses: QuickDose[]
+}
+
+export interface GoldenRule {
+  title: string
+  description: string
+}
+
+// Legacy types for backward compatibility (can be removed later)
+export type CoffeeRoutineType = 'morning' | 'afternoon' | 'sunday'
+export type GrinderType = 'ode' | 's3'
 
 export interface CoffeeRoutine {
   id: string
@@ -13,27 +66,27 @@ export interface CoffeeRoutine {
   name: string
   description: string
   batchSize: string
-  ratio: string // e.g. "1:17" or "1:16"
-  ratioNote?: string // e.g. "Smooth & Sweet" or "High Clarity"
-  water: number // in grams
-  coffee: number // in grams
+  ratio: string
+  ratioNote?: string
+  water: number
+  coffee: number
   grinder: GrinderType
   grinderSetting: string
   filter: string
-  waterTemp?: number // in Fahrenheit
-  waterNote?: string // e.g. "Default Machine Temp" or "Cooler = Sweeter"
+  waterTemp?: number
+  waterNote?: string
   steps: BrewStep[]
-  totalTime?: number // in seconds
+  totalTime?: number
   tips?: string[]
   beanRecommendation?: BeanRecommendation
 }
 
 export interface BeanRecommendation {
-  source: string // e.g. "Metric Coffee"
-  location?: string // e.g. "West Fulton Market"
-  type: string // e.g. "Single Origin Washed Process"
-  origins?: string[] // e.g. ["Peru", "Colombia", "Honduras"]
-  flavor: string // e.g. "Clean, chocolate, citrus, structured"
+  source: string
+  location?: string
+  type: string
+  origins?: string[]
+  flavor: string
 }
 
 export interface BrewStep {
@@ -44,9 +97,9 @@ export interface BrewStep {
   action?: string
   tips?: string[]
   timing?: {
-    start: number // seconds from brew start
-    duration?: number // seconds
-    alert?: boolean // whether to show alert at this timing
+    start: number
+    duration?: number
+    alert?: boolean
   }
   completed?: boolean
 }

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { RefreshCw, AlertCircle, Car, MapPin, Loader2, Train, Bus, PersonStanding, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { RefreshCw, AlertCircle, Car, Train, Bus, PersonStanding, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { MapsLocationPicker } from './maps-location-picker'
+import { RideShareCard } from './ride-share-card'
 import type { CTABusResponse, CTATrainResponse } from '@/lib/types/cta.types'
 import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from '@/lib/types/cta.types'
-import type { MapsLocation } from '@/lib/types/maps.types'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 // CTA Brand Colors
@@ -54,6 +52,85 @@ function getUrgencyRowStyles(urgency: UrgencyLevel) {
   }
 }
 
+interface UrgencyBannerProps {
+  urgency: 'leave-now' | 'prepare'
+  arrivalMinutes: number
+  walkingTime: number
+}
+
+/**
+ * Animated urgency banner with countdown progress bar
+ * The progress bar counts down from 100% to 0% based on remaining buffer time
+ */
+function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerProps) {
+  const [progress, setProgress] = useState(100)
+  const startTimeRef = useRef<number>(Date.now())
+  const initialBufferRef = useRef<number>(arrivalMinutes - walkingTime)
+
+  // Calculate the max buffer time for each urgency level
+  // leave-now: 0-1 min buffer, prepare: 2-3 min buffer
+  const maxBuffer = urgency === 'leave-now' ? 2 : 4 // Buffer in minutes when progress starts at 100%
+
+  useEffect(() => {
+    // Reset refs when arrival time changes significantly
+    const currentBuffer = arrivalMinutes - walkingTime
+    startTimeRef.current = Date.now()
+    initialBufferRef.current = currentBuffer
+
+    const interval = setInterval(() => {
+      const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000
+      const currentBufferSeconds = (initialBufferRef.current * 60) - elapsedSeconds
+      
+      // Calculate progress: 100% at maxBuffer minutes, 0% at 0 minutes
+      const maxBufferSeconds = maxBuffer * 60
+      const newProgress = Math.max(0, Math.min(100, (currentBufferSeconds / maxBufferSeconds) * 100))
+      
+      setProgress(newProgress)
+    }, 100) // Update every 100ms for smooth animation
+
+    return () => clearInterval(interval)
+  }, [arrivalMinutes, walkingTime, maxBuffer])
+
+  const isLeaveNow = urgency === 'leave-now'
+
+  return (
+    <div className="relative overflow-hidden rounded-md mb-2">
+      {/* Progress bar background */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-all duration-100 ease-linear",
+          isLeaveNow
+            ? "bg-red-600/80"
+            : "bg-orange-500/80"
+        )}
+        style={{ width: `${progress}%` }}
+      />
+      {/* Darker background for depleted portion */}
+      <div
+        className={cn(
+          "absolute inset-0",
+          isLeaveNow
+            ? "bg-red-900/90"
+            : "bg-orange-900/90"
+        )}
+        style={{ 
+          left: `${progress}%`,
+          width: `${100 - progress}%`
+        }}
+      />
+      {/* Content */}
+      <div className={cn(
+        "relative flex items-center justify-center gap-2 px-2 py-1.5 text-xs font-bold text-white",
+        isLeaveNow && progress < 30 && "animate-pulse"
+      )}>
+        <AlertTriangle className="size-3" />
+        {isLeaveNow ? 'LEAVE NOW!' : 'Get ready to leave'}
+        <span className="font-normal">({arrivalMinutes}m arrival, {walkingTime}m walk)</span>
+      </div>
+    </div>
+  )
+}
+
 interface ArrivalBadgeProps {
   minutes: string
   urgency: UrgencyLevel
@@ -62,7 +139,7 @@ interface ArrivalBadgeProps {
 
 function ArrivalBadge({ minutes, urgency, isFirst }: ArrivalBadgeProps) {
   const isDue = minutes === 'DUE' || minutes === '1'
-  
+
   // Apply urgency styling to first badge
   const urgencyBg = isFirst ? {
     'missed': 'bg-gray-400 text-white line-through',
@@ -99,13 +176,13 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
 
   // Get walking time for this route
   const walkingTime = getWalkingTime(route, type)
-  
+
   // Calculate urgency based on first arrival
   const firstArrival = arrivals[0]
   const firstMinutes = firstArrival === 'DUE' ? 0 : parseInt(firstArrival, 10)
   const urgency = !isNaN(firstMinutes) ? getUrgencyLevel(firstMinutes, walkingTime) : 'normal'
   const urgencyStyles = getUrgencyRowStyles(urgency)
-  
+
   // Check if any arrival is catchable
   const hasCatchable = arrivals.some(time => {
     const mins = time === 'DUE' ? 0 : parseInt(time, 10)
@@ -118,22 +195,15 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
       urgencyStyles.row,
       urgency === 'normal' && 'hover:bg-muted/50'
     )}>
-      {/* Urgency Alert Banner */}
-      {urgency === 'leave-now' && (
-        <div className="flex items-center justify-center gap-2 rounded-md px-2 py-1 mb-2 text-xs font-bold bg-red-500 text-white animate-pulse">
-          <AlertTriangle className="size-3" />
-          LEAVE NOW!
-          <span className="font-normal">({firstMinutes}m arrival, {walkingTime}m walk)</span>
-        </div>
+      {/* Urgency Alert Banner with countdown progress */}
+      {(urgency === 'leave-now' || urgency === 'prepare') && (
+        <UrgencyBanner
+          urgency={urgency}
+          arrivalMinutes={firstMinutes}
+          walkingTime={walkingTime}
+        />
       )}
-      {urgency === 'prepare' && (
-        <div className="flex items-center justify-center gap-2 rounded-md px-2 py-1 mb-2 text-xs font-bold bg-orange-500 text-white">
-          <AlertTriangle className="size-3" />
-          Get ready to leave
-          <span className="font-normal">({firstMinutes}m arrival, {walkingTime}m walk)</span>
-        </div>
-      )}
-      
+
       <div className="flex items-center gap-3">
         {/* Route Badge */}
         <div className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} min-w-[44px] h-10 px-2`}>
@@ -211,10 +281,7 @@ export function TransportationCard() {
   const [trainData, setTrainData] = useState<Record<string, CTATrainResponse>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showLyft, setShowLyft] = useState(false)
-  const [pickup, setPickup] = useState<MapsLocation | null>(null)
-  const [dropoff, setDropoff] = useState<MapsLocation | null>(null)
-  const [lyftLoading, setLyftLoading] = useState(false)
+  const [showRideshare, setShowRideshare] = useState(false)
 
   const fetchTransit = async () => {
     try {
@@ -245,43 +312,6 @@ export function TransportationCard() {
     const interval = setInterval(fetchTransit, 30000) // 30 seconds
     return () => clearInterval(interval)
   }, [])
-
-  const handleLyftRequest = async () => {
-    if (!pickup || !dropoff) {
-      toast.error('Please select both pickup and dropoff locations')
-      return
-    }
-    setLyftLoading(true)
-    try {
-      const response = await fetch('/api/lyft/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ride_type: 'lyft',
-          origin: {
-            lat: pickup.geometry.location.lat,
-            lng: pickup.geometry.location.lng,
-            address: pickup.formatted_address,
-          },
-          destination: {
-            lat: dropoff.geometry.location.lat,
-            lng: dropoff.geometry.location.lng,
-            address: dropoff.formatted_address,
-          },
-        }),
-      })
-      if (response.ok) {
-        toast.success('Ride requested!')
-        setPickup(null)
-        setDropoff(null)
-        setShowLyft(false)
-      }
-    } catch {
-      toast.error('Failed to request ride')
-    } finally {
-      setLyftLoading(false)
-    }
-  }
 
   // Process bus routes
   const busRoutes = ['76', '36', '22']
@@ -349,13 +379,13 @@ export function TransportationCard() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant={showLyft ? 'default' : 'outline'}
+            variant={showRideshare ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setShowLyft(!showLyft)}
+            onClick={() => setShowRideshare(!showRideshare)}
             className="gap-1.5 text-xs"
           >
             <Car className="size-3.5" />
-            Lyft
+            Rideshare
           </Button>
           <Button variant="ghost" size="sm" onClick={fetchTransit} disabled={loading}>
             <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
@@ -363,56 +393,10 @@ export function TransportationCard() {
         </div>
       </div>
 
-      {/* Lyft Request Form */}
-      {showLyft && (
-        <div className="rounded-xl border border-pink-500/30 bg-pink-500/5 p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Car className="size-4 text-pink-500" />
-            <span className="text-sm font-medium">Request a Ride</span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Pickup
-              </label>
-              <MapsLocationPicker onSelect={setPickup} placeholder="Search pickup..." />
-              {pickup && (
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" />
-                  <span className="truncate">{pickup.formatted_address}</span>
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Dropoff
-              </label>
-              <MapsLocationPicker onSelect={setDropoff} placeholder="Search dropoff..." />
-              {dropoff && (
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" />
-                  <span className="truncate">{dropoff.formatted_address}</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <Button
-            onClick={handleLyftRequest}
-            disabled={!pickup || !dropoff || lyftLoading}
-            className="w-full gap-2 bg-pink-500 hover:bg-pink-600"
-          >
-            {lyftLoading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Requesting...
-              </>
-            ) : (
-              <>
-                <Car className="size-4" />
-                Request Lyft
-              </>
-            )}
-          </Button>
+      {/* Rideshare Widget */}
+      {showRideshare && (
+        <div className="rounded-xl border bg-background/50 p-4">
+          <RideShareCard compact />
         </div>
       )}
 

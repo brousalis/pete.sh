@@ -38,7 +38,7 @@ export function TodayHero() {
         if (data?.success && data.data) {
           const now = new Date()
           const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-          
+
           // Find first event within 24 hours
           const eventIn24Hours = data.data.find((event: CalendarEvent) => {
             const startTime = event.start.dateTime
@@ -46,11 +46,11 @@ export function TodayHero() {
               : event.start.date
                 ? parseISO(event.start.date)
                 : null
-            
+
             if (!startTime) return false
             return startTime >= now && startTime <= twentyFourHoursLater
           })
-          
+
           if (eventIn24Hours) {
             setNextEvent(eventIn24Hours)
           }
@@ -211,7 +211,7 @@ export function TodayHero() {
                 : nextEvent.start.date
                   ? parseISO(nextEvent.start.date)
                   : null
-              
+
               const isAllDay = !nextEvent.start.dateTime && !!nextEvent.start.date
               const timeDisplay = startTime
                 ? isToday(startTime)
@@ -222,7 +222,7 @@ export function TodayHero() {
                       ? format(startTime, 'EEE, MMM d')
                       : `${format(startTime, 'EEE, MMM d')}, ${format(startTime, 'h:mm a')}`
                 : 'All day'
-              
+
               return (
                 <motion.div
                   className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm"

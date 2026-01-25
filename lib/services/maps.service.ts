@@ -78,25 +78,41 @@ export class MapsService {
   /**
    * Get autocomplete predictions
    */
-  async getAutocomplete(input: string): Promise<MapsAutocompletePrediction[]> {
+  async getAutocomplete(input: string, locationBias?: { lat: number; lng: number }): Promise<MapsAutocompletePrediction[]> {
     if (!this.isConfigured()) {
       throw new Error("Google Maps API key not configured")
     }
 
     try {
-      const response = await axios.get<{ predictions: MapsAutocompletePrediction[] }>(
+      const params: Record<string, string> = {
+        input,
+        key: this.apiKey,
+      }
+
+      // Add location bias for better local results (Chicago area by default)
+      if (locationBias) {
+        params.location = `${locationBias.lat},${locationBias.lng}`
+        params.radius = "50000" // 50km radius
+      }
+
+      const response = await axios.get<{
+        predictions: MapsAutocompletePrediction[]
+        status: string
+        error_message?: string
+      }>(
         "https://maps.googleapis.com/maps/api/place/autocomplete/json",
-        {
-          params: {
-            input,
-            key: this.apiKey,
-          },
-        }
+        { params }
       )
+
+      // Log API status for debugging
+      if (response.data.status !== "OK" && response.data.status !== "ZERO_RESULTS") {
+        console.error("[Maps Autocomplete] API Status:", response.data.status, response.data.error_message)
+      }
 
       return response.data.predictions || []
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        console.error("[Maps Autocomplete] Error:", error.response?.data || error.message)
         throw new Error(`Google Maps API error: ${error.message}`)
       }
       throw error

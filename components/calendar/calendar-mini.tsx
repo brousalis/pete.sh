@@ -1,13 +1,22 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
 import { getEventsForDay } from "@/lib/utils/calendar-utils"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns"
-import { DayButton, DayButtonProps } from "react-day-picker"
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
+  endOfWeek,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+} from "date-fns"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import React from "react"
 
 interface CalendarMiniProps {
   currentDate: Date
@@ -15,6 +24,8 @@ interface CalendarMiniProps {
   events: CalendarEvent[]
   onSelectDate: (date: Date) => void
 }
+
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
 export function CalendarMini({
   currentDate,
@@ -34,85 +45,97 @@ export function CalendarMini({
     }
   })
 
+  // Get calendar grid days (including days from prev/next months to fill the grid)
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 })
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
+
+  // Group days into weeks
+  const weeks: Date[][] = []
+  for (let i = 0; i < calendarDays.length; i += 7) {
+    weeks.push(calendarDays.slice(i, i + 7))
+  }
+
+  const handlePrevMonth = () => {
+    onSelectDate(subMonths(currentDate, 1))
+  }
+
+  const handleNextMonth = () => {
+    onSelectDate(addMonths(currentDate, 1))
+  }
+
   return (
     <div className="shrink-0 rounded-xl border border-border/50 bg-card p-3">
-      <Calendar
-        mode="single"
-        selected={selectedDate || undefined}
-        onSelect={(date) => date && onSelectDate(date)}
-        month={currentDate}
-        onMonthChange={onSelectDate}
-        className="w-full [--cell-size:30px]"
-        classNames={{
-          months: "flex flex-col",
-          month: "space-y-2",
-          caption: "flex justify-center pt-0 relative items-center h-8",
-          caption_label: "text-sm font-medium",
-          nav: "space-x-1 flex items-center",
-          nav_button: cn(
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-          ),
-          nav_button_previous: "absolute left-0",
-          nav_button_next: "absolute right-0",
-          table: "w-full border-collapse",
-          head_row: "flex justify-between",
-          head_cell:
-            "text-muted-foreground rounded-md flex-1 font-normal text-[11px] text-center",
-          row: "flex w-full justify-between mt-1",
-          cell: cn(
-            "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:rounded-r-md",
-            "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-          ),
-          day: cn(
-            "size-[30px] p-0 font-normal text-sm aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md"
-          ),
-          day_range_end: "day-range-end",
-          day_selected:
-            "bg-brand text-white hover:bg-brand hover:text-white focus:bg-brand focus:text-white",
-          day_today: "bg-accent text-accent-foreground",
-          day_outside:
-            "day-outside text-muted-foreground/50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
-          day_disabled: "text-muted-foreground opacity-50",
-          day_hidden: "invisible",
-        }}
-        components={{
-          DayButton: (props) => (
-            <MiniDayButton {...props} daysWithEvents={daysWithEvents} />
-          ),
-        }}
-      />
+      {/* Header with navigation */}
+      <div className="mb-2 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={handlePrevMonth}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <span className="text-sm font-medium">
+          {format(currentDate, "MMMM yyyy")}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={handleNextMonth}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="mb-1 grid grid-cols-7 gap-0">
+        {WEEKDAYS.map((day) => (
+          <div
+            key={day}
+            className="py-1 text-center text-[10px] font-medium text-muted-foreground"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid gap-0.5">
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7 gap-0">
+            {week.map((day) => {
+              const dateKey = format(day, "yyyy-MM-dd")
+              const hasEvents = daysWithEvents.has(dateKey)
+              const isCurrentMonth = isSameMonth(day, currentDate)
+              const isSelected = selectedDate && isSameDay(day, selectedDate)
+              const isToday = isSameDay(day, new Date())
+
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  onClick={() => onSelectDate(day)}
+                  className={cn(
+                    "relative flex aspect-square items-center justify-center rounded-md text-xs font-normal transition-colors",
+                    "hover:bg-accent hover:text-accent-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    !isCurrentMonth && "text-muted-foreground/40",
+                    isToday && !isSelected && "bg-accent text-accent-foreground",
+                    isSelected && "bg-brand text-white hover:bg-brand hover:text-white"
+                  )}
+                >
+                  {day.getDate()}
+                  {hasEvents && !isSelected && isCurrentMonth && (
+                    <span className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-brand" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
     </div>
-  )
-}
-
-interface MiniDayButtonProps extends DayButtonProps {
-  daysWithEvents: Set<string>
-}
-
-function MiniDayButton({ day, modifiers, daysWithEvents, ...props }: MiniDayButtonProps) {
-  const dateKey = format(day.date, "yyyy-MM-dd")
-  const hasEvents = daysWithEvents.has(dateKey)
-  const isSelected = modifiers.selected
-  const isToday = modifiers.today
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className={cn(
-        "relative size-[30px] p-0 text-sm font-normal",
-        isSelected && "bg-brand text-white hover:bg-brand hover:text-white",
-        isToday && !isSelected && "bg-accent",
-        modifiers.outside && "text-muted-foreground/50",
-        modifiers.disabled && "text-muted-foreground opacity-50"
-      )}
-      disabled={modifiers.disabled}
-      {...props}
-    >
-      {day.date.getDate()}
-      {hasEvents && !isSelected && (
-        <span className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-brand" />
-      )}
-    </Button>
   )
 }

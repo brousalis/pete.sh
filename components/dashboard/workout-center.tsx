@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  Dumbbell, 
-  RotateCcw, 
-  Bike, 
-  StretchVertical, 
+import {
+  Dumbbell,
+  RotateCcw,
+  Bike,
+  StretchVertical,
   Zap,
-  ChevronDown, 
+  ChevronDown,
   ChevronRight,
   CheckCircle2,
   Circle,
@@ -75,7 +75,7 @@ interface SectionConfig {
 
 /**
  * WorkoutCenter - The main workout area showing today's exercises.
- * 
+ *
  * Features:
  * - Collapsible sections for warmup, main exercises, finisher, flush, mobility
  * - Full detail view with sets/reps/form cues
@@ -433,8 +433,8 @@ function ExerciseRow({
   isPreview,
 }: ExerciseRowProps) {
   const display = useAlternative && exercise.alternative ? exercise.alternative : exercise
-  const videoId = useAlternative && exercise.alternative?.youtubeVideoId 
-    ? exercise.alternative.youtubeVideoId 
+  const videoId = useAlternative && exercise.alternative?.youtubeVideoId
+    ? exercise.alternative.youtubeVideoId
     : exercise.youtubeVideoId
 
   // Format sets/reps/duration
@@ -460,7 +460,7 @@ function ExerciseRow({
       "rounded-md border transition-colors",
       isCompleted ? "bg-green-500/5 border-green-500/20" : "bg-background/50 border-transparent"
     )}>
-      <div 
+      <div
         className={cn(
           "flex items-start gap-2 p-2 transition-colors",
           !isPreview && "cursor-pointer hover:bg-muted/30"
@@ -499,7 +499,7 @@ function ExerciseRow({
               </Badge>
             )}
           </div>
-          
+
           {/* Metrics */}
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {getMetrics()}

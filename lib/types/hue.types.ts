@@ -46,6 +46,17 @@ export interface HueZone {
     all_on: boolean
     any_on: boolean
   }
+  action?: {
+    on: boolean
+    bri?: number
+    hue?: number
+    sat?: number
+    effect?: string
+    xy?: [number, number]
+    ct?: number
+    alert?: string
+    colormode?: string
+  }
   recycle?: boolean
   metadata?: {
     name: string
@@ -69,6 +80,7 @@ export interface HueScene {
   picture?: string
   lastupdated?: string
   version?: number
+  zoneName?: string
 }
 
 export interface HueBridgeConfig {
@@ -93,3 +105,85 @@ export interface HueApiResponse<T> {
   }
   data?: T
 }
+
+export interface HueAllLightsStatus {
+  totalLights: number
+  lightsOn: number
+  anyOn: boolean
+  allOn: boolean
+  averageBrightness: number
+}
+
+/** Entertainment area stream info (for Hue Sync) */
+export interface HueEntertainmentStream {
+  proxymode: string
+  proxynode: string
+  active: boolean
+  owner?: string
+}
+
+/** Entertainment area (for Hue Sync) */
+export interface HueEntertainmentArea extends HueZone {
+  stream?: HueEntertainmentStream
+  locations?: Record<string, [number, number, number]>
+}
+
+/** Entertainment/Sync status */
+export interface HueEntertainmentStatus {
+  active: boolean
+  owner?: string
+  proxymode?: string
+}
+
+/** Favorite scene shortcut configuration */
+export interface HueFavoriteScene {
+  id: string
+  sceneId: string
+  zoneId: string
+  name: string
+  icon?: string
+  color?: string
+}
+
+/** Room archetype to icon mapping */
+export type HueRoomArchetype =
+  | "living_room"
+  | "kitchen"
+  | "dining"
+  | "bedroom"
+  | "kids_bedroom"
+  | "bathroom"
+  | "nursery"
+  | "recreation"
+  | "office"
+  | "gym"
+  | "hallway"
+  | "toilet"
+  | "front_door"
+  | "garage"
+  | "terrace"
+  | "garden"
+  | "driveway"
+  | "carport"
+  | "home"
+  | "downstairs"
+  | "upstairs"
+  | "top_floor"
+  | "attic"
+  | "guest_room"
+  | "staircase"
+  | "lounge"
+  | "man_cave"
+  | "computer"
+  | "studio"
+  | "music"
+  | "tv"
+  | "reading"
+  | "closet"
+  | "storage"
+  | "laundry_room"
+  | "balcony"
+  | "porch"
+  | "barbecue"
+  | "pool"
+  | "other"

@@ -94,7 +94,7 @@ export function TopNavigation() {
       if (event.key === 'Escape') {
         setMobileMenuOpen(false)
       }
-      
+
       // Keyboard navigation shortcuts (Cmd/Ctrl + number)
       if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey) {
         const num = parseInt(event.key)
@@ -321,7 +321,7 @@ export function TopNavigation() {
 /**
  * Mobile Bottom Navigation - Optimized for iPhone 13 (390x844) and similar devices
  * Provides a native app-like persistent footer navigation on small screens
- * 
+ *
  * Design considerations:
  * - 44px minimum touch targets (Apple HIG)
  * - Safe area padding for notched devices
