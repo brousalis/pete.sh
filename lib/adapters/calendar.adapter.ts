@@ -2,8 +2,8 @@
  * Calendar Adapter
  * Handles Google Calendar data with event snapshots to Supabase
  * 
- * Local mode: Fetches from Google Calendar API, writes to Supabase
- * Production mode: Reads from Supabase cache
+ * Google Calendar requires OAuth authentication, so availability depends on
+ * whether the user is authenticated. Supabase cache is used as fallback.
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
@@ -42,6 +42,15 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
    */
   isConfigured(): boolean {
     return this.calendarService.isConfigured()
+  }
+
+  /**
+   * Check if Google Calendar API is available
+   * Calendar is an external API that requires OAuth - we consider it "available"
+   * if the service is configured. Authentication is handled separately.
+   */
+  protected async checkServiceAvailability(): Promise<boolean> {
+    return this.isConfigured()
   }
 
   /**
@@ -190,8 +199,9 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     maxResults: number = 10
   ): Promise<CalendarEvent[]> {
     const targetCalendarId = calendarId ?? this.defaultCalendarId
+    const isLocal = await this.isLocal()
 
-    if (this.isLocal()) {
+    if (isLocal) {
       try {
         const events = await this.calendarService.getUpcomingEvents(targetCalendarId, maxResults)
         
@@ -240,7 +250,9 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     status: string
     recordedAt?: string
   }>> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       const events = await this.getUpcomingEvents(undefined, maxResults)
       
       return events.map(event => ({

@@ -1,5 +1,5 @@
+import { Providers } from "@/components/providers"
 import { SyncManager } from "@/components/sync-manager"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
@@ -29,14 +29,14 @@ export default function RootLayout({
       data-brand="yellow"
     >
       <body className="font-sans">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <Providers>
           <Suspense fallback={null}>
             {children}
             <Analytics />
             {/* Background sync for local mode - syncs data to Supabase every 30s */}
             <SyncManager interval={30000} debug={false} />
           </Suspense>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

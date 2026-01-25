@@ -2,12 +2,11 @@
  * CTA Adapter
  * Handles Chicago Transit Authority data with historical recording
  * 
- * Local mode: Fetches from CTA API, writes history to Supabase
- * Production mode: CTA data is still fetched in real-time (public API)
- *                  but we also maintain historical records
+ * CTA data is always fetched from the real API when available (public API).
+ * Supabase is used for historical data storage and as a fallback.
  */
 
-import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
+import { BaseAdapter, SyncResult, getCurrentTimestamp, AVAILABILITY_CHECK_TIMEOUT } from './base.adapter'
 import { CTAService } from '@/lib/services/cta.service'
 import type {
   CTABusResponse,
@@ -44,9 +43,9 @@ const DEFAULT_ROUTE_CONFIG: CTARouteConfig = {
 /**
  * CTA Adapter - manages transit prediction data
  * 
- * Note: CTA data is always fetched from the real API when available,
- * even in production mode, since it's a public API. Supabase is used
- * for historical data storage and as a fallback.
+ * Note: CTA is a public API, so we always try to fetch from it
+ * regardless of "local mode". Supabase is used for historical
+ * data storage and as a fallback.
  */
 export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
   private ctaService: CTAService
@@ -59,10 +58,20 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
   }
 
   /**
-   * Check if CTA service is configured
+   * Check if CTA service is configured (has API key)
    */
   isConfigured(): boolean {
     return this.ctaService.isConfigured()
+  }
+
+  /**
+   * Check if CTA API is reachable
+   * Since CTA is a public API, this always returns true if configured
+   */
+  protected async checkServiceAvailability(): Promise<boolean> {
+    // CTA is a public API - always available if configured
+    // The actual reachability is handled per-request with fallback to cache
+    return this.isConfigured()
   }
 
   /**

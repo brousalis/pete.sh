@@ -2,12 +2,14 @@
  * Hue Adapter
  * Handles Philips Hue data with write-through caching to Supabase
  * 
- * Local mode: Fetches from Hue bridge, writes to Supabase
- * Production mode: Reads from Supabase cache
+ * Auto-detects mode based on Hue bridge reachability:
+ * - Bridge reachable: Fetches from Hue bridge, writes to Supabase
+ * - Bridge unreachable: Reads from Supabase cache
  */
 
-import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
+import { BaseAdapter, SyncResult, getCurrentTimestamp, AVAILABILITY_CHECK_TIMEOUT } from './base.adapter'
 import { HueService } from '@/lib/services/hue.service'
+import { config } from '@/lib/config'
 import type { HueLight, HueZone, HueScene, HueAllLightsStatus } from '@/lib/types/hue.types'
 import type { 
   HueLightRow, 
@@ -48,10 +50,47 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
   }
 
   /**
-   * Check if Hue bridge is configured
+   * Check if Hue bridge is configured (has IP and username)
    */
   isConfigured(): boolean {
     return this.hueService.isConfigured()
+  }
+
+  /**
+   * Check if Hue bridge is reachable
+   * Used for auto-detection of local vs production mode
+   */
+  protected async checkServiceAvailability(): Promise<boolean> {
+    // If not configured, definitely not available
+    if (!this.isConfigured()) {
+      return false
+    }
+
+    try {
+      const bridgeIp = config.hue.bridgeIp
+      const username = config.hue.username
+      
+      if (!bridgeIp || !username) {
+        return false
+      }
+
+      // Quick ping to the bridge config endpoint (doesn't require auth for basic info)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), AVAILABILITY_CHECK_TIMEOUT)
+
+      const response = await fetch(`http://${bridgeIp}/api/${username}/config`, {
+        method: 'GET',
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      // Bridge is available if we get a valid response
+      return response.ok
+    } catch {
+      // Any error means bridge is not reachable
+      return false
+    }
   }
 
   /**
@@ -256,7 +295,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get all lights status
    */
   async getAllLightsStatus(): Promise<HueAllLightsStatus | null> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       try {
         const status = await this.hueService.getAllLightsStatus()
         
@@ -306,7 +347,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get all lights
    */
   async getLights(): Promise<Record<string, HueLight>> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getLights()
     }
 
@@ -334,7 +377,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get all zones
    */
   async getZones(): Promise<Record<string, HueZone>> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getZones()
     }
 
@@ -361,7 +406,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get all scenes
    */
   async getScenes(): Promise<Record<string, HueScene>> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getScenes()
     }
 
@@ -390,7 +437,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get scenes for a specific zone
    */
   async getScenesForZone(zoneId: string): Promise<HueScene[]> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getScenesForZone(zoneId)
     }
 
@@ -411,7 +460,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get lights for a specific zone
    */
   async getLightsForZone(zoneId: string): Promise<HueLight[]> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getLightsForZone(zoneId)
     }
 
@@ -435,7 +486,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get entertainment areas
    */
   async getEntertainmentAreas(): Promise<HueZone[]> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getEntertainmentAreas()
     }
 
@@ -448,7 +501,9 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Get entertainment status for an area
    */
   async getEntertainmentStatus(areaId: string): Promise<{ active: boolean; owner?: string; proxymode?: string }> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.hueService.getEntertainmentStatus(areaId)
     }
 
@@ -458,56 +513,57 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
 
   // ==========================================
   // Mutation methods (local mode only)
-  // These delegate to the real service
+  // Use isLocalSync() since by the time controls are enabled,
+  // the availability check has already been cached
   // ==========================================
 
   async toggleLight(lightId: string, on?: boolean): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.toggleLight(lightId, on)
   }
 
   async toggleZone(zoneId: string, on?: boolean): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.toggleZone(zoneId, on)
   }
 
   async toggleAllLights(on: boolean): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.toggleAllLights(on)
   }
 
   async setBrightness(lightId: string, brightness: number): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setBrightness(lightId, brightness)
   }
 
   async setZoneBrightness(zoneId: string, brightness: number): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setZoneBrightness(zoneId, brightness)
   }
 
   async setAllBrightness(brightness: number): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setAllBrightness(brightness)
   }
 
   async activateScene(zoneId: string, sceneId: string): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.activateScene(zoneId, sceneId)
   }
 
   async setLightState(lightId: string, state: Parameters<HueService['setLightState']>[1]): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setLightState(lightId, state)
   }
 
   async setZoneState(zoneId: string, state: Parameters<HueService['setZoneState']>[1]): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setZoneState(zoneId, state)
   }
 
   async setEntertainmentMode(areaId: string, active: boolean): Promise<unknown> {
-    if (!this.isLocal()) throw new Error('Controls only available in local mode')
+    if (!this.isLocalSync()) throw new Error('Controls only available when local services are reachable')
     return this.hueService.setEntertainmentMode(areaId, active)
   }
 }

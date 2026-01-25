@@ -1,8 +1,16 @@
 /**
  * Client-side hook for deployment mode detection
  * 
- * Uses an API endpoint to get the deployment mode from the server
- * since environment variables aren't directly accessible on the client
+ * DEPRECATED: Prefer using useConnectivity from @/components/connectivity-provider
+ * 
+ * This hook is kept for backwards compatibility with existing components.
+ * It now primarily serves as a fallback for components not yet within
+ * the ConnectivityProvider, using the /api/mode endpoint.
+ * 
+ * For new code, use:
+ * - useConnectivity() - Full connectivity state
+ * - useIsReadOnly() - Check if read-only
+ * - useControlsEnabled() - Check if controls enabled
  */
 
 "use client"
@@ -28,7 +36,10 @@ const defaultMode: DeploymentModeInfo = {
 }
 
 /**
- * Hook to get the current deployment mode
+ * Hook to get the current deployment mode from server
+ * 
+ * NOTE: This hook uses the static DEPLOYMENT_MODE env var.
+ * For dynamic connectivity-based mode detection, use useConnectivity instead.
  */
 export function useDeploymentMode(): {
   mode: DeploymentModeInfo
@@ -67,6 +78,8 @@ export function useDeploymentMode(): {
 
 /**
  * Hook to check if controls should be disabled
+ * 
+ * NOTE: For dynamic detection, use useControlsEnabled from connectivity-provider
  */
 export function useControlsEnabled(): boolean {
   const { mode } = useDeploymentMode()
@@ -75,6 +88,8 @@ export function useControlsEnabled(): boolean {
 
 /**
  * Hook to check if in read-only mode (production)
+ * 
+ * NOTE: For dynamic detection, use useIsReadOnly from connectivity-provider
  */
 export function useReadOnlyMode(): boolean {
   const { mode } = useDeploymentMode()

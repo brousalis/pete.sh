@@ -3,14 +3,81 @@
  * Provides common functionality for all service adapters
  * 
  * The adapter pattern allows seamless switching between:
- * - Local mode: Fetch from real service + write to Supabase
- * - Production mode: Read from Supabase cache
+ * - Local mode: Fetch from real service + write to Supabase (auto-detected)
+ * - Production mode: Read from Supabase cache (fallback when services unreachable)
+ * 
+ * Mode is auto-detected by attempting to reach local services.
+ * No DEPLOYMENT_MODE env var required.
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient, getSupabaseServiceClient, isSupabaseConfigured, hasServiceRoleKey } from '@/lib/supabase/client'
-import { isLocalMode, isProductionMode } from '@/lib/utils/mode'
 import type { Database, ServiceName } from '@/lib/supabase/types'
+
+// ============================================
+// Server-side Connectivity Detection
+// ============================================
+
+interface ServiceAvailability {
+  available: boolean
+  checkedAt: Date
+  error?: string
+}
+
+/** Cache of service availability checks */
+const serviceAvailabilityCache = new Map<ServiceName, ServiceAvailability>()
+
+/** How long to cache availability results (ms) */
+const AVAILABILITY_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+/** Timeout for availability checks (ms) */
+export const AVAILABILITY_CHECK_TIMEOUT = 2000 // 2 seconds
+
+/**
+ * Check if a cached availability result is still valid
+ */
+function isAvailabilityCacheValid(serviceName: ServiceName): boolean {
+  const cached = serviceAvailabilityCache.get(serviceName)
+  if (!cached) return false
+  
+  const age = Date.now() - cached.checkedAt.getTime()
+  return age < AVAILABILITY_CACHE_TTL
+}
+
+/**
+ * Get global service availability status (for health endpoint)
+ */
+export function getServiceAvailabilityStatus(): Record<ServiceName, ServiceAvailability | null> {
+  const result: Record<string, ServiceAvailability | null> = {}
+  const services: ServiceName[] = ['hue', 'spotify', 'cta', 'calendar', 'fitness']
+  
+  for (const service of services) {
+    result[service] = serviceAvailabilityCache.get(service) ?? null
+  }
+  
+  return result as Record<ServiceName, ServiceAvailability | null>
+}
+
+/**
+ * Check if any local service is available (for mode detection)
+ */
+export function isAnyLocalServiceAvailable(): boolean {
+  for (const [, status] of serviceAvailabilityCache) {
+    if (status.available) return true
+  }
+  return false
+}
+
+/**
+ * Clear the availability cache (for testing or manual refresh)
+ */
+export function clearAvailabilityCache(): void {
+  serviceAvailabilityCache.clear()
+}
+
+// ============================================
+// Adapter Types
+// ============================================
 
 export interface AdapterConfig {
   /** Service name for logging and sync tracking */
@@ -31,6 +98,9 @@ export interface SyncResult {
 export abstract class BaseAdapter<TServiceData, TCachedData> {
   protected serviceName: ServiceName
   protected debug: boolean
+  
+  /** Cached availability status for this adapter instance */
+  private localAvailable: boolean | null = null
 
   constructor(config: AdapterConfig) {
     this.serviceName = config.serviceName
@@ -64,18 +134,96 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     return isSupabaseConfigured()
   }
 
+  // ============================================
+  // Auto-Detection Methods
+  // ============================================
+
   /**
-   * Check if running in local mode
+   * Abstract method to check if the local service is reachable
+   * Each adapter implements this with a quick ping to their service
+   * Should timeout quickly (< 2 seconds)
    */
-  protected isLocal(): boolean {
-    return isLocalMode()
+  protected abstract checkServiceAvailability(): Promise<boolean>
+
+  /**
+   * Check if local service is available (with caching)
+   */
+  protected async isLocalServiceAvailable(): Promise<boolean> {
+    // Check instance cache first (for multiple calls in same request)
+    if (this.localAvailable !== null) {
+      return this.localAvailable
+    }
+
+    // Check global cache
+    if (isAvailabilityCacheValid(this.serviceName)) {
+      const cached = serviceAvailabilityCache.get(this.serviceName)!
+      this.localAvailable = cached.available
+      return cached.available
+    }
+
+    // Perform actual check
+    this.log('Checking local service availability...')
+    
+    try {
+      const available = await this.checkServiceAvailability()
+      
+      // Cache the result
+      serviceAvailabilityCache.set(this.serviceName, {
+        available,
+        checkedAt: new Date(),
+      })
+      this.localAvailable = available
+      
+      this.log(`Local service ${available ? 'available' : 'unavailable'}`)
+      return available
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      // Cache the failure
+      serviceAvailabilityCache.set(this.serviceName, {
+        available: false,
+        checkedAt: new Date(),
+        error: errorMessage,
+      })
+      this.localAvailable = false
+      
+      this.log(`Local service check failed: ${errorMessage}`)
+      return false
+    }
   }
 
   /**
-   * Check if running in production mode
+   * Check if running in local mode (service available)
+   * Auto-detects based on service reachability
    */
-  protected isProduction(): boolean {
-    return isProductionMode()
+  protected async isLocal(): Promise<boolean> {
+    return this.isLocalServiceAvailable()
+  }
+
+  /**
+   * Check if running in production mode (service unavailable)
+   * Auto-detects based on service reachability
+   */
+  protected async isProduction(): Promise<boolean> {
+    return !(await this.isLocalServiceAvailable())
+  }
+
+  /**
+   * Synchronous check if local - uses cached value
+   * Returns false if no cached value (assumes production until proven otherwise)
+   */
+  protected isLocalSync(): boolean {
+    if (this.localAvailable !== null) {
+      return this.localAvailable
+    }
+    
+    const cached = serviceAvailabilityCache.get(this.serviceName)
+    if (cached && isAvailabilityCacheValid(this.serviceName)) {
+      return cached.available
+    }
+    
+    // Default to false (production) if not yet checked
+    return false
   }
 
   /**
@@ -175,11 +323,14 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
   /**
    * Main method to get data
-   * In local mode: fetches from service and writes to cache
-   * In production mode: reads from cache
+   * Auto-detects mode:
+   * - If local service reachable: fetches from service and writes to cache
+   * - If local service unreachable: reads from cache
    */
   async getData(): Promise<TServiceData | TCachedData | null> {
-    if (this.isLocal()) {
+    const isLocalAvailable = await this.isLocal()
+    
+    if (isLocalAvailable) {
       return this.getDataLocal()
     }
     return this.getDataProduction()
@@ -213,6 +364,21 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       return data
     } catch (error) {
       this.logError('Error fetching from service', error)
+      
+      // On service error, try falling back to cache
+      this.log('Service error, attempting cache fallback...')
+      if (this.isSupabaseAvailable()) {
+        try {
+          const cached = await this.fetchFromCache()
+          if (cached) {
+            this.log('Using cached data as fallback')
+            return cached as TServiceData
+          }
+        } catch {
+          // Cache fallback also failed
+        }
+      }
+      
       throw error
     }
   }
@@ -249,8 +415,10 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
    * Fetches from service and writes to cache, waiting for write to complete
    */
   async refreshCache(): Promise<SyncResult> {
-    if (!this.isLocal()) {
-      return { success: false, recordsWritten: 0, error: 'Cache refresh only available in local mode' }
+    const isLocalAvailable = await this.isLocal()
+    
+    if (!isLocalAvailable) {
+      return { success: false, recordsWritten: 0, error: 'Cache refresh only available when local services are reachable' }
     }
 
     if (!this.isSupabaseAvailable()) {

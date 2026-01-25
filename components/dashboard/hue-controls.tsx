@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { LiveBadge, ReadOnlyNotice } from "@/components/ui/live-badge"
-import { useReadOnlyMode } from "@/hooks/use-deployment-mode"
+import { useIsReadOnly } from "@/components/connectivity-provider"
 import type { HueAllLightsStatus, HueScene, HueZone } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -40,7 +40,7 @@ export function HueControls() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
-  const isReadOnly = useReadOnlyMode()
+  const isReadOnly = useIsReadOnly()
 
   const fetchData = useCallback(async () => {
     try {

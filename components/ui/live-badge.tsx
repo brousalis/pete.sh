@@ -3,11 +3,14 @@
 /**
  * LiveBadge Component
  * Shows a badge indicating live view mode (production) with recording timestamp
+ * 
+ * Now uses dynamic connectivity detection - when local instance is reachable,
+ * shows "Local Mode", otherwise shows "Live from Pete's"
  */
 
 import { cn } from "@/lib/utils"
-import { Radio, Wifi, WifiOff } from "lucide-react"
-import { useDeploymentMode } from "@/hooks/use-deployment-mode"
+import { Radio, Wifi, WifiOff, Loader2 } from "lucide-react"
+import { useConnectivity } from "@/components/connectivity-provider"
 
 interface LiveBadgeProps {
   className?: string
@@ -48,32 +51,47 @@ export function LiveBadge({
   compact = false,
   showAlways = false 
 }: LiveBadgeProps) {
-  const { mode, isLoading } = useDeploymentMode()
+  const { isInitialized, isLocalAvailable, isChecking, statusLabel } = useConnectivity()
 
   // Don't show in local mode unless showAlways is true
-  if (!showAlways && mode.isLocal) {
+  if (!showAlways && isLocalAvailable) {
     return null
   }
 
-  if (isLoading) {
-    return null
+  if (!isInitialized) {
+    return (
+      <div 
+        className={cn(
+          "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+          "bg-muted text-muted-foreground",
+          className
+        )}
+      >
+        <Loader2 className="h-3 w-3 animate-spin" />
+      </div>
+    )
   }
 
   const relativeTime = recordedAt ? formatRelativeTime(recordedAt) : null
+  const isRemote = !isLocalAvailable
 
   if (compact) {
     return (
       <div 
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-          mode.isProduction 
+          isRemote 
             ? "bg-red-500/10 text-red-500" 
             : "bg-green-500/10 text-green-500",
           className
         )}
-        title={mode.isProduction ? "Live from Pete's apartment" : "Connected to real devices"}
+        title={isRemote ? "Live from Pete's apartment" : "Connected to real devices"}
       >
-        <Radio className="h-3 w-3 animate-pulse" />
+        {isChecking ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Radio className="h-3 w-3 animate-pulse" />
+        )}
       </div>
     )
   }
@@ -82,13 +100,13 @@ export function LiveBadge({
     <div 
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
-        mode.isProduction 
+        isRemote 
           ? "bg-red-500/10 text-red-500 border border-red-500/20" 
           : "bg-green-500/10 text-green-500 border border-green-500/20",
         className
       )}
     >
-      {mode.isProduction ? (
+      {isRemote ? (
         <>
           <Radio className="h-3.5 w-3.5 animate-pulse" />
           <span>Live from Pete&apos;s</span>
@@ -99,7 +117,7 @@ export function LiveBadge({
       ) : (
         <>
           <Wifi className="h-3.5 w-3.5" />
-          <span>Local Mode</span>
+          <span>{statusLabel}</span>
         </>
       )}
     </div>
@@ -116,10 +134,10 @@ export function ConnectionStatus({
   isConnected?: boolean
   className?: string 
 }) {
-  const { mode } = useDeploymentMode()
+  const { isLocalAvailable } = useConnectivity()
 
-  // In production mode, show "cached" instead of connected/disconnected
-  if (mode.isProduction) {
+  // In remote mode, show "cached" instead of connected/disconnected
+  if (!isLocalAvailable) {
     return (
       <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
         <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
@@ -149,9 +167,9 @@ export function ConnectionStatus({
  * Read-only notice banner for production mode
  */
 export function ReadOnlyNotice({ className }: { className?: string }) {
-  const { mode, isLoading } = useDeploymentMode()
+  const { isInitialized, isLocalAvailable } = useConnectivity()
 
-  if (isLoading || mode.isLocal) {
+  if (!isInitialized || isLocalAvailable) {
     return null
   }
 

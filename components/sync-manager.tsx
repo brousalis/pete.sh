@@ -2,16 +2,16 @@
 
 /**
  * SyncManager Component
- * Runs in the background to periodically sync data to Supabase in local mode.
+ * Runs in the background to periodically sync data to Supabase when local instance is active.
  * This component renders nothing - it just manages the sync interval.
  * 
  * Only syncs when:
- * - Running in local mode (not production)
+ * - Local instance is reachable (dynamic detection via connectivity)
  * - Supabase is properly configured
  */
 
 import { useEffect, useRef, useCallback, useState } from "react"
-import { useDeploymentMode } from "@/hooks/use-deployment-mode"
+import { useConnectivity } from "@/components/connectivity-provider"
 
 interface SyncManagerProps {
   /** Sync interval in milliseconds (default: 30 seconds) */
@@ -32,7 +32,7 @@ export function SyncManager({
   syncOnMount = true,
   debug = false,
 }: SyncManagerProps) {
-  const { mode, isLoading } = useDeploymentMode()
+  const { isInitialized, isLocalAvailable, apiBaseUrl } = useConnectivity()
   const [capabilities, setCapabilities] = useState<SyncCapabilities | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastSyncRef = useRef<Date | null>(null)
@@ -46,11 +46,12 @@ export function SyncManager({
     [debug]
   )
 
-  // Check if sync is available (Supabase configured)
+  // Check if sync is available (Supabase configured) - only when local is available
   useEffect(() => {
     const checkCapabilities = async () => {
       try {
-        const response = await fetch("/api/sync")
+        // Use the appropriate API base URL
+        const response = await fetch(`${apiBaseUrl}/api/sync`)
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data) {
@@ -66,15 +67,19 @@ export function SyncManager({
       }
     }
 
-    if (!isLoading && mode.isLocal) {
+    if (isInitialized && isLocalAvailable) {
       checkCapabilities()
+    } else if (isInitialized && !isLocalAvailable) {
+      // Clear capabilities when local is not available
+      setCapabilities(null)
     }
-  }, [isLoading, mode.isLocal, log])
+  }, [isInitialized, isLocalAvailable, apiBaseUrl, log])
 
   const performSync = useCallback(async () => {
     try {
       log("Starting sync...")
-      const response = await fetch("/api/sync", {
+      // Use the appropriate API base URL
+      const response = await fetch(`${apiBaseUrl}/api/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ includeAuth: false }), // Only sync unauthenticated services
@@ -104,12 +109,12 @@ export function SyncManager({
     } catch (error) {
       log("Sync error", error)
     }
-  }, [log])
+  }, [apiBaseUrl, log])
 
   useEffect(() => {
-    // Don't run in production mode or while loading
-    if (isLoading || mode.isProduction) {
-      log("Sync disabled (production mode or loading)")
+    // Don't run if not initialized or local not available
+    if (!isInitialized || !isLocalAvailable) {
+      log("Sync disabled (local not available)")
       return
     }
 
@@ -141,7 +146,7 @@ export function SyncManager({
         intervalRef.current = null
       }
     }
-  }, [isLoading, mode.isProduction, capabilities, interval, syncOnMount, performSync, log])
+  }, [isInitialized, isLocalAvailable, capabilities, interval, syncOnMount, performSync, log])
 
   // This component renders nothing
   return null

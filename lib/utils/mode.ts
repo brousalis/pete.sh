@@ -2,46 +2,50 @@
  * Mode Detection Utilities
  * Determines whether the app is running in local or production mode
  * 
- * Local mode: Connects to real services and writes snapshots to Supabase
- * Production mode: Reads cached data from Supabase, controls disabled
+ * Mode is auto-detected based on service reachability:
+ * - Local mode: Local services (like Hue bridge) are reachable
+ * - Production mode: Local services are not reachable, read from cache
+ * 
+ * DEPLOYMENT_MODE env var is no longer required - mode is auto-detected.
  */
+
+import { isAnyLocalServiceAvailable, getServiceAvailabilityStatus } from '@/lib/adapters/base.adapter'
 
 export type DeploymentMode = 'local' | 'production'
 
 /**
- * Get the current deployment mode from environment variable
- * Defaults to 'local' if not set
+ * Get the current deployment mode based on service availability
+ * 
+ * This is now auto-detected:
+ * - If any local service is reachable: 'local'
+ * - If no local services are reachable: 'production'
  */
 export function getDeploymentMode(): DeploymentMode {
-  const mode = process.env.DEPLOYMENT_MODE?.toLowerCase()
-  
-  if (mode === 'production') {
-    return 'production'
+  // Check if any local service is available based on cached checks
+  if (isAnyLocalServiceAvailable()) {
+    return 'local'
   }
-  
-  // Default to local mode for development
-  return 'local'
+  return 'production'
 }
 
 /**
- * Check if running in local mode
- * Local mode has full access to real services and can write to Supabase
+ * Check if any local service is available
+ * This uses cached results from service availability checks
  */
 export function isLocalMode(): boolean {
-  return getDeploymentMode() === 'local'
+  return isAnyLocalServiceAvailable()
 }
 
 /**
- * Check if running in production mode
- * Production mode reads from Supabase and has controls disabled
+ * Check if running in production mode (no local services available)
  */
 export function isProductionMode(): boolean {
-  return getDeploymentMode() === 'production'
+  return !isAnyLocalServiceAvailable()
 }
 
 /**
  * Check if controls should be enabled
- * Controls are only enabled in local mode
+ * Controls are only enabled when local services are reachable
  */
 export function areControlsEnabled(): boolean {
   return isLocalMode()
@@ -49,11 +53,11 @@ export function areControlsEnabled(): boolean {
 
 /**
  * Require local mode for an operation
- * Throws an error if not in local mode
+ * Throws an error if no local services are available
  */
 export function requireLocalMode(operation: string = 'This action'): void {
   if (!isLocalMode()) {
-    throw new Error(`${operation} is only available in local mode`)
+    throw new Error(`${operation} is only available when local services are reachable`)
   }
 }
 
@@ -65,10 +69,10 @@ export function localModeGuard(): { allowed: boolean; error?: string } {
   if (isLocalMode()) {
     return { allowed: true }
   }
-  
+
   return {
     allowed: false,
-    error: 'This action is only available when running locally. The web version is read-only.'
+    error: 'This action is only available when local services are reachable. The web version is read-only.'
   }
 }
 
@@ -82,18 +86,20 @@ export function getModeInfo(): {
   controlsEnabled: boolean
   displayName: string
   description: string
+  serviceStatus: ReturnType<typeof getServiceAvailabilityStatus>
 } {
-  const mode = getDeploymentMode()
-  const isLocal = mode === 'local'
-  
+  const isLocal = isLocalMode()
+  const mode = isLocal ? 'local' : 'production'
+
   return {
     mode,
     isLocal,
     isProduction: !isLocal,
     controlsEnabled: isLocal,
     displayName: isLocal ? 'Local Mode' : 'Live View',
-    description: isLocal 
+    description: isLocal
       ? 'Connected to real devices'
-      : "Live from Pete's apartment"
+      : "Live from Pete's apartment",
+    serviceStatus: getServiceAvailabilityStatus(),
   }
 }

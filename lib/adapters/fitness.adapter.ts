@@ -2,8 +2,8 @@
  * Fitness Adapter
  * Replaces JSON file storage with Supabase for fitness routines and progress
  * 
- * Unlike other adapters, fitness data is always read/written from Supabase
- * in both local and production modes (no caching layer - direct access)
+ * Fitness data is primarily stored in Supabase. The local JSON file
+ * serves as a fallback/seed when Supabase has no data or is unavailable.
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
@@ -27,9 +27,8 @@ import type {
 /**
  * Fitness Adapter - manages fitness routines and progress
  * 
- * This adapter is unique in that it uses Supabase as the primary
- * data store in both local and production modes. The JSON file
- * is used as a fallback/seed when Supabase has no data.
+ * This adapter uses Supabase as the primary data store.
+ * The JSON file is used as a fallback/seed when Supabase has no data.
  */
 export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   private fitnessService: FitnessService
@@ -38,6 +37,17 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   constructor(debug: boolean = false) {
     super({ serviceName: 'fitness', debug })
     this.fitnessService = new FitnessService()
+  }
+
+  /**
+   * Check if fitness service is available
+   * Fitness uses Supabase as primary storage, but local JSON as fallback.
+   * Always returns true since JSON fallback is always available.
+   */
+  protected async checkServiceAvailability(): Promise<boolean> {
+    // Fitness service is always "available" - we either use Supabase
+    // or fall back to local JSON files
+    return true
   }
 
   /**

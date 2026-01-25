@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Calendar, AlertTriangle, Flame, Target, ChevronDown, Circle } from "lucide-react"
+import { Calendar, AlertTriangle, Flame, Target, ChevronDown, Circle, Watch } from "lucide-react"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -356,13 +357,22 @@ export function FitnessSingleView() {
             </Badge>
           )}
         </div>
-        {hasInjuryProtocol && (
-          <Badge variant="destructive" className="gap-1 text-xs shrink-0">
-            <AlertTriangle className="size-3" />
-            <span className="hidden sm:inline">Injury Protocol</span>
-            <span className="sm:hidden">Injury</span>
-          </Badge>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Apple Watch Link */}
+          <Link href="/fitness/watch">
+            <Button variant="outline" size="sm" className="h-7 px-2 gap-1.5 text-xs">
+              <Watch className="size-3.5" />
+              <span className="hidden sm:inline">Watch</span>
+            </Button>
+          </Link>
+          {hasInjuryProtocol && (
+            <Badge variant="destructive" className="gap-1 text-xs">
+              <AlertTriangle className="size-3" />
+              <span className="hidden sm:inline">Injury Protocol</span>
+              <span className="sm:hidden">Injury</span>
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Main 3-Panel Layout */}

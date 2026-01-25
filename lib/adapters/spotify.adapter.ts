@@ -2,8 +2,8 @@
  * Spotify Adapter
  * Handles Spotify playback data with write-through caching to Supabase
  * 
- * Local mode: Fetches from Spotify API, writes to Supabase
- * Production mode: Reads from Supabase cache
+ * Spotify requires OAuth authentication, so availability depends on
+ * whether the user is authenticated. Supabase cache is used as fallback.
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
@@ -55,6 +55,15 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    */
   isConfigured(): boolean {
     return config.spotify.isConfigured
+  }
+
+  /**
+   * Check if Spotify API is available
+   * Spotify is an external API that requires OAuth - we consider it "available"
+   * if the service is configured. Authentication is handled separately.
+   */
+  protected async checkServiceAvailability(): Promise<boolean> {
+    return this.isConfigured()
   }
 
   /**
@@ -190,7 +199,9 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    * Get current playback state
    */
   async getPlaybackState(): Promise<SpotifyPlaybackState | null> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       try {
         const state = await this.spotifyService.getPlaybackState()
         
@@ -217,7 +228,9 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    * Get available devices
    */
   async getDevices(): Promise<SpotifyDevice[]> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       return this.spotifyService.getDevices()
     }
 
@@ -230,7 +243,9 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    * Get current user info
    */
   async getCurrentUser(): Promise<SpotifyUser | null> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       try {
         return await this.spotifyService.getCurrentUser()
       } catch {
@@ -259,7 +274,9 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
     durationMs: number
     recordedAt?: string
   }> {
-    if (this.isLocal()) {
+    const isLocal = await this.isLocal()
+    
+    if (isLocal) {
       const state = await this.getPlaybackState()
       
       if (!state?.item) {
