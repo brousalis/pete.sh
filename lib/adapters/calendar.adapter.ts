@@ -88,8 +88,8 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     try {
       // Get the most recent event snapshots
       // Use DISTINCT ON event_id to get the latest snapshot for each event
-      const { data, error } = await client
-        .from('calendar_events')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (client.from('calendar_events') as any)
         .select('*')
         .gte('start_time', new Date().toISOString()) // Only future events
         .order('recorded_at', { ascending: false })
@@ -98,9 +98,11 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
       if (error) throw error
       if (!data || data.length === 0) return null
 
+      const rows = data as CalendarEventRow[]
+
       // Deduplicate by event_id (keep most recent snapshot)
       const eventMap = new Map<string, CalendarEventRow>()
-      for (const row of data as CalendarEventRow[]) {
+      for (const row of rows) {
         if (!eventMap.has(row.event_id)) {
           eventMap.set(row.event_id, row)
         }
@@ -115,7 +117,7 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
           return aTime.localeCompare(bTime)
         })
 
-      const recordedAt = data[0]?.recorded_at ?? new Date().toISOString()
+      const recordedAt = rows[0]?.recorded_at ?? new Date().toISOString()
 
       return { events, recordedAt }
     } catch (error) {
@@ -162,7 +164,8 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
       })
 
       if (inserts.length > 0) {
-        const { error } = await client.from('calendar_events').insert(inserts)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (client.from('calendar_events') as any).insert(inserts)
         if (error) throw error
         recordsWritten = inserts.length
       }

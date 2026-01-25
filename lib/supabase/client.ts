@@ -110,8 +110,9 @@ export function getSupabaseServiceClient(): SupabaseClient<Database> | null {
  * Get the appropriate client based on operation type
  * - For reads: use anon client
  * - For writes: use service client (if available) or anon client
+ * Returns null if Supabase is not configured
  */
-export function getSupabaseClientForOperation(operation: 'read' | 'write'): SupabaseClient<Database> {
+export function getSupabaseClientForOperation(operation: 'read' | 'write'): SupabaseClient<Database> | null {
   if (operation === 'write' && hasServiceRoleKey()) {
     return getSupabaseServiceClient()
   }

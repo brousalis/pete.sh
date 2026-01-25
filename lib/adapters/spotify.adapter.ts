@@ -169,7 +169,8 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
         recorded_at: timestamp,
       }
 
-      const { error } = await client.from('spotify_state').insert(insert)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (client.from('spotify_state') as any).insert(insert)
 
       if (error) throw error
 

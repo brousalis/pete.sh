@@ -95,11 +95,13 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
 
     try {
       // Fetch latest lights, zones, scenes, and status in parallel
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
       const [lightsResult, zonesResult, scenesResult, statusResult] = await Promise.all([
-        client.rpc('get_latest_hue_lights'),
-        client.rpc('get_latest_hue_zones'),
-        client.rpc('get_latest_hue_scenes'),
-        client.rpc('get_latest_hue_status'),
+        clientAny.rpc('get_latest_hue_lights'),
+        clientAny.rpc('get_latest_hue_zones'),
+        clientAny.rpc('get_latest_hue_scenes'),
+        clientAny.rpc('get_latest_hue_status'),
       ])
 
       if (lightsResult.error) throw lightsResult.error
@@ -121,7 +123,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
       ].filter(Boolean) as string[]
 
       const recordedAt = timestamps.length > 0 
-        ? timestamps.sort().reverse()[0] 
+        ? timestamps.sort().reverse()[0]! 
         : new Date().toISOString()
 
       return {
@@ -163,8 +165,11 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
         recorded_at: timestamp,
       }))
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
       if (lightInserts.length > 0) {
-        const { error: lightsError } = await client
+        const { error: lightsError } = await clientAny
           .from('hue_lights')
           .insert(lightInserts)
         
@@ -187,7 +192,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
       }))
 
       if (zoneInserts.length > 0) {
-        const { error: zonesError } = await client
+        const { error: zonesError } = await clientAny
           .from('hue_zones')
           .insert(zoneInserts)
         
@@ -210,7 +215,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
       }))
 
       if (sceneInserts.length > 0) {
-        const { error: scenesError } = await client
+        const { error: scenesError } = await clientAny
           .from('hue_scenes')
           .insert(sceneInserts)
         
@@ -228,7 +233,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
         recorded_at: timestamp,
       }
 
-      const { error: statusError } = await client
+      const { error: statusError } = await clientAny
         .from('hue_status')
         .insert(statusInsert)
       
@@ -260,7 +265,8 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
           const client = this.getWriteClient()
           if (client) {
             const timestamp = getCurrentTimestamp()
-            client
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(client as any)
               .from('hue_status')
               .insert({
                 total_lights: status.totalLights,
@@ -270,7 +276,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
                 average_brightness: status.averageBrightness,
                 recorded_at: timestamp,
               })
-              .then(({ error }) => {
+              .then(({ error }: { error: unknown }) => {
                 if (error) this.logError('Failed to cache status', error)
               })
           }
@@ -419,7 +425,10 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
 
     return zone.lights
       .filter(lightId => allLights[lightId] !== undefined)
-      .map(lightId => ({ ...allLights[lightId], id: lightId }))
+      .map(lightId => {
+        const light = allLights[lightId]!
+        return { ...light, id: lightId }
+      })
   }
 
   /**

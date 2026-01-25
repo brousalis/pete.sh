@@ -59,8 +59,8 @@ export class SonosAdapter extends BaseAdapter<SonosFullState, SonosCachedState> 
 
     try {
       // Get distinct players with their latest state
-      const { data, error } = await client
-        .from('sonos_state')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (client.from('sonos_state') as any)
         .select('*')
         .order('recorded_at', { ascending: false })
 
@@ -69,7 +69,7 @@ export class SonosAdapter extends BaseAdapter<SonosFullState, SonosCachedState> 
 
       // Group by player_id and take the latest for each
       const playerMap = new Map<string, SonosStateRow>()
-      for (const row of data) {
+      for (const row of data as SonosStateRow[]) {
         if (!playerMap.has(row.player_id)) {
           playerMap.set(row.player_id, row)
         }
@@ -77,7 +77,7 @@ export class SonosAdapter extends BaseAdapter<SonosFullState, SonosCachedState> 
 
       const players = Array.from(playerMap.values())
       const recordedAt = players.length > 0 
-        ? players[0].recorded_at 
+        ? players[0]!.recorded_at 
         : new Date().toISOString()
 
       return {
@@ -115,7 +115,8 @@ export class SonosAdapter extends BaseAdapter<SonosFullState, SonosCachedState> 
       }))
 
       if (inserts.length > 0) {
-        const { error } = await client.from('sonos_state').insert(inserts)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (client.from('sonos_state') as any).insert(inserts)
         if (error) throw error
         recordsWritten = inserts.length
       }
@@ -190,7 +191,8 @@ export class SonosAdapter extends BaseAdapter<SonosFullState, SonosCachedState> 
     if (!client) return null // Supabase not configured
     
     try {
-      const { data, error } = await client.rpc('get_latest_sonos_state', { 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (client as any).rpc('get_latest_sonos_state', { 
         p_player_id: playerId 
       })
 

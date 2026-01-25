@@ -45,6 +45,9 @@ const envSchema = z.object({
   // Spotify
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
+
+  // GetSongBPM
+  GETSONGBPM_API_KEY: z.string().optional(),
 })
 
 // Parse and validate environment variables
@@ -119,6 +122,11 @@ export const config = {
       'user-read-email',
       'user-read-private',
     ],
+  },
+  getSongBpm: {
+    apiKey: env.GETSONGBPM_API_KEY,
+    baseUrl: 'https://api.getsongbpm.com',
+    isConfigured: Boolean(env.GETSONGBPM_API_KEY),
   },
 } as const
 

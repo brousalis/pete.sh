@@ -88,8 +88,8 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
 
     try {
       // Get the most recent records for each route
-      const { data, error } = await client
-        .from('cta_history')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (client.from('cta_history') as any)
         .select('*')
         .order('recorded_at', { ascending: false })
         .limit(20) // Get recent history
@@ -97,11 +97,13 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
       if (error) throw error
       if (!data || data.length === 0) return null
 
+      const rows = data as CTAHistoryRow[]
+
       // Group by route and take the latest for each
       const busMap = new Map<string, CTAHistoryRow>()
       const trainMap = new Map<string, CTAHistoryRow>()
 
-      for (const row of data as CTAHistoryRow[]) {
+      for (const row of rows) {
         if (row.route_type === 'bus' && !busMap.has(row.route)) {
           busMap.set(row.route, row)
         } else if (row.route_type === 'train' && !trainMap.has(row.route)) {
@@ -150,7 +152,7 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
         }
       }
 
-      const recordedAt = data[0]?.recorded_at ?? new Date().toISOString()
+      const recordedAt = rows[0]?.recorded_at ?? new Date().toISOString()
 
       return { bus, train, recordedAt }
     } catch (error) {
@@ -208,7 +210,8 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
       }
 
       if (inserts.length > 0) {
-        const { error } = await client.from('cta_history').insert(inserts)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (client.from('cta_history') as any).insert(inserts)
         if (error) throw error
         recordsWritten = inserts.length
       }
@@ -273,14 +276,15 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
           const timestamp = getCurrentTimestamp()
           const error = response['bustime-response']?.error?.[0]
           
-          client.from('cta_history').insert({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(client.from('cta_history') as any).insert({
             route_type: 'bus',
             route,
             stop_id: stopId,
             predictions: error ? null : response['bustime-response']?.prd ?? [],
             error_message: error?.msg ?? null,
             recorded_at: timestamp,
-          }).then(({ error: insertError }) => {
+          }).then(({ error: insertError }: { error: unknown }) => {
             if (insertError) this.logError('Failed to record bus prediction', insertError)
           })
         }
@@ -307,14 +311,15 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
           const timestamp = getCurrentTimestamp()
           const hasError = response.ctatt?.errCd !== '0'
           
-          client.from('cta_history').insert({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(client.from('cta_history') as any).insert({
             route_type: 'train',
             route: line,
             station_id: stationId,
             predictions: hasError ? null : response.ctatt?.eta ?? [],
             error_message: hasError ? response.ctatt?.errNm : null,
             recorded_at: timestamp,
-          }).then(({ error: insertError }) => {
+          }).then(({ error: insertError }: { error: unknown }) => {
             if (insertError) this.logError('Failed to record train prediction', insertError)
           })
         }

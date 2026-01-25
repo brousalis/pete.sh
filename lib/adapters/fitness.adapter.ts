@@ -160,7 +160,10 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         updated_at: getCurrentTimestamp(),
       }
 
-      const { error: routineError } = await client
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+      
+      const { error: routineError } = await clientAny
         .from('fitness_routines')
         .upsert(routineInsert, { onConflict: 'id' })
 
@@ -173,12 +176,12 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           routine_id: routine.id,
           week_number: week.weekNumber,
           year: new Date(week.startDate).getFullYear(),
-          start_date: week.startDate.split('T')[0],
+          start_date: week.startDate.split('T')[0] ?? week.startDate,
           days: week.days,
           updated_at: getCurrentTimestamp(),
         }
 
-        const { error: weekError } = await client
+        const { error: weekError } = await clientAny
           .from('fitness_weeks')
           .upsert(weekInsert, { onConflict: 'routine_id,week_number,year' })
 
@@ -357,7 +360,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
    */
   getCurrentDayOfWeek(): DayOfWeek {
     const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    return days[new Date().getDay()]
+    return days[new Date().getDay()] ?? 'monday'
   }
 }
 

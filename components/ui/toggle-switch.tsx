@@ -6,17 +6,21 @@ export function ToggleSwitch({
   checked,
   onCheckedChange,
   label,
+  disabled,
 }: {
   checked: boolean
   onCheckedChange: (v: boolean) => void
   label?: string
+  disabled?: boolean
 }) {
   const id = React.useId()
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault()
-      onCheckedChange(!checked)
+      if (!disabled) {
+        onCheckedChange(!checked)
+      }
     }
   }
 
@@ -31,11 +35,12 @@ export function ToggleSwitch({
         id={id}
         role="switch"
         aria-checked={checked}
-        onClick={() => onCheckedChange(!checked)}
+        disabled={disabled}
+        onClick={() => !disabled && onCheckedChange(!checked)}
         onKeyDown={handleKeyDown}
         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors outline-none ring-1 ring-inset ring-border focus-visible:ring-2 focus-visible:ring-ring ${
           checked ? "bg-brand" : "bg-muted"
-        }`}
+        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <span
           className={`absolute left-0.5 top-0.5 size-[22px] rounded-full shadow-sm transition-transform ${

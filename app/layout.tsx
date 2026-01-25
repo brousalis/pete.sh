@@ -1,17 +1,17 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 import { SyncManager } from "@/components/sync-manager"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Analytics } from "@vercel/analytics/next"
+import { GeistMono } from "geist/font/mono"
+import { GeistSans } from "geist/font/sans"
+import type { Metadata } from "next"
+import type React from "react"
 import { Suspense } from "react"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Petehome",
-  description: "Petehome - Your modern smart home control center. Monitor and control your smart home devices, view statistics, manage profiles, and more.",
-  generator: "Petehome",
+  title: "petehome",
+  description: "petehome - Your modern smart home control center. Monitor and control your smart home devices, view statistics, manage profiles, and more.",
+  generator: "petehome",
 }
 
 export default function RootLayout({

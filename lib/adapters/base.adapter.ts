@@ -113,7 +113,8 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       const client = this.getWriteClient()
       if (!client) return // Supabase not configured
       
-      await client.from('sync_log').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (client.from('sync_log') as any).insert({
         service: this.serviceName,
         status,
         records_synced: recordsSynced,
@@ -138,8 +139,8 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       const client = this.getReadClient()
       if (!client) return null // Supabase not configured
       
-      const { data, error } = await client
-        .from('sync_log')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (client.from('sync_log') as any)
         .select('synced_at')
         .eq('service', this.serviceName)
         .eq('status', 'success')
@@ -148,7 +149,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
         .single()
 
       if (error || !data) return null
-      return new Date(data.synced_at)
+      return new Date((data as { synced_at: string }).synced_at)
     } catch {
       return null
     }
