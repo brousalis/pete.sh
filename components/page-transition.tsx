@@ -10,11 +10,24 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { pageVariants, transitions } from '@/lib/animations'
+import { transitions } from '@/lib/animations'
 
 interface PageTransitionProviderProps {
   children: ReactNode
   className?: string
+}
+
+// Simple, robust page transition variants that don't depend on children
+const simplePageVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
+  },
+  exit: { 
+    opacity: 0,
+    transition: { duration: 0.15, ease: [0, 0, 0.2, 1] }
+  },
 }
 
 /**
@@ -34,13 +47,13 @@ export function PageTransitionProvider({
   const pathname = usePathname()
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={pathname}
         initial="hidden"
         animate="visible"
         exit="exit"
-        variants={pageVariants}
+        variants={simplePageVariants}
         className={className}
       >
         {children}

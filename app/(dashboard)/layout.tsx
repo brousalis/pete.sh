@@ -1,6 +1,5 @@
 'use client'
 
-import { RouteErrorBoundary } from '@/components/error-boundary'
 import { PageTransitionProvider } from '@/components/page-transition'
 import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
 import { usePathname } from 'next/navigation'
@@ -20,9 +19,7 @@ export default function DashboardLayout({
       <div className="bg-background fixed inset-0 flex h-screen w-screen flex-col overflow-hidden">
         <div className="bg-muted flex h-full w-full flex-1 overflow-hidden">
           <PageTransitionProvider className="flex h-full w-full flex-1">
-            <RouteErrorBoundary pathname={pathname}>
-              {children}
-            </RouteErrorBoundary>
+            {children}
           </PageTransitionProvider>
         </div>
       </div>
@@ -44,9 +41,7 @@ export default function DashboardLayout({
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
           <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 md:px-6 md:py-6">
             <PageTransitionProvider className="h-full">
-              <RouteErrorBoundary pathname={pathname}>
-                {children}
-              </RouteErrorBoundary>
+              {children}
             </PageTransitionProvider>
           </main>
 
