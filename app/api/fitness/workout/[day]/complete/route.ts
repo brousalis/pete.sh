@@ -1,14 +1,13 @@
 import { NextRequest } from "next/server"
 import { successResponse, handleApiError } from "@/lib/api/utils"
-import { FitnessService } from "@/lib/services/fitness.service"
-
-const fitnessService = new FitnessService()
+import { getFitnessAdapter } from "@/lib/adapters/fitness.adapter"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ day: string }> }
 ) {
   try {
+    const adapter = getFitnessAdapter()
     const { day: dayParam } = await params
     const searchParams = request.nextUrl.searchParams
     const weekNumber = searchParams.get("week") ? parseInt(searchParams.get("week")!) : undefined
@@ -19,13 +18,10 @@ export async function POST(
     
     if (!weekNumber) {
       // Get current week
-      const now = new Date()
-      const startOfYear = new Date(now.getFullYear(), 0, 1)
-      const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-      const currentWeek = Math.ceil((days + startOfYear.getDay() + 1) / 7)
-      await fitnessService.markWorkoutComplete(day, currentWeek, exercisesCompleted)
+      const currentWeek = adapter.getCurrentWeekNumber()
+      await adapter.markWorkoutComplete(day, currentWeek, exercisesCompleted)
     } else {
-      await fitnessService.markWorkoutComplete(day, weekNumber, exercisesCompleted)
+      await adapter.markWorkoutComplete(day, weekNumber, exercisesCompleted)
     }
 
     return successResponse({ success: true })

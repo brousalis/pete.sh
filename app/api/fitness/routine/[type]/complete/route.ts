@@ -1,15 +1,6 @@
 import { NextRequest } from "next/server"
 import { successResponse, handleApiError } from "@/lib/api/utils"
-import { FitnessService } from "@/lib/services/fitness.service"
-
-const fitnessService = new FitnessService()
-
-function getCurrentWeekNumber(): number {
-  const now = new Date()
-  const startOfYear = new Date(now.getFullYear(), 0, 1)
-  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-  return Math.ceil((days + startOfYear.getDay() + 1) / 7)
-}
+import { getFitnessAdapter } from "@/lib/adapters/fitness.adapter"
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +8,7 @@ export async function POST(
 ) {
   const { type } = await params
   try {
+    const adapter = getFitnessAdapter()
     const searchParams = request.nextUrl.searchParams
     const day = searchParams.get("day") as "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
     const weekNumber = searchParams.get("week") ? parseInt(searchParams.get("week")!) : undefined
@@ -26,9 +18,9 @@ export async function POST(
     }
 
     const routineType = type === "morning" ? "morning" : "night"
-    const week = weekNumber || getCurrentWeekNumber()
+    const week = weekNumber || adapter.getCurrentWeekNumber()
     
-    await fitnessService.markRoutineComplete(routineType, day, week)
+    await adapter.markRoutineComplete(routineType, day, week)
 
     return successResponse({ success: true })
   } catch (error) {
@@ -42,6 +34,7 @@ export async function DELETE(
 ) {
   const { type } = await params
   try {
+    const adapter = getFitnessAdapter()
     const searchParams = request.nextUrl.searchParams
     const day = searchParams.get("day") as "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
     const weekNumber = searchParams.get("week") ? parseInt(searchParams.get("week")!) : undefined
@@ -51,9 +44,9 @@ export async function DELETE(
     }
 
     const routineType = type === "morning" ? "morning" : "night"
-    const week = weekNumber || getCurrentWeekNumber()
+    const week = weekNumber || adapter.getCurrentWeekNumber()
     
-    await fitnessService.markRoutineIncomplete(routineType, day, week)
+    await adapter.markRoutineIncomplete(routineType, day, week)
 
     return successResponse({ success: true })
   } catch (error) {

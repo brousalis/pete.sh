@@ -1,12 +1,11 @@
 import { handleApiError, successResponse } from '@/lib/api/utils'
-import { FitnessService } from '@/lib/services/fitness.service'
+import { getFitnessAdapter } from '@/lib/adapters/fitness.adapter'
 import { NextRequest } from 'next/server'
-
-const fitnessService = new FitnessService()
 
 export async function GET(_request: NextRequest) {
   try {
-    let routine = await fitnessService.getRoutine()
+    const adapter = getFitnessAdapter()
+    const routine = await adapter.getRoutine()
     if (!routine) {
       throw new Error('No routine found')
     }
@@ -18,8 +17,9 @@ export async function GET(_request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const adapter = getFitnessAdapter()
     const body = await request.json()
-    const routine = await fitnessService.updateRoutine(body)
+    const routine = await adapter.updateRoutine(body)
     return successResponse(routine)
   } catch (error) {
     return handleApiError(error)
