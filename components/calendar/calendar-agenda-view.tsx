@@ -194,8 +194,8 @@ function AgendaEventCard({ event, onSelect }: AgendaEventCardProps) {
       className={cn(
         "group flex w-full items-start gap-3 rounded-xl border-l-3 p-3 text-left transition-all",
         "hover:ring-2 hover:ring-brand/30 hover:shadow-sm",
-        colors.bg,
-        colors.border
+        colors?.bg,
+        colors?.border
       )}
     >
       {/* Time/All-day indicator */}
@@ -215,7 +215,7 @@ function AgendaEventCard({ event, onSelect }: AgendaEventCardProps) {
 
       {/* Event details */}
       <div className="min-w-0 flex-1">
-        <h4 className={cn("font-semibold leading-tight", colors.text)}>
+        <h4 className={cn("font-semibold leading-tight", colors?.text)}>
           {event.summary}
         </h4>
         {event.location && (

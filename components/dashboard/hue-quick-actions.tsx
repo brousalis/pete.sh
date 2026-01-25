@@ -88,7 +88,7 @@ export function HueQuickActions({
   }
 
   const handleBrightnessChange = async (values: number[]) => {
-    const value = values[0]
+    const value = values[0] ?? brightness
     setBrightness(value)
   }
 

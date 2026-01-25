@@ -294,23 +294,26 @@ interface AnimatedCardProps extends HTMLMotionProps<'div'> {
  * AnimatedCard - Card with hover lift effect
  */
 export const AnimatedCard = forwardRef<HTMLDivElement, AnimatedCardProps>(
-  ({ children, className, disableHover = false, ...props }, ref) => (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={transitions.smooth}
-      {...(disableHover ? {} : cardMotionProps)}
-      className={cn(
-        'bg-card ring-border rounded-2xl p-5 shadow-sm ring-1',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </motion.div>
-  )
+  ({ children, className, disableHover = false, ...props }, ref) => {
+    const hoverProps = disableHover ? {} : cardMotionProps
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        {...hoverProps}
+        transition={transitions.smooth}
+        className={cn(
+          'bg-card ring-border rounded-2xl p-5 shadow-sm ring-1',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    )
+  }
 )
 AnimatedCard.displayName = 'AnimatedCard'
 

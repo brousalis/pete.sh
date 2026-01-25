@@ -25,6 +25,7 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }: SwipeHandlers) {
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]
+    if (!touch) return
     touchRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
@@ -37,6 +38,7 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }: SwipeHandlers) {
       if (!touchRef.current) return
 
       const touch = e.changedTouches[0]
+      if (!touch) return
       const deltaX = touch.clientX - touchRef.current.startX
       const deltaY = touch.clientY - touchRef.current.startY
       const deltaTime = Date.now() - touchRef.current.startTime

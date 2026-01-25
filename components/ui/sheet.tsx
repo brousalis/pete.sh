@@ -56,22 +56,22 @@ const slideVariants = {
   right: {
     hidden: { x: '100%' },
     visible: { x: 0, transition: transitions.springGentle },
-    exit: { x: '100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] } },
+    exit: { x: '100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } },
   },
   left: {
     hidden: { x: '-100%' },
     visible: { x: 0, transition: transitions.springGentle },
-    exit: { x: '-100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] } },
+    exit: { x: '-100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } },
   },
   top: {
     hidden: { y: '-100%' },
     visible: { y: 0, transition: transitions.springGentle },
-    exit: { y: '-100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] } },
+    exit: { y: '-100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } },
   },
   bottom: {
     hidden: { y: '100%' },
     visible: { y: 0, transition: transitions.springGentle },
-    exit: { y: '100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] } },
+    exit: { y: '100%', transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } },
   },
 }
 

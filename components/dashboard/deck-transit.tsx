@@ -135,7 +135,7 @@ function RouteRow({ type, route, lineName, destination, arrivals, walkingTime }:
 
   // Calculate urgency based on first arrival
   const firstArrival = arrivals[0]
-  const firstMinutes = firstArrival === "DUE" ? 0 : parseInt(firstArrival, 10)
+  const firstMinutes = firstArrival === "DUE" ? 0 : parseInt(firstArrival ?? "", 10)
   const urgency = !isNaN(firstMinutes) ? getUrgencyLevel(firstMinutes, walkingTime) : "normal"
 
   // Check if catchable

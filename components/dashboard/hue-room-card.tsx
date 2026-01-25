@@ -96,7 +96,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate }: HueRoomCardProps) {
   )
 
   const handleBrightnessChange = (values: number[]) => {
-    setBrightness(values[0])
+    setBrightness(values[0] ?? brightness)
   }
 
   const handleBrightnessCommit = useCallback(

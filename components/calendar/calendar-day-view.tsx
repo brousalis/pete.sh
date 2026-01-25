@@ -114,11 +114,11 @@ export function CalendarDayView({
                   className={cn(
                     "flex items-center gap-2 rounded-lg border-l-3 px-3 py-2 text-left transition-all",
                     "hover:ring-2 hover:ring-brand/30",
-                    colors.bg,
-                    colors.border
+                    colors?.bg,
+                    colors?.border
                   )}
                 >
-                  <span className={cn("font-medium", colors.text)}>
+                  <span className={cn("font-medium", colors?.text)}>
                     {event.summary}
                   </span>
                   {event.location && (
@@ -194,8 +194,8 @@ export function CalendarDayView({
                       className={cn(
                         "absolute overflow-hidden rounded-lg border-l-3 p-3 text-left transition-all",
                         "hover:ring-2 hover:ring-brand/50 hover:z-10",
-                        colors.bg,
-                        colors.border
+                        colors?.bg,
+                        colors?.border
                       )}
                       style={{
                         top: pos.top,
@@ -208,7 +208,7 @@ export function CalendarDayView({
                         <span
                           className={cn(
                             "font-semibold leading-tight",
-                            colors.text
+                            colors?.text
                           )}
                         >
                           {pos.event.summary}

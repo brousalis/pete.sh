@@ -179,7 +179,7 @@ export function calculateEventPositions(
       columns.push([])
     }
 
-    columns[columnIndex].push({ event, end: eventEnd })
+    columns[columnIndex]?.push({ event, end: eventEnd })
 
     // Calculate position
     const minutesFromStart = differenceInMinutes(eventStart, dayStart)
@@ -226,7 +226,9 @@ export function getEventStartDate(event: CalendarEvent): Date | null {
   if (event.start.date) {
     // Parse all-day date as local date
     const [year, month, day] = event.start.date.split("-").map(Number)
-    return new Date(year, month - 1, day)
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      return new Date(year, month - 1, day)
+    }
   }
   return null
 }
@@ -241,7 +243,9 @@ export function getEventEndDate(event: CalendarEvent): Date | null {
   if (event.end.date) {
     // Parse all-day date as local date
     const [year, month, day] = event.end.date.split("-").map(Number)
-    return new Date(year, month - 1, day)
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      return new Date(year, month - 1, day)
+    }
   }
   return null
 }

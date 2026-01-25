@@ -272,7 +272,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   const handleRepeat = async () => {
     const modes: SpotifyRepeatMode[] = ["off", "context", "track"]
     const currentIndex = modes.indexOf(playbackState?.repeat_state || "off")
-    const newMode = modes[(currentIndex + 1) % 3]
+    const newMode = modes[(currentIndex + 1) % 3] ?? "off"
     // Mark action time to debounce polling
     lastActionTime.current = Date.now()
     // Optimistic update

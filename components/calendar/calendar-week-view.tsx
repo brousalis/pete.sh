@@ -131,8 +131,8 @@ export function CalendarWeekView({
                         className={cn(
                           "truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium",
                           "hover:ring-1 hover:ring-brand/50",
-                          colors.bg,
-                          colors.text
+                          colors?.bg,
+                          colors?.text
                         )}
                       >
                         {event.summary}
@@ -218,8 +218,8 @@ export function CalendarWeekView({
                             className={cn(
                               "absolute overflow-hidden rounded border-l-2 px-1 py-0.5 text-left transition-all",
                               "hover:ring-1 hover:ring-brand/50 hover:z-10",
-                              colors.bg,
-                              colors.border
+                              colors?.bg,
+                              colors?.border
                             )}
                             style={{
                               top: pos.top,
@@ -229,7 +229,7 @@ export function CalendarWeekView({
                               marginLeft: 2,
                             }}
                           >
-                            <span className={cn("block truncate text-[10px] font-semibold", colors.text)}>
+                            <span className={cn("block truncate text-[10px] font-semibold", colors?.text)}>
                               {pos.event.summary}
                             </span>
                             <span className="block truncate text-[9px] text-muted-foreground">

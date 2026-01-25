@@ -47,7 +47,7 @@ export function HueLightItem({ light, onUpdate }: HueLightItemProps) {
   )
 
   const handleBrightnessChange = (values: number[]) => {
-    setBrightness(values[0])
+    setBrightness(values[0] ?? brightness)
   }
 
   const handleBrightnessCommit = useCallback(

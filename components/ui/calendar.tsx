@@ -185,6 +185,16 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
+  // Filter out React event handlers that conflict with Framer Motion's Button types
+  const {
+    onAnimationStart,
+    onAnimationEnd,
+    onDragStart,
+    onDragEnd,
+    onDrag,
+    ...restProps
+  } = props
+
   return (
     <Button
       ref={ref}
@@ -205,7 +215,7 @@ function CalendarDayButton({
         defaultClassNames.day,
         className
       )}
-      {...props}
+      {...restProps}
     />
   )
 }

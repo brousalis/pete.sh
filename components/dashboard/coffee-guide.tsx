@@ -41,7 +41,7 @@ export function CoffeeGuide() {
   // Update cup size when method changes
   useEffect(() => {
     const sizes = coffeeService.getCupSizes(method)
-    if (!sizes.find((s) => s.value === cupSize)) {
+    if (!sizes.find((s) => s.value === cupSize) && sizes[0]) {
       setCupSize(sizes[0].value)
     }
   }, [method, cupSize])

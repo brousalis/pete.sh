@@ -111,7 +111,7 @@ export function CalendarEventDetail({
         )}
       >
         {/* Header */}
-        <div className={cn("shrink-0 border-b border-border/50 p-4", colors.bg)}>
+        <div className={cn("shrink-0 border-b border-border/50 p-4", colors?.bg)}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -123,7 +123,7 @@ export function CalendarEventDetail({
                   </Badge>
                 )}
               </div>
-              <h2 className={cn("mt-2 text-xl font-bold leading-tight", colors.text)}>
+              <h2 className={cn("mt-2 text-xl font-bold leading-tight", colors?.text)}>
                 {event.summary}
               </h2>
             </div>

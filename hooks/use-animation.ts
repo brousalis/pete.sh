@@ -36,7 +36,7 @@ export function useAnimationProps<T extends Record<string, unknown>>(
 export function useAnimateOnView(options?: {
   once?: boolean
   amount?: number | 'some' | 'all'
-  margin?: string
+  margin?: `${number}px ${number}px ${number}px ${number}px`
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, {

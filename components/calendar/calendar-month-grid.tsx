@@ -124,10 +124,10 @@ export function CalendarMonthGrid({
                         className={cn(
                           "truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium leading-tight transition-all",
                           "hover:ring-1 hover:ring-brand/50",
-                          colors.bg,
-                          colors.text,
+                          colors?.bg,
+                          colors?.text,
                           "border-l-2",
-                          colors.border
+                          colors?.border
                         )}
                         title={event.summary}
                       >

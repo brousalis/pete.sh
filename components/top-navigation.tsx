@@ -75,16 +75,16 @@ export function TopNavigation() {
 
   // Close mobile menu when clicking outside
   useEffect(() => {
+    if (!mobileMenuOpen) return
+
     const handleClickOutside = (event: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false)
       }
     }
 
-    if (mobileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [mobileMenuOpen])
 
   // Handle escape key and keyboard shortcuts
@@ -97,9 +97,10 @@ export function TopNavigation() {
       // Keyboard navigation shortcuts (Cmd/Ctrl + number)
       if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey) {
         const num = parseInt(event.key)
-        if (num >= 1 && num <= allNavItems.length) {
+        const navItem = allNavItems[num - 1]
+        if (num >= 1 && num <= allNavItems.length && navItem) {
           event.preventDefault()
-          window.location.href = allNavItems[num - 1].href
+          window.location.href = navItem.href
         }
       }
     }

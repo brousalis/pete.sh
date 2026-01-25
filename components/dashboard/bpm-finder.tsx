@@ -610,7 +610,7 @@ export function BpmFinder() {
                   </div>
                   <Slider
                     value={[targetBpm]}
-                    onValueChange={(v) => setTargetBpm(v[0])}
+                    onValueChange={(v) => setTargetBpm(v[0] ?? targetBpm)}
                     min={100}
                     max={200}
                     step={1}
@@ -626,7 +626,7 @@ export function BpmFinder() {
                   </div>
                   <Slider
                     value={[bpmTolerance]}
-                    onValueChange={(v) => setBpmTolerance(v[0])}
+                    onValueChange={(v) => setBpmTolerance(v[0] ?? bpmTolerance)}
                     min={1}
                     max={15}
                     step={1}

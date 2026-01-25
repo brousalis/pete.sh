@@ -47,7 +47,7 @@ export function RideShareCard({ compact = false }: RideShareCardProps) {
   const [predictions, setPredictions] = useState<MapsAutocompletePrediction[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
-  const searchDebounceRef = useRef<NodeJS.Timeout>()
+  const searchDebounceRef = useRef<NodeJS.Timeout>(undefined)
 
   // Selection state
   const [selectedDestination, setSelectedDestination] = useState<SelectedDestination | null>(null)
