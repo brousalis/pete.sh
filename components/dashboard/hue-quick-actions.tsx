@@ -101,7 +101,9 @@ export function HueQuickActions({
   const handleBrightnessChange = async (values: number[]) => {
     if (isReadOnly) return
     const value = values[0]
-    setBrightness(value)
+    if (value !== undefined) {
+      setBrightness(value)
+    }
   }
 
   const handleBrightnessCommit = async (values: number[]) => {
@@ -110,6 +112,7 @@ export function HueQuickActions({
       return
     }
     const value = values[0]
+    if (value === undefined) return
     try {
       const response = await fetch("/api/hue/all", {
         method: "POST",

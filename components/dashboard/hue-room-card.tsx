@@ -103,7 +103,9 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
 
   const handleBrightnessChange = (values: number[]) => {
     if (isReadOnly) return
-    setBrightness(values[0])
+    if (values[0] !== undefined) {
+      setBrightness(values[0])
+    }
   }
 
   const handleBrightnessCommit = useCallback(
@@ -113,6 +115,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
         return
       }
       const value = values[0]
+      if (value === undefined) return
       setIsUpdating(true)
       try {
         const response = await fetch(`/api/hue/zones/${zone.id}/brightness`, {
