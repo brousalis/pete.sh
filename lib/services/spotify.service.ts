@@ -15,6 +15,10 @@ import type {
   SpotifyTrack,
   SpotifyQueue,
   SpotifyRepeatMode,
+  SpotifyAudioFeatures,
+  SpotifySavedTrack,
+  SpotifyRecommendationsParams,
+  SpotifyRecommendationsResponse,
 } from "@/lib/types/spotify.types"
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -407,6 +411,205 @@ export class SpotifyService {
       limit: limit.toString(),
     })
     return this.apiRequest(`/search?${params.toString()}`)
+  }
+
+  // ==========================================
+  // Audio Features Endpoints
+  // ==========================================
+
+  /**
+   * Get audio features for a single track
+   */
+  async getAudioFeatures(trackId: string): Promise<SpotifyAudioFeatures> {
+    return this.apiRequest<SpotifyAudioFeatures>(`/audio-features/${trackId}`)
+  }
+
+  /**
+   * Get audio features for multiple tracks (max 100)
+   */
+  async getAudioFeaturesForTracks(trackIds: string[]): Promise<SpotifyAudioFeatures[]> {
+    if (trackIds.length === 0) return []
+    // API allows max 100 tracks per request
+    const ids = trackIds.slice(0, 100).join(",")
+    const response = await this.apiRequest<{ audio_features: (SpotifyAudioFeatures | null)[] }>(
+      `/audio-features?ids=${ids}`
+    )
+    // Filter out null values (tracks without audio features)
+    return response.audio_features.filter((f): f is SpotifyAudioFeatures => f !== null)
+  }
+
+  // ==========================================
+  // User Library Endpoints
+  // ==========================================
+
+  /**
+   * Get user's saved tracks (library)
+   */
+  async getSavedTracks(
+    limit = 50,
+    offset = 0
+  ): Promise<{ items: SpotifySavedTrack[]; total: number; next: string | null }> {
+    const params = new URLSearchParams({
+      limit: Math.min(limit, 50).toString(),
+      offset: offset.toString(),
+    })
+    return this.apiRequest(`/me/tracks?${params.toString()}`)
+  }
+
+  /**
+   * Get all saved tracks with pagination
+   * Warning: This can be slow for large libraries
+   */
+  async getAllSavedTracks(progressCallback?: (loaded: number, total: number) => void): Promise<SpotifySavedTrack[]> {
+    const allTracks: SpotifySavedTrack[] = []
+    let offset = 0
+    const limit = 50
+    let total = 0
+
+    do {
+      const response = await this.getSavedTracks(limit, offset)
+      allTracks.push(...response.items)
+      total = response.total
+      offset += limit
+      progressCallback?.(allTracks.length, total)
+    } while (offset < total)
+
+    return allTracks
+  }
+
+  // ==========================================
+  // Recommendations Endpoint
+  // ==========================================
+
+  /**
+   * Get track recommendations based on seeds and audio features
+   */
+  async getRecommendations(params: SpotifyRecommendationsParams): Promise<SpotifyRecommendationsResponse> {
+    const queryParams = new URLSearchParams()
+
+    // Add seed parameters (max 5 total across all seed types)
+    if (params.seed_artists?.length) {
+      queryParams.set("seed_artists", params.seed_artists.slice(0, 5).join(","))
+    }
+    if (params.seed_tracks?.length) {
+      queryParams.set("seed_tracks", params.seed_tracks.slice(0, 5).join(","))
+    }
+    if (params.seed_genres?.length) {
+      queryParams.set("seed_genres", params.seed_genres.slice(0, 5).join(","))
+    }
+
+    // Limit
+    if (params.limit) {
+      queryParams.set("limit", Math.min(params.limit, 100).toString())
+    }
+
+    // Tempo filters
+    if (params.target_tempo !== undefined) {
+      queryParams.set("target_tempo", params.target_tempo.toString())
+    }
+    if (params.min_tempo !== undefined) {
+      queryParams.set("min_tempo", params.min_tempo.toString())
+    }
+    if (params.max_tempo !== undefined) {
+      queryParams.set("max_tempo", params.max_tempo.toString())
+    }
+
+    // Energy filters
+    if (params.target_energy !== undefined) {
+      queryParams.set("target_energy", params.target_energy.toString())
+    }
+    if (params.min_energy !== undefined) {
+      queryParams.set("min_energy", params.min_energy.toString())
+    }
+    if (params.max_energy !== undefined) {
+      queryParams.set("max_energy", params.max_energy.toString())
+    }
+
+    // Danceability filters
+    if (params.target_danceability !== undefined) {
+      queryParams.set("target_danceability", params.target_danceability.toString())
+    }
+    if (params.min_danceability !== undefined) {
+      queryParams.set("min_danceability", params.min_danceability.toString())
+    }
+    if (params.max_danceability !== undefined) {
+      queryParams.set("max_danceability", params.max_danceability.toString())
+    }
+
+    return this.apiRequest<SpotifyRecommendationsResponse>(`/recommendations?${queryParams.toString()}`)
+  }
+
+  // ==========================================
+  // Playlist Management Endpoints
+  // ==========================================
+
+  /**
+   * Create a new playlist
+   */
+  async createPlaylist(
+    userId: string,
+    name: string,
+    options?: { description?: string; public?: boolean }
+  ): Promise<SpotifyPlaylist> {
+    return this.apiRequest<SpotifyPlaylist>(`/users/${userId}/playlists`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        description: options?.description || "",
+        public: options?.public ?? false,
+      }),
+    })
+  }
+
+  /**
+   * Add tracks to a playlist
+   */
+  async addTracksToPlaylist(
+    playlistId: string,
+    trackUris: string[],
+    position?: number
+  ): Promise<{ snapshot_id: string }> {
+    const body: { uris: string[]; position?: number } = {
+      uris: trackUris.slice(0, 100), // Max 100 tracks per request
+    }
+    if (position !== undefined) {
+      body.position = position
+    }
+    return this.apiRequest(`/playlists/${playlistId}/tracks`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    })
+  }
+
+  /**
+   * Remove tracks from a playlist
+   */
+  async removeTracksFromPlaylist(
+    playlistId: string,
+    trackUris: string[]
+  ): Promise<{ snapshot_id: string }> {
+    return this.apiRequest(`/playlists/${playlistId}/tracks`, {
+      method: "DELETE",
+      body: JSON.stringify({
+        tracks: trackUris.map((uri) => ({ uri })),
+      }),
+    })
+  }
+
+  /**
+   * Get a single playlist by ID
+   */
+  async getPlaylist(playlistId: string): Promise<SpotifyPlaylist> {
+    return this.apiRequest<SpotifyPlaylist>(`/playlists/${playlistId}`)
+  }
+
+  /**
+   * Get top tracks for an artist
+   */
+  async getArtistTopTracks(artistId: string, market = "US"): Promise<{ tracks: SpotifyTrack[] }> {
+    return this.apiRequest<{ tracks: SpotifyTrack[] }>(
+      `/artists/${artistId}/top-tracks?market=${market}`
+    )
   }
 }
 

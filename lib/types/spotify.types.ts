@@ -163,6 +163,65 @@ export interface SpotifyQueue {
 
 export type SpotifyRepeatMode = "off" | "track" | "context"
 
+export interface SpotifyAudioFeatures {
+  id: string
+  uri: string
+  track_href: string
+  analysis_url: string
+  duration_ms: number
+  tempo: number // BPM
+  time_signature: number
+  key: number
+  mode: number // 0 = minor, 1 = major
+  acousticness: number // 0.0 to 1.0
+  danceability: number // 0.0 to 1.0
+  energy: number // 0.0 to 1.0
+  instrumentalness: number // 0.0 to 1.0
+  liveness: number // 0.0 to 1.0
+  loudness: number // -60 to 0 dB
+  speechiness: number // 0.0 to 1.0
+  valence: number // 0.0 to 1.0 (musical positivity)
+}
+
+export interface SpotifyRecommendationsParams {
+  seed_artists?: string[] // Max 5 total seeds
+  seed_tracks?: string[]
+  seed_genres?: string[]
+  limit?: number // Default 20, max 100
+  // Tempo filters
+  target_tempo?: number
+  min_tempo?: number
+  max_tempo?: number
+  // Other optional filters
+  target_energy?: number
+  min_energy?: number
+  max_energy?: number
+  target_danceability?: number
+  min_danceability?: number
+  max_danceability?: number
+}
+
+export interface SpotifyRecommendationsResponse {
+  tracks: SpotifyTrack[]
+  seeds: {
+    afterFilteringSize: number
+    afterRelinkingSize: number
+    href: string
+    id: string
+    initialPoolSize: number
+    type: "artist" | "track" | "genre"
+  }[]
+}
+
+export interface SpotifySavedTrack {
+  added_at: string
+  track: SpotifyTrack
+}
+
+export interface SpotifyTrackWithFeatures extends SpotifyTrack {
+  audioFeatures?: SpotifyAudioFeatures
+}
+
 export interface SpotifyAuthState {
   isAuthenticated: boolean
   user: SpotifyUser | null

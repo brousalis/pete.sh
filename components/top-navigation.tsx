@@ -1,25 +1,7 @@
 'use client'
 
-import type React from 'react'
-import {
-  Bus,
-  Calendar,
-  Coffee,
-  Dumbbell,
-  Grid3x3,
-  Home,
-  Lightbulb,
-  Music,
-  Bell,
-  Settings,
-  Menu,
-  X,
-  Command,
-} from 'lucide-react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { ColorThemePicker } from '@/components/color-theme'
+import { ThemeToggle } from '@/components/theme-toggle'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,10 +10,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { ColorThemePicker } from '@/components/color-theme'
+import { staggerItemVariants, transitions } from '@/lib/animations'
 import { cn } from '@/lib/utils'
-import { transitions, staggerItemVariants } from '@/lib/animations'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  Bus,
+  Calendar,
+  Coffee,
+  Command,
+  Dumbbell,
+  Grid3x3,
+  Home,
+  Lightbulb,
+  Menu,
+  Music,
+  Settings,
+  X
+} from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type NavItem = {
   href: string
@@ -174,8 +173,7 @@ export function TopNavigation() {
 
         {/* Right side actions */}
         <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-          {/* Notifications */}
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger className="relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50">
               <Bell className="size-5 text-muted-foreground" aria-hidden />
               <span className="sr-only">Open notifications</span>
@@ -194,7 +192,7 @@ export function TopNavigation() {
                 View all
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           {/* Settings */}
           <DropdownMenu>

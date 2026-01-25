@@ -1,39 +1,37 @@
 "use client"
 
-import { useState } from "react"
-import {
-  Dumbbell,
-  RotateCcw,
-  Bike,
-  StretchVertical,
-  Zap,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  Circle,
-  AlertTriangle,
-  Play,
-  Footprints
-} from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { YouTubePlayer } from "@/components/ui/youtube-player"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { YouTubePlayer } from "@/components/ui/youtube-player"
+import type { DayOfWeek, Exercise, Workout, WorkoutCompletion } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
-import type { Workout, Exercise, WorkoutCompletion, DayOfWeek } from "@/lib/types/fitness.types"
+import {
+  AlertTriangle,
+  Bike,
+  ChevronDown,
+  ChevronRight,
+  Dumbbell,
+  Footprints,
+  Play,
+  RotateCcw,
+  StretchVertical,
+  Zap
+} from "lucide-react"
+import { useState } from "react"
 
 interface WorkoutCenterProps {
   /** The workout data for today */
@@ -149,7 +147,7 @@ export function WorkoutCenter({
   // Rest day view
   if (!workout) {
     return (
-      <Card className={cn("flex flex-col h-full bg-blue-500/5 border-blue-500/20", className)}>
+      <Card className={cn("flex flex-col h-full bg-blue-500/5 border-blue-500/20 py-0", className)}>
         <CardContent className="flex flex-col items-center justify-center flex-1 p-6 text-center">
           <div className="rounded-full p-4 bg-blue-500/10 text-blue-500 mb-4">
             <Footprints className="size-8" />
@@ -233,7 +231,7 @@ export function WorkoutCenter({
 
   return (
     <Card className={cn(
-      "flex flex-col h-full min-h-0 overflow-hidden",
+      "flex flex-col h-full min-h-0 overflow-hidden py-0",
       isWorkoutCompleted && !isPreview && "bg-green-500/5 border-green-500/20",
       isPreview && "border-blue-500/30 border-dashed",
       className

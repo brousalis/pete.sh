@@ -1,30 +1,30 @@
 "use client"
 
-import { useState } from "react"
-import { Sun, Moon, Play, Check, Info, ChevronDown, ChevronUp, Clock, ExternalLink } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ExerciseTimer } from "@/components/ui/exercise-timer"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ExerciseTimer } from "@/components/ui/exercise-timer"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { cn } from "@/lib/utils"
 import type { DailyRoutine, RoutineCompletion } from "@/lib/types/fitness.types"
+import { cn } from "@/lib/utils"
+import { Check, ChevronDown, ChevronUp, Clock, ExternalLink, Info, Moon, Play, Sun } from "lucide-react"
+import { useState } from "react"
 
 interface StretchPanelProps {
   /** The routine data (morning or night) */
@@ -96,7 +96,7 @@ export function StretchPanel({
   if (isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col overflow-hidden bg-green-500/5 border-green-500/20",
+        "flex flex-col overflow-hidden bg-green-500/5 border-green-500/20 py-0",
         className
       )}>
         <CardContent className="p-3">
@@ -164,16 +164,16 @@ export function StretchPanel({
       "Deep Squat Hold": "M9z8Z7aY4Kk",
       "Thoracic Openers / T-Spine Rotation": "vuyUwtHl694",
       "Dead Hang": "HoE-C85ZlCE",
-      "Couch Stretch": "t9d0Ob5rLU4",
-      "Doorway Pec Stretch": "QpHfyWLj9Kw",
-      "Child's Pose with Side Reach": "2MJvnzR6b1M",
+      "Couch Stretch": "eoPmgjyj9-Q",
+      "Doorway Pec Stretch": "CEQMx4zFwYs",
+      "Child's Pose with Side Reach": "YTAwpiX2Dsg",
     }
     return videoMap[exerciseName]
   }
 
   return (
     <Card className={cn(
-      "flex flex-col h-full min-h-0 overflow-hidden",
+      "flex flex-col h-full min-h-0 overflow-hidden py-0",
       className
     )}>
       <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">

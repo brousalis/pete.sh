@@ -42,9 +42,15 @@ const envSchema = z.object({
   // Desktop Features
   NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES: z.string().optional(),
 
+  // App URL (for OAuth callbacks)
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+
   // Spotify
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
+
+  // GetSongBPM
+  GETSONGBPM_API_KEY: z.string().optional(),
 })
 
 // Parse and validate environment variables
@@ -102,10 +108,16 @@ export const config = {
   desktop: {
     enabled: env.NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES === 'true',
   },
+  app: {
+    url: env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000',
+  },
   spotify: {
     clientId: env.NEXT_SPOTIFY_CLIENT_ID,
     clientSecret: env.NEXT_SPOTIFY_CLIENT_SECRET,
-    redirectUri: 'http://127.0.0.1:3000/spotify/callback',
+    get redirectUri() {
+      const baseUrl = env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+      return `${baseUrl}/spotify/callback`
+    },
     isConfigured: Boolean(env.NEXT_SPOTIFY_CLIENT_ID && env.NEXT_SPOTIFY_CLIENT_SECRET),
     scopes: [
       'user-read-playback-state',
@@ -115,10 +127,17 @@ export const config = {
       'user-library-read',
       'playlist-read-private',
       'playlist-read-collaborative',
+      'playlist-modify-public',
+      'playlist-modify-private',
       'streaming',
       'user-read-email',
       'user-read-private',
     ],
+  },
+  getSongBpm: {
+    apiKey: env.GETSONGBPM_API_KEY,
+    isConfigured: Boolean(env.GETSONGBPM_API_KEY),
+    baseUrl: 'https://api.getsong.co',
   },
 } as const
 

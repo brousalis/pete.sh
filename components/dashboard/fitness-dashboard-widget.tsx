@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { CheckCircle2, Circle, Sun, Moon, Flame, Calendar, ArrowRight, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import type { ConsistencyStats, DayOfWeek, WeeklyRoutine, Workout } from "@/lib/types/fitness.types"
+import { AlertTriangle, ArrowRight, CheckCircle2, Circle, Flame, Moon, Sun } from "lucide-react"
 import Link from "next/link"
-import { format } from "date-fns"
-import type { WeeklyRoutine, DayOfWeek, Workout, ConsistencyStats } from "@/lib/types/fitness.types"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export function FitnessDashboardWidget() {
@@ -170,7 +168,7 @@ export function FitnessDashboardWidget() {
         {/* Daily Routines */}
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Daily Routines</h4>
-          
+
           {/* Morning Routine */}
           <div className={`rounded-lg border p-3 transition-all ${morningCompleted ? "bg-green-50/50 dark:bg-green-950/10 ring-1 ring-green-500/20" : ""}`}>
             <div className="flex items-center justify-between">
