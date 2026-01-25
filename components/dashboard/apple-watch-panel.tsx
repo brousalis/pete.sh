@@ -248,7 +248,7 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
               )}
 
               {/* Weekly Summary */}
-              {weeklySummary.length > 0 && (
+              {weeklySummary[0] && (
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                     This Week

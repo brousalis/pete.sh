@@ -13,10 +13,17 @@ import type {
   CadenceSample,
   PaceSample,
   HeartRateZone,
-  WorkoutAnalytics,
-  FitnessInsights,
-  calculateHrZones,
 } from '@/lib/types/apple-health.types'
+import type {
+  AppleHealthWorkoutRow,
+  AppleHealthWorkoutInsert,
+  AppleHealthHrSampleInsert,
+  AppleHealthCadenceSampleInsert,
+  AppleHealthPaceSampleInsert,
+  AppleHealthRouteInsert,
+  AppleHealthDailyMetricsInsert,
+  AppleHealthDailyMetricsRow,
+} from '@/lib/supabase/types'
 
 // ============================================
 // DATABASE TYPES (matching Supabase schema)
@@ -121,43 +128,44 @@ export class AppleHealthService {
     const weekNumber = this.getWeekNumber(startDate)
     const year = startDate.getFullYear()
 
-    // Insert workout
-    const { data: workoutData, error: workoutError } = await supabase
+    // Insert workout - using type assertion for dynamic table
+    const workoutInsert: AppleHealthWorkoutInsert = {
+      healthkit_id: workout.id,
+      workout_type: workout.workoutType,
+      workout_type_raw: workout.workoutTypeRaw || null,
+      start_date: workout.startDate,
+      end_date: workout.endDate,
+      duration: workout.duration,
+      active_calories: workout.activeCalories,
+      total_calories: workout.totalCalories,
+      distance_meters: workout.distance || null,
+      distance_miles: workout.distanceMiles || null,
+      elevation_gain_meters: workout.elevationGain || null,
+      hr_average: workout.heartRate.average,
+      hr_min: workout.heartRate.min,
+      hr_max: workout.heartRate.max,
+      hr_zones: hrZones,
+      cadence_average: workout.runningMetrics?.cadence.average || null,
+      pace_average: workout.runningMetrics?.pace.average || null,
+      pace_best: workout.runningMetrics?.pace.best || null,
+      stride_length_avg: workout.runningMetrics?.strideLength?.average || null,
+      running_power_avg: workout.runningMetrics?.runningPower?.average || null,
+      source: workout.source,
+      source_version: workout.sourceVersion || null,
+      device_name: workout.device?.name || null,
+      device_model: workout.device?.model || null,
+      weather_temp_celsius: workout.weather?.temperature || null,
+      weather_humidity: workout.weather?.humidity || null,
+      linked_workout_id: linkedWorkoutId || null,
+      linked_day: linkedDay || null,
+      linked_week: weekNumber,
+      linked_year: year,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: workoutData, error: workoutError } = await (supabase as any)
       .from('apple_health_workouts')
-      .upsert({
-        healthkit_id: workout.id,
-        workout_type: workout.workoutType,
-        workout_type_raw: workout.workoutTypeRaw || null,
-        start_date: workout.startDate,
-        end_date: workout.endDate,
-        duration: workout.duration,
-        active_calories: workout.activeCalories,
-        total_calories: workout.totalCalories,
-        distance_meters: workout.distance || null,
-        distance_miles: workout.distanceMiles || null,
-        elevation_gain_meters: workout.elevationGain || null,
-        hr_average: workout.heartRate.average,
-        hr_min: workout.heartRate.min,
-        hr_max: workout.heartRate.max,
-        hr_zones: hrZones,
-        cadence_average: workout.runningMetrics?.cadence.average || null,
-        pace_average: workout.runningMetrics?.pace.average || null,
-        pace_best: workout.runningMetrics?.pace.best || null,
-        stride_length_avg: workout.runningMetrics?.strideLength?.average || null,
-        running_power_avg: workout.runningMetrics?.runningPower?.average || null,
-        source: workout.source,
-        source_version: workout.sourceVersion || null,
-        device_name: workout.device?.name || null,
-        device_model: workout.device?.model || null,
-        weather_temp_celsius: workout.weather?.temperature || null,
-        weather_humidity: workout.weather?.humidity || null,
-        linked_workout_id: linkedWorkoutId || null,
-        linked_day: linkedDay || null,
-        linked_week: weekNumber,
-        linked_year: year,
-      }, {
-        onConflict: 'healthkit_id',
-      })
+      .upsert(workoutInsert, { onConflict: 'healthkit_id' })
       .select('id')
       .single()
 
@@ -166,7 +174,10 @@ export class AppleHealthService {
       throw new Error(`Failed to save workout: ${workoutError.message}`)
     }
 
-    const workoutId = workoutData.id
+    const workoutId = (workoutData as { id: string })?.id
+    if (!workoutId) {
+      throw new Error('Failed to get workout ID after insert')
+    }
 
     // Save HR samples (batch insert)
     if (workout.heartRateSamples.length > 0) {
@@ -198,14 +209,17 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('write')
     if (!supabase) return
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     // Delete existing samples for this workout (in case of re-sync)
-    await supabase
+    await db
       .from('apple_health_hr_samples')
       .delete()
       .eq('workout_id', workoutId)
 
     // Batch insert (Supabase handles batching)
-    const hrRecords = samples.map(sample => ({
+    const hrRecords: AppleHealthHrSampleInsert[] = samples.map(sample => ({
       workout_id: workoutId,
       timestamp: sample.timestamp,
       bpm: sample.bpm,
@@ -216,7 +230,7 @@ export class AppleHealthService {
     const chunkSize = 1000
     for (let i = 0; i < hrRecords.length; i += chunkSize) {
       const chunk = hrRecords.slice(i, i + chunkSize)
-      const { error } = await supabase
+      const { error } = await db
         .from('apple_health_hr_samples')
         .insert(chunk)
 
@@ -233,12 +247,15 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('write')
     if (!supabase) return
 
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
       .from('apple_health_cadence_samples')
       .delete()
       .eq('workout_id', workoutId)
 
-    const records = samples.map(sample => ({
+    const records: AppleHealthCadenceSampleInsert[] = samples.map(sample => ({
       workout_id: workoutId,
       timestamp: sample.timestamp,
       steps_per_minute: sample.stepsPerMinute,
@@ -247,7 +264,7 @@ export class AppleHealthService {
     const chunkSize = 1000
     for (let i = 0; i < records.length; i += chunkSize) {
       const chunk = records.slice(i, i + chunkSize)
-      await supabase.from('apple_health_cadence_samples').insert(chunk)
+      await db.from('apple_health_cadence_samples').insert(chunk)
     }
   }
 
@@ -258,12 +275,15 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('write')
     if (!supabase) return
 
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
       .from('apple_health_pace_samples')
       .delete()
       .eq('workout_id', workoutId)
 
-    const records = samples.map(sample => ({
+    const records: AppleHealthPaceSampleInsert[] = samples.map(sample => ({
       workout_id: workoutId,
       timestamp: sample.timestamp,
       minutes_per_mile: sample.minutesPerMile,
@@ -273,7 +293,7 @@ export class AppleHealthService {
     const chunkSize = 1000
     for (let i = 0; i < records.length; i += chunkSize) {
       const chunk = records.slice(i, i + chunkSize)
-      await supabase.from('apple_health_pace_samples').insert(chunk)
+      await db.from('apple_health_pace_samples').insert(chunk)
     }
   }
 
@@ -286,18 +306,23 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('write')
     if (!supabase) return
 
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
       .from('apple_health_routes')
       .delete()
       .eq('workout_id', workoutId)
 
-    await supabase.from('apple_health_routes').insert({
+    const routeInsert: AppleHealthRouteInsert = {
       workout_id: workoutId,
       total_distance_meters: route.totalDistance,
       total_elevation_gain: route.totalElevationGain,
       total_elevation_loss: route.totalElevationLoss,
       samples: route.samples,
-    })
+    }
+
+    await db.from('apple_health_routes').insert(routeInsert)
   }
 
   /**
@@ -310,7 +335,10 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    let query = db
       .from('apple_health_workouts')
       .select('*')
       .order('start_date', { ascending: false })
@@ -327,7 +355,7 @@ export class AppleHealthService {
       return []
     }
 
-    return data || []
+    return (data as DbWorkout[]) || []
   }
 
   /**
@@ -342,8 +370,11 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return null
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     // Fetch workout
-    const { data: workout, error: workoutError } = await supabase
+    const { data: workout, error: workoutError } = await db
       .from('apple_health_workouts')
       .select('*')
       .eq('id', workoutId)
@@ -355,17 +386,17 @@ export class AppleHealthService {
 
     // Fetch samples in parallel
     const [hrResult, cadenceResult, paceResult] = await Promise.all([
-      supabase
+      db
         .from('apple_health_hr_samples')
         .select('*')
         .eq('workout_id', workoutId)
         .order('timestamp', { ascending: true }),
-      supabase
+      db
         .from('apple_health_cadence_samples')
         .select('timestamp, steps_per_minute')
         .eq('workout_id', workoutId)
         .order('timestamp', { ascending: true }),
-      supabase
+      db
         .from('apple_health_pace_samples')
         .select('timestamp, minutes_per_mile')
         .eq('workout_id', workoutId)
@@ -373,10 +404,10 @@ export class AppleHealthService {
     ])
 
     return {
-      workout,
-      hrSamples: hrResult.data || [],
-      cadenceSamples: cadenceResult.data || [],
-      paceSamples: paceResult.data || [],
+      workout: workout as DbWorkout,
+      hrSamples: (hrResult.data as DbHrSample[]) || [],
+      cadenceSamples: (cadenceResult.data as { timestamp: string; steps_per_minute: number }[]) || [],
+      paceSamples: (paceResult.data as { timestamp: string; minutes_per_mile: number }[]) || [],
     }
   }
 
@@ -390,7 +421,10 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const { data, error } = await db
       .from('apple_health_hr_samples')
       .select('timestamp, bpm')
       .eq('workout_id', workoutId)
@@ -399,8 +433,9 @@ export class AppleHealthService {
     if (error || !data) return []
 
     // Downsample for chart display
+    const samples = data as { timestamp: string; bpm: number }[]
     const interval = Math.ceil(sampleInterval / 5) // Assuming ~5 sec samples
-    return data.filter((_, index) => index % interval === 0)
+    return samples.filter((_, index) => index % interval === 0)
   }
 
   // ============================================
@@ -414,35 +449,38 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('write')
     if (!supabase) return false
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const metricsInsert: AppleHealthDailyMetricsInsert = {
+      date: metrics.date,
+      steps: metrics.steps,
+      active_calories: metrics.activeCalories,
+      total_calories: metrics.totalCalories,
+      exercise_minutes: metrics.exerciseMinutes,
+      stand_hours: metrics.standHours,
+      move_goal: metrics.moveGoal || null,
+      exercise_goal: metrics.exerciseGoal || null,
+      stand_goal: metrics.standGoal || null,
+      resting_heart_rate: metrics.restingHeartRate || null,
+      heart_rate_variability: metrics.heartRateVariability || null,
+      vo2_max: metrics.vo2Max || null,
+      sleep_duration: metrics.sleepDuration || null,
+      sleep_awake: metrics.sleepStages?.awake || null,
+      sleep_rem: metrics.sleepStages?.rem || null,
+      sleep_core: metrics.sleepStages?.core || null,
+      sleep_deep: metrics.sleepStages?.deep || null,
+      walking_hr_average: metrics.walkingHeartRateAverage || null,
+      walking_double_support_pct: metrics.walkingDoubleSupportPercentage || null,
+      walking_asymmetry_pct: metrics.walkingAsymmetryPercentage || null,
+      walking_speed: metrics.walkingSpeed || null,
+      walking_step_length: metrics.walkingStepLength || null,
+      source: metrics.source,
+    }
+
+    const { error } = await db
       .from('apple_health_daily_metrics')
-      .upsert({
-        date: metrics.date,
-        steps: metrics.steps,
-        active_calories: metrics.activeCalories,
-        total_calories: metrics.totalCalories,
-        exercise_minutes: metrics.exerciseMinutes,
-        stand_hours: metrics.standHours,
-        move_goal: metrics.moveGoal || null,
-        exercise_goal: metrics.exerciseGoal || null,
-        stand_goal: metrics.standGoal || null,
-        resting_heart_rate: metrics.restingHeartRate || null,
-        heart_rate_variability: metrics.heartRateVariability || null,
-        vo2_max: metrics.vo2Max || null,
-        sleep_duration: metrics.sleepDuration || null,
-        sleep_awake: metrics.sleepStages?.awake || null,
-        sleep_rem: metrics.sleepStages?.rem || null,
-        sleep_core: metrics.sleepStages?.core || null,
-        sleep_deep: metrics.sleepStages?.deep || null,
-        walking_hr_average: metrics.walkingHeartRateAverage || null,
-        walking_double_support_pct: metrics.walkingDoubleSupportPercentage || null,
-        walking_asymmetry_pct: metrics.walkingAsymmetryPercentage || null,
-        walking_speed: metrics.walkingSpeed || null,
-        walking_step_length: metrics.walkingStepLength || null,
-        source: metrics.source,
-      }, {
-        onConflict: 'date',
-      })
+      .upsert(metricsInsert, { onConflict: 'date' })
 
     if (error) {
       console.error('Error saving daily metrics:', error)
@@ -459,10 +497,13 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - daysBack)
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('apple_health_daily_metrics')
       .select('*')
       .gte('date', startDate.toISOString().split('T')[0])
@@ -473,7 +514,7 @@ export class AppleHealthService {
       return []
     }
 
-    return data || []
+    return (data as DbDailyMetrics[]) || []
   }
 
   /**
@@ -483,16 +524,19 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return null
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     const today = new Date().toISOString().split('T')[0]
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('apple_health_daily_metrics')
       .select('*')
       .eq('date', today)
       .single()
 
     if (error) return null
-    return data
+    return data as DbDailyMetrics
   }
 
   // ============================================
@@ -514,16 +558,31 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - (weeksBack * 7))
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('apple_health_workouts')
       .select('start_date, duration, total_calories, distance_miles, hr_average, workout_type')
       .gte('start_date', startDate.toISOString())
       .order('start_date', { ascending: false })
 
     if (error || !data) return []
+
+    // Type the partial select result
+    type WorkoutSummaryRow = {
+      start_date: string
+      duration: number
+      total_calories: number
+      distance_miles: number | null
+      hr_average: number | null
+      workout_type: string
+    }
+
+    const workouts = data as WorkoutSummaryRow[]
 
     // Group by week
     const weeklyData = new Map<string, {
@@ -536,9 +595,9 @@ export class AppleHealthService {
       workoutTypes: Record<string, number>
     }>()
 
-    data.forEach(workout => {
+    workouts.forEach(workout => {
       const date = new Date(workout.start_date)
-      const weekStart = this.getWeekStartDate(date).toISOString().split('T')[0]
+      const weekStart = this.getWeekStartDate(date).toISOString().split('T')[0] as string
 
       if (!weeklyData.has(weekStart)) {
         weeklyData.set(weekStart, {
@@ -564,14 +623,14 @@ export class AppleHealthService {
       week.workoutTypes[workout.workout_type] = (week.workoutTypes[workout.workout_type] || 0) + 1
     })
 
-    return Array.from(weeklyData.entries()).map(([weekStart, data]) => ({
+    return Array.from(weeklyData.entries()).map(([weekStart, weekData]) => ({
       weekStart,
-      totalWorkouts: data.totalWorkouts,
-      totalDurationMin: Math.round(data.totalDuration / 60),
-      totalCalories: Math.round(data.totalCalories),
-      totalDistanceMiles: Math.round(data.totalDistance * 10) / 10,
-      avgHr: data.hrCount > 0 ? Math.round(data.hrSum / data.hrCount) : 0,
-      workoutTypes: data.workoutTypes,
+      totalWorkouts: weekData.totalWorkouts,
+      totalDurationMin: Math.round(weekData.totalDuration / 60),
+      totalCalories: Math.round(weekData.totalCalories),
+      totalDistanceMiles: Math.round(weekData.totalDistance * 10) / 10,
+      avgHr: weekData.hrCount > 0 ? Math.round(weekData.hrSum / weekData.hrCount) : 0,
+      workoutTypes: weekData.workoutTypes,
     }))
   }
 
@@ -586,35 +645,45 @@ export class AppleHealthService {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - daysBack)
     const startDateStr = startDate.toISOString().split('T')[0]
 
     // Get resting HR from daily metrics
-    const { data: dailyData } = await supabase
+    const { data: dailyData } = await db
       .from('apple_health_daily_metrics')
       .select('date, resting_heart_rate')
       .gte('date', startDateStr)
       .order('date', { ascending: true })
 
     // Get workout HR averages grouped by day
-    const { data: workoutData } = await supabase
+    const { data: workoutData } = await db
       .from('apple_health_workouts')
       .select('start_date, hr_average')
       .gte('start_date', startDate.toISOString())
 
+    // Type the partial select results
+    type DailyHrRow = { date: string; resting_heart_rate: number | null }
+    type WorkoutHrRow = { start_date: string; hr_average: number | null }
+
+    const dailyRows = (dailyData as DailyHrRow[]) || []
+    const workoutRows = (workoutData as WorkoutHrRow[]) || []
+
     // Build date map
     const dateMap = new Map<string, { restingHr: number | null; workoutHrs: number[] }>()
 
-    dailyData?.forEach(d => {
+    dailyRows.forEach(d => {
       dateMap.set(d.date, {
         restingHr: d.resting_heart_rate,
         workoutHrs: [],
       })
     })
 
-    workoutData?.forEach(w => {
-      const date = new Date(w.start_date).toISOString().split('T')[0]
+    workoutRows.forEach(w => {
+      const date = new Date(w.start_date).toISOString().split('T')[0] as string
       if (!dateMap.has(date)) {
         dateMap.set(date, { restingHr: null, workoutHrs: [] })
       }
@@ -625,11 +694,11 @@ export class AppleHealthService {
 
     return Array.from(dateMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, data]) => ({
+      .map(([date, hrData]) => ({
         date,
-        restingHr: data.restingHr,
-        avgWorkoutHr: data.workoutHrs.length > 0
-          ? Math.round(data.workoutHrs.reduce((a, b) => a + b, 0) / data.workoutHrs.length)
+        restingHr: hrData.restingHr,
+        avgWorkoutHr: hrData.workoutHrs.length > 0
+          ? Math.round(hrData.workoutHrs.reduce((a, b) => a + b, 0) / hrData.workoutHrs.length)
           : null,
       }))
   }
@@ -655,8 +724,10 @@ export class AppleHealthService {
 
     samples.forEach(sample => {
       const zone = zones.find(z => sample.bpm >= z.minBpm && sample.bpm < z.maxBpm)
-        || zones[zones.length - 1] // Default to peak if above max
-      zone.duration += sampleInterval
+        ?? zones[zones.length - 1] // Default to peak if above max
+      if (zone) {
+        zone.duration += sampleInterval
+      }
     })
 
     const totalDuration = zones.reduce((sum, z) => sum + z.duration, 0)

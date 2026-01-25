@@ -208,7 +208,7 @@ export default function AppleWatchPage() {
                 )}
 
                 {/* Weekly Summary */}
-                {weeklySummary.length > 0 && (
+                {weeklySummary[0] && (
                   <WeeklySummaryCard 
                     summary={weeklySummary[0]} 
                     previousSummary={weeklySummary[1]}

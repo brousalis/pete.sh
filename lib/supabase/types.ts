@@ -339,6 +339,201 @@ export interface SyncLogInsert {
   synced_at: string
 }
 
+// Apple Health Types
+export interface AppleHealthWorkoutRow {
+  id: string
+  healthkit_id: string
+  workout_type: string
+  workout_type_raw: number | null
+  start_date: string
+  end_date: string
+  duration: number
+  active_calories: number
+  total_calories: number
+  distance_meters: number | null
+  distance_miles: number | null
+  elevation_gain_meters: number | null
+  hr_average: number | null
+  hr_min: number | null
+  hr_max: number | null
+  hr_zones: unknown[] | null
+  cadence_average: number | null
+  pace_average: number | null
+  pace_best: number | null
+  stride_length_avg: number | null
+  running_power_avg: number | null
+  source: string
+  source_version: string | null
+  device_name: string | null
+  device_model: string | null
+  weather_temp_celsius: number | null
+  weather_humidity: number | null
+  linked_workout_id: string | null
+  linked_day: string | null
+  linked_week: number | null
+  linked_year: number | null
+  recorded_at: string
+  created_at: string
+}
+
+export interface AppleHealthWorkoutInsert {
+  id?: string
+  healthkit_id: string
+  workout_type: string
+  workout_type_raw?: number | null
+  start_date: string
+  end_date: string
+  duration: number
+  active_calories: number
+  total_calories: number
+  distance_meters?: number | null
+  distance_miles?: number | null
+  elevation_gain_meters?: number | null
+  hr_average?: number | null
+  hr_min?: number | null
+  hr_max?: number | null
+  hr_zones?: unknown[] | null
+  cadence_average?: number | null
+  pace_average?: number | null
+  pace_best?: number | null
+  stride_length_avg?: number | null
+  running_power_avg?: number | null
+  source: string
+  source_version?: string | null
+  device_name?: string | null
+  device_model?: string | null
+  weather_temp_celsius?: number | null
+  weather_humidity?: number | null
+  linked_workout_id?: string | null
+  linked_day?: string | null
+  linked_week?: number | null
+  linked_year?: number | null
+  recorded_at?: string
+  created_at?: string
+}
+
+export interface AppleHealthHrSampleRow {
+  id: string
+  workout_id: string
+  timestamp: string
+  bpm: number
+  motion_context: string | null
+}
+
+export interface AppleHealthHrSampleInsert {
+  id?: string
+  workout_id: string
+  timestamp: string
+  bpm: number
+  motion_context?: string | null
+}
+
+export interface AppleHealthCadenceSampleRow {
+  id: string
+  workout_id: string
+  timestamp: string
+  steps_per_minute: number
+}
+
+export interface AppleHealthCadenceSampleInsert {
+  id?: string
+  workout_id: string
+  timestamp: string
+  steps_per_minute: number
+}
+
+export interface AppleHealthPaceSampleRow {
+  id: string
+  workout_id: string
+  timestamp: string
+  minutes_per_mile: number
+  speed_mph: number | null
+}
+
+export interface AppleHealthPaceSampleInsert {
+  id?: string
+  workout_id: string
+  timestamp: string
+  minutes_per_mile: number
+  speed_mph?: number | null
+}
+
+export interface AppleHealthRouteRow {
+  id: string
+  workout_id: string
+  total_distance_meters: number
+  total_elevation_gain: number
+  total_elevation_loss: number
+  samples: unknown[]
+}
+
+export interface AppleHealthRouteInsert {
+  id?: string
+  workout_id: string
+  total_distance_meters: number
+  total_elevation_gain: number
+  total_elevation_loss: number
+  samples: unknown[]
+}
+
+export interface AppleHealthDailyMetricsRow {
+  id: string
+  date: string
+  steps: number
+  active_calories: number
+  total_calories: number
+  exercise_minutes: number
+  stand_hours: number
+  move_goal: number | null
+  exercise_goal: number | null
+  stand_goal: number | null
+  resting_heart_rate: number | null
+  heart_rate_variability: number | null
+  vo2_max: number | null
+  sleep_duration: number | null
+  sleep_awake: number | null
+  sleep_rem: number | null
+  sleep_core: number | null
+  sleep_deep: number | null
+  walking_hr_average: number | null
+  walking_double_support_pct: number | null
+  walking_asymmetry_pct: number | null
+  walking_speed: number | null
+  walking_step_length: number | null
+  source: string
+  recorded_at: string
+  created_at: string
+}
+
+export interface AppleHealthDailyMetricsInsert {
+  id?: string
+  date: string
+  steps: number
+  active_calories: number
+  total_calories: number
+  exercise_minutes: number
+  stand_hours: number
+  move_goal?: number | null
+  exercise_goal?: number | null
+  stand_goal?: number | null
+  resting_heart_rate?: number | null
+  heart_rate_variability?: number | null
+  vo2_max?: number | null
+  sleep_duration?: number | null
+  sleep_awake?: number | null
+  sleep_rem?: number | null
+  sleep_core?: number | null
+  sleep_deep?: number | null
+  walking_hr_average?: number | null
+  walking_double_support_pct?: number | null
+  walking_asymmetry_pct?: number | null
+  walking_speed?: number | null
+  walking_step_length?: number | null
+  source: string
+  recorded_at?: string
+  created_at?: string
+}
+
 // Database interface for Supabase client
 export interface Database {
   public: {
@@ -397,6 +592,36 @@ export interface Database {
         Row: SyncLogRow
         Insert: SyncLogInsert
         Update: Partial<SyncLogInsert>
+      }
+      apple_health_workouts: {
+        Row: AppleHealthWorkoutRow
+        Insert: AppleHealthWorkoutInsert
+        Update: Partial<AppleHealthWorkoutInsert>
+      }
+      apple_health_hr_samples: {
+        Row: AppleHealthHrSampleRow
+        Insert: AppleHealthHrSampleInsert
+        Update: Partial<AppleHealthHrSampleInsert>
+      }
+      apple_health_cadence_samples: {
+        Row: AppleHealthCadenceSampleRow
+        Insert: AppleHealthCadenceSampleInsert
+        Update: Partial<AppleHealthCadenceSampleInsert>
+      }
+      apple_health_pace_samples: {
+        Row: AppleHealthPaceSampleRow
+        Insert: AppleHealthPaceSampleInsert
+        Update: Partial<AppleHealthPaceSampleInsert>
+      }
+      apple_health_routes: {
+        Row: AppleHealthRouteRow
+        Insert: AppleHealthRouteInsert
+        Update: Partial<AppleHealthRouteInsert>
+      }
+      apple_health_daily_metrics: {
+        Row: AppleHealthDailyMetricsRow
+        Insert: AppleHealthDailyMetricsInsert
+        Update: Partial<AppleHealthDailyMetricsInsert>
       }
     }
     Views: {
