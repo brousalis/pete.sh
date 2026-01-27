@@ -21,6 +21,7 @@ import type {
   Workout, 
   ConsistencyStats 
 } from "@/lib/types/fitness.types"
+import { apiGet } from "@/lib/api/client"
 
 /**
  * FitnessWidget - A compact dashboard widget showing today's fitness at a glance.
@@ -53,24 +54,21 @@ export function FitnessWidget() {
       try {
         const day = getCurrentDay()
         const [routineRes, workoutRes, consistencyRes] = await Promise.all([
-          fetch("/api/fitness/routine"),
-          fetch(`/api/fitness/workout/${day}`),
-          fetch("/api/fitness/consistency"),
+          apiGet<WeeklyRoutine>("/api/fitness/routine"),
+          apiGet<Workout>(`/api/fitness/workout/${day}`),
+          apiGet<ConsistencyStats>("/api/fitness/consistency"),
         ])
 
-        if (routineRes.ok) {
-          const data = await routineRes.json()
-          if (data.success) setRoutine(data.data)
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
-        if (workoutRes.ok) {
-          const data = await workoutRes.json()
-          if (data.success && data.data) setTodayWorkout(data.data)
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
 
-        if (consistencyRes.ok) {
-          const data = await consistencyRes.json()
-          if (data.success) setConsistencyStats(data.data)
+        if (consistencyRes.success && consistencyRes.data) {
+          setConsistencyStats(consistencyRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch fitness data", error)

@@ -26,6 +26,7 @@ import {
   Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { apiGet } from "@/lib/api/client"
 import type { MapsAutocompletePrediction, MapsPlaceDetails } from "@/lib/types/maps.types"
 import { config } from "@/lib/config"
 
@@ -68,10 +69,9 @@ export function RideShareCard({ compact = false }: RideShareCardProps) {
 
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/maps/autocomplete?input=${encodeURIComponent(query)}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPredictions(data.data || [])
+      const response = await apiGet<MapsAutocompletePrediction[]>(`/api/maps/autocomplete?input=${encodeURIComponent(query)}`)
+      if (response.success) {
+        setPredictions(response.data || [])
       }
     } catch {
       console.error("Failed to search places")
@@ -102,10 +102,9 @@ export function RideShareCard({ compact = false }: RideShareCardProps) {
 
     try {
       // Get place details for coordinates
-      const detailsResponse = await fetch(`/api/maps/place/${prediction.place_id}`)
-      if (!detailsResponse.ok) throw new Error("Failed to get place details")
-      const detailsData = await detailsResponse.json()
-      const place: MapsPlaceDetails = detailsData.data
+      const detailsResponse = await apiGet<MapsPlaceDetails>(`/api/maps/place/${prediction.place_id}`)
+      if (!detailsResponse.success || !detailsResponse.data) throw new Error("Failed to get place details")
+      const place = detailsResponse.data
 
       setSelectedDestination({
         name: place.name || prediction.structured_formatting.main_text,

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { apiGet } from '@/lib/api/client'
 
 export function CalendarCard() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -32,27 +33,20 @@ export function CalendarCard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/calendar/upcoming?maxResults=10')
+      const response = await apiGet<CalendarEvent[]>('/api/calendar/upcoming?maxResults=10')
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+      if (!response.success) {
         // 401 is expected when not authenticated - handle silently
-        if (response.status === 401) {
+        if (response.code === 'UNAUTHORIZED' || response.error?.includes('not authenticated')) {
           setError('not_authenticated')
           return
         }
-        console.error('[CalendarCard] Error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-        })
-        throw new Error(errorData.error || 'Failed to fetch events')
+        console.error('[CalendarCard] Error response:', response)
+        throw new Error(response.error || 'Failed to fetch events')
       }
 
-      const data = await response.json()
-
-      if (data.success && data.data) {
-        setEvents(data.data)
+      if (response.data) {
+        setEvents(response.data)
       } else {
         setEvents([])
       }

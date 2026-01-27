@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import type { WeatherObservation } from '@/lib/types/weather.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import { staggerContainerVariants, staggerItemVariants, fadeUpVariants, transitions } from '@/lib/animations'
+import { apiGet } from '@/lib/api/client'
 
 export function TodayHero() {
   const [time, setTime] = useState(new Date())
@@ -22,25 +23,23 @@ export function TodayHero() {
 
   useEffect(() => {
     // Fetch weather
-    fetch('/api/weather/current')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.success && data.data) {
-          setWeather(data.data)
+    apiGet<WeatherObservation>('/api/weather/current')
+      .then(response => {
+        if (response?.success && response.data) {
+          setWeather(response.data)
         }
       })
       .catch(() => {})
 
     // Fetch next event (within 24 hours)
-    fetch('/api/calendar/upcoming?maxResults=10')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.success && data.data) {
+    apiGet<CalendarEvent[]>('/api/calendar/upcoming?maxResults=10')
+      .then(response => {
+        if (response?.success && response.data) {
           const now = new Date()
           const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
           // Find first event within 24 hours
-          const eventIn24Hours = data.data.find((event: CalendarEvent) => {
+          const eventIn24Hours = response.data.find((event: CalendarEvent) => {
             const startTime = event.start.dateTime
               ? parseISO(event.start.dateTime)
               : event.start.date

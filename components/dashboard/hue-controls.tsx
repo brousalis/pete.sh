@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { LiveBadge, ReadOnlyNotice } from "@/components/ui/live-badge"
-import { useIsReadOnly } from "@/components/connectivity-provider"
+import { useIsReadOnly, useConnectivity } from "@/components/connectivity-provider"
 import type { HueAllLightsStatus, HueScene, HueZone } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { HueQuickActions } from "./hue-quick-actions"
 import { HueRoomCard } from "./hue-room-card"
 import { HueSyncCard } from "./hue-sync-card"
+import { useApi } from "@/hooks/use-api"
 
 type ViewMode = "grid" | "list"
 
@@ -41,6 +42,7 @@ export function HueControls() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const isReadOnly = useIsReadOnly()
+  const { apiBaseUrl, isInitialized } = useConnectivity()
 
   const fetchData = useCallback(async () => {
     try {
@@ -49,9 +51,9 @@ export function HueControls() {
 
       // Fetch zones, all scenes, and status in parallel
       const [zonesRes, scenesRes, statusRes] = await Promise.all([
-        fetch("/api/hue/zones"),
-        fetch("/api/hue/scenes"),
-        fetch("/api/hue/all"),
+        fetch(`${apiBaseUrl}/api/hue/zones`),
+        fetch(`${apiBaseUrl}/api/hue/scenes`),
+        fetch(`${apiBaseUrl}/api/hue/all`),
       ])
 
       // Handle zones response
@@ -80,7 +82,7 @@ export function HueControls() {
         // Fetch scenes for each zone
         const scenesPromises = zonesArray.map(async (zone) => {
           try {
-            const res = await fetch(`/api/hue/zones/${zone.id}/scenes`)
+            const res = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/scenes`)
             if (res.ok) {
               const data = await res.json()
               return {
@@ -123,11 +125,14 @@ export function HueControls() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [apiBaseUrl])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    // Wait for connectivity to be initialized before fetching
+    if (isInitialized) {
+      fetchData()
+    }
+  }, [fetchData, isInitialized])
 
   // Auto-refresh every 30 seconds when page is visible
   useEffect(() => {

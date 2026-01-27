@@ -18,6 +18,7 @@ import {
   Wind,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { apiGet } from '@/lib/api/client'
 
 export function WeatherCard() {
   const [current, setCurrent] = useState<WeatherObservation | null>(null)
@@ -28,17 +29,15 @@ export function WeatherCard() {
     setLoading(true)
     try {
       const [currentRes, forecastRes] = await Promise.all([
-        fetch('/api/weather/current'),
-        fetch('/api/weather/forecast'),
+        apiGet<WeatherObservation>('/api/weather/current'),
+        apiGet<WeatherForecast>('/api/weather/forecast'),
       ])
 
-      if (currentRes.ok) {
-        const data = await currentRes.json()
-        if (data.success) setCurrent(data.data)
+      if (currentRes.success && currentRes.data) {
+        setCurrent(currentRes.data)
       }
-      if (forecastRes.ok) {
-        const data = await forecastRes.json()
-        if (data.success) setForecast(data.data)
+      if (forecastRes.success && forecastRes.data) {
+        setForecast(forecastRes.data)
       }
     } catch (err) {
       console.error('Failed to fetch weather', err)

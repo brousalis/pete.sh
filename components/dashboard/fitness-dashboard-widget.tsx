@@ -8,6 +8,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, Circle, Flame, Moon, Sun } fro
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 export function FitnessDashboardWidget() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -19,31 +20,22 @@ export function FitnessDashboardWidget() {
     const fetchData = async () => {
       try {
         // Get routine
-        const routineRes = await fetch("/api/fitness/routine")
-        if (routineRes.ok) {
-          const routineData = await routineRes.json()
-          if (routineData.success) {
-            setRoutine(routineData.data)
-          }
+        const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
         // Get today's workout
         const today = new Date().toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as DayOfWeek
-        const workoutRes = await fetch(`/api/fitness/workout/${today}`)
-        if (workoutRes.ok) {
-          const workoutData = await workoutRes.json()
-          if (workoutData.success && workoutData.data) {
-            setTodayWorkout(workoutData.data)
-          }
+        const workoutRes = await apiGet<Workout>(`/api/fitness/workout/${today}`)
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
 
         // Get consistency stats
-        const consistencyRes = await fetch("/api/fitness/consistency")
-        if (consistencyRes.ok) {
-          const consistencyData = await consistencyRes.json()
-          if (consistencyData.success) {
-            setConsistency(consistencyData.data)
-          }
+        const consistencyRes = await apiGet<ConsistencyStats>("/api/fitness/consistency")
+        if (consistencyRes.success && consistencyRes.data) {
+          setConsistency(consistencyRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch fitness data", error)
@@ -71,26 +63,18 @@ export function FitnessDashboardWidget() {
     const weekNumber = getCurrentWeekNumber()
 
     try {
-      const response = await fetch(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to mark routine complete")
+      const response = await apiPost(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed to mark routine complete")
 
       // Refresh data
-      const routineRes = await fetch("/api/fitness/routine")
-      if (routineRes.ok) {
-        const routineData = await routineRes.json()
-        if (routineData.success) {
-          setRoutine(routineData.data)
-        }
+      const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+      if (routineRes.success && routineRes.data) {
+        setRoutine(routineRes.data)
       }
 
-      const consistencyRes = await fetch("/api/fitness/consistency")
-      if (consistencyRes.ok) {
-        const consistencyData = await consistencyRes.json()
-        if (consistencyData.success) {
-          setConsistency(consistencyData.data)
-        }
+      const consistencyRes = await apiGet<ConsistencyStats>("/api/fitness/consistency")
+      if (consistencyRes.success && consistencyRes.data) {
+        setConsistency(consistencyRes.data)
       }
 
       toast.success(`${type === "morning" ? "Morning" : "Night"} routine completed!`)

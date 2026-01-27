@@ -5,6 +5,7 @@ import { Monitor, Volume2, Cpu, RefreshCw, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { isLocalhost } from "@/lib/config"
+import { apiGet, apiPost } from "@/lib/api/client"
 import type { PerformanceMetrics, VolumeState } from "@/lib/types/desktop.types"
 import { toast } from "sonner"
 
@@ -28,22 +29,16 @@ export function DeckDesktop() {
       setError(null)
 
       const [volResponse, perfResponse] = await Promise.all([
-        fetch("/api/desktop/volume").catch(() => null),
-        fetch("/api/desktop/performance").catch(() => null),
+        apiGet<VolumeState>("/api/desktop/volume").catch(() => null),
+        apiGet<PerformanceMetrics>("/api/desktop/performance").catch(() => null),
       ])
 
-      if (volResponse?.ok) {
-        const volData = await volResponse.json()
-        if (volData.success) {
-          setVolume(volData.data)
-        }
+      if (volResponse?.success && volResponse.data) {
+        setVolume(volResponse.data)
       }
 
-      if (perfResponse?.ok) {
-        const perfData = await perfResponse.json()
-        if (perfData.success) {
-          setPerformance(perfData.data)
-        }
+      if (perfResponse?.success && perfResponse.data) {
+        setPerformance(perfResponse.data)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load")
@@ -56,12 +51,8 @@ export function DeckDesktop() {
     const vol = newVolume[0] ?? 0
     setVolume((prev) => (prev ? { ...prev, volume: vol } : { volume: vol, muted: false }))
     try {
-      const response = await fetch("/api/desktop/volume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ volume: vol }),
-      })
-      if (!response.ok) throw new Error("Failed to set volume")
+      const response = await apiPost("/api/desktop/volume", { volume: vol })
+      if (!response.success) throw new Error("Failed to set volume")
     } catch (error) {
       toast.error("Failed to set volume")
       fetchData()
@@ -70,10 +61,8 @@ export function DeckDesktop() {
 
   const handleSwitchDisplay = async () => {
     try {
-      const response = await fetch("/api/desktop/display/switch", {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to switch display")
+      const response = await apiPost("/api/desktop/display/switch")
+      if (!response.success) throw new Error("Failed to switch display")
       toast.success("Display switched")
     } catch (error) {
       toast.error("Failed to switch display")

@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Monitor, Square, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api/client"
 import type { HueEntertainmentArea, HueEntertainmentStatus } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
 
@@ -36,38 +37,44 @@ export function HueSyncCard({
       setLoading(true)
 
       // Fetch all entertainment areas
-      const response = await fetch("/api/hue/entertainment")
-      if (!response.ok) {
+      const response = await apiGet<HueEntertainmentArea[]>("/api/hue/entertainment")
+      if (!response.success || !response.data) {
         setLoading(false)
         return
       }
 
-      const data = await response.json()
-      if (data.success && data.data && Array.isArray(data.data)) {
-        setAreas(data.data)
+      const areas = response.data
+      if (Array.isArray(areas)) {
+        setAreas(areas)
 
         // If we have an ID, use it directly
         if (areaId) {
-          const found = data.data.find((a: HueEntertainmentArea) => a.id === areaId)
+          const found = areas.find((a: HueEntertainmentArea) => a.id === areaId)
           if (found) {
             setSelectedArea(found)
           }
         }
         // If we have a name preference, try to find it
         else if (areaName) {
-          const found = data.data.find((a: HueEntertainmentArea) =>
+          const found = areas.find((a: HueEntertainmentArea) =>
             a.name.toLowerCase().includes(areaName.toLowerCase())
           )
           if (found) {
             setSelectedArea(found)
-          } else if (data.data.length > 0) {
+          } else {
             // Fall back to first area
-            setSelectedArea(data.data[0])
+            const firstArea = areas[0]
+            if (firstArea) {
+              setSelectedArea(firstArea)
+            }
           }
         }
         // Otherwise use the first area
-        else if (data.data.length > 0) {
-          setSelectedArea(data.data[0])
+        else {
+          const firstArea = areas[0]
+          if (firstArea) {
+            setSelectedArea(firstArea)
+          }
         }
       }
     } catch {
@@ -83,12 +90,9 @@ export function HueSyncCard({
 
     const fetchStatus = async () => {
       try {
-        const statusRes = await fetch(`/api/hue/entertainment/${selectedArea.id}`)
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          if (statusData.success) {
-            setStatus(statusData.data)
-          }
+        const statusData = await apiGet<HueEntertainmentStatus>(`/api/hue/entertainment/${selectedArea.id}`)
+        if (statusData.success && statusData.data) {
+          setStatus(statusData.data)
         }
       } catch {
         // Ignore status fetch errors
@@ -108,12 +112,9 @@ export function HueSyncCard({
 
     const pollStatus = async () => {
       try {
-        const res = await fetch(`/api/hue/entertainment/${selectedArea.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success) {
-            setStatus(data.data)
-          }
+        const statusData = await apiGet<HueEntertainmentStatus>(`/api/hue/entertainment/${selectedArea.id}`)
+        if (statusData.success && statusData.data) {
+          setStatus(statusData.data)
         }
       } catch {
         // Ignore polling errors
@@ -136,21 +137,18 @@ export function HueSyncCard({
 
     setToggling(true)
     try {
-      const response = await fetch(`/api/hue/entertainment/${selectedArea.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active }),
-      })
+      const responseData = await apiPost<{ error?: { description?: string } }[]>(
+        `/api/hue/entertainment/${selectedArea.id}`,
+        { active }
+      )
 
-      const responseData = await response.json()
-      
-      if (!response.ok) {
+      if (!responseData.success) {
         throw new Error(responseData.error || "Failed to toggle Hue Sync")
       }
 
       // Check for Hue API errors even on 200 response
       if (responseData.data && Array.isArray(responseData.data)) {
-        const hueError = responseData.data.find((r: { error?: { description?: string } }) => r?.error)
+        const hueError = responseData.data.find((r) => r?.error)
         if (hueError?.error) {
           throw new Error(hueError.error.description || "Hue API error")
         }

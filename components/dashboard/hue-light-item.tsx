@@ -8,6 +8,7 @@ import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import { toast } from "sonner"
 import type { HueLight } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
+import { useConnectivity } from "@/components/connectivity-provider"
 
 interface HueLightItemProps {
   light: HueLight
@@ -20,6 +21,7 @@ export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightIt
   const [on, setOn] = useState(light.state.on)
   const [brightness, setBrightness] = useState(light.state.bri || 127)
   const [isUpdating, setIsUpdating] = useState(false)
+  const { apiBaseUrl } = useConnectivity()
 
   useEffect(() => {
     setOn(light.state.on)
@@ -35,7 +37,7 @@ export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightIt
       setIsUpdating(true)
       setOn(checked)
       try {
-        const response = await fetch(`/api/hue/lights/${light.id}/toggle`, {
+        const response = await fetch(`${apiBaseUrl}/api/hue/lights/${light.id}/toggle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ on: checked }),
@@ -49,7 +51,7 @@ export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightIt
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate, isReadOnly]
+    [light.id, light.name, onUpdate, isReadOnly, apiBaseUrl]
   )
 
   const handleBrightnessChange = (values: number[]) => {
@@ -69,7 +71,7 @@ export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightIt
       if (value === undefined) return
       setIsUpdating(true)
       try {
-        const response = await fetch(`/api/hue/lights/${light.id}/state`, {
+        const response = await fetch(`${apiBaseUrl}/api/hue/lights/${light.id}/state`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bri: value, on: true }),
@@ -83,7 +85,7 @@ export function HueLightItem({ light, onUpdate, isReadOnly = false }: HueLightIt
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate, isReadOnly]
+    [light.id, light.name, onUpdate, isReadOnly, apiBaseUrl]
   )
 
   // Determine light color display based on state

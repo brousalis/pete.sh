@@ -5,6 +5,7 @@ import { Calendar, Clock, RefreshCw, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO, isToday, isTomorrow } from "date-fns"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
+import { apiGet } from "@/lib/api/client"
 
 export function DeckCalendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -15,21 +16,20 @@ export function DeckCalendar() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/calendar/upcoming?maxResults=3")
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<CalendarEvent[]>("/api/calendar/upcoming?maxResults=3")
+      if (!response.success) {
+        if (response.code === "NOT_CONFIGURED") {
           setError("Not configured")
           return
         }
-        if (response.status === 401) {
+        if (response.code === "UNAUTHORIZED") {
           setError("Not authenticated")
           return
         }
-        throw new Error("Failed to fetch events")
+        throw new Error(response.error || "Failed to fetch events")
       }
-      const data = await response.json()
-      if (data.success && data.data) {
-        setEvents(data.data.slice(0, 3)) // Show only next 3 events
+      if (response.data) {
+        setEvents(response.data.slice(0, 3)) // Show only next 3 events
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load")

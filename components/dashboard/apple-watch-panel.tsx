@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { apiGet } from "@/lib/api/client"
 import {
   WorkoutCard,
   WorkoutDetailView,
@@ -92,16 +93,11 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
     try {
       setError(null)
       
-      const [workoutsRes, dailyRes, summaryRes] = await Promise.all([
-        fetch('/api/apple-health/workout?limit=10'),
-        fetch('/api/apple-health/daily?days=1'),
-        fetch('/api/apple-health/summary?weeks=2'),
+      const [workoutsData, dailyData, summaryData] = await Promise.all([
+        apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=10'),
+        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=1'),
+        apiGet<{ weeks: WeeklySummary[] }>('/api/apple-health/summary?weeks=2'),
       ])
-
-      // Parse responses
-      const workoutsData = await workoutsRes.json()
-      const dailyData = await dailyRes.json()
-      const summaryData = await summaryRes.json()
 
       if (workoutsData.success) {
         setWorkouts(workoutsData.data || [])
@@ -110,7 +106,9 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
       if (dailyData.success && dailyData.data) {
         // Get today's or most recent metrics
         const metrics = Array.isArray(dailyData.data) ? dailyData.data[0] : dailyData.data
-        setDailyMetrics(metrics)
+        if (metrics) {
+          setDailyMetrics(metrics)
+        }
       }
 
       if (summaryData.success && summaryData.data?.weeks) {
@@ -307,23 +305,25 @@ export function AppleWatchWidget({ className, onClick }: AppleWatchWidgetProps) 
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchWidgetData() {
       try {
-        const [workoutsRes, dailyRes] = await Promise.all([
-          fetch('/api/apple-health/workout?limit=1'),
-          fetch('/api/apple-health/daily?days=1'),
+        const [workoutsData, dailyData] = await Promise.all([
+          apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=1'),
+          apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=1'),
         ])
 
-        const workoutsData = await workoutsRes.json()
-        const dailyData = await dailyRes.json()
-
-        if (workoutsData.success && workoutsData.data?.length > 0) {
-          setLatestWorkout(workoutsData.data[0])
+        if (workoutsData.success && workoutsData.data && workoutsData.data.length > 0) {
+          const firstWorkout = workoutsData.data[0]
+          if (firstWorkout) {
+            setLatestWorkout(firstWorkout)
+          }
         }
 
         if (dailyData.success && dailyData.data) {
           const metrics = Array.isArray(dailyData.data) ? dailyData.data[0] : dailyData.data
-          setDailyMetrics(metrics)
+          if (metrics) {
+            setDailyMetrics(metrics)
+          }
         }
       } catch (err) {
         console.error('Error fetching watch data:', err)
@@ -332,7 +332,7 @@ export function AppleWatchWidget({ className, onClick }: AppleWatchWidgetProps) 
       }
     }
 
-    fetchData()
+    fetchWidgetData()
   }, [])
 
   if (loading) {

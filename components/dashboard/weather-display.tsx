@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { RefreshCw, Thermometer, Droplets, Wind, Gauge, Eye, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { WeatherObservation } from "@/lib/types/weather.types"
+import { apiGet } from "@/lib/api/client"
 
 export function WeatherDisplay() {
   const [weather, setWeather] = useState<WeatherObservation | null>(null)
@@ -14,11 +15,10 @@ export function WeatherDisplay() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/weather/current")
-      if (!response.ok) throw new Error("Failed to fetch weather")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setWeather(data.data)
+      const response = await apiGet<WeatherObservation>("/api/weather/current")
+      if (!response.success) throw new Error(response.error || "Failed to fetch weather")
+      if (response.data) {
+        setWeather(response.data)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load weather")

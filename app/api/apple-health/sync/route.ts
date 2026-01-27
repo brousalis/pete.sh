@@ -5,27 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { appleHealthService } from '@/lib/services/apple-health.service'
+import { verifyPeteWatchAuth } from '@/lib/api/petewatch-auth'
 import type { AppleHealthBatchSyncPayload } from '@/lib/types/apple-health.types'
-
-// API Key for PeteWatch authentication
-const PETEWATCH_API_KEY = process.env.PETEWATCH_API_KEY
-
-/**
- * Verify PeteWatch API key
- */
-function verifyApiKey(request: NextRequest): boolean {
-  if (process.env.NODE_ENV === 'development') {
-    return true
-  }
-
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.substring(7)
-  return token === PETEWATCH_API_KEY
-}
 
 /**
  * POST /api/apple-health/sync
@@ -34,9 +15,10 @@ function verifyApiKey(request: NextRequest): boolean {
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!verifyApiKey(request)) {
+    const authResult = verifyPeteWatchAuth(request)
+    if (!authResult.valid) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: authResult.error || 'Unauthorized' },
         { status: 401 }
       )
     }

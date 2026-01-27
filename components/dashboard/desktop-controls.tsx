@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Progress } from '@/components/ui/progress'
 import { isLocalhost } from '@/lib/config'
+import { apiGet, apiPost } from '@/lib/api/client'
 import type { PerformanceMetrics, VolumeState } from '@/lib/types/desktop.types'
 import { AlertCircle, Cpu, Monitor, RefreshCw, Volume2, HardDrive, Laptop } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -32,22 +33,16 @@ export function DesktopControls() {
       setError(null)
 
       const [volResponse, perfResponse] = await Promise.all([
-        fetch('/api/desktop/volume').catch(() => null),
-        fetch('/api/desktop/performance').catch(() => null),
+        apiGet<VolumeState>('/api/desktop/volume').catch(() => null),
+        apiGet<PerformanceMetrics>('/api/desktop/performance').catch(() => null),
       ])
 
-      if (volResponse?.ok) {
-        const volData = await volResponse.json()
-        if (volData.success) {
-          setVolume(volData.data)
-        }
+      if (volResponse?.success && volResponse.data) {
+        setVolume(volResponse.data)
       }
 
-      if (perfResponse?.ok) {
-        const perfData = await perfResponse.json()
-        if (perfData.success) {
-          setPerformance(perfData.data)
-        }
+      if (perfResponse?.success && perfResponse.data) {
+        setPerformance(perfResponse.data)
       }
     } catch (err) {
       setError(
@@ -64,12 +59,8 @@ export function DesktopControls() {
       prev ? { ...prev, volume: vol ?? 0 } : { volume: vol ?? 0, muted: false }
     )
     try {
-      const response = await fetch('/api/desktop/volume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ volume: vol }),
-      })
-      if (!response.ok) throw new Error('Failed to set volume')
+      const response = await apiPost('/api/desktop/volume', { volume: vol })
+      if (!response.success) throw new Error('Failed to set volume')
     } catch (error) {
       toast.error('Failed to set volume')
       fetchData() // Revert
@@ -78,10 +69,8 @@ export function DesktopControls() {
 
   const handleSwitchDisplay = async () => {
     try {
-      const response = await fetch('/api/desktop/display/switch', {
-        method: 'POST',
-      })
-      if (!response.ok) throw new Error('Failed to switch display')
+      const response = await apiPost('/api/desktop/display/switch')
+      if (!response.success) throw new Error('Failed to switch display')
       toast.success('Display switched')
     } catch (error) {
       toast.error('Failed to switch display')

@@ -21,6 +21,7 @@ import type {
   ConsistencyStats,
 } from '@/lib/types/fitness.types'
 import { toast } from 'sonner'
+import { apiGet, apiPost } from '@/lib/api/client'
 
 export function FitnessCard() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -32,28 +33,25 @@ export function FitnessCard() {
     const fetchData = async () => {
       try {
         const [routineRes, consistencyRes] = await Promise.all([
-          fetch('/api/fitness/routine'),
-          fetch('/api/fitness/consistency'),
+          apiGet<WeeklyRoutine>('/api/fitness/routine'),
+          apiGet<ConsistencyStats>('/api/fitness/consistency'),
         ])
 
-        if (routineRes.ok) {
-          const data = await routineRes.json()
-          if (data.success) setRoutine(data.data)
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
-        if (consistencyRes.ok) {
-          const data = await consistencyRes.json()
-          if (data.success) setConsistency(data.data)
+        if (consistencyRes.success && consistencyRes.data) {
+          setConsistency(consistencyRes.data)
         }
 
         // Get today's workout
         const today = new Date()
           .toLocaleDateString('en-US', { weekday: 'long' })
           .toLowerCase() as DayOfWeek
-        const workoutRes = await fetch(`/api/fitness/workout/${today}`)
-        if (workoutRes.ok) {
-          const data = await workoutRes.json()
-          if (data.success && data.data) setTodayWorkout(data.data)
+        const workoutRes = await apiGet<Workout>(`/api/fitness/workout/${today}`)
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
       } catch (error) {
         console.error('Failed to fetch fitness data', error)
@@ -85,25 +83,22 @@ export function FitnessCard() {
     const weekNumber = getCurrentWeekNumber()
 
     try {
-      const response = await fetch(
-        `/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`,
-        { method: 'POST' }
+      const response = await apiPost(
+        `/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`
       )
-      if (!response.ok) throw new Error('Failed')
+      if (!response.success) throw new Error('Failed')
 
       // Refresh data
       const [routineRes, consistencyRes] = await Promise.all([
-        fetch('/api/fitness/routine'),
-        fetch('/api/fitness/consistency'),
+        apiGet<WeeklyRoutine>('/api/fitness/routine'),
+        apiGet<ConsistencyStats>('/api/fitness/consistency'),
       ])
 
-      if (routineRes.ok) {
-        const data = await routineRes.json()
-        if (data.success) setRoutine(data.data)
+      if (routineRes.success && routineRes.data) {
+        setRoutine(routineRes.data)
       }
-      if (consistencyRes.ok) {
-        const data = await consistencyRes.json()
-        if (data.success) setConsistency(data.data)
+      if (consistencyRes.success && consistencyRes.data) {
+        setConsistency(consistencyRes.data)
       }
 
       toast.success(

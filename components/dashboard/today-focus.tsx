@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import type { WeeklyRoutine, DayOfWeek, Workout } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 export function TodayFocus() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -20,22 +21,16 @@ export function TodayFocus() {
     const fetchData = async () => {
       try {
         // Get routine
-        const routineRes = await fetch("/api/fitness/routine")
-        if (routineRes.ok) {
-          const routineData = await routineRes.json()
-          if (routineData.success) {
-            setRoutine(routineData.data)
-          }
+        const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
         // Get today's workout
         const today = new Date().toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as DayOfWeek
-        const workoutRes = await fetch(`/api/fitness/workout/${today}`)
-        if (workoutRes.ok) {
-          const workoutData = await workoutRes.json()
-          if (workoutData.success && workoutData.data) {
-            setTodayWorkout(workoutData.data)
-          }
+        const workoutRes = await apiGet<Workout>(`/api/fitness/workout/${today}`)
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch today's data", error)
@@ -63,18 +58,13 @@ export function TodayFocus() {
     const weekNumber = getCurrentWeekNumber()
 
     try {
-      const response = await fetch(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to mark routine complete")
+      const response = await apiPost(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed to mark routine complete")
 
       // Refresh routine data
-      const routineRes = await fetch("/api/fitness/routine")
-      if (routineRes.ok) {
-        const routineData = await routineRes.json()
-        if (routineData.success) {
-          setRoutine(routineData.data)
-        }
+      const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+      if (routineRes.success && routineRes.data) {
+        setRoutine(routineRes.data)
       }
     } catch (error) {
       throw error

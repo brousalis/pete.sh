@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import type { WeeklyRoutine, DayOfWeek, FitnessProgress } from "@/lib/types/fitness.types"
+import { apiGet } from "@/lib/api/client"
 
 export function WeeklySchedule() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -18,24 +19,19 @@ export function WeeklySchedule() {
     const fetchData = async () => {
       try {
         // Get routine
-        const routineRes = await fetch("/api/fitness/routine")
-        if (routineRes.ok) {
-          const routineData = await routineRes.json()
-          if (routineData.success) {
-            setRoutine(routineData.data)
-            if (routineData.data.weeks.length > 0) {
-              setCurrentWeek(routineData.data.weeks[0].weekNumber)
-            }
+        const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
+          const firstWeek = routineRes.data.weeks[0]
+          if (firstWeek) {
+            setCurrentWeek(firstWeek.weekNumber)
           }
         }
 
         // Get progress
-        const progressRes = await fetch(`/api/fitness/progress?week=${currentWeek}`)
-        if (progressRes.ok) {
-          const progressData = await progressRes.json()
-          if (progressData.success) {
-            setProgress(progressData.data)
-          }
+        const progressRes = await apiGet<FitnessProgress>(`/api/fitness/progress?week=${currentWeek}`)
+        if (progressRes.success && progressRes.data) {
+          setProgress(progressRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch data", error)

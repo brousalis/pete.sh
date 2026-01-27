@@ -42,6 +42,7 @@ import type {
   SpotifyTrack,
   SpotifyRepeatMode,
 } from "@/lib/types/spotify.types"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 interface SpotifyPlayerProps {
   onAuthRequired?: () => void
@@ -72,17 +73,13 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   // Fetch user profile
   const fetchUser = useCallback(async () => {
     try {
-      const response = await fetch("/api/spotify/me")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setUser(data.data)
+      const response = await apiGet<SpotifyUser>("/api/spotify/me")
+      if (response.success && response.data) {
+        setUser(response.data)
         setError(null)
         return true
       }
-      if (response.status === 401) {
-        setUser(null)
-        return false
-      }
+      setUser(null)
       return false
     } catch {
       return false
@@ -97,19 +94,18 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     }
     
     try {
-      const response = await fetch("/api/spotify/player")
-      const data = await response.json()
-      if (data.success) {
+      const response = await apiGet<SpotifyPlaybackState>("/api/spotify/player")
+      if (response.success) {
         // Double-check we're not in a debounce period (action could have happened during fetch)
         if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
           return
         }
-        setPlaybackState(data.data)
-        if (data.data?.device?.volume_percent != null) {
-          setVolume(data.data.device.volume_percent)
+        setPlaybackState(response.data ?? null)
+        if (response.data?.device?.volume_percent != null) {
+          setVolume(response.data.device.volume_percent)
         }
-        if (data.data?.progress_ms != null && data.data?.item?.duration_ms) {
-          setProgress((data.data.progress_ms / data.data.item.duration_ms) * 100)
+        if (response.data?.progress_ms != null && response.data?.item?.duration_ms) {
+          setProgress((response.data.progress_ms / response.data.item.duration_ms) * 100)
         }
       }
     } catch {
@@ -120,10 +116,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   // Fetch devices
   const fetchDevices = useCallback(async () => {
     try {
-      const response = await fetch("/api/spotify/devices")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setDevices(data.data)
+      const response = await apiGet<SpotifyDevice[]>("/api/spotify/devices")
+      if (response.success && response.data) {
+        setDevices(response.data)
       }
     } catch {
       // Silent fail
@@ -133,10 +128,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   // Fetch playlists
   const fetchPlaylists = useCallback(async () => {
     try {
-      const response = await fetch("/api/spotify/playlists?limit=10")
-      const data = await response.json()
-      if (data.success && data.data?.items) {
-        setPlaylists(data.data.items)
+      const response = await apiGet<{ items: SpotifyPlaylist[] }>("/api/spotify/playlists?limit=10")
+      if (response.success && response.data?.items) {
+        setPlaylists(response.data.items)
       }
     } catch {
       // Silent fail
@@ -190,12 +184,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     // Optimistically update UI
     setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      })
-      if (!response.ok) {
+      const response = await apiPost(endpoint, {})
+      if (!response.success) {
         // Revert on failure
         setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
       }
@@ -214,11 +204,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     // Start skip animation
     setIsSkipping(direction)
     try {
-      await fetch(`/api/spotify/player/${direction}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      })
+      await apiPost(`/api/spotify/player/${direction}`, {})
       // Refresh playback state after a short delay, then clear animation
       setTimeout(async () => {
         await fetchPlayback(true)
@@ -235,11 +221,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     const vol = newVolume[0] ?? 50
     setVolume(vol)
     try {
-      await fetch("/api/spotify/player/volume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ volume: vol }),
-      })
+      await apiPost("/api/spotify/player/volume", { volume: vol })
     } catch {
       // Silent fail, volume is already updated optimistically
     }
@@ -253,12 +235,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     // Optimistic update
     setPlaybackState((prev) => prev ? { ...prev, shuffle_state: newState } : null)
     try {
-      const response = await fetch("/api/spotify/player/shuffle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: newState }),
-      })
-      if (!response.ok) {
+      const response = await apiPost("/api/spotify/player/shuffle", { state: newState })
+      if (!response.success) {
         // Revert on failure
         setPlaybackState((prev) => prev ? { ...prev, shuffle_state: !newState } : null)
       }
@@ -285,12 +263,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     if (!searchQuery.trim()) return
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(searchQuery)}&types=track&limit=5`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data?.tracks?.items) {
-          setSearchResults(data.data.tracks.items)
-        }
+      const response = await apiGet<{ tracks: { items: SpotifyTrack[] } }>(`/api/spotify/search?q=${encodeURIComponent(searchQuery)}&types=track&limit=5`)
+      if (response.success && response.data?.tracks?.items) {
+        setSearchResults(response.data.tracks.items)
       }
       // Silent fail - no error toast
     } catch {
@@ -305,12 +280,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     // Mark action time to debounce polling
     lastActionTime.current = Date.now()
     try {
-      const response = await fetch("/api/spotify/player/play", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uris: [uri] }),
-      })
-      if (response.ok) {
+      const response = await apiPost("/api/spotify/player/play", { uris: [uri] })
+      if (response.success) {
         setTimeout(() => fetchPlayback(true), ACTION_DEBOUNCE_MS)
         setShowSearch(false)
         setSearchQuery("")
@@ -326,12 +297,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     // Mark action time to debounce polling
     lastActionTime.current = Date.now()
     try {
-      const response = await fetch("/api/spotify/player/play", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contextUri: uri }),
-      })
-      if (response.ok) {
+      const response = await apiPost("/api/spotify/player/play", { contextUri: uri })
+      if (response.success) {
         setTimeout(() => fetchPlayback(true), ACTION_DEBOUNCE_MS)
         setShowPlaylists(false)
       }
@@ -343,7 +310,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   // Disconnect
   const handleDisconnect = async () => {
     try {
-      await fetch("/api/spotify/disconnect", { method: "POST" })
+      await apiPost("/api/spotify/disconnect")
       setUser(null)
       setPlaybackState(null)
     } catch {

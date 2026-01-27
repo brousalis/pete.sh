@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 // How long to pause polling after a user action (ms)
 const ACTION_DEBOUNCE_MS = 2000
@@ -39,16 +40,12 @@ export function SpotifyWidget() {
   // Fetch user profile
   const fetchUser = useCallback(async () => {
     try {
-      const response = await fetch("/api/spotify/me")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setUser(data.data)
+      const response = await apiGet<SpotifyUser>("/api/spotify/me")
+      if (response.success && response.data) {
+        setUser(response.data)
         return true
       }
-      if (response.status === 401) {
-        setUser(null)
-        return false
-      }
+      setUser(null)
       return false
     } catch {
       return false
@@ -63,16 +60,15 @@ export function SpotifyWidget() {
     }
     
     try {
-      const response = await fetch("/api/spotify/player")
-      const data = await response.json()
-      if (data.success) {
+      const response = await apiGet<SpotifyPlaybackState>("/api/spotify/player")
+      if (response.success) {
         // Double-check we're not in a debounce period
         if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
           return
         }
-        setPlaybackState(data.data)
-        if (data.data?.progress_ms != null && data.data?.item?.duration_ms) {
-          setProgress((data.data.progress_ms / data.data.item.duration_ms) * 100)
+        setPlaybackState(response.data ?? null)
+        if (response.data?.progress_ms != null && response.data?.item?.duration_ms) {
+          setProgress((response.data.progress_ms / response.data.item.duration_ms) * 100)
         }
       }
     } catch {
@@ -125,12 +121,8 @@ export function SpotifyWidget() {
     lastActionTime.current = Date.now()
     setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      })
-      if (!response.ok) {
+      const response = await apiPost(endpoint, {})
+      if (!response.success) {
         setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
       }
       setTimeout(() => fetchPlayback(true), ACTION_DEBOUNCE_MS)
@@ -144,11 +136,7 @@ export function SpotifyWidget() {
     lastActionTime.current = Date.now()
     setIsSkipping(direction)
     try {
-      await fetch(`/api/spotify/player/${direction}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      })
+      await apiPost(`/api/spotify/player/${direction}`, {})
       setTimeout(async () => {
         await fetchPlayback(true)
         setIsSkipping(null)

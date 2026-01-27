@@ -7,6 +7,7 @@ import { RideShareCard } from './ride-share-card'
 import type { CTABusResponse, CTATrainResponse } from '@/lib/types/cta.types'
 import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from '@/lib/types/cta.types'
 import { cn } from '@/lib/utils'
+import { apiGet } from '@/lib/api/client'
 
 // CTA Brand Colors
 const CTA_COLORS = {
@@ -287,18 +288,17 @@ export function TransportationCard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/cta/all')
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<{ bus: Record<string, CTABusResponse>; train: Record<string, CTATrainResponse> }>('/api/cta/all')
+      if (!response.success) {
+        if (response.code === 'NOT_CONFIGURED') {
           setError('CTA API not configured')
           return
         }
-        throw new Error('Failed to fetch transit data')
+        throw new Error(response.error || 'Failed to fetch transit data')
       }
-      const data = await response.json()
-      if (data.success && data.data) {
-        setBusData(data.data.bus || {})
-        setTrainData(data.data.train || {})
+      if (response.data) {
+        setBusData(response.data.bus || {})
+        setTrainData(response.data.train || {})
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load transit')

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Search, MapPin, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { apiGet } from "@/lib/api/client"
 import type { MapsLocation } from "@/lib/types/maps.types"
 
 interface MapsLocationPickerProps {
@@ -26,17 +26,16 @@ export function MapsLocationPicker({ onSelect, placeholder = "Search for a locat
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`/api/maps/search?query=${encodeURIComponent(searchQuery)}`)
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<MapsLocation[]>(`/api/maps/search?query=${encodeURIComponent(searchQuery)}`)
+      if (!response.success) {
+        if (response.code === "400") {
           setError("Google Maps API not configured")
           return
         }
-        throw new Error("Failed to search")
+        throw new Error(response.error || "Failed to search")
       }
-      const data = await response.json()
-      if (data.success && data.data) {
-        setResults(data.data)
+      if (response.data) {
+        setResults(response.data)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to search")

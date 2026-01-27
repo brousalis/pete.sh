@@ -105,10 +105,10 @@
       "exercises": [
         {
           "id": "monday-flush",
-          "name": "Stationary Bike",
+          "name": "Endurance Run",
           "duration": 2400,
-          "form": "Zone 2. Consistent RPM.",
-          "notes": "Listen to a podcast."
+          "form": "Zone 2. Consistent SPM.",
+          "notes": "Listen to 170 bpm for cadence"
         }
       ]
     },

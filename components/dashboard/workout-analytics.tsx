@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { apiGet } from "@/lib/api/client"
 import { format, formatDistanceToNow } from "date-fns"
 
 // ============================================
@@ -378,10 +379,9 @@ export function WorkoutDetailView({ workoutId, onClose }: WorkoutDetailViewProps
   useEffect(() => {
     async function fetchWorkout() {
       try {
-        const res = await fetch(`/api/apple-health/workout/${workoutId}`)
-        const json = await res.json()
-        if (json.success) {
-          setData(json.data)
+        const response = await apiGet<WorkoutDetail>(`/api/apple-health/workout/${workoutId}`)
+        if (response.success && response.data) {
+          setData(response.data)
         }
       } catch (error) {
         console.error('Error fetching workout:', error)

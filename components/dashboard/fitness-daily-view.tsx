@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { WeeklyRoutine, DayOfWeek, Workout, DailyRoutine, RoutineCompletion } from "@/lib/types/fitness.types"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 const MAX_VISIBLE_EXERCISES = 4
 
@@ -34,22 +35,16 @@ export function FitnessDailyView() {
     const fetchData = async () => {
       try {
         const [routineRes, workoutRes] = await Promise.all([
-          fetch("/api/fitness/routine"),
-          fetch(`/api/fitness/workout/${getCurrentDay()}`)
+          apiGet<WeeklyRoutine>("/api/fitness/routine"),
+          apiGet<Workout>(`/api/fitness/workout/${getCurrentDay()}`)
         ])
 
-        if (routineRes.ok) {
-          const routineData = await routineRes.json()
-          if (routineData.success) {
-            setRoutine(routineData.data)
-          }
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
-        if (workoutRes.ok) {
-          const workoutData = await workoutRes.json()
-          if (workoutData.success && workoutData.data) {
-            setTodayWorkout(workoutData.data)
-          }
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch fitness data", error)
@@ -66,18 +61,13 @@ export function FitnessDailyView() {
     const weekNumber = getCurrentWeekNumber()
 
     try {
-      const response = await fetch(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to mark routine complete")
+      const response = await apiPost(`/api/fitness/routine/${type}/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed to mark routine complete")
 
       // Refresh routine data
-      const routineRes = await fetch("/api/fitness/routine")
-      if (routineRes.ok) {
-        const routineData = await routineRes.json()
-        if (routineData.success) {
-          setRoutine(routineData.data)
-        }
+      const routineRes = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+      if (routineRes.success && routineRes.data) {
+        setRoutine(routineRes.data)
       }
       
       toast.success(`${type === "morning" ? "Morning" : "Night"} routine completed!`)

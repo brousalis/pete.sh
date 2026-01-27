@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import type { HueZone, HueScene } from "@/lib/types/hue.types"
 import { toast } from "sonner"
+import { apiPost } from "@/lib/api/client"
 
 function getRoomIcon(name: string) {
   const n = name.toLowerCase()
@@ -48,12 +49,8 @@ export function HueZoneCard({ zone, scenes = [], onToggle, onActivateScene }: Hu
         await onToggle(zone.id, checked)
       } else {
         // Fallback to API call
-        const response = await fetch(`/api/hue/zones/${zone.id}/toggle`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ on: checked }),
-        })
-        if (!response.ok) throw new Error("Failed to toggle zone")
+        const response = await apiPost(`/api/hue/zones/${zone.id}/toggle`, { on: checked })
+        if (!response.success) throw new Error("Failed to toggle zone")
       }
       toast.success(`${zone.name} turned ${checked ? "on" : "off"}`)
     } catch (error) {
@@ -70,10 +67,8 @@ export function HueZoneCard({ zone, scenes = [], onToggle, onActivateScene }: Hu
       if (onActivateScene) {
         await onActivateScene(zone.id, sceneId)
       } else {
-        const response = await fetch(`/api/hue/zones/${zone.id}/scenes/${sceneId}`, {
-          method: "POST",
-        })
-        if (!response.ok) throw new Error("Failed to activate scene")
+        const response = await apiPost(`/api/hue/zones/${zone.id}/scenes/${sceneId}`)
+        if (!response.success) throw new Error("Failed to activate scene")
       }
       const scene = scenes.find((s) => s.id === sceneId)
       toast.success(`Activated scene: ${scene?.name || sceneId}`)

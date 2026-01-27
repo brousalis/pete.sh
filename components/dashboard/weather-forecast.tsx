@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react"
 import { RefreshCw, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { WeatherForecast } from "@/lib/types/weather.types"
+import type { WeatherForecast as WeatherForecastType } from "@/lib/types/weather.types"
 import { format } from "date-fns"
+import { apiGet } from "@/lib/api/client"
 
 export function WeatherForecast() {
-  const [forecast, setForecast] = useState<WeatherForecast | null>(null)
+  const [forecast, setForecast] = useState<WeatherForecastType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -15,11 +16,10 @@ export function WeatherForecast() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/weather/forecast")
-      if (!response.ok) throw new Error("Failed to fetch forecast")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setForecast(data.data)
+      const response = await apiGet<WeatherForecastType>("/api/weather/forecast")
+      if (!response.success) throw new Error(response.error || "Failed to fetch forecast")
+      if (response.data) {
+        setForecast(response.data)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load forecast")

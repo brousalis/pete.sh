@@ -1,20 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { CheckCircle2, Circle, AlertTriangle, Clock, RotateCcw, Bike, StretchVertical, Video, VideoOff, ChevronDown, ChevronRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { YouTubePlayer } from "@/components/ui/youtube-player"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import type { Workout, Exercise } from "@/lib/types/fitness.types"
-import type { DayOfWeek } from "@/lib/types/fitness.types"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { YouTubePlayer } from "@/components/ui/youtube-player"
+import { apiGet } from "@/lib/api/client"
+import type { DayOfWeek, Exercise, Workout } from "@/lib/types/fitness.types"
+import { cn } from "@/lib/utils"
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, PersonStanding, RotateCcw, StretchVertical, Video, VideoOff } from "lucide-react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface WorkoutDetailViewProps {
   day: DayOfWeek
@@ -32,12 +32,9 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   useEffect(() => {
     const fetchWorkout = async () => {
       try {
-        const response = await fetch(`/api/fitness/workout/${day}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setWorkout(data.data)
-          }
+        const response = await apiGet<Workout>(`/api/fitness/workout/${day}`)
+        if (response.success && response.data) {
+          setWorkout(response.data)
         }
       } catch (error) {
         console.error("Failed to fetch workout", error)
@@ -136,13 +133,13 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   const hasElbowSafe = workout.exercises.some((ex) => ex.isElbowSafe === false && ex.alternative)
 
   // Compact Exercise Row Component
-  const ExerciseRow = ({ 
-    exercise, 
+  const ExerciseRow = ({
+    exercise,
     showCheckbox = false,
     isCompleted = false,
     onClick,
     className
-  }: { 
+  }: {
     exercise: Exercise
     showCheckbox?: boolean
     isCompleted?: boolean
@@ -155,7 +152,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     const isVideoOpen = openVideos.has(exercise.id)
 
     return (
-      <div 
+      <div
         className={cn(
           "flex items-start gap-2 p-2 rounded-md transition-colors",
           showCheckbox && "cursor-pointer hover:bg-muted/50",
@@ -173,7 +170,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
             )}
           </div>
         )}
-        
+
         <div className={cn("flex-1 min-w-0", isVideoOpen && videoId && "w-[50%]")}>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={cn("text-sm font-medium", isCompleted && "line-through text-muted-foreground")}>
@@ -199,7 +196,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
         </div>
 
         {videoId && (
-          <div 
+          <div
             className={cn(
               "shrink-0 transition-all",
               isVideoOpen ? "flex-1 max-w-[50%]" : "w-28"
@@ -220,15 +217,15 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   }
 
   // Section Header Component
-  const SectionHeader = ({ 
-    id, 
-    title, 
-    icon: Icon, 
+  const SectionHeader = ({
+    id,
+    title,
+    icon: Icon,
     iconColor,
     duration,
     count,
     bgColor
-  }: { 
+  }: {
     id: string
     title: string
     icon: React.ElementType
@@ -292,10 +289,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           <CardContent className="p-2">
             <Collapsible open={expandedSections.has("warmup")} onOpenChange={() => toggleSection("warmup")}>
               <CollapsibleTrigger asChild>
-                <SectionHeader 
-                  id="warmup" 
-                  title={workout.warmup.name} 
-                  icon={RotateCcw} 
+                <SectionHeader
+                  id="warmup"
+                  title={workout.warmup.name}
+                  icon={RotateCcw}
                   iconColor="text-blue-500"
                   duration={workout.warmup.duration}
                   count={workout.warmup.exercises.length}
@@ -318,10 +315,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
         <CardContent className="p-2">
           <Collapsible open={expandedSections.has("exercises")} onOpenChange={() => toggleSection("exercises")}>
             <CollapsibleTrigger asChild>
-              <SectionHeader 
-                id="exercises" 
-                title="Exercises" 
-                icon={Circle} 
+              <SectionHeader
+                id="exercises"
+                title="Exercises"
+                icon={Circle}
                 iconColor="text-foreground"
                 count={workout.exercises.length}
               />
@@ -329,9 +326,9 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
             <CollapsibleContent>
               <div className="mt-1 space-y-0.5">
                 {workout.exercises.map((ex) => (
-                  <ExerciseRow 
-                    key={ex.id} 
-                    exercise={ex} 
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
                     showCheckbox
                     isCompleted={completedExercises.has(ex.id)}
                     onClick={() => toggleExercise(ex.id)}
@@ -349,10 +346,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           <CardContent className="p-2">
             <Collapsible open={expandedSections.has("finisher")} onOpenChange={() => toggleSection("finisher")}>
               <CollapsibleTrigger asChild>
-                <SectionHeader 
-                  id="finisher" 
-                  title="Finisher" 
-                  icon={Clock} 
+                <SectionHeader
+                  id="finisher"
+                  title="Finisher"
+                  icon={Clock}
                   iconColor="text-red-500"
                   count={workout.finisher.length}
                 />
@@ -375,10 +372,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           <CardContent className="p-2">
             <Collapsible open={expandedSections.has("metabolic")} onOpenChange={() => toggleSection("metabolic")}>
               <CollapsibleTrigger asChild>
-                <SectionHeader 
-                  id="metabolic" 
-                  title={workout.metabolicFlush.name} 
-                  icon={Bike} 
+                <SectionHeader
+                  id="metabolic"
+                  title={workout.metabolicFlush.name}
+                  icon={PersonStanding}
                   iconColor="text-orange-500"
                   duration={workout.metabolicFlush.duration}
                 />
@@ -401,10 +398,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           <CardContent className="p-2">
             <Collapsible open={expandedSections.has("mobility")} onOpenChange={() => toggleSection("mobility")}>
               <CollapsibleTrigger asChild>
-                <SectionHeader 
-                  id="mobility" 
-                  title={workout.mobility.name} 
-                  icon={StretchVertical} 
+                <SectionHeader
+                  id="mobility"
+                  title={workout.mobility.name}
+                  icon={StretchVertical}
                   iconColor="text-purple-500"
                   duration={workout.mobility.duration}
                 />

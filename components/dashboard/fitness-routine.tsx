@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { RefreshCw, Plus, AlertCircle } from "lucide-react"
 import type { WeeklyRoutine, DayOfWeek, Workout } from "@/lib/types/fitness.types"
 import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 export function FitnessRoutine() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -18,13 +19,13 @@ export function FitnessRoutine() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/fitness/routine")
-      if (!response.ok) throw new Error("Failed to fetch routine")
-      const data = await response.json()
-      if (data.success && data.data) {
-        setRoutine(data.data)
-        if (data.data.weeks.length > 0) {
-          setCurrentWeek(data.data.weeks[0].weekNumber)
+      const response = await apiGet<WeeklyRoutine>("/api/fitness/routine")
+      if (!response.success) throw new Error(response.error || "Failed to fetch routine")
+      if (response.data) {
+        setRoutine(response.data)
+        const firstWeek = response.data.weeks[0]
+        if (firstWeek) {
+          setCurrentWeek(firstWeek.weekNumber)
         }
       }
     } catch (err) {
@@ -41,14 +42,9 @@ export function FitnessRoutine() {
     await Promise.all(
       days.map(async (day) => {
         try {
-          const response = await fetch(`/api/fitness/workout/${day}`)
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-              definitions[day] = data.data
-            } else {
-              definitions[day] = null
-            }
+          const response = await apiGet<Workout>(`/api/fitness/workout/${day}`)
+          if (response.success && response.data) {
+            definitions[day] = response.data
           } else {
             definitions[day] = null
           }
@@ -68,10 +64,8 @@ export function FitnessRoutine() {
 
   const handleComplete = async (day: DayOfWeek) => {
     try {
-      const response = await fetch(`/api/fitness/workout/${day}/complete?week=${currentWeek}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed to mark complete")
+      const response = await apiPost(`/api/fitness/workout/${day}/complete?week=${currentWeek}`)
+      if (!response.success) throw new Error("Failed to mark complete")
       await fetchRoutine()
       toast.success("Workout marked as complete!")
     } catch (error) {

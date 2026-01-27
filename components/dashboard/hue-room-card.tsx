@@ -22,6 +22,7 @@ import { HueLightItem } from "./hue-light-item"
 import { toast } from "sonner"
 import type { HueZone, HueScene, HueLight } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
+import { useConnectivity } from "@/components/connectivity-provider"
 
 function getRoomIcon(name: string, className?: string) {
   const n = name.toLowerCase()
@@ -51,6 +52,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
   const [expanded, setExpanded] = useState(false)
   const [lights, setLights] = useState<HueLight[]>([])
   const [loadingLights, setLoadingLights] = useState(false)
+  const { apiBaseUrl } = useConnectivity()
 
   useEffect(() => {
     setOn(zone.state.any_on)
@@ -63,7 +65,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
   useEffect(() => {
     if (expanded && lights.length === 0) {
       setLoadingLights(true)
-      fetch(`/api/hue/zones/${zone.id}/lights`)
+      fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/lights`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.data) {
@@ -73,7 +75,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
         .catch(() => toast.error("Failed to load lights"))
         .finally(() => setLoadingLights(false))
     }
-  }, [expanded, zone.id, lights.length])
+  }, [expanded, zone.id, lights.length, apiBaseUrl])
 
   const handleToggle = useCallback(
     async (checked: boolean) => {
@@ -84,7 +86,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
       setIsUpdating(true)
       setOn(checked)
       try {
-        const response = await fetch(`/api/hue/zones/${zone.id}/toggle`, {
+        const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/toggle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ on: checked }),
@@ -98,7 +100,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate, isReadOnly]
+    [zone.id, zone.name, onUpdate, isReadOnly, apiBaseUrl]
   )
 
   const handleBrightnessChange = (values: number[]) => {
@@ -118,7 +120,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
       if (value === undefined) return
       setIsUpdating(true)
       try {
-        const response = await fetch(`/api/hue/zones/${zone.id}/brightness`, {
+        const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/brightness`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ brightness: value }),
@@ -132,7 +134,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate, isReadOnly]
+    [zone.id, zone.name, onUpdate, isReadOnly, apiBaseUrl]
   )
 
   const handleActivateScene = useCallback(
@@ -144,7 +146,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
       setIsUpdating(true)
       try {
         const response = await fetch(
-          `/api/hue/zones/${zone.id}/scenes/${sceneId}`,
+          `${apiBaseUrl}/api/hue/zones/${zone.id}/scenes/${sceneId}`,
           { method: "POST" }
         )
         if (!response.ok) throw new Error("Failed to activate scene")
@@ -157,13 +159,13 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
         setIsUpdating(false)
       }
     },
-    [zone.id, onUpdate, isReadOnly]
+    [zone.id, onUpdate, isReadOnly, apiBaseUrl]
   )
 
   const handleLightUpdate = useCallback(async () => {
     // Refresh lights
     try {
-      const response = await fetch(`/api/hue/zones/${zone.id}/lights`)
+      const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/lights`)
       const data = await response.json()
       if (data.success && data.data) {
         setLights(data.data)
@@ -172,7 +174,7 @@ export function HueRoomCard({ zone, scenes = [], onUpdate, isReadOnly = false }:
       // Silently fail - main refresh will catch it
     }
     onUpdate?.()
-  }, [zone.id, onUpdate])
+  }, [zone.id, onUpdate, apiBaseUrl])
 
   // Filter and sort scenes
   // - Filter out auto-generated effect scenes (HueEssentialsEffect, etc.)

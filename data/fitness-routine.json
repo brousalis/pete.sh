@@ -86,7 +86,7 @@
           "action": "Drop into the deepest squat you can. Keep heels flat. Use your elbows to push your knees out. Rock side to side gently."
         },
         {
-          "name": "Thoracic Openers / T-Spine Rotation",
+          "name": "T-Spine Rotation",
           "duration": 60,
           "description": "Prevents developing a \"hunchback\" posture from all the pulling and carrying.",
           "why": "Prevents hunchback posture from pulling and carrying",
@@ -176,7 +176,12 @@
       "weekNumber": 5,
       "startDate": "2026-01-26T06:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": false
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -186,5 +191,5 @@
       }
     }
   ],
-  "updatedAt": "2026-01-25T15:20:11.673Z"
+  "updatedAt": "2026-01-26T15:49:59.633Z"
 }

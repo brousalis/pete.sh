@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import type { HueZone } from "@/lib/types/hue.types"
 import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api/client"
 
 export function DeckLights() {
   const [zones, setZones] = useState<HueZone[]>([])
@@ -17,17 +18,16 @@ export function DeckLights() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/hue/zones")
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<Record<string, HueZone>>("/api/hue/zones")
+      if (!response.success) {
+        if (response.code === "NOT_CONFIGURED") {
           setError("Not configured")
           return
         }
-        throw new Error("Failed to fetch zones")
+        throw new Error(response.error || "Failed to fetch zones")
       }
-      const data = await response.json()
-      if (data.success && data.data) {
-        const zonesArray = Object.entries(data.data).map(([id, zone]) => ({
+      if (response.data) {
+        const zonesArray = Object.entries(response.data).map(([id, zone]) => ({
           ...(zone as HueZone),
           id,
         }))
@@ -48,11 +48,7 @@ export function DeckLights() {
   const handleToggleAll = async (on: boolean) => {
     try {
       const promises = zones.map((zone) =>
-        fetch(`/api/hue/zones/${zone.id}/toggle`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ on }),
-        })
+        apiPost(`/api/hue/zones/${zone.id}/toggle`, { on })
       )
       await Promise.all(promises)
       setAnyOn(on)
@@ -65,12 +61,8 @@ export function DeckLights() {
 
   const handleToggleZone = async (zoneId: string, on: boolean) => {
     try {
-      const response = await fetch(`/api/hue/zones/${zoneId}/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on }),
-      })
-      if (!response.ok) throw new Error("Failed to toggle zone")
+      const response = await apiPost(`/api/hue/zones/${zoneId}/toggle`, { on })
+      if (!response.success) throw new Error("Failed to toggle zone")
       toast.success(`Zone ${on ? "on" : "off"}`)
       await fetchZones()
     } catch (error) {

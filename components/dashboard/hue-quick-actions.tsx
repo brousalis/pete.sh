@@ -16,6 +16,8 @@ import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
 import type { HueAllLightsStatus, HueScene } from "@/lib/types/hue.types"
 import { cn } from "@/lib/utils"
+import { useConnectivity } from "@/components/connectivity-provider"
+import { apiPost } from "@/lib/api/client"
 
 interface HueQuickActionsProps {
   status: HueAllLightsStatus | null
@@ -63,12 +65,8 @@ export function HueQuickActions({
     }
     setIsTogglingAll(true)
     try {
-      const response = await fetch("/api/hue/all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on }),
-      })
-      if (!response.ok) throw new Error("Failed to toggle lights")
+      const response = await apiPost("/api/hue/all", { on })
+      if (!response.success) throw new Error("Failed to toggle lights")
       toast.success(on ? "All lights on" : "All lights off")
       await onRefresh()
     } catch {
@@ -85,12 +83,8 @@ export function HueQuickActions({
     }
     setBrightness(value)
     try {
-      const response = await fetch("/api/hue/all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on: true, brightness: value }),
-      })
-      if (!response.ok) throw new Error("Failed to set brightness")
+      const response = await apiPost("/api/hue/all", { on: true, brightness: value })
+      if (!response.success) throw new Error("Failed to set brightness")
       toast.success(`Brightness set to ${Math.round((value / 254) * 100)}%`)
       await onRefresh()
     } catch {
@@ -114,12 +108,8 @@ export function HueQuickActions({
     const value = values[0]
     if (value === undefined) return
     try {
-      const response = await fetch("/api/hue/all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ on: true, brightness: value }),
-      })
-      if (!response.ok) throw new Error("Failed to set brightness")
+      const response = await apiPost("/api/hue/all", { on: true, brightness: value })
+      if (!response.success) throw new Error("Failed to set brightness")
       await onRefresh()
     } catch {
       toast.error("Failed to set brightness")
@@ -138,11 +128,8 @@ export function HueQuickActions({
 
     setActivatingScene(scene.id)
     try {
-      const response = await fetch(
-        `/api/hue/zones/${scene.group}/scenes/${scene.id}`,
-        { method: "POST" }
-      )
-      if (!response.ok) throw new Error("Failed to activate scene")
+      const response = await apiPost(`/api/hue/zones/${scene.group}/scenes/${scene.id}`)
+      if (!response.success) throw new Error("Failed to activate scene")
       toast.success(`Activated: ${scene.name}`)
       await onRefresh()
     } catch {

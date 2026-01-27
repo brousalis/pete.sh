@@ -5,6 +5,7 @@ import { Flame, Target } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import type { ConsistencyStats } from "@/lib/types/fitness.types"
+import { apiGet } from "@/lib/api/client"
 
 export function ConsistencyDashboard() {
   const [stats, setStats] = useState<ConsistencyStats | null>(null)
@@ -13,12 +14,9 @@ export function ConsistencyDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/fitness/consistency")
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            setStats(data.data)
-          }
+        const response = await apiGet<ConsistencyStats>("/api/fitness/consistency")
+        if (response.success && response.data) {
+          setStats(response.data)
         }
       } catch (error) {
         console.error("Failed to fetch consistency stats", error)

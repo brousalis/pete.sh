@@ -12,6 +12,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import type { HueZone } from '@/lib/types/hue.types'
 import { toast } from 'sonner'
+import { apiGet, apiPost } from '@/lib/api/client'
 
 export function HomeEnvironmentCard() {
   const [zones, setZones] = useState<HueZone[]>([])
@@ -24,29 +25,26 @@ export function HomeEnvironmentCard() {
 
     // Fetch HUE zones
     try {
-      const response = await fetch('/api/hue/zones')
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<Record<string, HueZone>>('/api/hue/zones')
+      if (!response.success) {
+        if (response.code === 'NOT_CONFIGURED') {
           setLightsError('HUE bridge not configured')
         }
-      } else {
-        const data = await response.json()
-        if (data.success && data.data) {
-          const zonesArray = Object.entries(data.data).map(([id, zone]) => ({
-            ...(zone as HueZone),
-            id,
-          }))
-          setZones(zonesArray)
-          setLightsError(null)
+      } else if (response.data) {
+        const zonesArray = Object.entries(response.data).map(([id, zone]) => ({
+          ...(zone as HueZone),
+          id,
+        }))
+        setZones(zonesArray)
+        setLightsError(null)
 
-          // Initialize brightness values
-          const brightnessMap: Record<string, number> = {}
-          zonesArray.forEach(zone => {
-            // Default to 100% if on, 50% if off
-            brightnessMap[zone.id] = zone.state?.any_on ? 100 : 50
-          })
-          setZoneBrightness(brightnessMap)
-        }
+        // Initialize brightness values
+        const brightnessMap: Record<string, number> = {}
+        zonesArray.forEach(zone => {
+          // Default to 100% if on, 50% if off
+          brightnessMap[zone.id] = zone.state?.any_on ? 100 : 50
+        })
+        setZoneBrightness(brightnessMap)
       }
     } catch {
       setLightsError('Failed to load lights')
@@ -70,12 +68,8 @@ export function HomeEnvironmentCard() {
     )
 
     try {
-      const response = await fetch(`/api/hue/zones/${zoneId}/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ on }),
-      })
-      if (!response.ok) throw new Error()
+      const response = await apiPost(`/api/hue/zones/${zoneId}/toggle`, { on })
+      if (!response.success) throw new Error()
     } catch {
       // Revert on error
       setZones(prev =>
@@ -95,11 +89,7 @@ export function HomeEnvironmentCard() {
     try {
       // Convert 0-100 to 0-254 for Hue API
       const hueBrightness = Math.round((brightness / 100) * 254)
-      await fetch(`/api/hue/zones/${zoneId}/brightness`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brightness: hueBrightness }),
-      })
+      await apiPost(`/api/hue/zones/${zoneId}/brightness`, { brightness: hueBrightness })
     } catch {
       // Silent fail for brightness - it's a frequent operation
     }

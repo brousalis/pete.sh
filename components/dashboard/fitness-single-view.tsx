@@ -22,6 +22,7 @@ import type {
   Workout,
   ConsistencyStats
 } from "@/lib/types/fitness.types"
+import { apiGet, apiPost, apiDelete } from "@/lib/api/client"
 
 const DAYS_OF_WEEK: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
@@ -82,24 +83,21 @@ export function FitnessSingleView() {
     try {
       const day = getCurrentDay()
       const [routineRes, workoutRes, consistencyRes] = await Promise.all([
-        fetch("/api/fitness/routine"),
-        fetch(`/api/fitness/workout/${day}`),
-        fetch("/api/fitness/consistency"),
+        apiGet<WeeklyRoutine>("/api/fitness/routine"),
+        apiGet<Workout>(`/api/fitness/workout/${day}`),
+        apiGet<ConsistencyStats>("/api/fitness/consistency"),
       ])
 
-      if (routineRes.ok) {
-        const data = await routineRes.json()
-        if (data.success) setRoutine(data.data)
+      if (routineRes.success && routineRes.data) {
+        setRoutine(routineRes.data)
       }
 
-      if (workoutRes.ok) {
-        const data = await workoutRes.json()
-        if (data.success && data.data) setTodayWorkout(data.data)
+      if (workoutRes.success && workoutRes.data) {
+        setTodayWorkout(workoutRes.data)
       }
 
-      if (consistencyRes.ok) {
-        const data = await consistencyRes.json()
-        if (data.success) setConsistencyStats(data.data)
+      if (consistencyRes.success && consistencyRes.data) {
+        setConsistencyStats(consistencyRes.data)
       }
     } catch (error) {
       console.error("Failed to fetch fitness data", error)
@@ -111,14 +109,11 @@ export function FitnessSingleView() {
   // Fetch workout for selected day
   const fetchSelectedDayWorkout = useCallback(async (day: DayOfWeek) => {
     try {
-      const response = await fetch(`/api/fitness/workout/${day}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          setSelectedDayWorkout(data.data)
-        } else {
-          setSelectedDayWorkout(null)
-        }
+      const response = await apiGet<Workout>(`/api/fitness/workout/${day}`)
+      if (response.success && response.data) {
+        setSelectedDayWorkout(response.data)
+      } else {
+        setSelectedDayWorkout(null)
       }
     } catch (error) {
       console.error("Failed to fetch workout for day", error)
@@ -149,10 +144,8 @@ export function FitnessSingleView() {
     setCompletingMorning(true)
 
     try {
-      const response = await fetch(`/api/fitness/routine/morning/complete?day=${day}&week=${weekNumber}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed")
+      const response = await apiPost(`/api/fitness/routine/morning/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed")
       await fetchData()
       toast.success("Morning routine completed!")
     } catch {
@@ -169,10 +162,8 @@ export function FitnessSingleView() {
     setCompletingNight(true)
 
     try {
-      const response = await fetch(`/api/fitness/routine/night/complete?day=${day}&week=${weekNumber}`, {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error("Failed")
+      const response = await apiPost(`/api/fitness/routine/night/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed")
       await fetchData()
       toast.success("Night routine completed!")
     } catch {
@@ -189,10 +180,8 @@ export function FitnessSingleView() {
     setCompletingMorning(true)
 
     try {
-      const response = await fetch(`/api/fitness/routine/morning/complete?day=${day}&week=${weekNumber}`, {
-        method: "DELETE",
-      })
-      if (!response.ok) throw new Error("Failed")
+      const response = await apiDelete(`/api/fitness/routine/morning/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed")
       await fetchData()
       toast.success("Morning routine unmarked")
     } catch {
@@ -209,10 +198,8 @@ export function FitnessSingleView() {
     setCompletingNight(true)
 
     try {
-      const response = await fetch(`/api/fitness/routine/night/complete?day=${day}&week=${weekNumber}`, {
-        method: "DELETE",
-      })
-      if (!response.ok) throw new Error("Failed")
+      const response = await apiDelete(`/api/fitness/routine/night/complete?day=${day}&week=${weekNumber}`)
+      if (!response.success) throw new Error("Failed")
       await fetchData()
       toast.success("Night routine unmarked")
     } catch {
@@ -228,12 +215,8 @@ export function FitnessSingleView() {
     setCompletingWorkout(true)
 
     try {
-      const response = await fetch(`/api/fitness/workout/${day}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exercisesCompleted }),
-      })
-      if (!response.ok) throw new Error("Failed")
+      const response = await apiPost(`/api/fitness/workout/${day}/complete`, { exercisesCompleted })
+      if (!response.success) throw new Error("Failed")
       await fetchData()
       toast.success("Workout completed!")
     } catch {

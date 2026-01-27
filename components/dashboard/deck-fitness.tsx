@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Dumbbell, CheckCircle2, Circle, Flame, RefreshCw } from "lucide-react"
 import type { WeeklyRoutine, DayOfWeek, Workout, ConsistencyStats } from "@/lib/types/fitness.types"
+import { apiGet } from "@/lib/api/client"
 
 export function DeckFitness() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -13,31 +14,23 @@ export function DeckFitness() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const day = new Date().toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as DayOfWeek
         const [routineRes, workoutRes, consistencyRes] = await Promise.all([
-          fetch("/api/fitness/routine"),
-          fetch(`/api/fitness/workout/${new Date().toLocaleDateString("en-US", { weekday: "long" }).toLowerCase()}`),
-          fetch("/api/fitness/consistency"),
+          apiGet<WeeklyRoutine>("/api/fitness/routine"),
+          apiGet<Workout>(`/api/fitness/workout/${day}`),
+          apiGet<ConsistencyStats>("/api/fitness/consistency"),
         ])
 
-        if (routineRes.ok) {
-          const routineData = await routineRes.json()
-          if (routineData.success) {
-            setRoutine(routineData.data)
-          }
+        if (routineRes.success && routineRes.data) {
+          setRoutine(routineRes.data)
         }
 
-        if (workoutRes.ok) {
-          const workoutData = await workoutRes.json()
-          if (workoutData.success && workoutData.data) {
-            setTodayWorkout(workoutData.data)
-          }
+        if (workoutRes.success && workoutRes.data) {
+          setTodayWorkout(workoutRes.data)
         }
 
-        if (consistencyRes.ok) {
-          const consistencyData = await consistencyRes.json()
-          if (consistencyData.success) {
-            setConsistency(consistencyData.data)
-          }
+        if (consistencyRes.success && consistencyRes.data) {
+          setConsistency(consistencyRes.data)
         }
       } catch (error) {
         console.error("Failed to fetch fitness data", error)

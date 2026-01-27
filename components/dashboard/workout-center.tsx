@@ -21,11 +21,11 @@ import type { DayOfWeek, Exercise, Workout, WorkoutCompletion } from "@/lib/type
 import { cn } from "@/lib/utils"
 import {
   AlertTriangle,
-  Bike,
   ChevronDown,
   ChevronRight,
   Dumbbell,
   Footprints,
+  PersonStanding,
   Play,
   RotateCcw,
   StretchVertical,
@@ -204,7 +204,7 @@ export function WorkoutCenter({
     sections.push({
       id: "metabolic",
       title: workout.metabolicFlush.name || "Metabolic Flush",
-      icon: Bike,
+      icon: PersonStanding,
       iconColor: "text-orange-500",
       bgColor: "bg-orange-500/5",
       exercises: workout.metabolicFlush.exercises,

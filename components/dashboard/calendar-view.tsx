@@ -5,6 +5,7 @@ import { Calendar, Clock, MapPin, RefreshCw, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
+import { apiGet } from "@/lib/api/client"
 
 export function CalendarView() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -15,21 +16,20 @@ export function CalendarView() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/calendar/upcoming?maxResults=20")
-      if (!response.ok) {
-        if (response.status === 400) {
+      const response = await apiGet<CalendarEvent[]>("/api/calendar/upcoming?maxResults=20")
+      if (!response.success) {
+        if (response.code === "NOT_CONFIGURED") {
           setError("Google Calendar not configured")
           return
         }
-        if (response.status === 401) {
+        if (response.code === "UNAUTHORIZED") {
           setError("not_authenticated")
           return
         }
-        throw new Error("Failed to fetch events")
+        throw new Error(response.error || "Failed to fetch events")
       }
-      const data = await response.json()
-      if (data.success && data.data) {
-        setEvents(data.data)
+      if (response.data) {
+        setEvents(response.data)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load calendar events")
