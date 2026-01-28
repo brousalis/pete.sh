@@ -25,7 +25,8 @@ import {
   Menu,
   Music,
   Settings,
-  X
+  X,
+  ChefHat
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
 ]
 
 // All items including Deck for keyboard shortcuts
@@ -59,7 +61,8 @@ const allNavItems: NavItem[] = [
   { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
-  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '8' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
+  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
 ]
 
 export function TopNavigation() {

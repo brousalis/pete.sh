@@ -2,6 +2,7 @@
 
 import { CalendarCard } from '@/components/dashboard/calendar-card'
 import { CoffeeCard } from '@/components/dashboard/coffee-card'
+import { CookingWidget } from '@/components/dashboard/cooking-widget'
 import { FitnessWidget } from '@/components/dashboard/fitness-widget'
 import { HomeEnvironmentCard } from '@/components/dashboard/home-environment-card'
 import { SpotifyWidget } from '@/components/dashboard/spotify-widget'
@@ -85,8 +86,13 @@ export function MainDashboard() {
           <CoffeeCard />
         </DashboardCard>
 
-        {/* Home Controls */}
+        {/* Cooking */}
         <DashboardCard index={6}>
+          <CookingWidget />
+        </DashboardCard>
+
+        {/* Home Controls */}
+        <DashboardCard index={7}>
           <HomeEnvironmentCard />
         </DashboardCard>
       </Masonry>

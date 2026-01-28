@@ -36,6 +36,7 @@ const nextConfig = {
   // React strict mode for better development experience
   reactStrictMode: true,
   // SWC minification is default in Next.js 16 (no need to specify)
+  // Note: Puppeteer is automatically externalized in Next.js 16
   // Experimental features
   experimental: {
     // Add any experimental features you want to enable
