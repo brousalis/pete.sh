@@ -1,35 +1,38 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Clock, RefreshCw, AlertCircle } from "lucide-react"
+import { Calendar, Clock, RefreshCw, AlertCircle, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO, isToday, isTomorrow } from "date-fns"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
 import { apiGet } from "@/lib/api/client"
 
+interface CalendarResponse {
+  events: CalendarEvent[]
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+  message?: string
+}
+
 export function DeckCalendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
 
   const fetchEvents = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiGet<CalendarEvent[]>("/api/calendar/upcoming?maxResults=3")
+      const response = await apiGet<CalendarResponse>("/api/calendar/upcoming?maxResults=3")
       if (!response.success) {
-        if (response.code === "NOT_CONFIGURED") {
-          setError("Not configured")
-          return
-        }
-        if (response.code === "UNAUTHORIZED") {
-          setError("Not authenticated")
-          return
-        }
         throw new Error(response.error || "Failed to fetch events")
       }
       if (response.data) {
-        setEvents(response.data.slice(0, 3)) // Show only next 3 events
+        setEvents((response.data.events || []).slice(0, 3)) // Show only next 3 events
+        setSource(response.data.source || 'none')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load")
@@ -45,14 +48,11 @@ export function DeckCalendar() {
   }, [])
 
   if (error) {
-    const isNotAuthenticated = error === "Not authenticated" || error.includes("not_authenticated")
     return (
       <div className="rounded-2xl bg-card p-3 shadow-lg ">
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <AlertCircle className="size-5 text-destructive" />
-          <div className="text-xs font-medium text-destructive">
-            {isNotAuthenticated ? "Auth required" : error}
-          </div>
+          <div className="text-xs font-medium text-destructive">{error}</div>
         </div>
       </div>
     )

@@ -1,6 +1,7 @@
 'use client'
 
 import { ColorThemePicker } from '@/components/color-theme'
+import { useConnectivity } from '@/components/connectivity-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import {
   DropdownMenu,
@@ -26,7 +27,9 @@ import {
   Music,
   Settings,
   X,
-  ChefHat
+  ChefHat,
+  Wifi,
+  WifiOff,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -70,6 +73,7 @@ export function TopNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement>(null)
+  const { isLocalAvailable, isInitialized } = useConnectivity()
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -119,19 +123,48 @@ export function TopNavigation() {
     <header ref={headerRef} className="bg-card border-border/50 sticky top-0 z-50 border-b">
       <div className="mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:px-4 md:gap-4 md:px-5 lg:px-6">
         {/* Logo */}
-        <Link
-          href="/dashboard"
-          className="group relative flex shrink-0 items-center"
-          aria-label="Go to dashboard"
-        >
-          <span className="text-brand text-lg font-bold sm:text-xl">
-            petehome
-          </span>
-          {/* Keyboard shortcut indicator */}
-          <span className="ml-2 hidden items-center gap-0.5 rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground xl:flex">
-            <Command className="size-2.5" />K
-          </span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="group relative flex items-center"
+            aria-label="Go to dashboard"
+          >
+            <span className="text-brand text-lg font-bold sm:text-xl">
+              petehome
+            </span>
+            {/* Keyboard shortcut indicator */}
+            <span className="ml-2 hidden items-center gap-0.5 rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground xl:flex">
+              <Command className="size-2.5" />K
+            </span>
+          </Link>
+          
+          {/* Local Mode Indicator - shows when in production but connected to local */}
+          {isInitialized && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={cn(
+                "hidden sm:flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                isLocalAvailable
+                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                  : "bg-muted text-muted-foreground"
+              )}
+              title={isLocalAvailable ? "Connected to local services" : "Read-only mode (cached data)"}
+            >
+              {isLocalAvailable ? (
+                <>
+                  <Wifi className="size-3" />
+                  <span>Local</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="size-3" />
+                  <span>Live</span>
+                </>
+              )}
+            </motion.div>
+          )}
+        </div>
 
         {/* Desktop Navigation - visible on tablet (768px+) */}
         <nav className="hidden flex-1 items-center justify-center md:flex" aria-label="Primary navigation">

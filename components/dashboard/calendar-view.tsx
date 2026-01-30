@@ -1,35 +1,42 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Clock, MapPin, RefreshCw, AlertCircle } from "lucide-react"
+import { Calendar, Clock, MapPin, RefreshCw, AlertCircle, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
 import { apiGet } from "@/lib/api/client"
 
+interface CalendarResponse {
+  events: CalendarEvent[]
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+  message?: string
+}
+
 export function CalendarView() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
+  const [authAvailable, setAuthAvailable] = useState(false)
+  const [authUrl, setAuthUrl] = useState<string | null>(null)
 
   const fetchEvents = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiGet<CalendarEvent[]>("/api/calendar/upcoming?maxResults=20")
+      const response = await apiGet<CalendarResponse>("/api/calendar/upcoming?maxResults=20")
       if (!response.success) {
-        if (response.code === "NOT_CONFIGURED") {
-          setError("Google Calendar not configured")
-          return
-        }
-        if (response.code === "UNAUTHORIZED") {
-          setError("not_authenticated")
-          return
-        }
         throw new Error(response.error || "Failed to fetch events")
       }
       if (response.data) {
-        setEvents(response.data)
+        setEvents(response.data.events || [])
+        setSource(response.data.source || 'none')
+        setAuthAvailable(response.data.authAvailable || false)
+        setAuthUrl(response.data.authUrl || null)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load calendar events")
@@ -46,29 +53,21 @@ export function CalendarView() {
   }, [])
 
   if (error) {
-    const isNotAuthenticated = error === "not_authenticated" || error.includes("Not authenticated")
-
     return (
       <div className="rounded-xl bg-background p-4 ">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="size-5" />
-            <p className="text-sm">
-              {isNotAuthenticated
-                ? "Please authorize Google Calendar access to view events"
-                : error}
-            </p>
+            <p className="text-sm">{error}</p>
           </div>
-          {isNotAuthenticated && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => window.location.href = "/api/calendar/auth"}
-              className="w-fit"
-            >
-              Authorize Google Calendar
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchEvents}
+            className="w-fit"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     )

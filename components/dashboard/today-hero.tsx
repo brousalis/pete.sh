@@ -32,14 +32,14 @@ export function TodayHero() {
       .catch(() => {})
 
     // Fetch next event (within 24 hours)
-    apiGet<CalendarEvent[]>('/api/calendar/upcoming?maxResults=10')
+    apiGet<{ events: CalendarEvent[] }>('/api/calendar/upcoming?maxResults=10')
       .then(response => {
-        if (response?.success && response.data) {
+        if (response?.success && response.data?.events) {
           const now = new Date()
           const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
           // Find first event within 24 hours
-          const eventIn24Hours = response.data.find((event: CalendarEvent) => {
+          const eventIn24Hours = response.data.events.find((event: CalendarEvent) => {
             const startTime = event.start.dateTime
               ? parseISO(event.start.dateTime)
               : event.start.date

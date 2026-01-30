@@ -19,36 +19,49 @@ import {
   Clock,
   MapPin,
   RefreshCw,
+  Database,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { apiGet } from '@/lib/api/client'
 
+interface CalendarResponse {
+  events: CalendarEvent[]
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+  message?: string
+}
+
 export function CalendarCard() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
+  const [authAvailable, setAuthAvailable] = useState(false)
+  const [authUrl, setAuthUrl] = useState<string | null>(null)
 
   const fetchEvents = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiGet<CalendarEvent[]>('/api/calendar/upcoming?maxResults=10')
+      const response = await apiGet<CalendarResponse>('/api/calendar/upcoming?maxResults=10')
 
       if (!response.success) {
-        // 401 is expected when not authenticated - handle silently
-        if (response.code === 'UNAUTHORIZED' || response.error?.includes('not authenticated')) {
-          setError('not_authenticated')
-          return
-        }
         console.error('[CalendarCard] Error response:', response)
         throw new Error(response.error || 'Failed to fetch events')
       }
 
       if (response.data) {
-        setEvents(response.data)
+        // Handle new response format with metadata
+        setEvents(response.data.events || [])
+        setSource(response.data.source || 'none')
+        setAuthAvailable(response.data.authAvailable || false)
+        setAuthUrl(response.data.authUrl || null)
       } else {
         setEvents([])
+        setSource('none')
       }
     } catch (err) {
       console.error('[CalendarCard] Fetch error:', err)
@@ -172,7 +185,8 @@ export function CalendarCard() {
     return minutesUntil > 0 && minutesUntil <= 30
   }
 
-  if (error === 'not_authenticated') {
+  // Show error state
+  if (error) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -184,15 +198,15 @@ export function CalendarCard() {
         <div className="bg-muted/30 rounded-lg border p-4">
           <div className="text-muted-foreground flex items-center gap-2">
             <AlertCircle className="size-4" />
-            <p className="text-sm">Google Calendar not connected</p>
+            <p className="text-sm">{error}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => (window.location.href = '/api/calendar/auth')}
+            onClick={fetchEvents}
             className="mt-3"
           >
-            Connect Google Calendar
+            Retry
           </Button>
         </div>
       </div>
@@ -205,8 +219,26 @@ export function CalendarCard() {
         <div className="flex items-center gap-2">
           <Calendar className="text-brand size-5" />
           <h3 className="text-foreground text-sm font-semibold">Calendar</h3>
+          {/* Source indicator */}
+          {source === 'cache' && (
+            <span className="flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground" title="Showing cached data">
+              <Database className="size-2.5" />
+              cached
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Auth button when available but not authenticated */}
+          {authAvailable && source === 'cache' && authUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => (window.location.href = authUrl)}
+              className="gap-1.5 text-xs"
+            >
+              Connect
+            </Button>
+          )}
           <Link href="/calendar">
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
               View All
