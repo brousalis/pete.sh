@@ -129,7 +129,7 @@ export class CookingService {
         is_favorite,
         source,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .select()
       .single()
 
@@ -153,7 +153,7 @@ export class CookingService {
 
       const { error: ingredientsError } = await supabase
         .from('recipe_ingredients')
-        .insert(ingredientsToInsert)
+        .insert(ingredientsToInsert as never)
 
       if (ingredientsError) {
         console.error('Error creating ingredients:', ingredientsError)
@@ -210,7 +210,7 @@ export class CookingService {
 
     const { data: updatedRecipe, error: recipeError } = await supabase
       .from('recipes')
-      .update(updateData)
+      .update(updateData as never)
       .eq('id', id)
       .select()
       .single()
@@ -238,7 +238,7 @@ export class CookingService {
 
         const { error: ingredientsError } = await supabase
           .from('recipe_ingredients')
-          .insert(ingredientsToInsert)
+          .insert(ingredientsToInsert as never)
 
         if (ingredientsError) {
           console.error('Error updating ingredients:', ingredientsError)
@@ -363,7 +363,7 @@ export class CookingService {
         notes: snapshot.notes,
         is_favorite: snapshot.is_favorite,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', recipeId)
       .select()
       .single()
@@ -410,9 +410,9 @@ export class CookingService {
     // Get next version number
     const { data: versionData } = await supabase.rpc('get_next_version_number', {
       p_recipe_id: recipeId,
-    })
+    } as never)
 
-    const versionNumber = (versionData as number) || 1
+    const versionNumber = ((versionData as unknown) as number) || 1
 
     // Get current ingredients to include in snapshot
     const { data: ingredientsData } = await supabase
@@ -435,7 +435,7 @@ export class CookingService {
       version_number: versionNumber,
       commit_message: commitMessage,
       recipe_snapshot: snapshot as unknown as Record<string, unknown>,
-    })
+    } as never)
 
     if (error) {
       console.error('Error creating version:', error)

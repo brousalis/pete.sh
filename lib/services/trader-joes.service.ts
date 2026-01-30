@@ -36,7 +36,18 @@ export class TraderJoesService {
     }
 
     // Convert to TraderJoesRecipe format
-    const recipes: TraderJoesRecipe[] = (data || []).map((row) => ({
+    type TJRow = {
+      id: string
+      tj_recipe_id: string | null
+      name: string
+      url: string
+      category: string | null
+      image_url: string | null
+      recipe_data: Record<string, unknown>
+      last_scraped_at: string | null
+      created_at: string
+    }
+    const recipes: TraderJoesRecipe[] = ((data || []) as TJRow[]).map((row) => ({
       id: row.id,
       tj_recipe_id: row.tj_recipe_id || undefined,
       name: row.name,
@@ -44,7 +55,7 @@ export class TraderJoesService {
       category: row.category || undefined,
       image_url: row.image_url || undefined,
       recipe_data: row.recipe_data as TraderJoesRecipe['recipe_data'],
-      last_scraped_at: row.last_scraped_at,
+      last_scraped_at: row.last_scraped_at || undefined,
       created_at: row.created_at,
     }))
 
@@ -72,16 +83,29 @@ export class TraderJoesService {
       return null
     }
 
+    type TJCached = {
+      id: string
+      tj_recipe_id: string | null
+      name: string
+      url: string
+      category: string | null
+      image_url: string | null
+      recipe_data: Record<string, unknown>
+      last_scraped_at: string | null
+      created_at: string
+    }
+    const typedCached = cached as TJCached
+
     return {
-      id: cached.id,
-      tj_recipe_id: cached.tj_recipe_id || undefined,
-      name: cached.name,
-      url: cached.url,
-      category: cached.category || undefined,
-      image_url: cached.image_url || undefined,
-      recipe_data: cached.recipe_data as TraderJoesRecipe['recipe_data'],
-      last_scraped_at: cached.last_scraped_at,
-      created_at: cached.created_at,
+      id: typedCached.id,
+      tj_recipe_id: typedCached.tj_recipe_id || undefined,
+      name: typedCached.name,
+      url: typedCached.url,
+      category: typedCached.category || undefined,
+      image_url: typedCached.image_url || undefined,
+      recipe_data: typedCached.recipe_data as TraderJoesRecipe['recipe_data'],
+      last_scraped_at: typedCached.last_scraped_at || undefined,
+      created_at: typedCached.created_at,
     }
   }
 
@@ -105,7 +129,7 @@ export class TraderJoesService {
           image_url: recipe.image_url || null,
           recipe_data: recipe.recipe_data as unknown as Record<string, unknown>,
           last_scraped_at: new Date().toISOString(),
-        },
+        } as never,
         { onConflict: 'url' }
       )
       .select()
@@ -116,16 +140,29 @@ export class TraderJoesService {
       throw new Error(`Failed to cache recipe: ${error.message}`)
     }
 
+    type TJData = {
+      id: string
+      tj_recipe_id: string | null
+      name: string
+      url: string
+      category: string | null
+      image_url: string | null
+      recipe_data: Record<string, unknown>
+      last_scraped_at: string | null
+      created_at: string
+    }
+    const typedData = data as TJData
+
     return {
-      id: data.id,
-      tj_recipe_id: data.tj_recipe_id || undefined,
-      name: data.name,
-      url: data.url,
-      category: data.category || undefined,
-      image_url: data.image_url || undefined,
-      recipe_data: data.recipe_data as TraderJoesRecipe['recipe_data'],
-      last_scraped_at: data.last_scraped_at,
-      created_at: data.created_at,
+      id: typedData.id,
+      tj_recipe_id: typedData.tj_recipe_id || undefined,
+      name: typedData.name,
+      url: typedData.url,
+      category: typedData.category || undefined,
+      image_url: typedData.image_url || undefined,
+      recipe_data: typedData.recipe_data as TraderJoesRecipe['recipe_data'],
+      last_scraped_at: typedData.last_scraped_at || undefined,
+      created_at: typedData.created_at,
     }
   }
 
@@ -160,12 +197,14 @@ export class TraderJoesService {
           let unit: string | undefined
           let name: string
 
-          if (parts.length >= 3 && !isNaN(parseFloat(parts[0]))) {
-            amount = parseFloat(parts[0])
-            unit = parts[1]
+          const firstPart = parts[0]
+          const secondPart = parts[1]
+          if (parts.length >= 3 && firstPart && !isNaN(parseFloat(firstPart))) {
+            amount = parseFloat(firstPart)
+            unit = secondPart
             name = parts.slice(2).join(' ')
-          } else if (parts.length >= 2 && !isNaN(parseFloat(parts[0]))) {
-            amount = parseFloat(parts[0])
+          } else if (parts.length >= 2 && firstPart && !isNaN(parseFloat(firstPart))) {
+            amount = parseFloat(firstPart)
             name = parts.slice(1).join(' ')
           } else {
             name = ingredient

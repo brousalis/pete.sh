@@ -77,7 +77,7 @@ export class MealPlanningService {
       throw new Error('Supabase not configured')
     }
 
-    const weekStartDate = new Date(input.week_start_date)
+    const weekStartDate = new Date(input.week_start_date || new Date())
     const year = weekStartDate.getFullYear()
     const weekNumber = this.getWeekNumber(weekStartDate)
 
@@ -92,7 +92,7 @@ export class MealPlanningService {
           meals: input.meals as unknown as Record<string, unknown>,
           notes: input.notes || null,
           updated_at: new Date().toISOString(),
-        })
+        } as never)
         .eq('id', existing.id)
         .select()
         .single()
@@ -113,7 +113,7 @@ export class MealPlanningService {
           week_number: weekNumber,
           meals: input.meals as unknown as Record<string, unknown>,
           notes: input.notes || null,
-        })
+        } as never)
         .select()
         .single()
 
@@ -252,8 +252,8 @@ export class MealPlanningService {
       // Update existing
       const { data, error } = await supabase
         .from('shopping_lists')
-        .update(listData)
-        .eq('id', existingList.id)
+        .update(listData as never)
+        .eq('id', (existingList as { id: string }).id)
         .select()
         .single()
 
@@ -270,7 +270,7 @@ export class MealPlanningService {
       // Create new
       const { data, error } = await supabase
         .from('shopping_lists')
-        .insert(listData)
+        .insert(listData as never)
         .select()
         .single()
 
@@ -311,7 +311,7 @@ export class MealPlanningService {
 
     return {
       ...(data as ShoppingList),
-      items: (data.items as unknown as ShoppingListItem[]) || [],
+      items: ((data as ShoppingList).items as unknown as ShoppingListItem[]) || [],
     }
   }
 
@@ -329,7 +329,7 @@ export class MealPlanningService {
 
     const { error } = await supabase
       .from('shopping_lists')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, updated_at: new Date().toISOString() } as never)
       .eq('id', shoppingListId)
 
     if (error) {
