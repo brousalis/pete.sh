@@ -18,11 +18,11 @@ import { cn } from "@/lib/utils"
 import { apiGet } from "@/lib/api/client"
 import {
   WorkoutCard,
-  WorkoutDetailView,
   DailyMetricsCard,
   WeeklySummaryCard,
   HrZonesBar,
 } from "./workout-analytics"
+import { EnhancedWorkoutDetailView } from "./enhanced-workout-detail"
 
 // ============================================
 // TYPES
@@ -175,7 +175,7 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
         </CardHeader>
         <CardContent>
           <ScrollArea style={{ maxHeight }}>
-            <WorkoutDetailView workoutId={selectedWorkoutId} />
+            <EnhancedWorkoutDetailView workoutId={selectedWorkoutId} />
           </ScrollArea>
         </CardContent>
       </Card>

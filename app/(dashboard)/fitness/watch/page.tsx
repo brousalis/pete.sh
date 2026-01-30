@@ -19,11 +19,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import Link from "next/link"
 import {
   WorkoutCard,
-  WorkoutDetailView,
   DailyMetricsCard,
   WeeklySummaryCard,
   HrChart,
 } from "@/components/dashboard/workout-analytics"
+import { EnhancedWorkoutDetailView } from "@/components/dashboard/enhanced-workout-detail"
 
 // Types
 interface AppleWorkout {
@@ -151,7 +151,7 @@ export default function AppleWatchPage() {
           <h1 className="text-lg font-semibold">Workout Details</h1>
         </div>
         <ScrollArea className="flex-1">
-          <WorkoutDetailView workoutId={selectedWorkoutId} />
+          <EnhancedWorkoutDetailView workoutId={selectedWorkoutId} />
         </ScrollArea>
       </div>
     )

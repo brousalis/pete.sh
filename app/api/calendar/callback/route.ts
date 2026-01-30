@@ -39,11 +39,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Create OAuth2 client with dynamic redirect URI
-    // IMPORTANT: Must match the redirect URI used in CalendarService.getAuthUrl()
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI ||
-      (process.env.NEXT_PUBLIC_APP_URL
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/api/calendar/callback`
-        : "http://localhost:3000/api/calendar/callback")
+    // IMPORTANT: Must match the redirect URI used in CalendarService.getAuthUrl() EXACTLY
+    // Always use GOOGLE_REDIRECT_URI env var for consistency, or fallback to localhost
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/calendar/callback"
 
     console.log("[Calendar Callback] Using redirect URI:", redirectUri)
 
