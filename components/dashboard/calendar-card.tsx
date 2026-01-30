@@ -229,7 +229,7 @@ export function CalendarCard() {
         </div>
         <div className="flex items-center gap-2">
           {/* Auth button when available but not authenticated */}
-          {authAvailable && source === 'cache' && authUrl && (
+          {authAvailable && (source === 'cache' || source === 'none') && authUrl && (
             <Button
               variant="outline"
               size="sm"
@@ -270,8 +270,21 @@ export function CalendarCard() {
             No upcoming events
           </p>
           <p className="text-muted-foreground/70 mt-1 text-xs">
-            Your schedule is clear
+            {authAvailable && !source.includes('live') 
+              ? 'Connect Google Calendar to see your schedule' 
+              : 'Your schedule is clear'}
           </p>
+          {authAvailable && authUrl && (source === 'cache' || source === 'none') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => (window.location.href = authUrl)}
+              className="mt-3 gap-1.5"
+            >
+              <Calendar className="size-3.5" />
+              Connect Google Calendar
+            </Button>
+          )}
         </div>
       ) : (
         <TooltipProvider delayDuration={300}>

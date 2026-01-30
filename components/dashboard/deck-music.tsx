@@ -10,10 +10,37 @@ import {
   SkipForward,
   RefreshCw,
   AlertCircle,
+  Database,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
 import { apiGet, apiPost } from "@/lib/api/client"
+
+interface SpotifyUserResponse {
+  user: SpotifyUser | null
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+}
+
+interface SpotifyPlaybackResponse {
+  playback: {
+    isPlaying: boolean
+    track: {
+      name: string
+      artist: string
+      album: string
+      imageUrl: string
+    } | null
+    progressMs: number
+    durationMs: number
+  }
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+}
 
 // How long to pause polling after a user action (ms)
 const ACTION_DEBOUNCE_MS = 2000
@@ -21,10 +48,15 @@ const ACTION_DEBOUNCE_MS = 2000
 export function DeckMusic() {
   const [user, setUser] = useState<SpotifyUser | null>(null)
   const [playbackState, setPlaybackState] = useState<SpotifyPlaybackState | null>(null)
+  const [cachedPlayback, setCachedPlayback] = useState<SpotifyPlaybackResponse['playback'] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [isSkipping, setIsSkipping] = useState<"next" | "previous" | null>(null)
+  const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authAvailable, setAuthAvailable] = useState(false)
+  const [authUrl, setAuthUrl] = useState<string | null>(null)
 
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
@@ -32,11 +64,15 @@ export function DeckMusic() {
   // Fetch user profile
   const fetchUser = useCallback(async () => {
     try {
-      const response = await apiGet<SpotifyUser>("/api/spotify/me")
+      const response = await apiGet<SpotifyUserResponse>("/api/spotify/me")
       if (response.success && response.data) {
-        setUser(response.data)
+        setUser(response.data.user)
+        setSource(response.data.source)
+        setIsAuthenticated(response.data.authenticated)
+        setAuthAvailable(response.data.authAvailable)
+        setAuthUrl(response.data.authUrl || null)
         setError(null)
-        return true
+        return response.data.authenticated || response.data.user !== null
       }
       setUser(null)
       return false
@@ -53,15 +89,18 @@ export function DeckMusic() {
     }
 
     try {
-      const response = await apiGet<SpotifyPlaybackState>("/api/spotify/player")
-      if (response.success) {
+      const response = await apiGet<SpotifyPlaybackResponse>("/api/spotify/player")
+      if (response.success && response.data) {
         // Double-check we're not in a debounce period
         if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
           return
         }
-        setPlaybackState(response.data ?? null)
-        if (response.data?.progress_ms != null && response.data?.item?.duration_ms) {
-          setProgress((response.data.progress_ms / response.data.item.duration_ms) * 100)
+        setSource(response.data.source)
+        setIsAuthenticated(response.data.authenticated)
+        setCachedPlayback(response.data.playback)
+        
+        if (response.data.playback?.durationMs > 0) {
+          setProgress((response.data.playback.progressMs / response.data.playback.durationMs) * 100)
         }
       }
     } catch {
@@ -158,8 +197,15 @@ export function DeckMusic() {
     )
   }
 
-  // Not connected state
-  if (!loading && !user) {
+  // Check if we should show controls
+  const showControls = isAuthenticated && source === 'live'
+  
+  // Get display track info from cached playback
+  const displayTrack = cachedPlayback?.track
+  const isPlaying = cachedPlayback?.isPlaying ?? false
+
+  // Not connected and no cached data state
+  if (!loading && !user && !displayTrack) {
     return (
       <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg">
         <div className="mb-1.5 flex items-center gap-1.5">
@@ -174,23 +220,21 @@ export function DeckMusic() {
           </div>
           <div className="text-center">
             <div className="text-xs font-medium text-muted-foreground">
-              Not connected
+              {authAvailable ? "Not connected" : "No playback data"}
             </div>
-            <a
-              href="/api/spotify/auth"
-              className="text-xs text-green-500 hover:underline"
-            >
-              Connect Spotify
-            </a>
+            {authAvailable && authUrl && (
+              <a
+                href={authUrl}
+                className="text-xs text-green-500 hover:underline"
+              >
+                Connect Spotify
+              </a>
+            )}
           </div>
         </div>
       </div>
     )
   }
-
-  const currentTrack = playbackState?.item
-  const albumArt = currentTrack?.album?.images?.[0]?.url
-  const isPlaying = playbackState?.is_playing
 
   return (
     <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg">
@@ -205,9 +249,16 @@ export function DeckMusic() {
             />
           </div>
           <div>
-            <div className="text-sm font-semibold text-foreground">Music</div>
-            {user && (
-              <div className="text-xs text-muted-foreground">Spotify</div>
+            <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+              Music
+              {source === 'cache' && (
+                <Database className="size-2.5 text-muted-foreground" />
+              )}
+            </div>
+            {(user || source === 'cache') && (
+              <div className="text-xs text-muted-foreground">
+                {source === 'cache' ? 'Read-only' : 'Spotify'}
+              </div>
             )}
           </div>
         </div>
@@ -227,16 +278,16 @@ export function DeckMusic() {
 
       {/* Content */}
       <div className="flex flex-1 flex-col space-y-1.5">
-        {currentTrack ? (
+        {displayTrack ? (
           <>
             {/* Now Playing */}
             <div
               className={`relative flex items-center gap-2 rounded-lg bg-background/50 p-1.5 transition-all ${
-                isSkipping ? "scale-[0.98]" : ""
+                isSkipping && showControls ? "scale-[0.98]" : ""
               }`}
             >
               {/* Skip overlay */}
-              {isSkipping && (
+              {isSkipping && showControls && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/60 backdrop-blur-[2px]">
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {isSkipping === "next" ? "Next..." : "Previous..."}
@@ -245,10 +296,10 @@ export function DeckMusic() {
               )}
 
               {/* Album Art */}
-              {albumArt ? (
+              {displayTrack.imageUrl ? (
                 <Image
-                  src={albumArt}
-                  alt={currentTrack.album.name}
+                  src={displayTrack.imageUrl}
+                  alt={displayTrack.album}
                   width={40}
                   height={40}
                   className="shrink-0 rounded-md"
@@ -262,10 +313,10 @@ export function DeckMusic() {
               {/* Track Info */}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-medium">
-                  {currentTrack.name}
+                  {displayTrack.name}
                 </div>
                 <div className="truncate text-[10px] text-muted-foreground">
-                  {currentTrack.artists.map((a) => a.name).join(", ")}
+                  {displayTrack.artist}
                 </div>
               </div>
             </div>
@@ -273,44 +324,56 @@ export function DeckMusic() {
             {/* Progress Bar */}
             <div className="h-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-green-500 transition-all duration-1000"
+                className={`h-full transition-all duration-1000 ${showControls ? "bg-green-500" : "bg-green-500/50"}`}
                 style={{ width: `${progress}%` }}
               />
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleSkip("previous")}
-                className="h-10 w-10 min-h-[44px] min-w-[44px] touch-manipulation"
-              >
-                <SkipBack className="size-4" />
-              </Button>
-              <button
-                onClick={handlePlayPause}
-                className={`flex h-12 w-12 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-full transition-all active:scale-95 ${
-                  isPlaying
-                    ? "bg-green-500 text-white"
-                    : "bg-foreground text-background"
-                }`}
-              >
-                {isPlaying ? (
-                  <Pause className="size-5" />
-                ) : (
-                  <Play className="ml-0.5 size-5" />
-                )}
-              </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleSkip("next")}
-                className="h-10 w-10 min-h-[44px] min-w-[44px] touch-manipulation"
-              >
-                <SkipForward className="size-4" />
-              </Button>
-            </div>
+            {/* Controls - only show when authenticated */}
+            {showControls ? (
+              <div className="flex items-center justify-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleSkip("previous")}
+                  className="h-10 w-10 min-h-[44px] min-w-[44px] touch-manipulation"
+                >
+                  <SkipBack className="size-4" />
+                </Button>
+                <button
+                  onClick={handlePlayPause}
+                  className={`flex h-12 w-12 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-full transition-all active:scale-95 ${
+                    isPlaying
+                      ? "bg-green-500 text-white"
+                      : "bg-foreground text-background"
+                  }`}
+                >
+                  {isPlaying ? (
+                    <Pause className="size-5" />
+                  ) : (
+                    <Play className="ml-0.5 size-5" />
+                  )}
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleSkip("next")}
+                  className="h-10 w-10 min-h-[44px] min-w-[44px] touch-manipulation"
+                >
+                  <SkipForward className="size-4" />
+                </Button>
+              </div>
+            ) : authAvailable && authUrl ? (
+              /* Connect button for local mode */
+              <div className="flex items-center justify-center">
+                <a
+                  href={authUrl}
+                  className="rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600"
+                >
+                  Connect Spotify
+                </a>
+              </div>
+            ) : null}
           </>
         ) : (
           /* No track playing */
@@ -323,7 +386,7 @@ export function DeckMusic() {
                 No track playing
               </div>
               <div className="text-[10px] text-muted-foreground/70">
-                Start playback on any device
+                {showControls ? "Start playback on any device" : "No recent playback data"}
               </div>
             </div>
           </div>

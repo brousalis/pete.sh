@@ -1,6 +1,7 @@
-import { successResponse, errorResponse } from "@/lib/api/utils"
+import { NextResponse } from "next/server"
+import { successResponse, handleApiError } from "@/lib/api/utils"
 import { getSpotifyAdapter } from "@/lib/adapters"
-import { isProductionMode } from "@/lib/utils/mode"
+import { isProductionMode, isLocalMode } from "@/lib/utils/mode"
 
 /**
  * Get current playback state
@@ -9,29 +10,96 @@ export async function GET() {
   try {
     const adapter = getSpotifyAdapter()
     
-    // In production mode, read from cache without auth
+    // In production mode (no local services), read from cache
     if (isProductionMode()) {
       const nowPlaying = await adapter.getNowPlaying()
-      return successResponse(nowPlaying)
+      return successResponse({
+        playback: nowPlaying,
+        source: 'cache',
+        authenticated: false,
+        authAvailable: false,
+      })
     }
 
-    // In local mode, need to authenticate and fetch real data
+    // Local mode - try to authenticate
     if (!adapter.isConfigured()) {
-      return errorResponse("Spotify not configured", 400)
+      // Not configured - return cached data if available
+      try {
+        const cachedPlayback = await adapter.getNowPlaying()
+        return successResponse({
+          playback: cachedPlayback,
+          source: 'cache',
+          authenticated: false,
+          authAvailable: false,
+          message: 'Spotify not configured',
+        })
+      } catch {
+        return successResponse({
+          playback: { isPlaying: false, track: null, progressMs: 0, durationMs: 0 },
+          source: 'none',
+          authenticated: false,
+          authAvailable: false,
+          message: 'Spotify not configured',
+        })
+      }
     }
 
     const { authenticated } = await adapter.initializeWithTokens()
+    
     if (!authenticated) {
-      return errorResponse("Not authenticated with Spotify", 401)
+      // Not authenticated in local mode - return cached data with auth prompt
+      try {
+        const cachedPlayback = await adapter.getNowPlaying()
+        return NextResponse.json({
+          success: true,
+          data: {
+            playback: cachedPlayback,
+            source: 'cache',
+            authenticated: false,
+            authAvailable: isLocalMode(),
+            authUrl: '/api/spotify/auth',
+            message: 'Using cached data. Authenticate to get real-time updates.',
+          },
+        })
+      } catch {
+        return NextResponse.json({
+          success: true,
+          data: {
+            playback: { isPlaying: false, track: null, progressMs: 0, durationMs: 0 },
+            source: 'none',
+            authenticated: false,
+            authAvailable: isLocalMode(),
+            authUrl: '/api/spotify/auth',
+            message: 'Please authenticate to access Spotify.',
+          },
+        })
+      }
     }
 
+    // Authenticated - get live data
     const playbackState = await adapter.getPlaybackState()
-    return successResponse(playbackState)
+    
+    // Transform to consistent format
+    const nowPlaying = {
+      isPlaying: playbackState?.is_playing ?? false,
+      track: playbackState?.item ? {
+        name: playbackState.item.name,
+        artist: playbackState.item.artists.map(a => a.name).join(', '),
+        album: playbackState.item.album.name,
+        imageUrl: playbackState.item.album.images[0]?.url ?? '',
+      } : null,
+      progressMs: playbackState?.progress_ms ?? 0,
+      durationMs: playbackState?.item?.duration_ms ?? 0,
+    }
+    
+    return successResponse({
+      playback: nowPlaying,
+      source: 'live',
+      authenticated: true,
+      authAvailable: true,
+    })
   } catch (error) {
     console.error("[Spotify Player] Error:", error)
-    if (error instanceof Error && error.message === "TOKEN_EXPIRED") {
-      return errorResponse("Session expired", 401)
-    }
-    return errorResponse(error instanceof Error ? error.message : "Failed to get playback", 500)
+    return handleApiError(error)
   }
 }
