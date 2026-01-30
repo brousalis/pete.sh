@@ -7,24 +7,33 @@ import { google } from "googleapis"
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
 import type { CalendarEvent, CalendarEventsResponse } from "@/lib/types/calendar.types"
+import { getGoogleCalendarTokens, setGoogleCalendarTokens, clearGoogleCalendarTokens } from "./token-storage"
 
 /**
- * Helper function to load tokens from cookies and set them on the calendar service
+ * Helper function to load tokens and set them on the calendar service
+ * First checks file-based storage (for cross-origin requests from pete.sh)
+ * Falls back to cookies (for same-origin requests)
  * Proactively refreshes access token if missing or expired but refresh token exists
- * Returns the original access token for comparison after API calls
  */
 export async function loadCalendarTokensFromCookies(
   calendarService: CalendarService
 ): Promise<{ accessToken: string | null; refreshToken: string | null }> {
+  // First try file-based storage (works for cross-origin requests)
+  const fileTokens = getGoogleCalendarTokens()
+  
+  // Fall back to cookies if file storage is empty
   const cookieStore = await cookies()
-  let accessToken = cookieStore.get("google_calendar_access_token")?.value || null
-  const refreshToken = cookieStore.get("google_calendar_refresh_token")?.value || null
+  const cookieAccessToken = cookieStore.get("google_calendar_access_token")?.value || null
+  const cookieRefreshToken = cookieStore.get("google_calendar_refresh_token")?.value || null
+  
+  // Use file tokens if available, otherwise use cookies
+  let accessToken = fileTokens.accessToken || cookieAccessToken
+  const refreshToken = fileTokens.refreshToken || cookieRefreshToken
 
-  console.log("[CalendarService] Loading tokens from cookies:", {
-    hasAccessToken: !!accessToken,
-    hasRefreshToken: !!refreshToken,
-    accessTokenLength: accessToken?.length,
-    refreshTokenLength: refreshToken?.length,
+  console.log("[CalendarService] Loading tokens:", {
+    fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
+    fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
+    using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
   })
 
   // If we have a refresh token but no access token (or access token expired), refresh it
@@ -47,14 +56,23 @@ export async function loadCalendarTokensFromCookies(
         expiryDate: updatedCredentials.expiry_date,
       })
 
-      // Update the cookie with the new access token
+      // Update tokens in both file storage and cookies
       if (accessToken) {
         const expiresIn = updatedCredentials.expiry_date
           ? new Date(updatedCredentials.expiry_date)
           : new Date(Date.now() + 3600 * 1000) // 1 hour fallback
+        const newRefreshToken = updatedCredentials.refresh_token || refreshToken
 
         console.log("[CalendarService] Storing refreshed access token, expires:", expiresIn.toISOString())
 
+        // Save to file storage (for cross-origin requests)
+        setGoogleCalendarTokens({
+          access_token: accessToken,
+          refresh_token: newRefreshToken,
+          expiry_date: updatedCredentials.expiry_date,
+        })
+
+        // Also save to cookies (for same-origin requests as backup)
         cookieStore.set("google_calendar_access_token", accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -63,8 +81,6 @@ export async function loadCalendarTokensFromCookies(
           path: "/",
         })
 
-        // Update refresh token cookie if it changed (extend expiry)
-        const newRefreshToken = updatedCredentials.refresh_token || refreshToken
         cookieStore.set("google_calendar_refresh_token", newRefreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -86,6 +102,7 @@ export async function loadCalendarTokensFromCookies(
           refreshError?.code === 400 ||
           refreshError?.code === 401) {
         console.log("[CalendarService] Clearing invalid tokens")
+        clearGoogleCalendarTokens()
         cookieStore.delete("google_calendar_refresh_token")
         cookieStore.delete("google_calendar_access_token")
         return { accessToken: null, refreshToken: null }

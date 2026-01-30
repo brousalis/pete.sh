@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SpotifyService } from "@/lib/services/spotify.service"
+import { setSpotifyTokens } from "@/lib/services/token-storage"
 
 const spotifyService = new SpotifyService()
 
 /**
  * OAuth callback handler for Spotify
  * Exchanges the authorization code for access and refresh tokens
+ * 
+ * Stores tokens in:
+ * 1. File-based storage (for cross-origin requests from pete.sh to localhost)
+ * 2. httpOnly cookies (for same-origin requests as backup)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -69,7 +74,14 @@ export async function GET(request: NextRequest) {
     // Calculate expiration time
     const expiresAt = Date.now() + tokens.expires_in * 1000
 
-    // Store access token
+    // Store tokens in file-based storage (for cross-origin requests)
+    setSpotifyTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expiry_date: expiresAt,
+    })
+
+    // Also store in httpOnly cookies (for same-origin requests as backup)
     cookieStore.set("spotify_access_token", tokens.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

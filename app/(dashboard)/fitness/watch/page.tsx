@@ -24,6 +24,7 @@ import {
   HrChart,
 } from "@/components/dashboard/workout-analytics"
 import { EnhancedWorkoutDetailView } from "@/components/dashboard/enhanced-workout-detail"
+import { apiGet } from "@/lib/api/client"
 
 // Types
 interface AppleWorkout {
@@ -92,31 +93,26 @@ export default function AppleWatchPage() {
   const fetchData = useCallback(async () => {
     try {
       const [workoutsRes, dailyRes, summaryRes, trendsRes] = await Promise.all([
-        fetch('/api/apple-health/workout?limit=20'),
-        fetch('/api/apple-health/daily?days=7'),
-        fetch('/api/apple-health/summary?weeks=4'),
-        fetch('/api/apple-health/summary?type=hr-trends&weeks=4'),
+        apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=20'),
+        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=7'),
+        apiGet<{ weeks: WeeklySummary[] }>('/api/apple-health/summary?weeks=4'),
+        apiGet<{ trends: HrTrend[] }>('/api/apple-health/summary?type=hr-trends&weeks=4'),
       ])
 
-      const workoutsData = await workoutsRes.json()
-      const dailyData = await dailyRes.json()
-      const summaryData = await summaryRes.json()
-      const trendsData = await trendsRes.json()
-
-      if (workoutsData.success) {
-        setWorkouts(workoutsData.data || [])
+      if (workoutsRes.success) {
+        setWorkouts(workoutsRes.data || [])
       }
 
-      if (dailyData.success) {
-        setDailyMetrics(Array.isArray(dailyData.data) ? dailyData.data : [dailyData.data].filter(Boolean))
+      if (dailyRes.success) {
+        setDailyMetrics(Array.isArray(dailyRes.data) ? dailyRes.data : [dailyRes.data].filter((d): d is DailyMetrics => Boolean(d)))
       }
 
-      if (summaryData.success) {
-        setWeeklySummary(summaryData.data?.weeks || [])
+      if (summaryRes.success) {
+        setWeeklySummary(summaryRes.data?.weeks || [])
       }
 
-      if (trendsData.success) {
-        setHrTrends(trendsData.data?.trends || [])
+      if (trendsRes.success) {
+        setHrTrends(trendsRes.data?.trends || [])
       }
     } catch (error) {
       console.error('Error fetching Apple Watch data:', error)

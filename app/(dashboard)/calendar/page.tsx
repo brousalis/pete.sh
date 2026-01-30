@@ -18,8 +18,18 @@ import { cn } from "@/lib/utils"
 import { filterEvents, navigateDate } from "@/lib/utils/calendar-utils"
 import { format, isSameDay } from "date-fns"
 import { AnimatePresence, motion } from "framer-motion"
-import { AlertCircle, Calendar, RefreshCw } from "lucide-react"
+import { AlertCircle, Calendar, Database, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { apiGet } from "@/lib/api/client"
+
+interface CalendarResponse {
+  events: CalendarEvent[]
+  source: 'live' | 'cache' | 'none'
+  authenticated: boolean
+  authAvailable: boolean
+  authUrl?: string
+  message?: string
+}
 
 export default function CalendarPage() {
   // State
@@ -33,29 +43,26 @@ export default function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [showMiniCalendar, setShowMiniCalendar] = useState(true)
+  const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
+  const [authAvailable, setAuthAvailable] = useState(false)
+  const [authUrl, setAuthUrl] = useState<string | null>(null)
 
   // Fetch events
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/calendar/upcoming?maxResults=100")
+      const response = await apiGet<CalendarResponse>("/api/calendar/upcoming?maxResults=100")
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError("not_authenticated")
-          return
-        }
-        if (response.status === 400) {
-          setError("Google Calendar not configured")
-          return
-        }
-        throw new Error("Failed to fetch events")
+      if (!response.success) {
+        throw new Error(response.error || "Failed to fetch events")
       }
 
-      const data = await response.json()
-      if (data.success && data.data) {
-        setEvents(data.data)
+      if (response.data) {
+        setEvents(response.data.events || [])
+        setSource(response.data.source || 'none')
+        setAuthAvailable(response.data.authAvailable || false)
+        setAuthUrl(response.data.authUrl || null)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load calendar events")
@@ -180,8 +187,6 @@ export default function CalendarPage() {
 
   // Render error state
   if (error) {
-    const isNotAuthenticated = error === "not_authenticated"
-
     return (
       <div className="flex h-full items-center justify-center p-8">
         <div className="flex max-w-md flex-col items-center gap-4 text-center">
@@ -189,49 +194,55 @@ export default function CalendarPage() {
             <AlertCircle className="size-8 text-destructive" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">
-              {isNotAuthenticated
-                ? "Connect Your Calendar"
-                : "Unable to Load Calendar"}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              {isNotAuthenticated
-                ? "Please authorize access to your Google Calendar to view your events."
-                : error}
-            </p>
+            <h2 className="text-xl font-semibold">Unable to Load Calendar</h2>
+            <p className="mt-2 text-muted-foreground">{error}</p>
           </div>
-          {isNotAuthenticated ? (
-            <Button
-              onClick={() => (window.location.href = "/api/calendar/auth")}
-              className="mt-2"
-            >
-              <Calendar className="mr-2 size-4" />
-              Connect Google Calendar
-            </Button>
-          ) : (
-            <Button onClick={fetchEvents} variant="outline" className="mt-2">
-              <RefreshCw className="mr-2 size-4" />
-              Try Again
-            </Button>
-          )}
+          <Button onClick={fetchEvents} variant="outline" className="mt-2">
+            <RefreshCw className="mr-2 size-4" />
+            Try Again
+          </Button>
         </div>
       </div>
     )
   }
 
+  // Show connect prompt if no events and auth is available
+  const showConnectPrompt = events.length === 0 && authAvailable && (source === 'cache' || source === 'none')
+
   return (
     <div className="-m-3 flex h-[calc(100%+24px)] flex-col overflow-hidden sm:-m-5 sm:h-[calc(100%+40px)] md:-mx-6 md:-my-6 md:h-[calc(100%+48px)]">
       {/* Header */}
-      <CalendarHeader
-        currentDate={currentDate}
-        viewMode={viewMode}
-        searchQuery={searchQuery}
-        isLoading={loading}
-        onDateChange={handleDateChange}
-        onViewModeChange={setViewMode}
-        onSearchChange={setSearchQuery}
-        onRefresh={fetchEvents}
-      />
+      <div className="relative">
+        <CalendarHeader
+          currentDate={currentDate}
+          viewMode={viewMode}
+          searchQuery={searchQuery}
+          isLoading={loading}
+          onDateChange={handleDateChange}
+          onViewModeChange={setViewMode}
+          onSearchChange={setSearchQuery}
+          onRefresh={fetchEvents}
+        />
+        {/* Source indicator and auth button */}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {source === 'cache' && (
+            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground" title="Showing cached data">
+              <Database className="size-2.5" />
+              cached
+            </span>
+          )}
+          {authAvailable && !source.includes('live') && authUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => (window.location.href = authUrl)}
+              className="h-7 gap-1.5 text-xs"
+            >
+              Connect
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Main content area - optimized for iPad Mini horizontal (1024x768) */}
       <div className="flex flex-1 overflow-hidden">
@@ -302,6 +313,29 @@ export default function CalendarPage() {
                   <p className="text-sm text-muted-foreground">
                     Loading calendar...
                   </p>
+                </div>
+              </div>
+            ) : showConnectPrompt ? (
+              <div className="flex h-full items-center justify-center p-8">
+                <div className="flex max-w-md flex-col items-center gap-4 text-center">
+                  <div className="flex size-16 items-center justify-center rounded-full bg-muted">
+                    <Calendar className="size-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Connect Your Calendar</h2>
+                    <p className="mt-2 text-muted-foreground">
+                      Connect Google Calendar to see your events in real-time.
+                    </p>
+                  </div>
+                  {authUrl && (
+                    <Button
+                      onClick={() => (window.location.href = authUrl)}
+                      className="mt-2"
+                    >
+                      <Calendar className="mr-2 size-4" />
+                      Connect Google Calendar
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (

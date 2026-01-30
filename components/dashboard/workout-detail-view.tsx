@@ -9,7 +9,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { YouTubePlayer } from "@/components/ui/youtube-player"
-import { apiGet } from "@/lib/api/client"
+import { apiGet, apiPost } from "@/lib/api/client"
 import type { DayOfWeek, Exercise, Workout } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, PersonStanding, RotateCcw, StretchVertical, Video, VideoOff } from "lucide-react"
@@ -60,12 +60,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   const handleComplete = async () => {
     setIsCompleting(true)
     try {
-      const response = await fetch(`/api/fitness/workout/${day}/complete`, {
-        method: "POST",
-        body: JSON.stringify({ exercisesCompleted: Array.from(completedExercises) }),
-        headers: { "Content-Type": "application/json" },
+      const response = await apiPost(`/api/fitness/workout/${day}/complete`, {
+        exercisesCompleted: Array.from(completedExercises)
       })
-      if (!response.ok) throw new Error("Failed to mark workout complete")
+      if (!response.success) throw new Error("Failed to mark workout complete")
       toast.success("Workout completed!")
       onComplete?.()
     } catch (error) {

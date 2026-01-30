@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Music, Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { apiGet } from "@/lib/api/client"
 
 function SpotifyCallbackContent() {
   const router = useRouter()
@@ -31,12 +32,11 @@ function SpotifyCallbackContent() {
       }
 
       try {
-        // Exchange code for tokens via our API
-        const response = await fetch(`/api/spotify/callback?code=${code}&state=${state || ""}`)
-        const data = await response.json()
+        // Exchange code for tokens via our API (uses apiGet for proper routing in local mode)
+        const response = await apiGet(`/api/spotify/callback?code=${code}&state=${state || ""}`)
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to complete authorization")
+        if (!response.success) {
+          throw new Error(response.error || "Failed to complete authorization")
         }
 
         setStatus("success")

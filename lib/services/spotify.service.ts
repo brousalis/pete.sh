@@ -4,6 +4,7 @@
  */
 
 import { config } from "@/lib/config"
+import { getSpotifyTokens, setSpotifyTokens, clearSpotifyTokens } from "./token-storage"
 import type {
   SpotifyTokens,
   SpotifyUser,
@@ -614,19 +615,36 @@ export class SpotifyService {
 }
 
 /**
- * Helper function to load Spotify tokens from cookies
+ * Helper function to load Spotify tokens
+ * First checks file-based storage (for cross-origin requests from pete.sh)
+ * Falls back to cookies (for same-origin requests)
  */
 export async function loadSpotifyTokensFromCookies(
   spotifyService: SpotifyService,
   cookieStore: { get: (name: string) => { value: string } | undefined }
 ): Promise<{ accessToken: string | null; refreshToken: string | null; needsRefresh: boolean }> {
-  const accessToken = cookieStore.get("spotify_access_token")?.value || null
-  const refreshToken = cookieStore.get("spotify_refresh_token")?.value || null
-  const expiresAt = cookieStore.get("spotify_expires_at")?.value
+  // First try file-based storage (works for cross-origin requests)
+  const fileTokens = getSpotifyTokens()
+  
+  // Fall back to cookies if file storage is empty
+  const cookieAccessToken = cookieStore.get("spotify_access_token")?.value || null
+  const cookieRefreshToken = cookieStore.get("spotify_refresh_token")?.value || null
+  const cookieExpiresAt = cookieStore.get("spotify_expires_at")?.value
+  
+  // Use file tokens if available, otherwise use cookies
+  const accessToken = fileTokens.accessToken || cookieAccessToken
+  const refreshToken = fileTokens.refreshToken || cookieRefreshToken
+  const expiresAt = fileTokens.expiryDate || (cookieExpiresAt ? parseInt(cookieExpiresAt, 10) : null)
+
+  console.log("[SpotifyService] Loading tokens:", {
+    fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
+    fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
+    using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
+  })
 
   // Check if token is expired or about to expire (within 5 minutes)
   const needsRefresh = expiresAt
-    ? parseInt(expiresAt, 10) < Date.now() + 5 * 60 * 1000
+    ? expiresAt < Date.now() + 5 * 60 * 1000
     : !accessToken && !!refreshToken
 
   if (accessToken) {

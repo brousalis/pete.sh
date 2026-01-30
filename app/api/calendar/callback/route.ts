@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { google } from "googleapis"
 import { config } from "@/lib/config"
+import { setGoogleCalendarTokens } from "@/lib/services/token-storage"
 
 /**
  * OAuth callback handler for Google Calendar
  * This route handles the OAuth redirect from Google after user authorization
  *
- * Stores tokens in httpOnly cookies for security
+ * Stores tokens in:
+ * 1. File-based storage (for cross-origin requests from pete.sh to localhost)
+ * 2. httpOnly cookies (for same-origin requests as backup)
  */
 export async function GET(request: NextRequest) {
   // Get the app base URL for redirects (use NEXT_PUBLIC_APP_URL or fallback to localhost)
@@ -64,7 +67,14 @@ export async function GET(request: NextRequest) {
       expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
     })
 
-    // Store tokens in httpOnly cookies
+    // Store tokens in file-based storage (for cross-origin requests)
+    setGoogleCalendarTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expiry_date: tokens.expiry_date,
+    })
+
+    // Also store in httpOnly cookies (for same-origin requests as backup)
     const cookieStore = await cookies()
 
     // Store access token (expires when token expires, or in 1 hour as fallback)
