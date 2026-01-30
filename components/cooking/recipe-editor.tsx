@@ -116,7 +116,10 @@ export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
   ) => {
     setFormData((prev) => {
       const ingredients = [...(prev.ingredients || [])]
-      ingredients[index] = { ...ingredients[index], [field]: value }
+      const existing = ingredients[index]
+      if (existing) {
+        ingredients[index] = { ...existing, [field]: value }
+      }
       return { ...prev, ingredients }
     })
   }
@@ -148,7 +151,10 @@ export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
   const handleInstructionChange = (index: number, instruction: string) => {
     setFormData((prev) => {
       const instructions = [...(prev.instructions || [])]
-      instructions[index] = { ...instructions[index], instruction }
+      const existing = instructions[index]
+      if (existing) {
+        instructions[index] = { ...existing, instruction }
+      }
       return { ...prev, instructions }
     })
   }

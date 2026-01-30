@@ -125,6 +125,7 @@ export function ConnectivityProvider({
   const checkConnectivity = useCallback(async (): Promise<boolean> => {
     // If no local URL configured, we can't check
     if (!localUrl) {
+      console.log("[Connectivity] No local URL configured (NEXT_PUBLIC_LOCAL_API_URL not set)")
       setState((prev) => ({
         ...prev,
         isInitialized: true,
@@ -135,6 +136,7 @@ export function ConnectivityProvider({
       return false
     }
 
+    console.log(`[Connectivity] Checking local availability at ${localUrl}/api/health`)
     setState((prev) => ({ ...prev, isChecking: true }))
 
     try {
@@ -156,6 +158,7 @@ export function ConnectivityProvider({
       }
 
       const data = await response.json()
+      console.log("[Connectivity] Health check response:", data)
 
       // Verify it's the right instance
       if (data.instanceId !== "petehome-local") {
@@ -164,6 +167,7 @@ export function ConnectivityProvider({
 
       // Only in local mode on that instance should we enable controls
       const isLocalInstance = data.mode === "local"
+      console.log(`[Connectivity] Local mode: ${isLocalInstance}, setting apiBaseUrl to: ${isLocalInstance ? localUrl : "(relative)"}`)
 
       if (isMountedRef.current) {
         setState((prev) => ({
@@ -182,6 +186,7 @@ export function ConnectivityProvider({
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error"
+      console.log(`[Connectivity] Health check failed: ${errorMessage}`)
 
       if (isMountedRef.current) {
         setState((prev) => ({
@@ -316,6 +321,7 @@ export function ConnectivityProvider({
       effectiveApiBaseUrl = ""
     }
 
+    console.log(`[Connectivity] Syncing API base URL: "${effectiveApiBaseUrl || '(relative)'}" (forced: ${forcedMode || 'none'})`)
     setApiBaseUrl(effectiveApiBaseUrl)
   }, [state.apiBaseUrl, forcedMode, localUrl])
 

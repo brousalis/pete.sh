@@ -37,6 +37,9 @@ let currentApiBaseUrl = ""
  * Set the API base URL (called by ConnectivityProvider)
  */
 export function setApiBaseUrl(url: string): void {
+  if (currentApiBaseUrl !== url) {
+    console.log(`[API Client] Base URL changed: "${currentApiBaseUrl || '(relative)'}" -> "${url || '(relative)'}"`)
+  }
   currentApiBaseUrl = url
 }
 

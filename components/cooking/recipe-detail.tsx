@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RecipeVersionHistory } from './recipe-version-history'
 import { apiGet, apiDelete } from '@/lib/api/client'
+import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import type { RecipeWithIngredients, RecipeVersion } from '@/lib/types/cooking.types'
 

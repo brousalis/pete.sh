@@ -184,12 +184,27 @@
         },
         "tuesday": {},
         "wednesday": {},
-        "thursday": {},
+        "thursday": {
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": true,
+            "completedAt": "2026-01-29T21:56:46.535Z",
+            "exercisesCompleted": [
+              "thu-run",
+              "thu-flush"
+            ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-01-29T21:56:49.277Z"
+          }
+        },
         "friday": {},
         "saturday": {},
         "sunday": {}
       }
     }
   ],
-  "updatedAt": "2026-01-28T00:42:11.924Z"
+  "updatedAt": "2026-01-30T01:44:42.663Z"
 }

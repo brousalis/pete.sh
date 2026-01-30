@@ -17,6 +17,14 @@ import type {
   DailyRoutine,
   DayOfWeek 
 } from '@/lib/types/fitness.types'
+import type {
+  RecipeSource,
+  RecipeDifficulty,
+  RecipeStep,
+  WeeklyMeals,
+  ShoppingListStatus,
+  ShoppingListItem,
+} from '@/lib/types/cooking.types'
 
 // Service name type
 export type ServiceName = 'spotify' | 'hue' | 'cta' | 'calendar' | 'fitness'
@@ -534,6 +542,151 @@ export interface AppleHealthDailyMetricsInsert {
   created_at?: string
 }
 
+// Cooking-related types
+export interface RecipeRow {
+  id: string
+  name: string
+  description: string | null
+  source: RecipeSource
+  source_url: string | null
+  prep_time: number | null
+  cook_time: number | null
+  servings: number | null
+  difficulty: RecipeDifficulty | null
+  tags: string[]
+  image_url: string | null
+  instructions: RecipeStep[] | Record<string, unknown>
+  notes: string | null
+  is_favorite: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface RecipeInsert {
+  id?: string
+  name: string
+  description?: string | null
+  source?: RecipeSource
+  source_url?: string | null
+  prep_time?: number | null
+  cook_time?: number | null
+  servings?: number | null
+  difficulty?: RecipeDifficulty | null
+  tags?: string[]
+  image_url?: string | null
+  instructions?: RecipeStep[] | Record<string, unknown>
+  notes?: string | null
+  is_favorite?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface RecipeIngredientRow {
+  id: string
+  recipe_id: string
+  name: string
+  amount: number | null
+  unit: string | null
+  notes: string | null
+  order_index: number
+  created_at: string
+}
+
+export interface RecipeIngredientInsert {
+  id?: string
+  recipe_id: string
+  name: string
+  amount?: number | null
+  unit?: string | null
+  notes?: string | null
+  order_index: number
+  created_at?: string
+}
+
+export interface RecipeVersionRow {
+  id: string
+  recipe_id: string
+  version_number: number
+  commit_message: string | null
+  recipe_snapshot: Record<string, unknown>
+  created_by: string | null
+  created_at: string
+}
+
+export interface RecipeVersionInsert {
+  id?: string
+  recipe_id: string
+  version_number: number
+  commit_message?: string | null
+  recipe_snapshot: Record<string, unknown>
+  created_by?: string | null
+  created_at?: string
+}
+
+export interface MealPlanRow {
+  id: string
+  week_start_date: string
+  year: number
+  week_number: number
+  meals: WeeklyMeals | Record<string, unknown>
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MealPlanInsert {
+  id?: string
+  week_start_date?: string
+  year: number
+  week_number: number
+  meals: WeeklyMeals | Record<string, unknown>
+  notes?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ShoppingListRow {
+  id: string
+  meal_plan_id: string
+  items: ShoppingListItem[] | Record<string, unknown>[]
+  status: ShoppingListStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface ShoppingListInsert {
+  id?: string
+  meal_plan_id: string
+  items: ShoppingListItem[] | Record<string, unknown>[]
+  status?: ShoppingListStatus
+  created_at?: string
+  updated_at?: string
+}
+
+export interface TraderJoesRecipeRow {
+  id: string
+  tj_recipe_id: string | null
+  name: string
+  url: string
+  category: string | null
+  image_url: string | null
+  recipe_data: Record<string, unknown>
+  last_scraped_at: string | null
+  created_at: string
+}
+
+export interface TraderJoesRecipeInsert {
+  id?: string
+  tj_recipe_id?: string | null
+  name: string
+  url: string
+  category?: string | null
+  image_url?: string | null
+  recipe_data: Record<string, unknown>
+  last_scraped_at?: string | null
+  created_at?: string
+}
+
 // Database interface for Supabase client
 export interface Database {
   public: {
@@ -622,6 +775,37 @@ export interface Database {
         Row: AppleHealthDailyMetricsRow
         Insert: AppleHealthDailyMetricsInsert
         Update: Partial<AppleHealthDailyMetricsInsert>
+      }
+      // Cooking tables
+      recipes: {
+        Row: RecipeRow
+        Insert: RecipeInsert
+        Update: Partial<RecipeInsert>
+      }
+      recipe_ingredients: {
+        Row: RecipeIngredientRow
+        Insert: RecipeIngredientInsert
+        Update: Partial<RecipeIngredientInsert>
+      }
+      recipe_versions: {
+        Row: RecipeVersionRow
+        Insert: RecipeVersionInsert
+        Update: Partial<RecipeVersionInsert>
+      }
+      meal_plans: {
+        Row: MealPlanRow
+        Insert: MealPlanInsert
+        Update: Partial<MealPlanInsert>
+      }
+      shopping_lists: {
+        Row: ShoppingListRow
+        Insert: ShoppingListInsert
+        Update: Partial<ShoppingListInsert>
+      }
+      trader_joes_recipes: {
+        Row: TraderJoesRecipeRow
+        Insert: TraderJoesRecipeInsert
+        Update: Partial<TraderJoesRecipeInsert>
       }
     }
     Views: {

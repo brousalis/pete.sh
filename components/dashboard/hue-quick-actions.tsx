@@ -26,6 +26,10 @@ interface HueQuickActionsProps {
   favoriteSceneNames?: string[]
   /** When true, all controls are disabled (production mode) */
   isReadOnly?: boolean
+  /** Zone ID to target for brightness control (defaults to all lights) */
+  brightnessZoneId?: string
+  /** Zone name to display for brightness control */
+  brightnessZoneName?: string
 }
 
 const presetBrightness = [
@@ -40,6 +44,8 @@ export function HueQuickActions({
   onRefresh,
   favoriteSceneNames = ["pete red", "pete work"],
   isReadOnly = false,
+  brightnessZoneId,
+  brightnessZoneName,
 }: HueQuickActionsProps) {
   const [isTogglingAll, setIsTogglingAll] = useState(false)
   const [activatingScene, setActivatingScene] = useState<string | null>(null)
@@ -57,6 +63,10 @@ export function HueQuickActions({
       (name) => scene.name.toLowerCase().includes(name.toLowerCase())
     )
   )
+
+  // Determine the zone ID for brightness control
+  // Priority: 1) Explicit prop, 2) Zone from first favorite scene
+  const effectiveBrightnessZoneId = brightnessZoneId || favoriteScenes[0]?.group
 
   const handleToggleAll = async (on: boolean) => {
     if (isReadOnly) {
@@ -81,11 +91,16 @@ export function HueQuickActions({
       toast.error("Controls disabled in live view mode")
       return
     }
+    if (!effectiveBrightnessZoneId) {
+      toast.error("No zone configured for brightness control")
+      return
+    }
     setBrightness(value)
     try {
-      const response = await apiPost("/api/hue/all", { on: true, brightness: value })
+      const response = await apiPost(`/api/hue/zones/${effectiveBrightnessZoneId}/brightness`, { brightness: value })
       if (!response.success) throw new Error("Failed to set brightness")
-      toast.success(`Brightness set to ${Math.round((value / 254) * 100)}%`)
+      const targetName = brightnessZoneName || "Office"
+      toast.success(`${targetName} brightness set to ${Math.round((value / 254) * 100)}%`)
       await onRefresh()
     } catch {
       toast.error("Failed to set brightness")
@@ -107,8 +122,12 @@ export function HueQuickActions({
     }
     const value = values[0]
     if (value === undefined) return
+    if (!effectiveBrightnessZoneId) {
+      toast.error("No zone configured for brightness control")
+      return
+    }
     try {
-      const response = await apiPost("/api/hue/all", { on: true, brightness: value })
+      const response = await apiPost(`/api/hue/zones/${effectiveBrightnessZoneId}/brightness`, { brightness: value })
       if (!response.success) throw new Error("Failed to set brightness")
       await onRefresh()
     } catch {
@@ -245,10 +264,11 @@ export function HueQuickActions({
         </div>
       )}
 
-      {/* Brightness Presets */}
+      {/* Brightness Presets - Only affects the target zone */}
+      {effectiveBrightnessZoneId && (
       <div className="space-y-3">
         <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Brightness
+          {brightnessZoneName || "Office"} Brightness
         </h3>
         <div className="flex flex-wrap items-center gap-3">
           {presetBrightness.map((preset) => {
@@ -292,6 +312,7 @@ export function HueQuickActions({
           </div>
         )}
       </div>
+      )}
     </motion.div>
   )
 }

@@ -150,7 +150,7 @@ export function RecipeList({ onRecipeClick, onNewRecipe, className }: RecipeList
                 variant={filters.is_favorite ? 'default' : 'outline'}
                 size="sm"
                 onClick={() =>
-                  handleFilterChange('is_favorite', filters.is_favorite ? undefined : true)
+                  handleFilterChange('is_favorite', filters.is_favorite ? undefined : 'true')
                 }
                 className="h-8 text-xs"
               >

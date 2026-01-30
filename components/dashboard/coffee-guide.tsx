@@ -26,11 +26,18 @@ const roastColors: Record<RoastLevel, string> = {
   dark: 'bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-300',
 }
 
+function getInitialRecipe() {
+  return coffeeService.getRecommendedRecipe()
+}
+
 export function CoffeeGuide() {
-  const [method, setMethod] = useState<BrewMethod>('moccamaster')
-  const [cupSize, setCupSize] = useState<CupSize>('8-cup')
-  const [roast, setRoast] = useState<RoastLevel>('medium')
-  const [selectedRecipe, setSelectedRecipe] = useState<CoffeeRecipe | null>(null)
+  const [method, setMethod] = useState<BrewMethod>(() => getInitialRecipe().method)
+  const [cupSize, setCupSize] = useState<CupSize>(() => getInitialRecipe().cupSize)
+  const [roast, setRoast] = useState<RoastLevel>(() => getInitialRecipe().roast)
+  const [selectedRecipe, setSelectedRecipe] = useState<CoffeeRecipe | null>(() => {
+    const init = getInitialRecipe()
+    return coffeeService.getRecipe(init.method, init.cupSize, init.roast)
+  })
 
   const cupSizes = coffeeService.getCupSizes(method)
   const roastStrategies = coffeeService.getRoastStrategies()
@@ -38,7 +45,7 @@ export function CoffeeGuide() {
   const switchDoses = coffeeService.getSwitchDoses()
   const moccaDoses = coffeeService.getMoccamasterDoses()
 
-  // Update cup size when method changes
+  // Update cup size when method changes (new method may not support current size)
   useEffect(() => {
     const sizes = coffeeService.getCupSizes(method)
     if (!sizes.find((s) => s.value === cupSize) && sizes[0]) {
@@ -51,14 +58,6 @@ export function CoffeeGuide() {
     const recipe = coffeeService.getRecipe(method, cupSize, roast)
     setSelectedRecipe(recipe)
   }, [method, cupSize, roast])
-
-  // Set initial recommended recipe
-  useEffect(() => {
-    const recommended = coffeeService.getRecommendedRecipe()
-    setMethod(recommended.method)
-    setCupSize(recommended.cupSize)
-    setRoast(recommended.roast)
-  }, [])
 
   return (
     <div className="grid gap-3 lg:grid-cols-2">
@@ -100,6 +99,7 @@ export function CoffeeGuide() {
             {/* Method Toggle */}
             <div className="flex gap-1.5">
               <Button
+                type="button"
                 variant={method === 'moccamaster' ? 'default' : 'outline'}
                 onClick={() => setMethod('moccamaster')}
                 className={`flex-1 gap-1.5 h-8 text-xs ${method === 'moccamaster' ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
@@ -109,6 +109,7 @@ export function CoffeeGuide() {
                 Moccamaster
               </Button>
               <Button
+                type="button"
                 variant={method === 'switch' ? 'default' : 'outline'}
                 onClick={() => setMethod('switch')}
                 className={`flex-1 gap-1.5 h-8 text-xs ${method === 'switch' ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
@@ -128,6 +129,7 @@ export function CoffeeGuide() {
                   {cupSizes.map((size) => (
                     <Button
                       key={size.value}
+                      type="button"
                       variant={cupSize === size.value ? 'default' : 'outline'}
                       onClick={() => setCupSize(size.value)}
                       className={`h-7 px-2 text-[11px] ${cupSize === size.value ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
@@ -146,6 +148,7 @@ export function CoffeeGuide() {
                   {(['light', 'medium', 'dark'] as RoastLevel[]).map((r) => (
                     <Button
                       key={r}
+                      type="button"
                       variant={roast === r ? 'default' : 'outline'}
                       onClick={() => setRoast(r)}
                       className={`h-7 px-2.5 text-[11px] capitalize ${roast === r ? 'bg-amber-600 hover:bg-amber-700' : ''}`}

@@ -283,6 +283,8 @@ export function HueControls() {
           onRefresh={fetchData}
           favoriteSceneNames={["pete red", "pete work"]}
           isReadOnly={isReadOnly}
+          brightnessZoneId={zones.find((z) => z.name.toLowerCase().includes("office"))?.id}
+          brightnessZoneName="Office"
         />
       </motion.div>
 
