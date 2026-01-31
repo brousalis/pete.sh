@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
-import { apiGet, apiPost } from "@/lib/api/client"
+import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -60,6 +60,18 @@ export function DeckMusic() {
 
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
+  
+  // Compute full auth URL based on API base (for cross-origin local mode)
+  // Include returnTo param so localhost knows to redirect back to pete.sh
+  const fullAuthUrl = authUrl ? (() => {
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}${authUrl}`
+    // If we're on a different origin (e.g., pete.sh hitting localhost), include returnTo
+    if (typeof window !== 'undefined' && baseUrl && !window.location.origin.includes('localhost')) {
+      return `${url}?returnTo=${encodeURIComponent(window.location.origin)}`
+    }
+    return url
+  })() : null
 
   // Fetch user profile
   const fetchUser = useCallback(async () => {
@@ -222,9 +234,9 @@ export function DeckMusic() {
             <div className="text-xs font-medium text-muted-foreground">
               {authAvailable ? "Not connected" : "No playback data"}
             </div>
-            {authAvailable && authUrl && (
+            {authAvailable && fullAuthUrl && (
               <a
-                href={authUrl}
+                href={fullAuthUrl}
                 className="text-xs text-green-500 hover:underline"
               >
                 Connect Spotify
@@ -363,11 +375,11 @@ export function DeckMusic() {
                   <SkipForward className="size-4" />
                 </Button>
               </div>
-            ) : authAvailable && authUrl ? (
+            ) : authAvailable && fullAuthUrl ? (
               /* Connect button for local mode */
               <div className="flex items-center justify-center">
                 <a
-                  href={authUrl}
+                  href={fullAuthUrl}
                   className="rounded-full bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600"
                 >
                   Connect Spotify

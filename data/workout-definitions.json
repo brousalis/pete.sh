@@ -132,10 +132,7 @@
         }
       ]
     },
-    "notes": [
-      "2-Hour Pro Block: Skill (20m) + Lift (50m) + Bike (40m) + Mobility (15m)",
-      "Stop 1 rep before failure"
-    ]
+    "notes": ["2-Hour Pro Block: Skill (20m) + Lift (50m) + Bike (40m) + Mobility (15m)", "Stop 1 rep before failure"]
   },
   "tuesday": {
     "id": "tuesday-core-posture",
@@ -229,9 +226,7 @@
         }
       ]
     },
-    "notes": [
-      "2-Hour Pro Block structure"
-    ]
+    "notes": ["2-Hour Pro Block structure"]
   },
   "wednesday": {
     "id": "wednesday-fat-incinerator",
@@ -265,10 +260,7 @@
         "youtubeVideoId": "VzIcGAgBiaM"
       }
     ],
-    "notes": [
-      "Cushioned Running shoes required",
-      "This is the biggest calorie burner of the week"
-    ]
+    "notes": ["Cushioned Running shoes required", "This is the biggest calorie burner of the week"]
   },
   "thursday": {
     "id": "thursday-endurance",
@@ -291,10 +283,7 @@
         "notes": "20 Mins Stationary Bike. Flushes lactic acid from the run."
       }
     ],
-    "notes": [
-      "If shins hurt, switch to Elliptical",
-      "Recovery bike flushes lactic acid"
-    ]
+    "notes": ["If shins hurt, switch to Elliptical", "Recovery bike flushes lactic acid"]
   },
   "friday": {
     "id": "friday-shin-saver-circuit",
@@ -317,7 +306,7 @@
           "reps": 15,
           "form": "Palms down, lift knuckles",
           "notes": "Elbow Armor rehab",
-          "youtubeVideoId": "N_8Vf_X_sR0"
+          "youtubeVideoId": "2WP49wiI2vg"
         },
         {
           "id": "fri-warmup-3",
@@ -388,10 +377,7 @@
         }
       ]
     },
-    "notes": [
-      "4 Rounds: A -> B -> C -> D with Zero Rest. Rest 2 mins after D. Repeat 4x",
-      "2-Hour Pro Block structure"
-    ]
+    "notes": ["4 Rounds: A -> B -> C -> D with Zero Rest. Rest 2 mins after D. Repeat 4x", "2-Hour Pro Block structure"]
   },
   "saturday": {
     "id": "saturday-hiit-sprints",
@@ -435,10 +421,7 @@
         "youtubeVideoId": "cub3xhJXsAA"
       }
     ],
-    "notes": [
-      "Cushioned Running shoes required",
-      "0-1% Incline only for Achilles safety"
-    ]
+    "notes": ["Cushioned Running shoes required", "0-1% Incline only for Achilles safety"]
   },
   "sunday": {
     "id": "sunday-active-recovery",

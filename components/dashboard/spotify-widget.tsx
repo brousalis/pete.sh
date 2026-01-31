@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
-import { apiGet, apiPost } from "@/lib/api/client"
+import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -68,6 +68,18 @@ export function SpotifyWidget() {
   
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
+  
+  // Compute full auth URL based on API base (for cross-origin local mode)
+  // Include returnTo param so localhost knows to redirect back to pete.sh
+  const fullAuthUrl = authUrl ? (() => {
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}${authUrl}`
+    // If we're on a different origin (e.g., pete.sh hitting localhost), include returnTo
+    if (typeof window !== 'undefined' && baseUrl && !window.location.origin.includes('localhost')) {
+      return `${url}?returnTo=${encodeURIComponent(window.location.origin)}`
+    }
+    return url
+  })() : null
 
   // Fetch user profile
   const fetchUser = useCallback(async () => {

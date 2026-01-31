@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Music, Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { apiGet } from "@/lib/api/client"
 
+interface CallbackResponse {
+  success: boolean
+  returnTo?: string
+  error?: string
+}
+
 function SpotifyCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -32,16 +38,30 @@ function SpotifyCallbackContent() {
       }
 
       try {
-        // Exchange code for tokens via our API (uses apiGet for proper routing in local mode)
-        const response = await apiGet(`/api/spotify/callback?code=${code}&state=${state || ""}`)
+        // Exchange code for tokens via our API
+        // Note: This runs on localhost after Spotify redirects here
+        const response = await fetch(`/api/spotify/callback?code=${code}&state=${state || ""}`)
+        const data: CallbackResponse = await response.json()
 
-        if (!response.success) {
-          throw new Error(response.error || "Failed to complete authorization")
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to complete authorization")
         }
 
         setStatus("success")
-        setMessage("Connected to Spotify!")
-        setTimeout(() => router.push("/music?spotify=connected"), 1500)
+        
+        // Check if we should redirect back to pete.sh
+        if (data.returnTo) {
+          setMessage("Connected! Redirecting back...")
+          setTimeout(() => {
+            // Redirect back to pete.sh with success param
+            const returnUrl = new URL("/music", data.returnTo)
+            returnUrl.searchParams.set("spotify", "connected")
+            window.location.href = returnUrl.toString()
+          }, 1500)
+        } else {
+          setMessage("Connected to Spotify!")
+          setTimeout(() => router.push("/music?spotify=connected"), 1500)
+        }
       } catch (err) {
         setStatus("error")
         setMessage(err instanceof Error ? err.message : "Failed to connect")

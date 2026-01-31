@@ -110,7 +110,14 @@ export async function GET(request: NextRequest) {
       path: "/",
     })
 
-    return NextResponse.json({ success: true })
+    // Get and clear the returnTo URL if set (for redirecting back to pete.sh)
+    const returnTo = cookieStore.get("spotify_return_to")?.value
+    if (returnTo) {
+      cookieStore.delete("spotify_return_to")
+      console.log("[Spotify Callback] Will redirect to:", returnTo)
+    }
+
+    return NextResponse.json({ success: true, returnTo })
   } catch (error) {
     console.error("[Spotify Callback] Error:", error)
     return NextResponse.json(

@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SpotifyService } from "@/lib/services/spotify.service"
+import { getSpotifyTokens } from "@/lib/services/token-storage"
 
 const spotifyService = new SpotifyService()
 
 /**
  * Initiate Spotify OAuth flow
  * Redirects user to Spotify's authorization page
+ * 
+ * Supports a `returnTo` query param to redirect back after OAuth
+ * (useful when initiating from pete.sh via localhost)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     if (!spotifyService.isConfigured()) {
       return NextResponse.json(
@@ -17,14 +21,36 @@ export async function GET() {
       )
     }
 
-    // Check if we already have a valid token
     const cookieStore = await cookies()
-    const accessToken = cookieStore.get("spotify_access_token")?.value
-    const expiresAt = cookieStore.get("spotify_expires_at")?.value
+    
+    // Check if we already have valid tokens (in file storage or cookies)
+    const fileTokens = getSpotifyTokens()
+    const cookieAccessToken = cookieStore.get("spotify_access_token")?.value
+    const cookieExpiresAt = cookieStore.get("spotify_expires_at")?.value
+    
+    const hasValidToken = (fileTokens.accessToken && fileTokens.expiryDate && fileTokens.expiryDate > Date.now()) ||
+                          (cookieAccessToken && cookieExpiresAt && parseInt(cookieExpiresAt, 10) > Date.now())
 
     // If we have a valid non-expired token, redirect to music page
-    if (accessToken && expiresAt && parseInt(expiresAt, 10) > Date.now()) {
-      return NextResponse.redirect(new URL("/music?spotify=connected", process.env.NEXT_PUBLIC_APP_URL || "http://127.0.0.1:3000"))
+    if (hasValidToken) {
+      const returnTo = request.nextUrl.searchParams.get("returnTo")
+      if (returnTo) {
+        return NextResponse.redirect(new URL("/music?spotify=connected", returnTo))
+      }
+      return NextResponse.redirect(new URL("/music?spotify=connected", "http://127.0.0.1:3000"))
+    }
+
+    // Store returnTo URL if provided (for redirecting back after OAuth)
+    const returnTo = request.nextUrl.searchParams.get("returnTo") || request.headers.get("referer")
+    if (returnTo && returnTo.includes("pete.sh")) {
+      cookieStore.set("spotify_return_to", returnTo, {
+        httpOnly: true,
+        secure: false, // Need to be accessible from localhost
+        sameSite: "lax",
+        maxAge: 60 * 10, // 10 minutes
+        path: "/",
+      })
+      console.log("[Spotify Auth] Stored returnTo URL:", returnTo)
     }
 
     // Generate a state parameter for CSRF protection

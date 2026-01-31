@@ -43,7 +43,7 @@ import type {
   SpotifyTrack,
   SpotifyRepeatMode,
 } from "@/lib/types/spotify.types"
-import { apiGet, apiPost } from "@/lib/api/client"
+import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
 
 interface SpotifyPlayerProps {
   onAuthRequired?: () => void
@@ -104,6 +104,18 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
+  
+  // Compute full auth URL based on API base (for cross-origin local mode)
+  // Include returnTo param so localhost knows to redirect back to pete.sh
+  const fullAuthUrl = authUrl ? (() => {
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}${authUrl}`
+    // If we're on a different origin (e.g., pete.sh hitting localhost), include returnTo
+    if (typeof window !== 'undefined' && baseUrl && !window.location.origin.includes('localhost')) {
+      return `${url}?returnTo=${encodeURIComponent(window.location.origin)}`
+    }
+    return url
+  })() : null
 
   // Fetch user profile
   const fetchUser = useCallback(async () => {
@@ -425,9 +437,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
             </div>
           </div>
         </div>
-        {authAvailable && authUrl && (
+        {authAvailable && fullAuthUrl && (
           <a
-            href={authUrl}
+            href={fullAuthUrl}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-3 font-medium text-white transition-colors hover:bg-green-600"
           >
             <Music className="size-5" />
@@ -472,9 +484,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
         </div>
         <div className="flex items-center gap-1">
           {/* Connect button when auth is available but not authenticated */}
-          {authAvailable && !isAuthenticated && authUrl && (
+          {authAvailable && !isAuthenticated && fullAuthUrl && (
             <Button variant="outline" size="sm" asChild className="h-8 gap-1.5 text-xs">
-              <a href={authUrl}>Connect</a>
+              <a href={fullAuthUrl}>Connect</a>
             </Button>
           )}
           <Button variant="ghost" size="icon" className="size-8" onClick={() => { fetchPlayback(true); fetchDevices(); }}>
