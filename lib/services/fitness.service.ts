@@ -330,19 +330,16 @@ export class FitnessService {
   }
 
   /**
-   * Get consistency stats
+   * Get consistency stats for a given routine (and optional workout definitions).
+   * Used by the adapter when routine/defs come from Supabase.
    */
-  async getConsistencyStats(): Promise<ConsistencyStats> {
-    const routine = await this.getRoutine()
-    if (!routine) {
-      throw new Error("No routine found")
-    }
+  async getConsistencyStatsForRoutine(
+    routine: WeeklyRoutine,
+    workoutDefinitions?: Record<DayOfWeek, Workout>
+  ): Promise<ConsistencyStats> {
+    const defs = workoutDefinitions ?? (await this.getWorkoutDefinitions())
 
-    // Calculate streaks and completion rates
     const now = new Date()
-    const currentWeek = this.getCurrentWeekNumber()
-    const weeksToCheck = 4 // Last 4 weeks
-
     let totalWorkoutDays = 0
     let completedWorkoutDays = 0
     let totalMorningDays = 0
@@ -384,16 +381,13 @@ export class FitnessService {
         tempStreak = 0
       }
 
-      // Count routines
       totalMorningDays++
       if (dayData?.morningRoutine?.completed) completedMorningDays++
 
       totalNightDays++
       if (dayData?.nightRoutine?.completed) completedNightDays++
 
-      // Check if workout exists for this day
-      const workoutDefinitions = await this.getWorkoutDefinitions()
-      if (workoutDefinitions[dayOfWeek]) {
+      if (defs[dayOfWeek]) {
         totalWorkoutDays++
         if (dayData?.workout?.completed) completedWorkoutDays++
       }
@@ -420,5 +414,17 @@ export class FitnessService {
         nightRoutines: completedNightDays,
       },
     }
+  }
+
+  /**
+   * Get consistency stats (uses local JSON routine only).
+   * Prefer using the adapter in production so routine/defs come from Supabase.
+   */
+  async getConsistencyStats(): Promise<ConsistencyStats> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error("No routine found")
+    }
+    return this.getConsistencyStatsForRoutine(routine)
   }
 }

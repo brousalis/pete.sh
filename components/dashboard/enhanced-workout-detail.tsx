@@ -218,16 +218,16 @@ function TimeSeriesChart({
   // Generate smooth paths using bezier curves
   const generateSmoothPath = (points: { x: number; y: number }[]) => {
     if (points.length < 2) return ''
-    
+
     let path = `M ${points[0].x},${points[0].y}`
-    
+
     for (let i = 1; i < points.length; i++) {
       const prev = points[i - 1]
       const curr = points[i]
       const cpX = (prev.x + curr.x) / 2
       path += ` Q ${cpX},${prev.y} ${cpX},${(prev.y + curr.y) / 2} Q ${cpX},${curr.y} ${curr.x},${curr.y}`
     }
-    
+
     return path
   }
 
@@ -596,12 +596,12 @@ function SplitsTable({ splits, avgPace, avgHr, className }: SplitsTableProps) {
         const barWidth = getPaceBarWidth(split.avgPace)
 
         return (
-          <div 
+          <div
             key={split.splitNumber}
             className={cn(
               "relative rounded-lg p-3 border transition-colors",
-              isFastest ? "border-green-500/50 bg-green-500/5" : 
-              isSlowest ? "border-red-500/30 bg-red-500/5" : 
+              isFastest ? "border-green-500/50 bg-green-500/5" :
+              isSlowest ? "border-red-500/30 bg-red-500/5" :
               "border-border/30 bg-muted/20"
             )}
           >
@@ -616,7 +616,7 @@ function SplitsTable({ splits, avgPace, avgHr, className }: SplitsTableProps) {
                   </Badge>
                 )}
               </div>
-              <Badge 
+              <Badge
                 variant={split.paceVsAvg < 0 ? "default" : split.paceVsAvg > 0 ? "secondary" : "outline"}
                 className="text-[10px]"
               >
@@ -632,7 +632,7 @@ function SplitsTable({ splits, avgPace, avgHr, className }: SplitsTableProps) {
                 <span className="font-mono font-semibold ml-auto">{formatPace(split.avgPace)}/mi</span>
               </div>
               <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-                <div 
+                <div
                   className={cn(
                     "h-full rounded-full transition-all",
                     isFastest ? "bg-green-500" : isSlowest ? "bg-red-400" : "bg-primary/60"
@@ -993,8 +993,8 @@ export function EnhancedWorkoutDetailView({ workoutId, onClose, className }: Enh
               icon={<BarChart3 className="size-4 text-purple-500" />}
               title="Mile Splits"
               description={
-                analytics.paceAnalysis.splitStrategy === 'negative' 
-                  ? 'Negative split - great pacing!' 
+                analytics.paceAnalysis.splitStrategy === 'negative'
+                  ? 'Negative split - great pacing!'
                   : analytics.paceAnalysis.splitStrategy === 'positive'
                   ? 'Positive split - slowed in second half'
                   : analytics.paceAnalysis.splitStrategy === 'variable'
@@ -1010,7 +1010,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onClose, className }: Enh
                 )
               }
             />
-            <SplitsTable 
+            <SplitsTable
               splits={analytics.splits}
               avgPace={analytics.avgPace}
               avgHr={analytics.avgHr}
@@ -1091,7 +1091,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onClose, className }: Enh
                     <div className="flex items-center gap-2 mb-1">
                       <Heart className="size-4 text-red-500" />
                       <span className="font-semibold text-sm">Cardiac Drift</span>
-                      <Badge 
+                      <Badge
                         variant={analytics.cardiacDrift.interpretation === 'minimal' ? 'default' : 'secondary'}
                         className="text-[10px]"
                       >
@@ -1129,7 +1129,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onClose, className }: Enh
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="size-4 text-blue-500" />
                       <span className="font-semibold text-sm">Aerobic Decoupling</span>
-                      <Badge 
+                      <Badge
                         variant={analytics.aerobicDecoupling.interpretation === 'excellent' || analytics.aerobicDecoupling.interpretation === 'good' ? 'default' : 'secondary'}
                         className="text-[10px]"
                       >
@@ -1156,7 +1156,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onClose, className }: Enh
                       <div className="flex items-center gap-2 mb-1">
                         <Footprints className="size-4 text-green-500" />
                         <span className="font-semibold text-sm">Cadence Analysis</span>
-                        <Badge 
+                        <Badge
                           variant={analytics.cadenceAnalysis.optimalRange ? 'default' : 'secondary'}
                           className="text-[10px] capitalize"
                         >

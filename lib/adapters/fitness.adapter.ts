@@ -299,9 +299,15 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
 
   /**
    * Get consistency stats
+   * Uses routine and workout definitions from Supabase (or JSON fallback) so it works in production.
    */
   async getConsistencyStats(): Promise<ConsistencyStats> {
-    return this.fitnessService.getConsistencyStats()
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+    const workoutDefinitions = await this.getWorkoutDefinitions(this.currentRoutineId)
+    return this.fitnessService.getConsistencyStatsForRoutine(routine, workoutDefinitions)
   }
 
   /**

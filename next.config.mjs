@@ -1,5 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow being framed by the Firefox new-tab extension (keeps URL bar on extension)
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://pete.sh moz-extension:;",
+          },
+        ],
+      },
+    ];
+  },
   // Enable TypeScript type checking during builds
   typescript: {
     // Set to true only if you want to ignore type errors during build
