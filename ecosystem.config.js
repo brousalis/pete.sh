@@ -3,7 +3,8 @@
  * Manages the Petehome application process
  *
  * Usage:
- *   pm2 start ecosystem.config.js
+ *   pm2 start ecosystem.config.js --only petehome
+ *   pm2 start ecosystem.config.js --only petehome-dev
  *   pm2 stop petehome
  *   pm2 restart petehome
  *   pm2 logs petehome
@@ -11,37 +12,51 @@
  */
 
 const path = require('path');
-const isWindows = process.platform === 'win32';
-
-// Use node to run Next.js directly (works on both Windows and Linux)
-const nextBinary = path.join(__dirname, 'node_modules', 'next', 'dist', 'bin', 'next');
 
 module.exports = {
   apps: [
     {
+      // Production mode - runs built app
       name: 'petehome',
-      script: 'node',
-      args: `"${nextBinary}" start -H 0.0.0.0`, // Bind to all interfaces for local network access
-      cwd: process.cwd(), // Use current working directory (works on both Windows and Linux)
+      script: path.join(__dirname, 'scripts', 'pm2-start-prod.js'),
+      cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        HOSTNAME: '0.0.0.0', // Ensure binding to all interfaces
+        HOSTNAME: '0.0.0.0',
       },
-      // Auto-restart settings
       autorestart: true,
-      watch: false, // Set to true only for development
+      watch: false,
       max_memory_restart: '1G',
-
-      // Logging
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',
       log_file: './logs/pm2-combined.log',
       time: true,
-
-      // Advanced settings
+      min_uptime: '10s',
+      max_restarts: 10,
+      restart_delay: 4000,
+    },
+    {
+      // Development mode - hot reload enabled
+      name: 'petehome-dev',
+      script: path.join(__dirname, 'scripts', 'pm2-start-dev.js'),
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'development',
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0',
+      },
+      autorestart: true,
+      watch: false, // Next.js handles its own watching
+      max_memory_restart: '2G',
+      error_file: './logs/pm2-dev-error.log',
+      out_file: './logs/pm2-dev-out.log',
+      log_file: './logs/pm2-dev-combined.log',
+      time: true,
       min_uptime: '10s',
       max_restarts: 10,
       restart_delay: 4000,

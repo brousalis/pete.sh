@@ -13,6 +13,8 @@ import { getSpotifyAdapter } from '@/lib/adapters/spotify.adapter'
 import { getCTAAdapter } from '@/lib/adapters/cta.adapter'
 import { getCalendarAdapter } from '@/lib/adapters/calendar.adapter'
 import { getFitnessAdapter } from '@/lib/adapters/fitness.adapter'
+import { getSpotifyHistoryService } from '@/lib/services/spotify-history.service'
+import { getAuthenticatedSpotifyService } from '@/lib/spotify-auth'
 import type { SyncResult } from '@/lib/adapters/base.adapter'
 
 export interface SyncServiceResult {
@@ -98,6 +100,63 @@ export async function syncSpotify(): Promise<SyncServiceResult> {
   } catch (error) {
     return {
       service: 'spotify',
+      success: false,
+      recordsWritten: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs: Date.now() - start,
+    }
+  }
+}
+
+/**
+ * Sync Spotify listening history to Supabase
+ * Fetches recent plays and stores them for persistent history
+ * Note: Requires authenticated Spotify service
+ */
+export async function syncSpotifyHistory(): Promise<SyncServiceResult> {
+  const start = Date.now()
+  try {
+    const historyService = getSpotifyHistoryService()
+    
+    if (!historyService.isConfigured()) {
+      return {
+        service: 'spotify-history',
+        success: false,
+        recordsWritten: 0,
+        error: 'History service not configured (Supabase required)',
+        durationMs: Date.now() - start,
+      }
+    }
+
+    // Get authenticated Spotify service
+    const { service: spotifyService, authenticated } = await getAuthenticatedSpotifyService()
+    
+    if (!authenticated) {
+      return {
+        service: 'spotify-history',
+        success: false,
+        recordsWritten: 0,
+        error: 'Spotify not authenticated',
+        durationMs: Date.now() - start,
+      }
+    }
+
+    // Set the authenticated service
+    historyService.setSpotifyService(spotifyService)
+
+    // Sync recent plays
+    const result = await historyService.syncRecentPlays()
+    
+    return {
+      service: 'spotify-history',
+      success: result.success,
+      recordsWritten: result.newTracks,
+      error: result.error,
+      durationMs: Date.now() - start,
+    }
+  } catch (error) {
+    return {
+      service: 'spotify-history',
       success: false,
       recordsWritten: 0,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -238,16 +297,19 @@ export async function syncAll(): Promise<SyncAllResult> {
   }
 
   // Run all syncs in parallel
+  // Includes Spotify history for persistent listening tracking
   const results = await Promise.all([
     syncHue(),
     syncCTA(),
     syncFitness(),
-    // Note: Spotify and Calendar require auth context, so they may fail
+    syncSpotifyHistory(), // Sync listening history
+    // Note: Spotify state and Calendar require auth context, so they may fail
     // These are better synced via their respective API calls
   ])
 
   const totalRecordsWritten = results.reduce((sum, r) => sum + r.recordsWritten, 0)
-  const allSuccess = results.every(r => r.success)
+  // Consider success if non-auth services succeed (spotify-history may fail if not logged in)
+  const allSuccess = results.filter(r => !r.error?.includes('not authenticated')).every(r => r.success)
 
   return {
     success: allSuccess,

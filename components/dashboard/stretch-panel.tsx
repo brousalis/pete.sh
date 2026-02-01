@@ -31,7 +31,7 @@ interface StretchPanelProps {
   routine: DailyRoutine
   /** Type of routine for styling */
   type: "morning" | "night"
-  /** Completion state for today */
+  /** Completion state for the day being viewed */
   completion?: RoutineCompletion
   /** Callback when routine is marked complete */
   onComplete: () => void
@@ -39,6 +39,8 @@ interface StretchPanelProps {
   onUncomplete: () => void
   /** Whether the complete action is in progress */
   isCompleting?: boolean
+  /** Whether viewing in preview mode (another day) */
+  isPreview?: boolean
   /** Custom class name */
   className?: string
 }
@@ -68,6 +70,7 @@ export function StretchPanel({
   onComplete,
   onUncomplete,
   isCompleting = false,
+  isPreview = false,
   className,
 }: StretchPanelProps) {
   const [activeTimerIdx, setActiveTimerIdx] = useState<number | null>(null)
@@ -92,15 +95,37 @@ export function StretchPanel({
         accentBg: "bg-indigo-500/5",
       }
 
-  // Compact completed view
+  // Get YouTube video IDs for stretches
+  const getVideoId = (exerciseName: string): string | undefined => {
+    const videoMap: Record<string, string> = {
+      "Deep Squat Hold": "M9z8Z7aY4Kk",
+      "Thoracic Openers / T-Spine Rotation": "vuyUwtHl694",
+      "Dead Hang": "HoE-C85ZlCE",
+      "Couch Stretch": "eoPmgjyj9-Q",
+      "Doorway Pec Stretch": "CEQMx4zFwYs",
+      "Child's Pose with Side Reach": "YTAwpiX2Dsg",
+    }
+    return videoMap[exerciseName]
+  }
+
+  const openVideoModal = (videoId: string, title: string) => {
+    setVideoModal({ videoId, title })
+  }
+
+  const closeVideoModal = () => {
+    setVideoModal(null)
+  }
+
+  // Completed view - still shows exercises but in a completed state
   if (isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col overflow-hidden bg-green-500/5 border-green-500/20 py-0",
+        "flex flex-col h-full min-h-0 overflow-hidden bg-green-500/5 border-green-500/20 py-0",
         className
       )}>
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2">
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+          {/* Header */}
+          <div className="flex items-center gap-2 p-3 border-b border-green-500/20 bg-green-500/5">
             <div className={cn("rounded-md p-1.5", "bg-green-500/10")}>
               <Icon className={cn("size-4", "text-green-500")} />
             </div>
@@ -112,16 +137,101 @@ export function StretchPanel({
               Done
             </Badge>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="w-full h-7 text-[11px] mt-2 text-muted-foreground hover:text-foreground"
-            onClick={onUncomplete}
-            disabled={isCompleting}
-          >
-            {isCompleting ? "..." : "Undo"}
-          </Button>
+
+          {/* Completed Exercise List - Read only */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="p-2 space-y-1">
+              {routine.exercises.map((exercise, idx) => {
+                const videoId = getVideoId(exercise.name)
+                
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-md bg-green-500/5 border border-green-500/10 p-2"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Check className="size-3.5 text-green-500 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs text-muted-foreground">
+                          {exercise.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] text-muted-foreground/70">
+                          {exercise.duration}s
+                        </span>
+                        {videoId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => openVideoModal(videoId, exercise.name)}
+                          >
+                            <Play className="size-3 text-muted-foreground/70" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Footer with Undo - only show when not in preview mode */}
+          <div className="p-2 border-t border-green-500/20">
+            {isPreview ? (
+              <div className="text-center text-[11px] text-muted-foreground">
+                Completed
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={onUncomplete}
+                disabled={isCompleting}
+              >
+                {isCompleting ? "..." : "Undo"}
+              </Button>
+            )}
+          </div>
         </CardContent>
+
+        {/* Video Modal - same as non-completed state */}
+        <Dialog open={!!videoModal} onOpenChange={(open) => !open && closeVideoModal()}>
+          <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+            <DialogHeader className="p-4 pb-2">
+              <DialogTitle className="text-base">{videoModal?.title}</DialogTitle>
+            </DialogHeader>
+            {videoModal && (
+              <div className="px-4 pb-4">
+                <div className="relative overflow-hidden rounded-lg border border-border/50 bg-black shadow-lg">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      className="absolute inset-0 size-full"
+                      src={`https://www.youtube.com/embed/${videoModal.videoId}?rel=0&modestbranding=1&autoplay=1`}
+                      title={videoModal.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-end">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${videoModal.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <span>Open on YouTube</span>
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </Card>
     )
   }
@@ -147,28 +257,6 @@ export function StretchPanel({
 
   const toggleExerciseExpand = (idx: number) => {
     setExpandedExercise(expandedExercise === idx ? null : idx)
-  }
-
-  const openVideoModal = (videoId: string, title: string) => {
-    setVideoModal({ videoId, title })
-  }
-
-  const closeVideoModal = () => {
-    setVideoModal(null)
-  }
-
-  // Get YouTube video IDs for stretches (these aren't in the data, but we can add them)
-  const getVideoId = (exerciseName: string): string | undefined => {
-    // Map exercise names to YouTube video IDs
-    const videoMap: Record<string, string> = {
-      "Deep Squat Hold": "M9z8Z7aY4Kk",
-      "Thoracic Openers / T-Spine Rotation": "vuyUwtHl694",
-      "Dead Hang": "HoE-C85ZlCE",
-      "Couch Stretch": "eoPmgjyj9-Q",
-      "Doorway Pec Stretch": "CEQMx4zFwYs",
-      "Child's Pose with Side Reach": "YTAwpiX2Dsg",
-    }
-    return videoMap[exerciseName]
   }
 
   return (
@@ -335,15 +423,21 @@ export function StretchPanel({
 
         {/* Footer */}
         <div className={cn("p-2 border-t", themeColors.borderColor)}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full h-8 text-xs"
-            onClick={onComplete}
-            disabled={isCompleting}
-          >
-            {isCompleting ? "Completing..." : "Complete Routine"}
-          </Button>
+          {isPreview ? (
+            <div className="text-center text-[11px] text-muted-foreground py-1">
+              Not completed
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-8 text-xs"
+              onClick={onComplete}
+              disabled={isCompleting}
+            >
+              {isCompleting ? "Completing..." : "Complete Routine"}
+            </Button>
+          )}
         </div>
       </CardContent>
 

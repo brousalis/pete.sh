@@ -31,7 +31,7 @@ import {
   StretchVertical,
   Zap
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface WorkoutCenterProps {
   /** The workout data for today */
@@ -100,8 +100,15 @@ export function WorkoutCenter({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["exercises"]) // Main exercises open by default
   )
-
+  
   const isWorkoutCompleted = completion?.completed || false
+  
+  // When workout is completed, expand all sections so user can see what they did
+  useEffect(() => {
+    if (isWorkoutCompleted) {
+      setExpandedSections(new Set(["warmup", "exercises", "finisher", "metabolic", "mobility"]))
+    }
+  }, [isWorkoutCompleted])
   const dayName = day.charAt(0).toUpperCase() + day.slice(1)
 
   // Toggle section expansion
@@ -232,8 +239,8 @@ export function WorkoutCenter({
   return (
     <Card className={cn(
       "flex flex-col h-full min-h-0 overflow-hidden py-0",
-      isWorkoutCompleted && !isPreview && "bg-green-500/5 border-green-500/20",
-      isPreview && "border-blue-500/30 border-dashed",
+      isWorkoutCompleted && "bg-green-500/5 border-green-500/20",
+      isPreview && !isWorkoutCompleted && "border-blue-500/30 border-dashed",
       className
     )}>
       <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
@@ -257,7 +264,7 @@ export function WorkoutCenter({
                   Injury
                 </Badge>
               )}
-              {!isPreview && isWorkoutCompleted && (
+              {isWorkoutCompleted && (
                 <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] h-5 shrink-0">
                   Done
                 </Badge>
@@ -313,17 +320,31 @@ export function WorkoutCenter({
         </ScrollArea>
 
         {/* Footer */}
-        <div className="p-3 border-t bg-muted/20">
+        <div className={cn(
+          "p-3 border-t",
+          isWorkoutCompleted ? "bg-green-500/10" : "bg-muted/20"
+        )}>
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="text-xs text-muted-foreground">
-                {isPreview ? `${totalExercises} exercises` : `${completedExercises.size}/${totalExercises} exercises`}
+                {isWorkoutCompleted 
+                  ? `${completion?.exercisesCompleted?.length || totalExercises}/${totalExercises} exercises completed`
+                  : isPreview 
+                    ? `${totalExercises} exercises` 
+                    : `${completedExercises.size}/${totalExercises} exercises`
+                }
               </div>
             </div>
             {isPreview ? (
-              <Badge variant="secondary" className="text-xs">
-                Preview Mode
-              </Badge>
+              isWorkoutCompleted ? (
+                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                  Completed
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs">
+                  Preview
+                </Badge>
+              )
             ) : (
               <Button
                 size="sm"

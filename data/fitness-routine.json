@@ -1,6 +1,6 @@
 {
   "id": "climber-physique",
-  "name": "Climber Physique Training",
+  "name": "Initial Version",
   "userProfile": {
     "goal": "Climber physique (Wire-strong, vascular, no bulk) + 20 lbs Weight Loss",
     "stats": {
@@ -8,128 +8,128 @@
       "weight": 205
     },
     "schedule": {
+      "fasted": true,
       "startDay": "monday",
-      "trainingTime": "12:00 PM",
-      "fasted": true
+      "trainingTime": "12:00 PM"
     },
     "shoeStrategy": {
+      "cardio": [
+        "Cushioned Running shoes"
+      ],
       "lifting": [
         "Zero Drop",
         "Flat shoes (Vans, Converse)"
-      ],
-      "cardio": [
-        "Cushioned Running shoes"
       ]
     }
   },
   "injuryProtocol": {
-    "status": "active",
     "name": "Golfer's Elbow",
-    "description": "Currently feeling strain near the funny bone (inner elbow)",
-    "dailyRehab": [
-      {
-        "name": "Forearm Smash",
-        "description": "Massage the meaty part of your inner forearm with a lacrosse ball/hard object",
-        "duration": 2,
-        "frequency": "daily"
-      }
-    ],
     "rules": [
       "Use [ELBOW SAFE] alternatives listed for at least 2 weeks",
       "Do not return to standard exercises until you can hang from a bar pain-free",
       "Use lifting straps for Deadlifts/Rows to offload the grip"
-    ]
+    ],
+    "status": "active",
+    "dailyRehab": [
+      {
+        "name": "Forearm Smash",
+        "duration": 2,
+        "frequency": "daily",
+        "description": "Massage the meaty part of your inner forearm with a lacrosse ball/hard object"
+      }
+    ],
+    "description": "Currently feeling strain near the funny bone (inner elbow)"
   },
   "schedule": {
-    "monday": {
-      "focus": "Strength",
-      "goal": "Lift (Elbow Safe) + 40m Bike + Deep Stretch"
-    },
-    "tuesday": {
-      "focus": "Core/Posture",
-      "goal": "Core Routine + 45m Steep Hike + Deep Stretch"
-    },
-    "wednesday": {
-      "focus": "Hybrid",
-      "goal": "Run (2mi) + Hike (45-60m) + Tibialis Work"
-    },
-    "thursday": {
-      "focus": "Endurance",
-      "goal": "Run (4mi Slow) + 20m Recovery Spin"
-    },
     "friday": {
-      "focus": "Circuit",
-      "goal": "Circuit (Elbow Safe) + 30m Bike + Deep Stretch"
+      "goal": "Circuit (Elbow Safe) + 30m Bike + Deep Stretch",
+      "focus": "Circuit"
     },
-    "saturday": {
-      "focus": "HIIT",
-      "goal": "Sprints (20m) + 20m Walk + Deep Stretch"
+    "monday": {
+      "goal": "Lift (Elbow Safe) + 40m Bike + Deep Stretch",
+      "focus": "Strength"
     },
     "sunday": {
-      "focus": "Rest",
-      "goal": "10k Steps (No Gym)"
+      "goal": "10k Steps (No Gym)",
+      "focus": "Rest"
+    },
+    "tuesday": {
+      "goal": "Core Routine + 45m Steep Hike + Deep Stretch",
+      "focus": "Core/Posture"
+    },
+    "saturday": {
+      "goal": "Sprints (20m) + 20m Walk + Deep Stretch",
+      "focus": "HIIT"
+    },
+    "thursday": {
+      "goal": "Run (4mi Slow) + 20m Recovery Spin",
+      "focus": "Endurance"
+    },
+    "wednesday": {
+      "goal": "Run (2mi) + Hike (45-60m) + Tibialis Work",
+      "focus": "Hybrid"
     }
   },
   "dailyRoutines": {
-    "morning": {
-      "id": "oil-the-hinge",
-      "type": "morning",
-      "name": "Morning Stretch",
-      "description": "Do this right after you wake up. The goal is to open up your hips and upper back, which get stiff from sleeping.",
-      "duration": 3,
-      "exercises": [
-        {
-          "name": "Deep Squat Hold",
-          "duration": 60,
-          "description": "Opens ankles, knees, and hips for the day. Essential for the \"high step\" moves in climbing.",
-          "why": "Opens ankles, knees, and hips for the day",
-          "action": "Drop into the deepest squat you can. Keep heels flat. Use your elbows to push your knees out. Rock side to side gently."
-        },
-        {
-          "name": "T-Spine Rotation",
-          "duration": 60,
-          "description": "Prevents developing a \"hunchback\" posture from all the pulling and carrying.",
-          "why": "Prevents hunchback posture from pulling and carrying",
-          "action": "On hands and knees, put one hand behind your head. Rotate that elbow down to touch the opposite wrist, then rotate it all the way up to the ceiling. 30 seconds per side."
-        },
-        {
-          "name": "Dead Hang",
-          "duration": 60,
-          "description": "Decompresses your spine and wakes up your grip.",
-          "why": "Decompresses spine and wakes up grip",
-          "action": "Just hang from a bar (or doorframe if sturdy). Let your back crack and pop."
-        }
-      ]
-    },
     "night": {
       "id": "release-the-brakes",
-      "type": "night",
       "name": "Night Stretch",
-      "description": "Do this 30 minutes before bed. The goal is to lengthen the muscles that tightened up during your run or lift.",
+      "type": "night",
       "duration": 5,
       "exercises": [
         {
-          "name": "Couch Stretch",
-          "duration": 120,
-          "description": "The #1 stretch for you. Running and hiking tighten the hip flexors. Tight hip flexors cause lower back pain and \"weak\" glutes.",
           "why": "Fixes tight hip flexors from running and hiking",
-          "action": "Kneel in front of a couch (or wall). Put one shin vertical against the couch cushion behind you. Squeeze your glute and stand tall. You should feel a massive pull in the front of your hip/thigh. 60 seconds per side."
-        },
-        {
-          "name": "Doorway Pec Stretch",
-          "duration": 60,
-          "description": "Climbers and heavy lifters tend to roll their shoulders forward. This opens the chest so you can breathe better and stand taller.",
-          "why": "Opens chest for better breathing and posture",
-          "action": "Put your forearms against a doorframe at 90 degrees. Step through gently until you feel a stretch across your chest."
-        },
-        {
-          "name": "Child's Pose with Side Reach",
+          "name": "Couch Stretch",
+          "action": "Kneel in front of a couch (or wall). Put one shin vertical against the couch cushion behind you. Squeeze your glute and stand tall. You should feel a massive pull in the front of your hip/thigh. 60 seconds per side.",
           "duration": 120,
-          "description": "Loosens the lats (from all the pull-ups) and the lower back (from the RDLs and hiking).",
+          "description": "The #1 stretch for you. Running and hiking tighten the hip flexors. Tight hip flexors cause lower back pain and \"weak\" glutes."
+        },
+        {
+          "why": "Opens chest for better breathing and posture",
+          "name": "Doorway Pec Stretch",
+          "action": "Put your forearms against a doorframe at 90 degrees. Step through gently until you feel a stretch across your chest.",
+          "duration": 60,
+          "description": "Climbers and heavy lifters tend to roll their shoulders forward. This opens the chest so you can breathe better and stand taller."
+        },
+        {
           "why": "Loosens lats and lower back",
-          "action": "Kneel, sit back on your heels, and reach arms far forward on the floor. Then, walk both hands to the left (stretches right lat), hold, then walk to the right."
+          "name": "Child's Pose with Side Reach",
+          "action": "Kneel, sit back on your heels, and reach arms far forward on the floor. Then, walk both hands to the left (stretches right lat), hold, then walk to the right.",
+          "duration": 120,
+          "description": "Loosens the lats (from all the pull-ups) and the lower back (from the RDLs and hiking)."
         }
-      ]
+      ],
+      "description": "Do this 30 minutes before bed. The goal is to lengthen the muscles that tightened up during your run or lift."
+    },
+    "morning": {
+      "id": "oil-the-hinge",
+      "name": "Morning Stretch",
+      "type": "morning",
+      "duration": 3,
+      "exercises": [
+        {
+          "why": "Opens ankles, knees, and hips for the day",
+          "name": "Deep Squat Hold",
+          "action": "Drop into the deepest squat you can. Keep heels flat. Use your elbows to push your knees out. Rock side to side gently.",
+          "duration": 60,
+          "description": "Opens ankles, knees, and hips for the day. Essential for the \"high step\" moves in climbing."
+        },
+        {
+          "why": "Prevents hunchback posture from pulling and carrying",
+          "name": "T-Spine Rotation",
+          "action": "On hands and knees, put one hand behind your head. Rotate that elbow down to touch the opposite wrist, then rotate it all the way up to the ceiling. 30 seconds per side.",
+          "duration": 60,
+          "description": "Prevents developing a \"hunchback\" posture from all the pulling and carrying."
+        },
+        {
+          "why": "Decompresses spine and wakes up grip",
+          "name": "Dead Hang",
+          "action": "Just hang from a bar (or doorframe if sturdy). Let your back crack and pop.",
+          "duration": 60,
+          "description": "Decompresses your spine and wakes up your grip."
+        }
+      ],
+      "description": "Do this right after you wake up. The goal is to open up your hips and upper back, which get stiff from sleeping."
     }
   },
   "weeks": [
@@ -201,10 +201,40 @@
           }
         },
         "friday": {},
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-02-01T03:35:25.009Z",
+            "exercisesCompleted": []
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-01T03:52:34.856Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-01T03:35:27.543Z"
+          }
+        },
+        "sunday": {}
+      }
+    },
+    {
+      "weekNumber": 6,
+      "startDate": "2026-02-02T06:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
         "saturday": {},
         "sunday": {}
       }
     }
   ],
-  "updatedAt": "2026-01-31T01:23:48.079Z"
+  "updatedAt": "2026-02-01T13:59:56.049Z"
 }

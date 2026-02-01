@@ -235,3 +235,58 @@ export interface SpotifyPlayerState {
   isLoading: boolean
   error: string | null
 }
+
+// ==========================================
+// Listening History Types
+// ==========================================
+
+export interface SpotifyListeningHistoryEntry {
+  id: string
+  track_id: string
+  track_uri: string
+  track_name: string
+  track_artists: string
+  track_artist_ids?: string
+  album_name: string
+  album_id?: string
+  album_image_url?: string
+  duration_ms: number
+  context_type?: "album" | "artist" | "playlist" | "show" | null
+  context_uri?: string
+  played_at: string
+  tempo?: number
+  energy?: number
+  danceability?: number
+  valence?: number
+  synced_at: string
+  created_at: string
+}
+
+export interface SpotifyListeningStats {
+  total_tracks: number
+  unique_tracks: number
+  unique_artists: number
+  total_listening_time_ms: number
+  top_track?: string
+  top_track_count?: number
+  top_artist?: string
+  top_artist_count?: number
+}
+
+export interface SpotifySyncCursor {
+  id: string
+  last_played_at: string | null
+  last_sync_at: string
+  total_tracks_synced: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SpotifyHistorySyncResult {
+  success: boolean
+  newTracks: number
+  totalTracksInDb: number
+  oldestTrack?: string
+  newestTrack?: string
+  error?: string
+}

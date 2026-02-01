@@ -17,6 +17,10 @@ import path from "path"
 const ROUTINE_FILE = path.join(process.cwd(), "data", "fitness-routine.json")
 const WORKOUT_DEFINITIONS_FILE = path.join(process.cwd(), "data", "workout-definitions.json")
 
+// Export file paths for adapter use
+export const ROUTINE_FILE_PATH = ROUTINE_FILE
+export const WORKOUT_DEFINITIONS_FILE_PATH = WORKOUT_DEFINITIONS_FILE
+
 export class FitnessService {
   /**
    * Ensure data directory exists
@@ -31,15 +35,34 @@ export class FitnessService {
   }
 
   /**
-   * Get workout definitions
+   * Get workout definitions (public method)
    */
-  private async getWorkoutDefinitions(): Promise<Record<DayOfWeek, Workout>> {
+  async getWorkoutDefinitions(): Promise<Record<DayOfWeek, Workout>> {
     try {
       const data = await fs.readFile(WORKOUT_DEFINITIONS_FILE, "utf-8")
       return JSON.parse(data) as Record<DayOfWeek, Workout>
     } catch {
       return {} as Record<DayOfWeek, Workout>
     }
+  }
+
+  /**
+   * Update all workout definitions
+   */
+  async updateWorkoutDefinitions(definitions: Record<DayOfWeek, Workout>): Promise<Record<DayOfWeek, Workout>> {
+    await this.ensureDataDir()
+    await fs.writeFile(WORKOUT_DEFINITIONS_FILE, JSON.stringify(definitions, null, 2), "utf-8")
+    return definitions
+  }
+
+  /**
+   * Update workout definition for a specific day
+   */
+  async updateWorkoutDefinition(day: DayOfWeek, workout: Workout): Promise<Workout> {
+    const definitions = await this.getWorkoutDefinitions()
+    definitions[day] = workout
+    await this.updateWorkoutDefinitions(definitions)
+    return workout
   }
 
   /**

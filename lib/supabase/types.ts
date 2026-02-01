@@ -6,7 +6,13 @@
  * npx supabase gen types typescript --project-id your-project-id > lib/supabase/types.ts
  */
 
-import type { SpotifyPlaybackState, SpotifyDevice, SpotifyUser } from '@/lib/types/spotify.types'
+import type { 
+  SpotifyPlaybackState, 
+  SpotifyDevice, 
+  SpotifyUser,
+  SpotifyListeningHistoryEntry,
+  SpotifySyncCursor,
+} from '@/lib/types/spotify.types'
 import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { CTABusPrediction, CTATrainPrediction } from '@/lib/types/cta.types'
@@ -15,7 +21,8 @@ import type {
   InjuryProtocol, 
   WeeklySchedule, 
   DailyRoutine,
-  DayOfWeek 
+  DayOfWeek,
+  Workout,
 } from '@/lib/types/fitness.types'
 import type {
   RecipeSource,
@@ -141,6 +148,36 @@ export interface FitnessProgressRow {
   night_routine_completed: boolean
   night_routine_completed_at: string | null
   notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface FitnessRoutineVersionRow {
+  id: string
+  routine_id: string
+  version_number: number
+  name: string
+  change_summary: string | null
+  user_profile: UserProfile
+  injury_protocol: InjuryProtocol | null
+  schedule: WeeklySchedule
+  daily_routines: {
+    morning: DailyRoutine
+    night: DailyRoutine
+  }
+  workout_definitions: Record<DayOfWeek, Workout>
+  is_active: boolean
+  is_draft: boolean
+  created_at: string
+  updated_at: string
+  activated_at: string | null
+}
+
+export interface WorkoutDefinitionRow {
+  id: string
+  routine_id: string
+  day_of_week: DayOfWeek
+  workout: Workout
   created_at: string
   updated_at: string
 }
@@ -304,6 +341,36 @@ export interface FitnessProgressInsert {
   updated_at?: string
 }
 
+export interface FitnessRoutineVersionInsert {
+  id?: string
+  routine_id: string
+  version_number: number
+  name: string
+  change_summary?: string | null
+  user_profile: UserProfile
+  injury_protocol?: InjuryProtocol | null
+  schedule: WeeklySchedule
+  daily_routines: {
+    morning: DailyRoutine
+    night: DailyRoutine
+  }
+  workout_definitions: Record<DayOfWeek, Workout>
+  is_active?: boolean
+  is_draft?: boolean
+  created_at?: string
+  updated_at?: string
+  activated_at?: string | null
+}
+
+export interface WorkoutDefinitionInsert {
+  id?: string
+  routine_id: string
+  day_of_week: DayOfWeek
+  workout: Workout
+  created_at?: string
+  updated_at?: string
+}
+
 export interface CTAHistoryInsert {
   id?: string
   route_type: 'bus' | 'train'
@@ -345,6 +412,69 @@ export interface SyncLogInsert {
   error_message?: string | null
   records_synced: number
   synced_at: string
+}
+
+// Spotify Listening History types
+export interface SpotifyListeningHistoryRow {
+  id: string
+  track_id: string
+  track_uri: string
+  track_name: string
+  track_artists: string
+  track_artist_ids: string | null
+  album_name: string
+  album_id: string | null
+  album_image_url: string | null
+  duration_ms: number
+  context_type: 'album' | 'artist' | 'playlist' | 'show' | null
+  context_uri: string | null
+  played_at: string
+  tempo: number | null
+  energy: number | null
+  danceability: number | null
+  valence: number | null
+  synced_at: string
+  created_at: string
+}
+
+export interface SpotifyListeningHistoryInsert {
+  id?: string
+  track_id: string
+  track_uri: string
+  track_name: string
+  track_artists: string
+  track_artist_ids?: string | null
+  album_name: string
+  album_id?: string | null
+  album_image_url?: string | null
+  duration_ms: number
+  context_type?: 'album' | 'artist' | 'playlist' | 'show' | null
+  context_uri?: string | null
+  played_at: string
+  tempo?: number | null
+  energy?: number | null
+  danceability?: number | null
+  valence?: number | null
+  synced_at?: string
+  created_at?: string
+}
+
+export interface SpotifySyncCursorRow {
+  id: string
+  last_played_at: string | null
+  last_sync_at: string
+  total_tracks_synced: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SpotifySyncCursorInsert {
+  id?: string
+  last_played_at?: string | null
+  last_sync_at?: string
+  total_tracks_synced?: number
+  created_at?: string
+  updated_at?: string
 }
 
 // Apple Health Types
@@ -731,6 +861,16 @@ export interface Database {
         Insert: FitnessProgressInsert
         Update: Partial<FitnessProgressInsert>
       }
+      fitness_routine_versions: {
+        Row: FitnessRoutineVersionRow
+        Insert: FitnessRoutineVersionInsert
+        Update: Partial<FitnessRoutineVersionInsert>
+      }
+      workout_definitions: {
+        Row: WorkoutDefinitionRow
+        Insert: WorkoutDefinitionInsert
+        Update: Partial<WorkoutDefinitionInsert>
+      }
       cta_history: {
         Row: CTAHistoryRow
         Insert: CTAHistoryInsert
@@ -807,6 +947,17 @@ export interface Database {
         Insert: TraderJoesRecipeInsert
         Update: Partial<TraderJoesRecipeInsert>
       }
+      // Spotify listening history tables
+      spotify_listening_history: {
+        Row: SpotifyListeningHistoryRow
+        Insert: SpotifyListeningHistoryInsert
+        Update: Partial<SpotifyListeningHistoryInsert>
+      }
+      spotify_sync_cursor: {
+        Row: SpotifySyncCursorRow
+        Insert: SpotifySyncCursorInsert
+        Update: Partial<SpotifySyncCursorInsert>
+      }
     }
     Views: {
       [_ in never]: never
@@ -831,6 +982,48 @@ export interface Database {
       get_latest_hue_scenes: {
         Args: Record<string, never>
         Returns: HueSceneRow[]
+      }
+      get_spotify_listening_history: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_start_date?: string | null
+          p_end_date?: string | null
+        }
+        Returns: SpotifyListeningHistoryRow[]
+      }
+      get_spotify_listening_stats: {
+        Args: {
+          p_days?: number
+        }
+        Returns: {
+          total_tracks: number
+          unique_tracks: number
+          unique_artists: number
+          total_listening_time_ms: number
+          top_track: string | null
+          top_track_count: number | null
+          top_artist: string | null
+          top_artist_count: number | null
+        }[]
+      }
+      get_active_routine_version: {
+        Args: {
+          p_routine_id: string
+        }
+        Returns: FitnessRoutineVersionRow | null
+      }
+      get_latest_version_number: {
+        Args: {
+          p_routine_id: string
+        }
+        Returns: number
+      }
+      get_workout_definitions: {
+        Args: {
+          p_routine_id: string
+        }
+        Returns: WorkoutDefinitionRow[]
       }
     }
     Enums: {

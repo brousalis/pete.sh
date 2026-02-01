@@ -19,7 +19,8 @@ import { filterEvents, navigateDate } from "@/lib/utils/calendar-utils"
 import { format, isSameDay } from "date-fns"
 import { AnimatePresence, motion } from "framer-motion"
 import { AlertCircle, Calendar, Database, RefreshCw } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { apiGet } from "@/lib/api/client"
 
 interface CalendarResponse {
@@ -46,9 +47,12 @@ export default function CalendarPage() {
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [authAvailable, setAuthAvailable] = useState(false)
   const [authUrl, setAuthUrl] = useState<string | null>(null)
+  
+  const searchParams = useSearchParams()
+  const hasTriedRetry = useRef(false)
 
-  // Fetch events
-  const fetchEvents = useCallback(async () => {
+  // Fetch events with optional retry for post-OAuth race condition
+  const fetchEvents = useCallback(async (retryOnFailure = false): Promise<boolean> => {
     try {
       setLoading(true)
       setError(null)
@@ -63,20 +67,41 @@ export default function CalendarPage() {
         setSource(response.data.source || 'none')
         setAuthAvailable(response.data.authAvailable || false)
         setAuthUrl(response.data.authUrl || null)
+        
+        // Return true if we got authenticated data
+        return response.data.source === 'live' || response.data.authenticated
       }
+      return false
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load calendar events")
+      return false
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchEvents()
+    const init = async () => {
+      const isAuthSuccess = searchParams.get("auth") === "success"
+      
+      // First fetch
+      const gotAuthData = await fetchEvents()
+      
+      // If this is a fresh OAuth redirect and we didn't get auth data,
+      // retry once after a short delay (handles race condition with token storage)
+      if (isAuthSuccess && !gotAuthData && !hasTriedRetry.current) {
+        hasTriedRetry.current = true
+        console.log("[Calendar] Post-OAuth: retrying fetch after delay...")
+        await new Promise(resolve => setTimeout(resolve, 500))
+        await fetchEvents()
+      }
+    }
+    
+    init()
     // Refresh every 5 minutes
-    const interval = setInterval(fetchEvents, 300000)
+    const interval = setInterval(() => fetchEvents(), 300000)
     return () => clearInterval(interval)
-  }, [fetchEvents])
+  }, [fetchEvents, searchParams])
 
   // Keyboard navigation
   useEffect(() => {
@@ -197,7 +222,7 @@ export default function CalendarPage() {
             <h2 className="text-xl font-semibold">Unable to Load Calendar</h2>
             <p className="mt-2 text-muted-foreground">{error}</p>
           </div>
-          <Button onClick={fetchEvents} variant="outline" className="mt-2">
+          <Button onClick={() => fetchEvents()} variant="outline" className="mt-2">
             <RefreshCw className="mr-2 size-4" />
             Try Again
           </Button>

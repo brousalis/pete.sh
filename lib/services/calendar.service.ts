@@ -30,15 +30,16 @@ export async function loadCalendarTokensFromCookies(
   let accessToken = fileTokens.accessToken || cookieAccessToken
   const refreshToken = fileTokens.refreshToken || cookieRefreshToken
 
-  console.log("[CalendarService] Loading tokens:", {
-    fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
-    fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
-    using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
-  })
+  // Debug logging disabled - uncomment if needed
+  // console.log("[CalendarService] Loading tokens:", {
+  //   fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
+  //   fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
+  //   using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
+  // })
 
   // If we have a refresh token but no access token (or access token expired), refresh it
   if (refreshToken && !accessToken) {
-    console.log("[CalendarService] Access token missing, attempting to refresh using refresh token")
+    // console.log("[CalendarService] Access token missing, attempting to refresh")
     try {
       // Set just the refresh token first
       calendarService.setCredentials({
@@ -50,11 +51,7 @@ export async function loadCalendarTokensFromCookies(
       const updatedCredentials = await calendarService.refreshAccessToken()
       accessToken = updatedCredentials.access_token || null
 
-      console.log("[CalendarService] Refresh result:", {
-        gotAccessToken: !!accessToken,
-        gotRefreshToken: !!updatedCredentials.refresh_token,
-        expiryDate: updatedCredentials.expiry_date,
-      })
+      // console.log("[CalendarService] Refresh result:", { gotAccessToken: !!accessToken })
 
       // Update tokens in both file storage and cookies
       if (accessToken) {
@@ -63,7 +60,7 @@ export async function loadCalendarTokensFromCookies(
           : new Date(Date.now() + 3600 * 1000) // 1 hour fallback
         const newRefreshToken = updatedCredentials.refresh_token || refreshToken
 
-        console.log("[CalendarService] Storing refreshed access token, expires:", expiresIn.toISOString())
+        // console.log("[CalendarService] Storing refreshed access token")
 
         // Save to file storage (for cross-origin requests)
         setGoogleCalendarTokens({
@@ -89,7 +86,7 @@ export async function loadCalendarTokensFromCookies(
           path: "/",
         })
 
-        console.log("[CalendarService] Successfully refreshed and stored access token")
+        // console.log("[CalendarService] Token refreshed successfully")
       }
     } catch (refreshError: any) {
       console.error("[CalendarService] Failed to refresh access token:", {
@@ -101,7 +98,7 @@ export async function loadCalendarTokensFromCookies(
       if (refreshError?.message?.includes("invalid_grant") ||
           refreshError?.code === 400 ||
           refreshError?.code === 401) {
-        console.log("[CalendarService] Clearing invalid tokens")
+        // console.log("[CalendarService] Clearing invalid tokens")
         clearGoogleCalendarTokens()
         cookieStore.delete("google_calendar_refresh_token")
         cookieStore.delete("google_calendar_access_token")
@@ -240,10 +237,7 @@ export class CalendarService {
       throw new Error("Google Calendar not configured")
     }
 
-    console.log("[CalendarService] Setting credentials:", {
-      hasAccessToken: !!tokens.access_token,
-      hasRefreshToken: !!tokens.refresh_token,
-    })
+    // console.log("[CalendarService] Setting credentials")
 
     this.oauth2Client.setCredentials(tokens)
 
@@ -357,12 +351,8 @@ export class CalendarService {
     try {
       const now = new Date()
 
-      console.log("[CalendarService] Fetching upcoming events:", {
-        calendarId,
-        timeMin: now.toISOString(),
-        maxResults,
-        note: "No timeMax - showing all future events",
-      })
+      // Verbose logging disabled
+      // console.log("[CalendarService] Fetching upcoming events:", { calendarId, maxResults })
 
       const response = await this.calendar.events.list({
         calendarId,
@@ -374,30 +364,16 @@ export class CalendarService {
         showDeleted: false, // Don't show deleted events
       })
 
-      console.log("[CalendarService] API response:", {
-        itemsCount: response.data.items?.length || 0,
-        hasItems: !!response.data.items,
-        responseKeys: Object.keys(response.data || {}),
-        calendarSummary: response.data.summary,
-        calendarTimeZone: response.data.timeZone,
-        fullResponse: JSON.stringify(response.data, null, 2),
-      })
+      // Verbose logging disabled
+      // console.log("[CalendarService] Got", response.data.items?.length || 0, "events")
 
       const events = response.data.items || []
 
       // Filter out cancelled events
       const activeEvents = events.filter((e: CalendarEvent) => e.status !== "cancelled")
 
-      console.log("[CalendarService] Event filtering:", {
-        totalEvents: events.length,
-        cancelledEvents: events.filter((e: CalendarEvent) => e.status === "cancelled").length,
-        activeEvents: activeEvents.length,
-        summaries: activeEvents.map((e: CalendarEvent) => ({
-          summary: e.summary,
-          start: e.start.dateTime || e.start.date,
-          status: e.status,
-        })),
-      })
+      // Verbose logging disabled
+      // console.log("[CalendarService] Returning", activeEvents.length, "active events")
 
       return activeEvents
     } catch (error: any) {
@@ -410,7 +386,7 @@ export class CalendarService {
 
       // Handle token refresh if needed
       if (error.code === 401 && this.oauth2Client.credentials?.refresh_token) {
-        console.log("[CalendarService] Attempting token refresh")
+        // console.log("[CalendarService] Attempting token refresh")
         try {
           const { credentials } = await this.oauth2Client.refreshAccessToken()
           // Preserve refresh token if not returned in new credentials
@@ -419,7 +395,7 @@ export class CalendarService {
             refresh_token: credentials.refresh_token || this.oauth2Client.credentials.refresh_token,
           }
           this.oauth2Client.setCredentials(updatedCredentials)
-          console.log("[CalendarService] Token refreshed successfully, retrying request")
+          // console.log("[CalendarService] Token refreshed, retrying")
           // Retry the request
           const now = new Date()
           const response = await this.calendar.events.list({

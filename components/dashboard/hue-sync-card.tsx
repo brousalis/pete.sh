@@ -18,6 +18,8 @@ interface HueSyncCardProps {
   onUpdate?: () => Promise<void>
   /** When true, all controls are disabled (production mode) */
   isReadOnly?: boolean
+  /** Compact single-row layout for embedding in main area */
+  compact?: boolean
 }
 
 export function HueSyncCard({
@@ -25,6 +27,7 @@ export function HueSyncCard({
   areaId,
   onUpdate,
   isReadOnly = false,
+  compact = false,
 }: HueSyncCardProps) {
   const [areas, setAreas] = useState<HueEntertainmentArea[]>([])
   const [selectedArea, setSelectedArea] = useState<HueEntertainmentArea | null>(null)
@@ -176,6 +179,14 @@ export function HueSyncCard({
 
   // Loading state
   if (loading) {
+    if (compact) {
+      return (
+        <div className="flex items-center gap-2 border-t pt-4">
+          <div className="size-6 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+        </div>
+      )
+    }
     return (
       <motion.div
         className="rounded-2xl border bg-card p-4 shadow-sm"
@@ -195,6 +206,7 @@ export function HueSyncCard({
 
   // Show setup guidance if no entertainment areas exist
   if (areas.length === 0) {
+    if (compact) return null
     return (
       <motion.div
         className="overflow-hidden rounded-2xl border border-dashed border-muted-foreground/30 bg-card shadow-sm"
@@ -236,6 +248,52 @@ export function HueSyncCard({
 
   const isActive = status?.active || false
   const area = selectedArea
+
+  // Compact inline row for embedding in main area
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 border-t pt-4",
+          isActive && "border-purple-500/20"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={cn(
+              "flex size-6 shrink-0 items-center justify-center rounded-md",
+              isActive ? "bg-purple-500/20 text-purple-400" : "bg-muted text-muted-foreground"
+            )}
+          >
+            <Monitor className="size-3.5" />
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-medium text-muted-foreground">Hue Sync</span>
+            <span className="text-xs text-muted-foreground/80 truncate">{area?.name}</span>
+            <div
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                isActive ? "bg-green-500" : "bg-muted-foreground/40"
+              )}
+              title={isActive ? "Syncing" : "Idle"}
+            />
+          </div>
+        </div>
+        {isActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToggle(false)}
+            disabled={isReadOnly || toggling}
+            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-red-400"
+          >
+            <Square className="size-3" />
+            Stop
+          </Button>
+        )}
+      </div>
+    )
+  }
 
   return (
     <motion.div

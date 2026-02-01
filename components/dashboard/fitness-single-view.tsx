@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Calendar, AlertTriangle, Flame, Target, ChevronDown, Circle, Watch } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,8 @@ import {
 } from "@/components/ui/popover"
 import { StretchPanel } from "@/components/dashboard/stretch-panel"
 import { WorkoutCenter } from "@/components/dashboard/workout-center"
+import { TodayActivityBar } from "@/components/dashboard/fitness-dashboard"
+import type { AppleWorkout, DailyMetrics } from "@/components/dashboard/fitness-dashboard"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -51,10 +54,13 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
  * - Timer with audio cues
  */
 export function FitnessSingleView() {
+  const router = useRouter()
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
   const [todayWorkout, setTodayWorkout] = useState<Workout | null>(null)
   const [selectedDayWorkout, setSelectedDayWorkout] = useState<Workout | null>(null)
   const [consistencyStats, setConsistencyStats] = useState<ConsistencyStats | null>(null)
+  const [appleWorkouts, setAppleWorkouts] = useState<AppleWorkout[]>([])
+  const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [completingMorning, setCompletingMorning] = useState(false)
   const [completingNight, setCompletingNight] = useState(false)
@@ -82,10 +88,12 @@ export function FitnessSingleView() {
   const fetchData = useCallback(async () => {
     try {
       const day = getCurrentDay()
-      const [routineRes, workoutRes, consistencyRes] = await Promise.all([
+      const [routineRes, workoutRes, consistencyRes, appleWorkoutsRes, dailyMetricsRes] = await Promise.all([
         apiGet<WeeklyRoutine>("/api/fitness/routine"),
         apiGet<Workout>(`/api/fitness/workout/${day}`),
         apiGet<ConsistencyStats>("/api/fitness/consistency"),
+        apiGet<AppleWorkout[]>("/api/apple-health/workout?limit=10"),
+        apiGet<DailyMetrics | DailyMetrics[]>("/api/apple-health/daily?days=1"),
       ])
 
       if (routineRes.success && routineRes.data) {
@@ -98,6 +106,17 @@ export function FitnessSingleView() {
 
       if (consistencyRes.success && consistencyRes.data) {
         setConsistencyStats(consistencyRes.data)
+      }
+
+      if (appleWorkoutsRes.success && appleWorkoutsRes.data) {
+        setAppleWorkouts(appleWorkoutsRes.data)
+      }
+
+      if (dailyMetricsRes.success && dailyMetricsRes.data) {
+        const metrics = Array.isArray(dailyMetricsRes.data) 
+          ? dailyMetricsRes.data[0] 
+          : dailyMetricsRes.data
+        setDailyMetrics(metrics || null)
       }
     } catch (error) {
       console.error("Failed to fetch fitness data", error)
@@ -250,6 +269,7 @@ export function FitnessSingleView() {
   const weekNumber = getCurrentWeekNumber()
   const week = routine.weeks.find((w) => w.weekNumber === weekNumber)
   const todayData = week?.days[today]
+  const viewingDayData = week?.days[viewingDay] // Completion data for the day being viewed
   const viewingDaySchedule = routine.schedule[viewingDay]
   const todaySchedule = routine.schedule[today]
   const viewingDayName = viewingDay.charAt(0).toUpperCase() + viewingDay.slice(1)
@@ -258,6 +278,8 @@ export function FitnessSingleView() {
 
   // Get the appropriate workout to display
   const displayWorkout = isViewingToday ? todayWorkout : selectedDayWorkout
+  // Get the appropriate completion data for the day being viewed
+  const displayCompletion = isViewingToday ? todayData?.workout : viewingDayData?.workout
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -360,14 +382,15 @@ export function FitnessSingleView() {
 
       {/* Main 3-Panel Layout */}
       <div className="flex-1 grid grid-cols-[200px_1fr_200px] gap-3 min-h-0">
-        {/* Morning Panel - Always shows today's data */}
+        {/* Morning Panel - Shows viewed day's data */}
         <StretchPanel
           routine={routine.dailyRoutines.morning}
           type="morning"
-          completion={todayData?.morningRoutine}
+          completion={isViewingToday ? todayData?.morningRoutine : viewingDayData?.morningRoutine}
           onComplete={handleMorningComplete}
           onUncomplete={handleMorningUncomplete}
           isCompleting={completingMorning}
+          isPreview={!isViewingToday}
         />
 
         {/* Workout Center - Shows selected day's workout */}
@@ -376,7 +399,7 @@ export function FitnessSingleView() {
           day={viewingDay}
           focus={viewingDaySchedule?.focus}
           goal={viewingDaySchedule?.goal}
-          completion={isViewingToday ? todayData?.workout : undefined}
+          completion={displayCompletion}
           hasInjuryProtocol={hasInjuryProtocol}
           onComplete={handleWorkoutComplete}
           isCompleting={completingWorkout}
@@ -385,23 +408,33 @@ export function FitnessSingleView() {
           isPreview={!isViewingToday}
         />
 
-        {/* Night Panel - Always shows today's data */}
+        {/* Night Panel - Shows viewed day's data */}
         <StretchPanel
           routine={routine.dailyRoutines.night}
           type="night"
-          completion={todayData?.nightRoutine}
+          completion={isViewingToday ? todayData?.nightRoutine : viewingDayData?.nightRoutine}
           onComplete={handleNightComplete}
           onUncomplete={handleNightUncomplete}
           isCompleting={completingNight}
+          isPreview={!isViewingToday}
         />
       </div>
 
-      {/* Compact Consistency Bar */}
-      {consistencyStats && (
-        <div className="mt-3 shrink-0">
+      {/* Bottom Section: Consistency Bar + Today's Activity */}
+      <div className="mt-3 shrink-0 space-y-2">
+        {/* Today's Activity from Apple Watch */}
+        <TodayActivityBar
+          workouts={appleWorkouts}
+          metrics={dailyMetrics}
+          onWorkoutClick={(id) => router.push(`/fitness/watch?workout=${id}`)}
+          onViewAll={() => router.push("/fitness/watch")}
+        />
+
+        {/* Compact Consistency Bar */}
+        {consistencyStats && (
           <ConsistencyBar stats={consistencyStats} />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

@@ -271,7 +271,7 @@ export function HueControls() {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions + Hue Sync (compact) */}
       <motion.div
         className="rounded-2xl border bg-card p-6"
         initial={{ opacity: 0, y: 8 }}
@@ -285,6 +285,12 @@ export function HueControls() {
           isReadOnly={isReadOnly}
           brightnessZoneId={zones.find((z) => z.name.toLowerCase().includes("office"))?.id}
           brightnessZoneName="Office"
+        />
+        <HueSyncCard
+          areaName="office"
+          onUpdate={fetchData}
+          isReadOnly={isReadOnly}
+          compact
         />
       </motion.div>
 
@@ -313,15 +319,6 @@ export function HueControls() {
           </motion.div>
         ))}
       </div>
-
-      {/* Hue Sync for Office */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <HueSyncCard areaName="office" onUpdate={fetchData} isReadOnly={isReadOnly} />
-      </motion.div>
 
     </div>
   )

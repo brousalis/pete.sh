@@ -959,3 +959,206 @@ export function FitnessDashboard({
 }
 
 export default FitnessDashboard
+
+// ============================================
+// COMPACT TODAY'S ACTIVITY BAR (for embedding in main fitness page)
+// ============================================
+
+interface TodayActivityBarProps {
+  workouts: AppleWorkout[]
+  metrics: DailyMetrics | null
+  onWorkoutClick?: (workoutId: string) => void
+  onViewAll?: () => void
+  className?: string
+}
+
+export function TodayActivityBar({
+  workouts,
+  metrics,
+  onWorkoutClick,
+  onViewAll,
+  className
+}: TodayActivityBarProps) {
+  const todayWorkouts = workouts.filter(w => isToday(new Date(w.start_date)))
+  const totalDuration = todayWorkouts.reduce((sum, w) => sum + w.duration, 0)
+  const totalCalories = todayWorkouts.reduce((sum, w) => sum + w.active_calories, 0)
+  const totalDistance = todayWorkouts.reduce((sum, w) => sum + (w.distance_miles || 0), 0)
+  
+  // Activity ring progress
+  const moveProgress = metrics ? Math.min((metrics.active_calories / (metrics.move_goal || 500)) * 100, 100) : 0
+  const exerciseProgress = metrics ? Math.min((metrics.exercise_minutes / (metrics.exercise_goal || 30)) * 100, 100) : 0
+  const standProgress = metrics ? Math.min((metrics.stand_hours / (metrics.stand_goal || 12)) * 100, 100) : 0
+
+  if (todayWorkouts.length === 0 && !metrics) {
+    return null
+  }
+
+  return (
+    <div className={cn(
+      "flex items-center gap-3 p-3 rounded-lg bg-muted/30 border",
+      className
+    )}>
+      {/* Mini Activity Rings */}
+      {metrics && (
+        <div className="flex items-center gap-3 pr-3 border-r">
+          <MiniActivityRings
+            move={moveProgress}
+            exercise={exerciseProgress}
+            stand={standProgress}
+            size={40}
+          />
+          <div className="hidden sm:flex flex-col gap-0.5 text-[10px]">
+            <div className="flex items-center gap-1.5">
+              <div className="size-1.5 rounded-full bg-[#FF2D55]" />
+              <span className="text-muted-foreground">{metrics.active_calories}/{metrics.move_goal || 500}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="size-1.5 rounded-full bg-[#92E82A]" />
+              <span className="text-muted-foreground">{metrics.exercise_minutes}/{metrics.exercise_goal || 30}m</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="size-1.5 rounded-full bg-[#00D4FF]" />
+              <span className="text-muted-foreground">{metrics.stand_hours}/{metrics.stand_goal || 12}h</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Today's workouts summary */}
+      {todayWorkouts.length > 0 ? (
+        <>
+          <div className="flex items-center gap-2 pr-3 border-r">
+            <div className="text-center">
+              <div className="text-lg font-bold leading-none">{todayWorkouts.length}</div>
+              <div className="text-[9px] text-muted-foreground">Workouts</div>
+            </div>
+          </div>
+
+          {/* Workout pills */}
+          <div className="flex-1 flex items-center gap-2 overflow-x-auto">
+            {todayWorkouts.slice(0, 4).map((workout) => {
+              const colorClass = WORKOUT_COLORS[workout.workout_type] || WORKOUT_COLORS.other
+              const icon = getWorkoutIcon(workout.workout_type, "sm")
+              const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+              
+              return (
+                <button
+                  key={workout.id}
+                  onClick={() => onWorkoutClick?.(workout.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs whitespace-nowrap transition-all hover:scale-105",
+                    colorClass.split(' ').slice(1).join(' '),
+                    onWorkoutClick && "cursor-pointer"
+                  )}
+                >
+                  {icon}
+                  <span className="font-medium">{label}</span>
+                  <span className="text-muted-foreground hidden sm:inline">
+                    {formatDuration(workout.duration)}
+                  </span>
+                </button>
+              )
+            })}
+            {todayWorkouts.length > 4 && (
+              <Badge variant="secondary" className="text-[10px]">
+                +{todayWorkouts.length - 4} more
+              </Badge>
+            )}
+          </div>
+
+          {/* Totals */}
+          <div className="hidden md:flex items-center gap-4 pl-3 border-l text-xs">
+            <div className="flex items-center gap-1">
+              <Timer className="size-3.5 text-muted-foreground" />
+              <span className="font-medium">{formatDuration(totalDuration)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Flame className="size-3.5 text-orange-500" />
+              <span className="font-medium">{Math.round(totalCalories)}</span>
+            </div>
+            {totalDistance > 0 && (
+              <div className="flex items-center gap-1">
+                <Route className="size-3.5 text-green-500" />
+                <span className="font-medium">{totalDistance.toFixed(1)} mi</span>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 text-xs text-muted-foreground">
+          No workouts recorded today
+        </div>
+      )}
+
+      {/* View All */}
+      {onViewAll && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-7 px-2 text-xs shrink-0"
+          onClick={onViewAll}
+        >
+          <Watch className="size-3.5 mr-1" />
+          Details
+          <ChevronRight className="size-3 ml-0.5" />
+        </Button>
+      )}
+    </div>
+  )
+}
+
+// Mini Activity Rings for compact display
+interface MiniActivityRingsProps {
+  move: number
+  exercise: number
+  stand: number
+  size?: number
+}
+
+function MiniActivityRings({ move, exercise, stand, size = 40 }: MiniActivityRingsProps) {
+  const strokeWidth = size * 0.12
+  const radius = (size - strokeWidth) / 2
+  
+  const rings = [
+    { progress: move, color: "#FF2D55" },
+    { progress: exercise, color: "#92E82A" },
+    { progress: stand, color: "#00D4FF" },
+  ]
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+        {rings.map((ring, i) => {
+          const r = radius - (i * strokeWidth * 1.3)
+          const c = 2 * Math.PI * r
+          const offset = c - (ring.progress / 100) * c
+          
+          return (
+            <g key={i}>
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                strokeOpacity={0.2}
+              />
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeDasharray={c}
+                strokeDashoffset={offset}
+              />
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}

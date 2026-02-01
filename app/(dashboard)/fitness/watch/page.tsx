@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { 
   Watch, 
   ChevronLeft, 
@@ -15,12 +16,16 @@ import type { AppleWorkout, DailyMetrics, WeeklySummary } from "@/components/das
 import { apiGet } from "@/lib/api/client"
 
 export default function AppleWatchPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const workoutIdFromUrl = searchParams.get('workout')
+  
   const [workouts, setWorkouts] = useState<AppleWorkout[]>([])
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics[]>([])
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null)
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(workoutIdFromUrl)
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -54,9 +59,26 @@ export default function AppleWatchPage() {
     fetchData()
   }, [fetchData])
 
+  // Sync URL param with state
+  useEffect(() => {
+    if (workoutIdFromUrl && workoutIdFromUrl !== selectedWorkoutId) {
+      setSelectedWorkoutId(workoutIdFromUrl)
+    }
+  }, [workoutIdFromUrl, selectedWorkoutId])
+
   const handleRefresh = () => {
     setRefreshing(true)
     fetchData()
+  }
+
+  const handleWorkoutSelect = (workoutId: string) => {
+    setSelectedWorkoutId(workoutId)
+    router.push(`/fitness/watch?workout=${workoutId}`, { scroll: false })
+  }
+
+  const handleBackFromDetail = () => {
+    setSelectedWorkoutId(null)
+    router.push('/fitness/watch', { scroll: false })
   }
 
   // Workout detail view
@@ -67,7 +89,7 @@ export default function AppleWatchPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedWorkoutId(null)}
+            onClick={handleBackFromDetail}
           >
             <ChevronLeft className="size-4 mr-1" />
             Back
@@ -121,7 +143,7 @@ export default function AppleWatchPage() {
             workouts={workouts}
             dailyMetrics={dailyMetrics}
             weeklySummary={weeklySummary}
-            onWorkoutClick={setSelectedWorkoutId}
+            onWorkoutClick={handleWorkoutSelect}
             className="pb-4"
           />
         </ScrollArea>

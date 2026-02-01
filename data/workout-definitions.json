@@ -1,10 +1,111 @@
 {
+  "friday": {
+    "id": "friday-shin-saver-circuit",
+    "day": "friday",
+    "goal": "Conditioning. Zero Rest. Low Impact.",
+    "name": "The Shin-Saver Circuit",
+    "focus": "conditioning",
+    "notes": [
+      "4 Rounds: A -> B -> C -> D with Zero Rest. Rest 2 mins after D. Repeat 4x",
+      "2-Hour Pro Block structure"
+    ],
+    "warmup": {
+      "name": "Warm-up & Skill",
+      "duration": 10,
+      "exercises": [
+        {
+          "id": "fri-warmup-1",
+          "name": "5 min Rower"
+        },
+        {
+          "id": "fri-warmup-2",
+          "form": "Palms down, lift knuckles",
+          "name": "Reverse Wrist Curls",
+          "reps": 15,
+          "sets": 2,
+          "notes": "Elbow Armor rehab",
+          "youtubeVideoId": "2WP49wiI2vg"
+        },
+        {
+          "id": "fri-warmup-3",
+          "name": "Single-Leg Stance",
+          "sets": 2,
+          "notes": "60s per leg. Balance work.",
+          "duration": 60,
+          "youtubeVideoId": "78PpqNX_t0w"
+        }
+      ]
+    },
+    "mobility": {
+      "name": "Deep Mobility",
+      "exercises": [
+        {
+          "id": "fri-mobility-1",
+          "name": "90/90 Hip Switches",
+          "notes": "3 mins dynamic movement",
+          "duration": 180,
+          "youtubeVideoId": "m9ckaAmnRw8"
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": "friday-circuit-a",
+        "form": "Lean back on straps. Arms straight. Open into a \"Y\".",
+        "name": "TRX \"Y\" Flys",
+        "reps": 15,
+        "notes": "12-15 reps",
+        "isElbowSafe": true,
+        "youtubeVideoId": "hfHUWysKgXc"
+      },
+      {
+        "id": "friday-circuit-b",
+        "form": "Fast tempo",
+        "name": "Push-ups",
+        "reps": 20,
+        "notes": "15-20 reps",
+        "youtubeVideoId": "WDIpL0pjun0"
+      },
+      {
+        "id": "friday-circuit-c",
+        "form": "Neutral grip.",
+        "name": "Chest-Supported Row",
+        "reps": 15,
+        "notes": "12-15 reps",
+        "isElbowSafe": true,
+        "youtubeVideoId": "FTwvmczf7bE"
+      },
+      {
+        "id": "friday-circuit-d",
+        "name": "Rower Sprint OR Air Bike",
+        "notes": "60 seconds Max Effort. No Jump Rope.",
+        "duration": 60
+      }
+    ],
+    "metabolicFlush": {
+      "name": "The Metabolic Flush",
+      "duration": 30,
+      "exercises": [
+        {
+          "id": "fri-flush",
+          "form": "Zone 2.",
+          "name": "Stationary Bike",
+          "notes": "30 Minutes",
+          "duration": 1800
+        }
+      ]
+    }
+  },
   "monday": {
     "id": "monday-density-strength",
-    "name": "Density Strength",
-    "focus": "strength",
     "day": "monday",
     "goal": "Build wire-strong muscle density. Low Reps.",
+    "name": "Density Strength",
+    "focus": "strength",
+    "notes": [
+      "2-Hour Pro Block: Skill (20m) + Lift (50m) + Bike (40m) + Mobility (15m)",
+      "Stop 1 rep before failure"
+    ],
     "warmup": {
       "name": "Skill & Warm-up",
       "duration": 20,
@@ -12,14 +113,14 @@
         {
           "id": "warmup-1",
           "name": "5 min Rower",
-          "duration": 300,
-          "notes": "Light sweat"
+          "notes": "Light sweat",
+          "duration": 300
         },
         {
           "id": "warmup-2",
           "name": "Finger Extensions",
-          "sets": 2,
           "reps": 25,
+          "sets": 2,
           "notes": "Rubber band. Mandatory rehab.",
           "youtubeVideoId": "gk5D_sJny1s"
         },
@@ -27,74 +128,94 @@
           "id": "warmup-3",
           "name": "Single-Leg Stance (Eyes Closed)",
           "sets": 2,
-          "duration": 45,
           "notes": "45 secs per leg. Proprioception.",
+          "duration": 45,
           "youtubeVideoId": "78PpqNX_t0w"
         },
         {
           "id": "warmup-4",
           "name": "Single-Leg Bodyweight RDL",
-          "sets": 2,
           "reps": 10,
+          "sets": 2,
           "notes": "10 reps per leg. Control the ankle.",
           "youtubeVideoId": "JQZqPsmeesc"
+        }
+      ]
+    },
+    "mobility": {
+      "name": "Deep Mobility",
+      "duration": 15,
+      "exercises": [
+        {
+          "id": "monday-mobility-1",
+          "form": "Knees wide on floor, feet out, push hips back.",
+          "name": "Frog Stretch",
+          "duration": 120,
+          "youtubeVideoId": "daYzz_6zFd8"
+        },
+        {
+          "id": "monday-mobility-2",
+          "name": "Pigeon Pose",
+          "notes": "2 mins per side",
+          "duration": 120,
+          "youtubeVideoId": "AI5A1PRYX7E"
         }
       ]
     },
     "exercises": [
       {
         "id": "monday-a1",
-        "name": "Straight-Arm Cable Pulldowns",
-        "sets": 3,
-        "reps": 15,
         "form": "Arms locked. Push bar to thighs using lats.",
+        "name": "Straight-Arm Cable Pulldowns",
+        "reps": 15,
+        "sets": 3,
         "notes": "12-15 reps",
         "isElbowSafe": true,
         "youtubeVideoId": "G9uNaXGTJ4w"
       },
       {
         "id": "monday-a2",
+        "form": "Slight leg dip to drive up, 3-sec slow lower.",
         "name": "DB Push Press",
-        "sets": 3,
         "reps": 6,
         "rest": 120,
-        "form": "Slight leg dip to drive up, 3-sec slow lower.",
+        "sets": 3,
         "notes": "4-6 reps",
         "youtubeVideoId": "sElIkjcfyNY"
       },
       {
         "id": "monday-b1",
+        "form": "Hips back. Use Straps.",
         "name": "Romanian Deadlift (RDL)",
-        "sets": 3,
         "reps": 6,
         "rest": 90,
-        "form": "Hips back. Use Straps.",
+        "sets": 3,
         "notes": "5-6 reps",
         "youtubeVideoId": "7j-2w4-P14I"
       },
       {
         "id": "monday-b2",
-        "name": "DB Reverse Lunges",
-        "sets": 3,
-        "reps": 10,
         "form": "Step back far. Drive through the front heel.",
+        "name": "DB Reverse Lunges",
+        "reps": 10,
+        "sets": 3,
         "notes": "8-10 reps per leg",
         "youtubeVideoId": "Q2k3kYbtOcI"
       },
       {
         "id": "monday-c",
+        "form": "Hug plate/sandbag to chest. Squeeze with arms.",
         "name": "Bear Hug Carry",
         "sets": 3,
-        "form": "Hug plate/sandbag to chest. Squeeze with arms.",
         "notes": "Max Time",
         "isElbowSafe": true
       },
       {
         "id": "monday-d",
-        "name": "Cable Pull-Throughs",
-        "sets": 3,
-        "reps": 20,
         "form": "Rope between legs. Hinge hips back, snap forward.",
+        "name": "Cable Pull-Throughs",
+        "reps": 20,
+        "sets": 3,
         "notes": "15-20 reps",
         "youtubeVideoId": "pv8e6OSyETE"
       }
@@ -105,41 +226,37 @@
       "exercises": [
         {
           "id": "monday-flush",
-          "name": "Endurance Run",
-          "duration": 2400,
           "form": "Zone 2. Consistent SPM.",
-          "notes": "Listen to 170 bpm for cadence"
+          "name": "Endurance Run",
+          "notes": "Listen to 170 bpm for cadence",
+          "duration": 2400
         }
       ]
-    },
-    "mobility": {
-      "name": "Deep Mobility",
-      "duration": 15,
-      "exercises": [
-        {
-          "id": "monday-mobility-1",
-          "name": "Frog Stretch",
-          "duration": 120,
-          "form": "Knees wide on floor, feet out, push hips back.",
-          "youtubeVideoId": "daYzz_6zFd8"
-        },
-        {
-          "id": "monday-mobility-2",
-          "name": "Pigeon Pose",
-          "duration": 120,
-          "notes": "2 mins per side",
-          "youtubeVideoId": "AI5A1PRYX7E"
-        }
-      ]
-    },
-    "notes": ["2-Hour Pro Block: Skill (20m) + Lift (50m) + Bike (40m) + Mobility (15m)", "Stop 1 rep before failure"]
+    }
+  },
+  "sunday": {
+    "id": "sunday-active-recovery",
+    "day": "sunday",
+    "goal": "No gym. Walking only.",
+    "name": "Active Recovery",
+    "focus": "recovery",
+    "exercises": [
+      {
+        "id": "sun-walk",
+        "name": "10,000 Steps",
+        "notes": "No gym. Walk outside."
+      }
+    ]
   },
   "tuesday": {
     "id": "tuesday-core-posture",
-    "name": "Waist & Core",
-    "focus": "core",
     "day": "tuesday",
     "goal": "Narrow waist. Posture.",
+    "name": "Waist & Core",
+    "focus": "core",
+    "notes": [
+      "2-Hour Pro Block structure"
+    ],
     "warmup": {
       "name": "Warm-up",
       "duration": 5,
@@ -155,48 +272,61 @@
         }
       ]
     },
+    "mobility": {
+      "name": "Deep Mobility",
+      "exercises": [
+        {
+          "id": "tue-mobility-1",
+          "form": "Deep lunge, back knee down, elbows to floor inside front foot.",
+          "name": "Lizard Pose",
+          "notes": "2 mins per side",
+          "duration": 120,
+          "youtubeVideoId": "wq0g9wlAuXw"
+        }
+      ]
+    },
     "exercises": [
       {
         "id": "tuesday-a1",
-        "name": "Cable Pallof Press",
-        "sets": 3,
-        "reps": 12,
         "form": "Anti-rotation",
+        "name": "Cable Pallof Press",
+        "reps": 12,
+        "sets": 3,
         "notes": "12 reps/side",
         "youtubeVideoId": "xeFp4MXad98"
       },
       {
         "id": "tuesday-a2",
-        "name": "Ab Rollouts",
-        "sets": 3,
-        "reps": 10,
         "form": "Pause at full extension",
+        "name": "Ab Rollouts",
+        "reps": 10,
+        "sets": 3,
         "youtubeVideoId": "GeGIjeO9oQw"
       },
       {
         "id": "tuesday-b",
-        "name": "Lying Leg Raises",
-        "sets": 3,
-        "reps": 15,
         "form": "Lower back glued to floor.",
+        "name": "Lying Leg Raises",
+        "reps": 15,
+        "sets": 3,
         "isElbowSafe": true,
         "youtubeVideoId": "JB2oyawG9KI"
       },
       {
         "id": "tuesday-c",
+        "form": "Exhale all air, suck navel to spine",
         "name": "Stomach Vacuums",
         "sets": 3,
-        "duration": 20,
-        "form": "Exhale all air, suck navel to spine",
         "notes": "20-sec hold",
+        "duration": 20,
         "youtubeVideoId": "cub3xhJXsAA"
       },
       {
         "id": "tuesday-d",
-        "name": "Face Pulls",
-        "sets": 3,
-        "reps": 15,
         "form": "Rope to forehead. Light weight.",
+        "name": "Face Pulls",
+        "reps": 15,
+        "sets": 3,
         "youtubeVideoId": "qEyoBOpvqR4"
       }
     ],
@@ -206,185 +336,24 @@
       "exercises": [
         {
           "id": "tue-flush",
-          "name": "Steep Incline Walk",
-          "duration": 2700,
           "form": "Hands Off Rails.",
-          "notes": "45 Mins @ 15% Incline / 3.0 MPH"
+          "name": "Steep Incline Walk",
+          "notes": "45 Mins @ 15% Incline / 3.0 MPH",
+          "duration": 2700
         }
       ]
-    },
-    "mobility": {
-      "name": "Deep Mobility",
-      "exercises": [
-        {
-          "id": "tue-mobility-1",
-          "name": "Lizard Pose",
-          "duration": 120,
-          "form": "Deep lunge, back knee down, elbows to floor inside front foot.",
-          "notes": "2 mins per side",
-          "youtubeVideoId": "wq0g9wlAuXw"
-        }
-      ]
-    },
-    "notes": ["2-Hour Pro Block structure"]
-  },
-  "wednesday": {
-    "id": "wednesday-fat-incinerator",
-    "name": "Fat Incinerator",
-    "focus": "cardio",
-    "day": "wednesday",
-    "goal": "Glycogen Depletion -> Fat Oxidation.",
-    "exercises": [
-      {
-        "id": "wed-phase1",
-        "name": "The Run",
-        "duration": 1200,
-        "form": "Zone 2 breathing. Cushioned Shoes.",
-        "notes": "Exactly 2 Miles @ 10:00-10:30 pace"
-      },
-      {
-        "id": "wed-phase2",
-        "name": "The Extended Hike",
-        "duration": 3600,
-        "form": "HANDS OFF RAILS.",
-        "notes": "15% Incline Walk @ 3.0 mph for 45-60 mins. Biggest calorie burner of the week."
-      }
-    ],
-    "finisher": [
-      {
-        "id": "wed-prehab-1",
-        "name": "Tibialis Raises",
-        "sets": 3,
-        "reps": 25,
-        "notes": "Wall leans. Post-cardio pre-hab.",
-        "youtubeVideoId": "VzIcGAgBiaM"
-      }
-    ],
-    "notes": ["Cushioned Running shoes required", "This is the biggest calorie burner of the week"]
-  },
-  "thursday": {
-    "id": "thursday-endurance",
-    "name": "Endurance",
-    "focus": "cardio",
-    "day": "thursday",
-    "goal": "Caloric burn. Mental toughness.",
-    "exercises": [
-      {
-        "id": "thu-run",
-        "name": "Run",
-        "form": "Slow / Conversational pace.",
-        "notes": "4 Miles. If shins hurt, switch to Elliptical."
-      },
-      {
-        "id": "thu-flush",
-        "name": "Recovery Flush",
-        "duration": 1200,
-        "form": "Very light resistance.",
-        "notes": "20 Mins Stationary Bike. Flushes lactic acid from the run."
-      }
-    ],
-    "notes": ["If shins hurt, switch to Elliptical", "Recovery bike flushes lactic acid"]
-  },
-  "friday": {
-    "id": "friday-shin-saver-circuit",
-    "name": "The Shin-Saver Circuit",
-    "focus": "conditioning",
-    "day": "friday",
-    "goal": "Conditioning. Zero Rest. Low Impact.",
-    "warmup": {
-      "name": "Warm-up & Skill",
-      "duration": 10,
-      "exercises": [
-        {
-          "id": "fri-warmup-1",
-          "name": "5 min Rower"
-        },
-        {
-          "id": "fri-warmup-2",
-          "name": "Reverse Wrist Curls",
-          "sets": 2,
-          "reps": 15,
-          "form": "Palms down, lift knuckles",
-          "notes": "Elbow Armor rehab",
-          "youtubeVideoId": "2WP49wiI2vg"
-        },
-        {
-          "id": "fri-warmup-3",
-          "name": "Single-Leg Stance",
-          "sets": 2,
-          "duration": 60,
-          "notes": "60s per leg. Balance work.",
-          "youtubeVideoId": "78PpqNX_t0w"
-        }
-      ]
-    },
-    "exercises": [
-      {
-        "id": "friday-circuit-a",
-        "name": "TRX \"Y\" Flys",
-        "reps": 15,
-        "form": "Lean back on straps. Arms straight. Open into a \"Y\".",
-        "notes": "12-15 reps",
-        "isElbowSafe": true,
-        "youtubeVideoId": "hfHUWysKgXc"
-      },
-      {
-        "id": "friday-circuit-b",
-        "name": "Push-ups",
-        "reps": 20,
-        "form": "Fast tempo",
-        "notes": "15-20 reps",
-        "youtubeVideoId": "WDIpL0pjun0"
-      },
-      {
-        "id": "friday-circuit-c",
-        "name": "Chest-Supported Row",
-        "reps": 15,
-        "form": "Neutral grip.",
-        "notes": "12-15 reps",
-        "isElbowSafe": true,
-        "youtubeVideoId": "FTwvmczf7bE"
-      },
-      {
-        "id": "friday-circuit-d",
-        "name": "Rower Sprint OR Air Bike",
-        "duration": 60,
-        "notes": "60 seconds Max Effort. No Jump Rope."
-      }
-    ],
-    "metabolicFlush": {
-      "name": "The Metabolic Flush",
-      "duration": 30,
-      "exercises": [
-        {
-          "id": "fri-flush",
-          "name": "Stationary Bike",
-          "duration": 1800,
-          "form": "Zone 2.",
-          "notes": "30 Minutes"
-        }
-      ]
-    },
-    "mobility": {
-      "name": "Deep Mobility",
-      "exercises": [
-        {
-          "id": "fri-mobility-1",
-          "name": "90/90 Hip Switches",
-          "duration": 180,
-          "notes": "3 mins dynamic movement",
-          "youtubeVideoId": "m9ckaAmnRw8"
-        }
-      ]
-    },
-    "notes": ["4 Rounds: A -> B -> C -> D with Zero Rest. Rest 2 mins after D. Repeat 4x", "2-Hour Pro Block structure"]
+    }
   },
   "saturday": {
     "id": "saturday-hiit-sprints",
-    "name": "HIIT Sprints",
-    "focus": "hiit",
     "day": "saturday",
     "goal": "EPOC (Afterburn).",
+    "name": "HIIT Sprints",
+    "focus": "hiit",
+    "notes": [
+      "Cushioned Running shoes required",
+      "0-1% Incline only for Achilles safety"
+    ],
     "warmup": {
       "name": "Warm-up",
       "duration": 5,
@@ -396,44 +365,92 @@
         }
       ]
     },
-    "exercises": [
-      {
-        "id": "sat-intervals",
-        "name": "HIIT Intervals",
-        "duration": 1200,
-        "form": "0-1% Incline only. Cushioned Shoes.",
-        "notes": "30 seconds Sprint (9.0+ mph) / 90 seconds Walk. 20 Mins total"
-      }
-    ],
     "finisher": [
       {
         "id": "sat-cooldown",
         "name": "Cool Down Walk",
-        "duration": 1200,
-        "notes": "20 min Walk"
+        "notes": "20 min Walk",
+        "duration": 1200
       },
       {
         "id": "sat-finisher",
         "name": "Stomach Vacuums",
         "sets": 4,
-        "duration": 20,
         "notes": "4 sets x 20-sec holds",
+        "duration": 20,
         "youtubeVideoId": "cub3xhJXsAA"
       }
     ],
-    "notes": ["Cushioned Running shoes required", "0-1% Incline only for Achilles safety"]
-  },
-  "sunday": {
-    "id": "sunday-active-recovery",
-    "name": "Active Recovery",
-    "focus": "recovery",
-    "day": "sunday",
-    "goal": "No gym. Walking only.",
     "exercises": [
       {
-        "id": "sun-walk",
-        "name": "10,000 Steps",
-        "notes": "No gym. Walk outside."
+        "id": "sat-intervals",
+        "form": "0-1% Incline only. Cushioned Shoes.",
+        "name": "HIIT Intervals",
+        "notes": "30 seconds Sprint (9.0+ mph) / 90 seconds Walk. 20 Mins total",
+        "duration": 1200
+      }
+    ]
+  },
+  "thursday": {
+    "id": "thursday-endurance",
+    "day": "thursday",
+    "goal": "Caloric burn. Mental toughness.",
+    "name": "Endurance",
+    "focus": "cardio",
+    "notes": [
+      "If shins hurt, switch to Elliptical",
+      "Recovery bike flushes lactic acid"
+    ],
+    "exercises": [
+      {
+        "id": "thu-run",
+        "form": "Slow / Conversational pace.",
+        "name": "Run",
+        "notes": "4 Miles. If shins hurt, switch to Elliptical."
+      },
+      {
+        "id": "thu-flush",
+        "form": "Very light resistance.",
+        "name": "Recovery Flush",
+        "notes": "20 Mins Stationary Bike. Flushes lactic acid from the run.",
+        "duration": 1200
+      }
+    ]
+  },
+  "wednesday": {
+    "id": "wednesday-fat-incinerator",
+    "day": "wednesday",
+    "goal": "Glycogen Depletion -> Fat Oxidation.",
+    "name": "Fat Incinerator",
+    "focus": "cardio",
+    "notes": [
+      "Cushioned Running shoes required",
+      "This is the biggest calorie burner of the week"
+    ],
+    "finisher": [
+      {
+        "id": "wed-prehab-1",
+        "name": "Tibialis Raises",
+        "reps": 25,
+        "sets": 3,
+        "notes": "Wall leans. Post-cardio pre-hab.",
+        "youtubeVideoId": "VzIcGAgBiaM"
+      }
+    ],
+    "exercises": [
+      {
+        "id": "wed-phase1",
+        "form": "Zone 2 breathing. Cushioned Shoes.",
+        "name": "The Run",
+        "notes": "Exactly 2 Miles @ 10:00-10:30 pace",
+        "duration": 1200
+      },
+      {
+        "id": "wed-phase2",
+        "form": "HANDS OFF RAILS.",
+        "name": "The Extended Hike",
+        "notes": "15% Incline Walk @ 3.0 mph for 45-60 mins. Biggest calorie burner of the week.",
+        "duration": 3600
       }
     ]
   }

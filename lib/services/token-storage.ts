@@ -48,10 +48,17 @@ function readTokens(): StoredTokens {
 
 /**
  * Write tokens to storage
+ * Uses fsync to ensure data is flushed to disk (prevents race conditions)
  */
 function writeTokens(tokens: StoredTokens): void {
   try {
-    fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2), 'utf-8')
+    const data = JSON.stringify(tokens, null, 2)
+    // Open, write, fsync, close - ensures data is on disk before returning
+    const fd = fs.openSync(TOKEN_FILE, 'w')
+    fs.writeSync(fd, data, 0, 'utf-8')
+    fs.fsyncSync(fd)
+    fs.closeSync(fd)
+    console.log('[TokenStorage] Tokens written and synced to disk')
   } catch (error) {
     console.error('[TokenStorage] Error writing tokens:', error)
   }
