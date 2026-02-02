@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Pete Train needs access to read your health data to display your step count and activity progress.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Pete Train needs access to save your workout data to Apple Health.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Pete Train uses your location to detect when you arrive at the gym and send workout reminders.</string>
+</dict>
+</plist>
