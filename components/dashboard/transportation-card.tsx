@@ -1,24 +1,49 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, AlertCircle, Car, Train, Bus, PersonStanding, AlertTriangle } from 'lucide-react'
+import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
-import { RideShareCard } from './ride-share-card'
-import type { CTABusResponse, CTATrainResponse } from '@/lib/types/cta.types'
-import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from '@/lib/types/cta.types'
-import { cn } from '@/lib/utils'
 import { apiGet } from '@/lib/api/client'
+import type { CTABusResponse, CTATrainResponse } from '@/lib/types/cta.types'
+import {
+  getUrgencyLevel,
+  getWalkingTime,
+  type UrgencyLevel,
+} from '@/lib/types/cta.types'
+import { cn } from '@/lib/utils'
+import {
+  AlertCircle,
+  AlertTriangle,
+  Bus,
+  Car,
+  PersonStanding,
+  RefreshCw,
+  Train,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { RideShareCard } from './ride-share-card'
 
 // CTA Brand Colors
 const CTA_COLORS = {
   Brown: { bg: 'bg-[#62361B]', text: 'text-white', border: 'border-[#62361B]' },
-  Purple: { bg: 'bg-[#522398]', text: 'text-white', border: 'border-[#522398]' },
+  Purple: {
+    bg: 'bg-[#522398]',
+    text: 'text-white',
+    border: 'border-[#522398]',
+  },
   Red: { bg: 'bg-[#C60C30]', text: 'text-white', border: 'border-[#C60C30]' },
   Blue: { bg: 'bg-[#00A1DE]', text: 'text-white', border: 'border-[#00A1DE]' },
   Green: { bg: 'bg-[#009B3A]', text: 'text-white', border: 'border-[#009B3A]' },
-  Orange: { bg: 'bg-[#F9461C]', text: 'text-white', border: 'border-[#F9461C]' },
+  Orange: {
+    bg: 'bg-[#F9461C]',
+    text: 'text-white',
+    border: 'border-[#F9461C]',
+  },
   Pink: { bg: 'bg-[#E27EA6]', text: 'text-white', border: 'border-[#E27EA6]' },
-  Yellow: { bg: 'bg-[#F9E300]', text: 'text-black', border: 'border-[#F9E300]' },
+  Yellow: {
+    bg: 'bg-[#F9E300]',
+    text: 'text-black',
+    border: 'border-[#F9E300]',
+  },
   bus: { bg: 'bg-[#565A5C]', text: 'text-white', border: 'border-[#565A5C]' },
 }
 
@@ -63,7 +88,11 @@ interface UrgencyBannerProps {
  * Animated urgency banner with countdown progress bar
  * The progress bar counts down from 100% to 0% based on remaining buffer time
  */
-function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerProps) {
+function UrgencyBanner({
+  urgency,
+  arrivalMinutes,
+  walkingTime,
+}: UrgencyBannerProps) {
   const [progress, setProgress] = useState(100)
   const startTimeRef = useRef<number>(Date.now())
   const initialBufferRef = useRef<number>(arrivalMinutes - walkingTime)
@@ -80,12 +109,16 @@ function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerPr
 
     const interval = setInterval(() => {
       const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000
-      const currentBufferSeconds = (initialBufferRef.current * 60) - elapsedSeconds
-      
+      const currentBufferSeconds =
+        initialBufferRef.current * 60 - elapsedSeconds
+
       // Calculate progress: 100% at maxBuffer minutes, 0% at 0 minutes
       const maxBufferSeconds = maxBuffer * 60
-      const newProgress = Math.max(0, Math.min(100, (currentBufferSeconds / maxBufferSeconds) * 100))
-      
+      const newProgress = Math.max(
+        0,
+        Math.min(100, (currentBufferSeconds / maxBufferSeconds) * 100)
+      )
+
       setProgress(newProgress)
     }, 100) // Update every 100ms for smooth animation
 
@@ -95,38 +128,38 @@ function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerPr
   const isLeaveNow = urgency === 'leave-now'
 
   return (
-    <div className="relative overflow-hidden rounded-md mb-2">
+    <div className="relative mb-2 overflow-hidden rounded-md">
       {/* Progress bar background */}
       <div
         className={cn(
-          "absolute inset-0 transition-all duration-100 ease-linear",
-          isLeaveNow
-            ? "bg-red-600/80"
-            : "bg-orange-500/80"
+          'absolute inset-0 transition-all duration-100 ease-linear',
+          isLeaveNow ? 'bg-red-600/80' : 'bg-orange-500/80'
         )}
         style={{ width: `${progress}%` }}
       />
       {/* Darker background for depleted portion */}
       <div
         className={cn(
-          "absolute inset-0",
-          isLeaveNow
-            ? "bg-red-900/90"
-            : "bg-orange-900/90"
+          'absolute inset-0',
+          isLeaveNow ? 'bg-red-900/90' : 'bg-orange-900/90'
         )}
-        style={{ 
+        style={{
           left: `${progress}%`,
-          width: `${100 - progress}%`
+          width: `${100 - progress}%`,
         }}
       />
       {/* Content */}
-      <div className={cn(
-        "relative flex items-center justify-center gap-2 px-2 py-1.5 text-xs font-bold text-white",
-        isLeaveNow && progress < 30 && "animate-pulse"
-      )}>
+      <div
+        className={cn(
+          'relative flex items-center justify-center gap-2 px-2 py-1.5 text-xs font-bold text-white',
+          isLeaveNow && progress < 30 && 'animate-pulse'
+        )}
+      >
         <AlertTriangle className="size-3" />
         {isLeaveNow ? 'LEAVE NOW!' : 'Get ready to leave'}
-        <span className="font-normal">({arrivalMinutes}m arrival, {walkingTime}m walk)</span>
+        <span className="font-normal">
+          ({arrivalMinutes}m arrival, {walkingTime}m walk)
+        </span>
       </div>
     </div>
   )
@@ -142,13 +175,19 @@ function ArrivalBadge({ minutes, urgency, isFirst }: ArrivalBadgeProps) {
   const isDue = minutes === 'DUE' || minutes === '1'
 
   // Apply urgency styling to first badge
-  const urgencyBg = isFirst ? {
-    'missed': 'bg-gray-400 text-white line-through',
-    'leave-now': 'bg-red-500 text-white animate-pulse',
-    'prepare': 'bg-orange-500 text-white',
-    'upcoming': 'bg-yellow-500 text-black',
-    'normal': isDue ? 'animate-pulse bg-brand text-white' : 'bg-muted text-foreground',
-  }[urgency] : (isDue ? 'animate-pulse bg-brand text-white' : 'bg-muted text-foreground')
+  const urgencyBg = isFirst
+    ? {
+        missed: 'bg-gray-400 text-white line-through',
+        'leave-now': 'bg-red-500 text-white animate-pulse',
+        prepare: 'bg-orange-500 text-white',
+        upcoming: 'bg-yellow-500 text-black',
+        normal: isDue
+          ? 'animate-pulse bg-brand text-white'
+          : 'bg-muted text-foreground',
+      }[urgency]
+    : isDue
+      ? 'animate-pulse bg-brand text-white'
+      : 'bg-muted text-foreground'
 
   return (
     <div
@@ -170,18 +209,28 @@ interface CTARouteRowProps {
   arrivals: string[]
 }
 
-function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteRowProps) {
-  const colors = type === 'train' && lineName
-    ? CTA_COLORS[lineName as keyof typeof CTA_COLORS] || CTA_COLORS.bus
-    : CTA_COLORS.bus
+function CTARouteRow({
+  type,
+  route,
+  lineName,
+  destination,
+  arrivals,
+}: CTARouteRowProps) {
+  const colors =
+    type === 'train' && lineName
+      ? CTA_COLORS[lineName as keyof typeof CTA_COLORS] || CTA_COLORS.bus
+      : CTA_COLORS.bus
 
   // Get walking time for this route
   const walkingTime = getWalkingTime(route, type)
 
   // Calculate urgency based on first arrival
   const firstArrival = arrivals[0]
-  const firstMinutes = firstArrival === 'DUE' ? 0 : parseInt(firstArrival ?? '', 10)
-  const urgency = !isNaN(firstMinutes) ? getUrgencyLevel(firstMinutes, walkingTime) : 'normal'
+  const firstMinutes =
+    firstArrival === 'DUE' ? 0 : parseInt(firstArrival ?? '', 10)
+  const urgency = !isNaN(firstMinutes)
+    ? getUrgencyLevel(firstMinutes, walkingTime)
+    : 'normal'
   const urgencyStyles = getUrgencyRowStyles(urgency)
 
   // Check if any arrival is catchable
@@ -191,11 +240,13 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
   })
 
   return (
-    <div className={cn(
-      'rounded-lg p-3 transition-all duration-300',
-      urgencyStyles.row,
-      urgency === 'normal' && 'hover:bg-muted/50'
-    )}>
+    <div
+      className={cn(
+        'rounded-lg p-3 transition-all duration-300',
+        urgencyStyles.row,
+        urgency === 'normal' && 'hover:bg-muted/50'
+      )}
+    >
       {/* Urgency Alert Banner with countdown progress */}
       {(urgency === 'leave-now' || urgency === 'prepare') && (
         <UrgencyBanner
@@ -207,7 +258,9 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
 
       <div className="flex items-center gap-3">
         {/* Route Badge */}
-        <div className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} min-w-[44px] h-10 px-2`}>
+        <div
+          className={`flex items-center justify-center rounded-lg ${colors.bg} ${colors.text} h-10 min-w-[44px] px-2`}
+        >
           {type === 'train' ? (
             <Train className="size-5" />
           ) : (
@@ -219,28 +272,30 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {type === 'train' && lineName && (
-              <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${colors.bg} ${colors.text}`}>
+              <span
+                className={`rounded px-1.5 py-0.5 text-xs font-bold ${colors.bg} ${colors.text}`}
+              >
                 {lineName}
               </span>
             )}
             {type === 'bus' && (
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-foreground text-sm font-semibold">
                 Bus {route}
               </span>
             )}
             {/* Walking time indicator */}
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <span className="text-muted-foreground flex items-center gap-0.5 text-[10px]">
               <PersonStanding className="size-3" />
               {walkingTime}m
             </span>
           </div>
           <div className="mt-0.5 flex items-center gap-2">
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="text-muted-foreground truncate text-xs">
               to {destination}
             </p>
             {/* Catchable indicator */}
-            {arrivals.length > 0 && (
-              hasCatchable ? (
+            {arrivals.length > 0 &&
+              (hasCatchable ? (
                 <span className="text-[10px] font-medium text-green-600 dark:text-green-400">
                   Catchable
                 </span>
@@ -248,8 +303,7 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
                 <span className="text-[10px] font-medium text-red-500">
                   Too late
                 </span>
-              )
-            )}
+              ))}
           </div>
         </div>
 
@@ -258,7 +312,9 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
           {arrivals.length > 0 ? (
             arrivals.slice(0, 2).map((time, idx) => {
               const mins = time === 'DUE' ? 0 : parseInt(time, 10)
-              const arrivalUrgency = !isNaN(mins) ? getUrgencyLevel(mins, walkingTime) : 'normal'
+              const arrivalUrgency = !isNaN(mins)
+                ? getUrgencyLevel(mins, walkingTime)
+                : 'normal'
               return (
                 <ArrivalBadge
                   key={idx}
@@ -269,7 +325,9 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
               )
             })
           ) : (
-            <span className="text-xs text-muted-foreground italic">No arrivals</span>
+            <span className="text-muted-foreground text-xs italic">
+              No arrivals
+            </span>
           )}
         </div>
       </div>
@@ -279,7 +337,9 @@ function CTARouteRow({ type, route, lineName, destination, arrivals }: CTARouteR
 
 export function TransportationCard() {
   const [busData, setBusData] = useState<Record<string, CTABusResponse>>({})
-  const [trainData, setTrainData] = useState<Record<string, CTATrainResponse>>({})
+  const [trainData, setTrainData] = useState<Record<string, CTATrainResponse>>(
+    {}
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showRideshare, setShowRideshare] = useState(false)
@@ -288,7 +348,10 @@ export function TransportationCard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiGet<{ bus: Record<string, CTABusResponse>; train: Record<string, CTATrainResponse> }>('/api/cta/all')
+      const response = await apiGet<{
+        bus: Record<string, CTABusResponse>
+        train: Record<string, CTATrainResponse>
+      }>('/api/cta/all')
       if (!response.success) {
         if (response.code === 'NOT_CONFIGURED') {
           setError('CTA API not configured')
@@ -323,7 +386,9 @@ export function TransportationCard() {
     return {
       route,
       destination: predictions[0]?.stpnm || 'Downtown',
-      arrivals: predictions.slice(0, 3).map(p => p.prdctdn === 'DUE' ? 'DUE' : p.prdctdn),
+      arrivals: predictions
+        .slice(0, 3)
+        .map(p => (p.prdctdn === 'DUE' ? 'DUE' : p.prdctdn)),
       error: routeError,
     }
   })
@@ -335,18 +400,20 @@ export function TransportationCard() {
   ]
   const processedTrainLines = trainLines.map(({ code, name }) => {
     const lineData = trainData[code]
-    const predictions = lineData?.ctatt?.eta
-      ?.filter(eta => {
-        const trDr = typeof eta.trDr === 'string' ? parseInt(eta.trDr, 10) : eta.trDr
-        return eta.rt === code && trDr === 5 // Southbound to Loop
-      })
-      .slice(0, 3)
-      .map(eta => {
-        const minutes = Math.round(
-          (new Date(eta.arrT).getTime() - new Date().getTime()) / 60000
-        )
-        return minutes <= 0 ? 'DUE' : minutes.toString()
-      }) || []
+    const predictions =
+      lineData?.ctatt?.eta
+        ?.filter(eta => {
+          const trDr =
+            typeof eta.trDr === 'string' ? parseInt(eta.trDr, 10) : eta.trDr
+          return eta.rt === code && trDr === 5 // Southbound to Loop
+        })
+        .slice(0, 3)
+        .map(eta => {
+          const minutes = Math.round(
+            (new Date(eta.arrT).getTime() - new Date().getTime()) / 60000
+          )
+          return minutes <= 0 ? 'DUE' : minutes.toString()
+        }) || []
 
     return {
       code,
@@ -358,8 +425,8 @@ export function TransportationCard() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-card p-5 ">
-        <div className="flex items-center gap-2 text-destructive">
+      <div className="bg-card rounded-2xl p-5">
+        <div className="text-destructive flex items-center gap-2">
           <AlertCircle className="size-5" />
           <p className="text-sm">{error}</p>
         </div>
@@ -369,42 +436,46 @@ export function TransportationCard() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Getting Around</h3>
-          {/* CTA Logo style badge */}
+      <DashboardCardHeader
+        icon={<Bus className="size-5 text-[#00A1DE]" />}
+        iconContainerClassName="bg-[#00A1DE]/10"
+        title="Getting Around"
+        badge={
           <span className="rounded bg-[#00A1DE] px-1.5 py-0.5 text-[10px] font-bold text-white">
             CTA
           </span>
-        </div>
-        <div className="flex items-center gap-2">
+        }
+        viewHref="/transit"
+        viewLabel="View"
+        onRefresh={fetchTransit}
+        refreshing={loading}
+        rightExtra={
           <Button
             variant={showRideshare ? 'default' : 'outline'}
             size="sm"
             onClick={() => setShowRideshare(!showRideshare)}
-            className="gap-1.5 text-xs"
+            className="h-7 gap-1.5 px-2 text-xs"
           >
             <Car className="size-3.5" />
             Rideshare
           </Button>
-          <Button variant="ghost" size="sm" onClick={fetchTransit} disabled={loading}>
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Rideshare Widget */}
       {showRideshare && (
-        <div className="rounded-xl border bg-background/50 p-4">
+        <div className="bg-background/50 rounded-xl border p-4">
           <RideShareCard compact />
         </div>
       )}
 
       {/* Transit Arrivals */}
       {loading && Object.keys(busData).length === 0 ? (
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4">
-          <RefreshCw className="size-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading arrivals...</span>
+        <div className="bg-muted/30 flex items-center gap-2 rounded-lg border p-4">
+          <RefreshCw className="text-muted-foreground size-4 animate-spin" />
+          <span className="text-muted-foreground text-sm">
+            Loading arrivals...
+          </span>
         </div>
       ) : (
         <div className="space-y-2">
@@ -421,22 +492,23 @@ export function TransportationCard() {
           ))}
 
           {/* Bus Routes */}
-          {processedBusRoutes.map(route => (
-            !route.error && (
-              <CTARouteRow
-                key={route.route}
-                type="bus"
-                route={route.route}
-                destination={route.destination}
-                arrivals={route.arrivals}
-              />
-            )
-          ))}
+          {processedBusRoutes.map(
+            route =>
+              !route.error && (
+                <CTARouteRow
+                  key={route.route}
+                  type="bus"
+                  route={route.route}
+                  destination={route.destination}
+                  arrivals={route.arrivals}
+                />
+              )
+          )}
         </div>
       )}
 
       {/* Live indicator */}
-      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs">
         <span className="relative flex size-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex size-2 rounded-full bg-green-500" />

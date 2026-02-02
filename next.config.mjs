@@ -12,7 +12,7 @@ const nextConfig = {
           },
         ],
       },
-    ];
+    ]
   },
   // Enable TypeScript type checking during builds
   typescript: {
@@ -55,6 +55,6 @@ const nextConfig = {
   experimental: {
     // Add any experimental features you want to enable
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

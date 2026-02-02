@@ -1,31 +1,30 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { 
-  Dumbbell, 
-  Sun, 
-  Moon, 
-  Flame, 
-  ChevronRight, 
-  Check,
+import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
+import { Badge } from '@/components/ui/badge'
+import { apiGet } from '@/lib/api/client'
+import type {
+  ConsistencyStats,
+  DayOfWeek,
+  WeeklyRoutine,
+  Workout,
+} from '@/lib/types/fitness.types'
+import { cn } from '@/lib/utils'
+import {
   AlertTriangle,
-  Footprints
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import type { 
-  WeeklyRoutine, 
-  DayOfWeek, 
-  Workout, 
-  ConsistencyStats 
-} from "@/lib/types/fitness.types"
-import { apiGet } from "@/lib/api/client"
+  Check,
+  Dumbbell,
+  Flame,
+  Footprints,
+  Moon,
+  Sun,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 /**
  * FitnessWidget - A compact dashboard widget showing today's fitness at a glance.
- * 
+ *
  * Shows:
  * - Current streak
  * - Morning/night routine status
@@ -35,17 +34,22 @@ import { apiGet } from "@/lib/api/client"
 export function FitnessWidget() {
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
   const [todayWorkout, setTodayWorkout] = useState<Workout | null>(null)
-  const [consistencyStats, setConsistencyStats] = useState<ConsistencyStats | null>(null)
+  const [consistencyStats, setConsistencyStats] =
+    useState<ConsistencyStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   const getCurrentDay = (): DayOfWeek => {
-    return new Date().toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as DayOfWeek
+    return new Date()
+      .toLocaleDateString('en-US', { weekday: 'long' })
+      .toLowerCase() as DayOfWeek
   }
 
   const getCurrentWeekNumber = (): number => {
     const now = new Date()
     const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
+    const days = Math.floor(
+      (now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
+    )
     return Math.ceil((days + startOfYear.getDay() + 1) / 7)
   }
 
@@ -54,9 +58,9 @@ export function FitnessWidget() {
       try {
         const day = getCurrentDay()
         const [routineRes, workoutRes, consistencyRes] = await Promise.all([
-          apiGet<WeeklyRoutine>("/api/fitness/routine"),
+          apiGet<WeeklyRoutine>('/api/fitness/routine'),
           apiGet<Workout>(`/api/fitness/workout/${day}`),
-          apiGet<ConsistencyStats>("/api/fitness/consistency"),
+          apiGet<ConsistencyStats>('/api/fitness/consistency'),
         ])
 
         if (routineRes.success && routineRes.data) {
@@ -71,7 +75,7 @@ export function FitnessWidget() {
           setConsistencyStats(consistencyRes.data)
         }
       } catch (error) {
-        console.error("Failed to fetch fitness data", error)
+        console.error('Failed to fetch fitness data', error)
       } finally {
         setLoading(false)
       }
@@ -83,13 +87,13 @@ export function FitnessWidget() {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="size-5 rounded bg-muted" />
-          <div className="h-5 w-20 rounded bg-muted" />
+        <div className="mb-4 flex items-center gap-2">
+          <div className="bg-muted size-5 rounded" />
+          <div className="bg-muted h-5 w-20 rounded" />
         </div>
         <div className="space-y-3">
-          <div className="h-12 rounded-lg bg-muted" />
-          <div className="h-12 rounded-lg bg-muted" />
+          <div className="bg-muted h-12 rounded-lg" />
+          <div className="bg-muted h-12 rounded-lg" />
         </div>
       </div>
     )
@@ -101,11 +105,11 @@ export function FitnessWidget() {
 
   const today = getCurrentDay()
   const weekNumber = getCurrentWeekNumber()
-  const week = routine.weeks.find((w) => w.weekNumber === weekNumber)
+  const week = routine.weeks.find(w => w.weekNumber === weekNumber)
   const todayData = week?.days[today]
   const scheduleInfo = routine.schedule[today]
-  const hasInjuryProtocol = routine.injuryProtocol?.status === "active"
-  const isRestDay = scheduleInfo?.focus === "Rest"
+  const hasInjuryProtocol = routine.injuryProtocol?.status === 'active'
+  const isRestDay = scheduleInfo?.focus === 'Rest'
 
   const morningDone = todayData?.morningRoutine?.completed || false
   const nightDone = todayData?.nightRoutine?.completed || false
@@ -113,45 +117,49 @@ export function FitnessWidget() {
 
   // Calculate today's progress
   const totalTasks = isRestDay ? 2 : 3 // morning, night, and workout (if not rest day)
-  const completedTasks = (morningDone ? 1 : 0) + (nightDone ? 1 : 0) + (workoutDone && !isRestDay ? 1 : 0)
+  const completedTasks =
+    (morningDone ? 1 : 0) +
+    (nightDone ? 1 : 0) +
+    (workoutDone && !isRestDay ? 1 : 0)
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="size-5 text-blue-500" />
-          <h2 className="font-semibold">Fitness</h2>
-          {hasInjuryProtocol && (
-            <Badge variant="destructive" className="text-[10px] h-4 gap-0.5 px-1.5">
+      <DashboardCardHeader
+        icon={<Dumbbell className="size-5 text-blue-500" />}
+        iconContainerClassName="bg-blue-500/10"
+        title="Fitness"
+        badge={
+          hasInjuryProtocol ? (
+            <Badge
+              variant="destructive"
+              className="h-4 gap-0.5 px-1.5 text-[10px]"
+            >
               <AlertTriangle className="size-2.5" />
             </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {consistencyStats && consistencyStats.currentStreak > 0 && (
+          ) : undefined
+        }
+        viewHref="/fitness"
+        viewLabel="View"
+        rightExtra={
+          consistencyStats && consistencyStats.currentStreak > 0 ? (
             <div className="flex items-center gap-1 text-orange-500">
               <Flame className="size-4" />
-              <span className="text-sm font-bold">{consistencyStats.currentStreak}</span>
+              <span className="text-sm font-bold">
+                {consistencyStats.currentStreak}
+              </span>
             </div>
-          )}
-          <Link href="/fitness">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
-              View
-              <ChevronRight className="size-3" />
-            </Button>
-          </Link>
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* Progress indicator */}
-      <div className="flex gap-1 mb-4">
+      <div className="mb-4 flex gap-1">
         {Array.from({ length: totalTasks }).map((_, i) => (
           <div
             key={i}
             className={cn(
-              "h-1 flex-1 rounded-full transition-colors",
-              i < completedTasks ? "bg-green-500" : "bg-muted"
+              'h-1 flex-1 rounded-full transition-colors',
+              i < completedTasks ? 'bg-green-500' : 'bg-muted'
             )}
           />
         ))}
@@ -160,108 +168,131 @@ export function FitnessWidget() {
       {/* Today's Summary */}
       <div className="space-y-2">
         {/* Morning Routine */}
-        <div className={cn(
-          "flex items-center gap-3 p-2.5 rounded-lg border transition-colors",
-          morningDone 
-            ? "bg-green-500/5 border-green-500/20" 
-            : "bg-amber-500/5 border-amber-500/20"
-        )}>
-          <div className={cn(
-            "rounded-md p-1.5",
-            morningDone ? "bg-green-500/10" : "bg-amber-500/10"
-          )}>
-            <Sun className={cn(
-              "size-4",
-              morningDone ? "text-green-500" : "text-amber-500"
-            )} />
+        <div
+          className={cn(
+            'flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
+            morningDone
+              ? 'border-green-500/20 bg-green-500/5'
+              : 'border-amber-500/20 bg-amber-500/5'
+          )}
+        >
+          <div
+            className={cn(
+              'rounded-md p-1.5',
+              morningDone ? 'bg-green-500/10' : 'bg-amber-500/10'
+            )}
+          >
+            <Sun
+              className={cn(
+                'size-4',
+                morningDone ? 'text-green-500' : 'text-amber-500'
+              )}
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium">{routine.dailyRoutines.morning.name}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {routine.dailyRoutines.morning.duration}m · {routine.dailyRoutines.morning.exercises.length} stretches
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">
+              {routine.dailyRoutines.morning.name}
+            </div>
+            <div className="text-muted-foreground text-[11px]">
+              {routine.dailyRoutines.morning.duration}m ·{' '}
+              {routine.dailyRoutines.morning.exercises.length} stretches
             </div>
           </div>
-          {morningDone && (
-            <Check className="size-4 text-green-500 shrink-0" />
-          )}
+          {morningDone && <Check className="size-4 shrink-0 text-green-500" />}
         </div>
 
         {/* Today's Workout / Rest Day */}
         {isRestDay ? (
-          <div className="flex items-center gap-3 p-2.5 rounded-lg border bg-blue-500/5 border-blue-500/20">
-            <div className="rounded-md p-1.5 bg-blue-500/10">
+          <div className="flex items-center gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5">
+            <div className="rounded-md bg-blue-500/10 p-1.5">
               <Footprints className="size-4 text-blue-500" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-medium">Rest Day</div>
-              <div className="text-[11px] text-muted-foreground">
-                {scheduleInfo?.goal || "10,000 Steps"}
+              <div className="text-muted-foreground text-[11px]">
+                {scheduleInfo?.goal || '10,000 Steps'}
               </div>
             </div>
           </div>
         ) : todayWorkout ? (
           <Link href="/fitness" className="block">
-            <div className={cn(
-              "flex items-center gap-3 p-2.5 rounded-lg border transition-colors hover:bg-muted/50",
-              workoutDone 
-                ? "bg-green-500/5 border-green-500/20" 
-                : "bg-blue-500/5 border-blue-500/20"
-            )}>
-              <div className={cn(
-                "rounded-md p-1.5",
-                workoutDone ? "bg-green-500/10" : "bg-blue-500/10"
-              )}>
-                <Dumbbell className={cn(
-                  "size-4",
-                  workoutDone ? "text-green-500" : "text-blue-500"
-                )} />
+            <div
+              className={cn(
+                'hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
+                workoutDone
+                  ? 'border-green-500/20 bg-green-500/5'
+                  : 'border-blue-500/20 bg-blue-500/5'
+              )}
+            >
+              <div
+                className={cn(
+                  'rounded-md p-1.5',
+                  workoutDone ? 'bg-green-500/10' : 'bg-blue-500/10'
+                )}
+              >
+                <Dumbbell
+                  className={cn(
+                    'size-4',
+                    workoutDone ? 'text-green-500' : 'text-blue-500'
+                  )}
+                />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{todayWorkout.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {scheduleInfo?.focus} · {todayWorkout.exercises.length} exercises
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">
+                  {todayWorkout.name}
+                </div>
+                <div className="text-muted-foreground text-[11px]">
+                  {scheduleInfo?.focus} · {todayWorkout.exercises.length}{' '}
+                  exercises
                 </div>
               </div>
               {workoutDone ? (
-                <Check className="size-4 text-green-500 shrink-0" />
+                <Check className="size-4 shrink-0 text-green-500" />
               ) : (
-                <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                <ChevronRight className="text-muted-foreground size-4 shrink-0" />
               )}
             </div>
           </Link>
         ) : null}
 
         {/* Night Routine */}
-        <div className={cn(
-          "flex items-center gap-3 p-2.5 rounded-lg border transition-colors",
-          nightDone 
-            ? "bg-green-500/5 border-green-500/20" 
-            : "bg-indigo-500/5 border-indigo-500/20"
-        )}>
-          <div className={cn(
-            "rounded-md p-1.5",
-            nightDone ? "bg-green-500/10" : "bg-indigo-500/10"
-          )}>
-            <Moon className={cn(
-              "size-4",
-              nightDone ? "text-green-500" : "text-indigo-500"
-            )} />
+        <div
+          className={cn(
+            'flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
+            nightDone
+              ? 'border-green-500/20 bg-green-500/5'
+              : 'border-indigo-500/20 bg-indigo-500/5'
+          )}
+        >
+          <div
+            className={cn(
+              'rounded-md p-1.5',
+              nightDone ? 'bg-green-500/10' : 'bg-indigo-500/10'
+            )}
+          >
+            <Moon
+              className={cn(
+                'size-4',
+                nightDone ? 'text-green-500' : 'text-indigo-500'
+              )}
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium">{routine.dailyRoutines.night.name}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {routine.dailyRoutines.night.duration}m · {routine.dailyRoutines.night.exercises.length} stretches
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">
+              {routine.dailyRoutines.night.name}
+            </div>
+            <div className="text-muted-foreground text-[11px]">
+              {routine.dailyRoutines.night.duration}m ·{' '}
+              {routine.dailyRoutines.night.exercises.length} stretches
             </div>
           </div>
-          {nightDone && (
-            <Check className="size-4 text-green-500 shrink-0" />
-          )}
+          {nightDone && <Check className="size-4 shrink-0 text-green-500" />}
         </div>
       </div>
 
       {/* Quick Stats Footer */}
       {consistencyStats && (
-        <div className="flex items-center justify-between mt-4 pt-3 border-t text-xs text-muted-foreground">
+        <div className="text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs">
           <span>Week: {consistencyStats.weeklyCompletion}%</span>
           <span>Month: {consistencyStats.monthlyCompletion}%</span>
           <span>Best: {consistencyStats.longestStreak} days</span>

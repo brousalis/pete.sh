@@ -1,20 +1,24 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import Image from "next/image"
-import Link from "next/link"
+import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
+import { Button } from '@/components/ui/button'
+import { apiGet, apiPost, getApiBaseUrl } from '@/lib/api/client'
+import type {
+  SpotifyListeningHistoryEntry,
+  SpotifyPlaybackState,
+  SpotifyUser,
+} from '@/lib/types/spotify.types'
 import {
-  Play,
+  Clock,
+  Database,
+  Music,
   Pause,
+  Play,
   SkipBack,
   SkipForward,
-  Music,
-  ChevronRight,
-  Database,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
-import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
+} from 'lucide-react'
+import Image from 'next/image'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -47,7 +51,7 @@ const ACTION_DEBOUNCE_MS = 2000
 
 /**
  * SpotifyWidget - A compact dashboard widget showing current playback.
- * 
+ *
  * Shows:
  * - Album art and current track info
  * - Play/pause and skip controls
@@ -56,35 +60,59 @@ const ACTION_DEBOUNCE_MS = 2000
  */
 export function SpotifyWidget() {
   const [user, setUser] = useState<SpotifyUser | null>(null)
-  const [playbackState, setPlaybackState] = useState<SpotifyPlaybackState | null>(null)
-  const [cachedPlayback, setCachedPlayback] = useState<SpotifyPlaybackResponse['playback'] | null>(null)
+  const [playbackState, setPlaybackState] =
+    useState<SpotifyPlaybackState | null>(null)
+  const [cachedPlayback, setCachedPlayback] = useState<
+    SpotifyPlaybackResponse['playback'] | null
+  >(null)
   const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [isSkipping, setIsSkipping] = useState<"next" | "previous" | null>(null)
+  const [isSkipping, setIsSkipping] = useState<'next' | 'previous' | null>(null)
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authAvailable, setAuthAvailable] = useState(false)
   const [authUrl, setAuthUrl] = useState<string | null>(null)
-  
+  const [recentHistory, setRecentHistory] = useState<
+    SpotifyListeningHistoryEntry[]
+  >([])
+
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
-  
+
+  // Format relative time for recent songs
+  const formatRecentTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const diffMs = Date.now() - date.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
   // Compute full auth URL based on API base (for cross-origin local mode)
   // Include returnTo param so localhost knows to redirect back to pete.sh
-  const fullAuthUrl = authUrl ? (() => {
-    const baseUrl = getApiBaseUrl()
-    const url = `${baseUrl}${authUrl}`
-    // If we're on a different origin (e.g., pete.sh hitting localhost), include returnTo
-    if (typeof window !== 'undefined' && baseUrl && !window.location.origin.includes('localhost')) {
-      return `${url}?returnTo=${encodeURIComponent(window.location.origin)}`
-    }
-    return url
-  })() : null
+  const fullAuthUrl = authUrl
+    ? (() => {
+        const baseUrl = getApiBaseUrl()
+        const url = `${baseUrl}${authUrl}`
+        // If we're on a different origin (e.g., pete.sh hitting localhost), include returnTo
+        if (
+          typeof window !== 'undefined' &&
+          baseUrl &&
+          !window.location.origin.includes('localhost')
+        ) {
+          return `${url}?returnTo=${encodeURIComponent(window.location.origin)}`
+        }
+        return url
+      })()
+    : null
 
   // Fetch user profile
   const fetchUser = useCallback(async () => {
     try {
-      const response = await apiGet<SpotifyUserResponse>("/api/spotify/me")
+      const response = await apiGet<SpotifyUserResponse>('/api/spotify/me')
       if (response.success && response.data) {
         setUser(response.data.user)
         setSource(response.data.source)
@@ -100,27 +128,50 @@ export function SpotifyWidget() {
     }
   }, [])
 
+  // Fetch last 3 recent songs from listening history
+  const fetchRecentHistory = useCallback(async () => {
+    try {
+      const response = await apiGet<{
+        history: SpotifyListeningHistoryEntry[]
+      }>('/api/spotify/history?limit=3')
+      if (response.success && response.data?.history) {
+        setRecentHistory(response.data.history)
+      }
+    } catch {
+      // Silent fail
+    }
+  }, [])
+
   // Fetch playback state
   const fetchPlayback = useCallback(async (force = false) => {
     // Skip if a recent action was taken (unless forced)
     if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
       return
     }
-    
+
     try {
-      const response = await apiGet<SpotifyPlaybackResponse>("/api/spotify/player")
+      const response = await apiGet<SpotifyPlaybackResponse>(
+        '/api/spotify/player'
+      )
       if (response.success && response.data) {
         // Double-check we're not in a debounce period
-        if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
+        if (
+          !force &&
+          Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS
+        ) {
           return
         }
         setSource(response.data.source)
         setIsAuthenticated(response.data.authenticated)
         setCachedPlayback(response.data.playback)
-        
+
         // Update progress
         if (response.data.playback?.durationMs > 0) {
-          setProgress((response.data.playback.progressMs / response.data.playback.durationMs) * 100)
+          setProgress(
+            (response.data.playback.progressMs /
+              response.data.playback.durationMs) *
+              100
+          )
         }
       }
     } catch {
@@ -134,12 +185,12 @@ export function SpotifyWidget() {
       setLoading(true)
       const isAuth = await fetchUser()
       if (isAuth) {
-        await fetchPlayback(true)
+        await Promise.all([fetchPlayback(true), fetchRecentHistory()])
       }
       setLoading(false)
     }
     init()
-  }, [fetchUser, fetchPlayback])
+  }, [fetchUser, fetchPlayback, fetchRecentHistory])
 
   // Poll playback state
   useEffect(() => {
@@ -157,7 +208,7 @@ export function SpotifyWidget() {
     if (!playbackState?.is_playing || !playbackState.item) return
 
     const interval = setInterval(() => {
-      setProgress((prev) => {
+      setProgress(prev => {
         const duration = playbackState.item?.duration_ms || 1
         const increment = (1000 / duration) * 100
         return Math.min(prev + increment, 100)
@@ -169,22 +220,30 @@ export function SpotifyWidget() {
 
   // Play/Pause
   const handlePlayPause = async () => {
-    const endpoint = playbackState?.is_playing ? "/api/spotify/player/pause" : "/api/spotify/player/play"
+    const endpoint = playbackState?.is_playing
+      ? '/api/spotify/player/pause'
+      : '/api/spotify/player/play'
     lastActionTime.current = Date.now()
-    setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
+    setPlaybackState(prev =>
+      prev ? { ...prev, is_playing: !prev.is_playing } : null
+    )
     try {
       const response = await apiPost(endpoint, {})
       if (!response.success) {
-        setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
+        setPlaybackState(prev =>
+          prev ? { ...prev, is_playing: !prev.is_playing } : null
+        )
       }
       setTimeout(() => fetchPlayback(true), ACTION_DEBOUNCE_MS)
     } catch {
-      setPlaybackState((prev) => prev ? { ...prev, is_playing: !prev.is_playing } : null)
+      setPlaybackState(prev =>
+        prev ? { ...prev, is_playing: !prev.is_playing } : null
+      )
     }
   }
 
   // Skip
-  const handleSkip = async (direction: "next" | "previous") => {
+  const handleSkip = async (direction: 'next' | 'previous') => {
     lastActionTime.current = Date.now()
     setIsSkipping(direction)
     try {
@@ -198,19 +257,25 @@ export function SpotifyWidget() {
     }
   }
 
-  // Loading state
+  // Loading state — skeleton with consistent rhythm
   if (loading) {
     return (
-      <div className="animate-pulse">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="size-5 rounded bg-muted" />
-          <div className="h-5 w-16 rounded bg-muted" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-muted size-8 animate-pulse rounded-lg" />
+            <div className="space-y-1.5">
+              <div className="bg-muted h-4 w-20 animate-pulse rounded-md" />
+              <div className="bg-muted/80 h-3 w-14 animate-pulse rounded" />
+            </div>
+          </div>
         </div>
         <div className="flex gap-3">
-          <div className="size-14 rounded-lg bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-3/4 rounded bg-muted" />
-            <div className="h-3 w-1/2 rounded bg-muted" />
+          <div className="bg-muted size-[4.25rem] animate-pulse rounded-xl" />
+          <div className="flex-1 space-y-3">
+            <div className="bg-muted h-4 w-4/5 animate-pulse rounded-md" />
+            <div className="bg-muted/80 h-3.5 w-2/3 animate-pulse rounded" />
+            <div className="bg-muted/60 mt-2 h-2 w-full max-w-32 rounded-full" />
           </div>
         </div>
       </div>
@@ -219,7 +284,7 @@ export function SpotifyWidget() {
 
   // Check if we should show controls
   const showControls = isAuthenticated && source === 'live'
-  
+
   // Get display track info from cached playback
   const displayTrack = cachedPlayback?.track
   const isPlaying = cachedPlayback?.isPlaying ?? false
@@ -227,30 +292,30 @@ export function SpotifyWidget() {
   // Not connected and no cached data state
   if (!user && !displayTrack) {
     return (
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Music className="size-5 text-green-500" />
-            <h2 className="font-semibold">Spotify</h2>
+      <div className="space-y-4">
+        <DashboardCardHeader
+          icon={<Music className="size-5 text-green-600 dark:text-green-400" />}
+          iconContainerClassName="bg-green-500/10"
+          title="Spotify"
+          viewHref={fullAuthUrl ?? '/music'}
+          viewLabel={authAvailable ? 'Connect' : 'View'}
+        />
+        <p className="text-muted-foreground -mt-2 text-[11px]">
+          {authAvailable ? 'Connect to control playback' : 'Music & history'}
+        </p>
+        <div className="border-muted-foreground/25 bg-muted/20 flex items-center gap-4 rounded-xl border border-dashed py-4 pr-4 pl-4">
+          <div className="bg-muted/60 flex size-14 shrink-0 items-center justify-center rounded-xl">
+            <Music className="text-muted-foreground/60 size-7" />
           </div>
-          <Link href="/music">
-            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
-              {authAvailable ? "Connect" : "View"}
-              <ChevronRight className="size-3" />
-            </Button>
-          </Link>
-        </div>
-        <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/30 p-3">
-          <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
-            <Music className="size-5 text-muted-foreground" />
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-medium text-muted-foreground">
-              {authAvailable ? "Not connected" : "No playback data"}
-            </div>
-            <div className="text-xs text-muted-foreground/70">
-              {authAvailable ? "Connect to control playback" : ""}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-sm font-medium">
+              {authAvailable ? 'Not connected' : 'No playback data'}
+            </p>
+            <p className="text-muted-foreground/70 mt-0.5 text-xs">
+              {authAvailable
+                ? 'Link your account to see now playing and history'
+                : 'Play something on Spotify to see it here'}
+            </p>
           </div>
         </div>
       </div>
@@ -258,123 +323,147 @@ export function SpotifyWidget() {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`rounded-md p-1 ${isPlaying ? "bg-green-500/20" : "bg-muted"}`}>
-            <Music className={`size-4 ${isPlaying ? "text-green-500" : "text-muted-foreground"}`} />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <h2 className="font-semibold">Spotify</h2>
-            {source === 'cache' && (
-              <span className="flex items-center gap-0.5 rounded-full bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
-                <Database className="size-2" />
-              </span>
-            )}
-          </div>
-        </div>
-        <Link href="/music">
-          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
-            View
-            <ChevronRight className="size-3" />
-          </Button>
-        </Link>
-      </div>
+    <div className="space-y-4">
+      <DashboardCardHeader
+        icon={
+          <Music
+            className={`size-5 transition-colors ${
+              isPlaying
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-muted-foreground'
+            }`}
+          />
+        }
+        iconContainerClassName={isPlaying ? 'bg-green-500/15' : 'bg-muted'}
+        title="Spotify"
+        badge={
+          source === 'cache' ? (
+            <span className="bg-muted text-muted-foreground flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px]">
+              <Database className="size-2.5" />
+              Cached
+            </span>
+          ) : undefined
+        }
+        viewHref="/music"
+        viewLabel="View"
+      />
 
-      {/* Now Playing */}
+      {/* Now Playing — elevated card, clear hierarchy */}
       {displayTrack ? (
-        <div 
-          className={`relative overflow-hidden rounded-lg border bg-background/50 p-2.5 transition-all duration-300 ${
-            isSkipping && showControls ? "scale-[0.98]" : ""
-          }`}
+        <div
+          className={`bg-card/80 ring-border/50 relative overflow-hidden rounded-xl border shadow-sm ring-1 transition-all duration-300 ${
+            isSkipping && showControls ? 'scale-[0.99]' : ''
+          } ${isPlaying ? 'ring-green-500/10' : ''}`}
         >
           {/* Skip animation overlay */}
           {isSkipping && showControls && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                {isSkipping === "previous" && <SkipBack className="size-3 animate-pulse" />}
-                <span className="text-[10px] font-medium">
-                  {isSkipping === "next" ? "Next..." : "Previous..."}
+            <div className="bg-background/70 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm">
+              <div className="text-muted-foreground flex items-center gap-2">
+                {isSkipping === 'previous' && (
+                  <SkipBack className="size-4 animate-pulse" />
+                )}
+                <span className="text-xs font-medium">
+                  {isSkipping === 'next' ? 'Next...' : 'Previous...'}
                 </span>
-                {isSkipping === "next" && <SkipForward className="size-3 animate-pulse" />}
+                {isSkipping === 'next' && (
+                  <SkipForward className="size-4 animate-pulse" />
+                )}
               </div>
             </div>
           )}
 
-          <div className="flex gap-2.5">
-            {/* Album Art */}
-            <div className={`transition-all duration-300 ${isSkipping && showControls ? "opacity-50 blur-[1px]" : ""}`}>
+          <div className="flex gap-3 p-3">
+            {/* Album Art — subtle ring when playing */}
+            <div
+              className={`shrink-0 transition-all duration-300 ${
+                isSkipping && showControls ? 'opacity-50 blur-[1px]' : ''
+              }`}
+            >
               {displayTrack.imageUrl ? (
-                <Image
-                  src={displayTrack.imageUrl}
-                  alt={displayTrack.album}
-                  width={56}
-                  height={56}
-                  className={`shrink-0 rounded-md shadow-sm transition-transform duration-300 ${
-                    isSkipping && showControls ? (isSkipping === "next" ? "-translate-x-1" : "translate-x-1") : ""
+                <div
+                  className={`overflow-hidden rounded-lg ${
+                    isPlaying ? 'shadow-md ring-2 ring-green-500/20' : ''
                   }`}
-                />
+                >
+                  <Image
+                    src={displayTrack.imageUrl}
+                    alt={displayTrack.album}
+                    width={64}
+                    height={64}
+                    className={`block size-16 object-cover transition-transform duration-300 ${
+                      isSkipping && showControls
+                        ? isSkipping === 'next'
+                          ? '-translate-x-0.5'
+                          : 'translate-x-0.5'
+                        : ''
+                    }`}
+                  />
+                </div>
               ) : (
-                <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-muted">
-                  <Music className="size-5 text-muted-foreground" />
+                <div className="bg-muted flex size-16 items-center justify-center rounded-lg">
+                  <Music className="text-muted-foreground size-7" />
                 </div>
               )}
             </div>
 
             {/* Track Info & Controls */}
-            <div 
+            <div
               className={`min-w-0 flex-1 transition-all duration-300 ${
-                isSkipping && showControls ? "opacity-50" : ""
+                isSkipping && showControls ? 'opacity-50' : ''
               }`}
             >
-              <div className="truncate text-sm font-medium">{displayTrack.name}</div>
-              <div className="truncate text-xs text-muted-foreground">{displayTrack.artist}</div>
+              <div className="truncate text-sm font-semibold tracking-tight">
+                {displayTrack.name}
+              </div>
+              <div className="text-muted-foreground truncate text-xs">
+                {displayTrack.artist}
+              </div>
 
-              {/* Controls - only show when authenticated */}
               {showControls ? (
-                <div className="mt-1.5 flex items-center gap-1">
+                <div className="mt-2 flex items-center gap-1.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-7"
-                    onClick={() => handleSkip("previous")}
+                    className="hover:bg-muted/80 size-8"
+                    onClick={() => handleSkip('previous')}
                   >
-                    <SkipBack className="size-3.5" />
+                    <SkipBack className="size-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8 rounded-full bg-foreground text-background hover:bg-foreground/90"
+                    className="bg-foreground text-background hover:bg-foreground/90 size-9 rounded-full shadow-sm transition-transform hover:scale-105"
                     onClick={handlePlayPause}
                   >
-                    {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
+                    {isPlaying ? (
+                      <Pause className="size-4" />
+                    ) : (
+                      <Play className="ml-0.5 size-4" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-7"
-                    onClick={() => handleSkip("next")}
+                    className="hover:bg-muted/80 size-8"
+                    onClick={() => handleSkip('next')}
                   >
-                    <SkipForward className="size-3.5" />
+                    <SkipForward className="size-4" />
                   </Button>
 
-                  {/* Mini progress bar */}
-                  <div className="ml-auto flex-1 max-w-16">
-                    <div className="h-1 overflow-hidden rounded-full bg-muted">
+                  <div className="ml-auto max-w-20 flex-1 px-1">
+                    <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                       <div
-                        className="h-full bg-green-500 transition-all duration-1000"
+                        className="h-full rounded-full bg-green-500 transition-[width] duration-1000 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
                   </div>
                 </div>
               ) : (
-                /* Progress bar only for cached/read-only mode */
                 <div className="mt-2">
-                  <div className="h-1 overflow-hidden rounded-full bg-muted">
+                  <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                     <div
-                      className="h-full bg-green-500/50"
+                      className="h-full rounded-full bg-green-500/50 transition-[width] duration-1000"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -384,16 +473,65 @@ export function SpotifyWidget() {
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3 rounded-lg border bg-background/50 p-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-muted">
-            <Music className="size-5 text-muted-foreground" />
+        <div className="bg-muted/20 flex items-center gap-4 rounded-xl border py-3 pr-4 pl-4">
+          <div className="bg-muted/60 flex size-12 shrink-0 items-center justify-center rounded-lg">
+            <Music className="text-muted-foreground/60 size-6" />
           </div>
-          <div className="flex-1">
-            <div className="text-sm font-medium text-muted-foreground">No track playing</div>
-            <div className="text-xs text-muted-foreground/70">
-              {showControls ? "Start playback on any device" : "No recent playback data"}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-sm font-medium">
+              No track playing
+            </p>
+            <p className="text-muted-foreground/70 text-xs">
+              {showControls
+                ? 'Start playback on any device'
+                : 'No recent playback data'}
+            </p>
           </div>
+        </div>
+      )}
+
+      {/* Recent — secondary section with thumbnails and time pills */}
+      {recentHistory.length > 0 && (user || displayTrack) && (
+        <div className="border-border/80 border-t pt-3">
+          <div className="text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Clock className="size-3.5" />
+            <span className="text-[11px] font-medium tracking-wider uppercase">
+              Recently played
+            </span>
+          </div>
+          <ul className="space-y-1">
+            {recentHistory.map(entry => (
+              <li
+                key={entry.id}
+                className="hover:bg-muted/50 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors"
+              >
+                {entry.album_image_url ? (
+                  <Image
+                    src={entry.album_image_url}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="ring-border/50 size-8 shrink-0 rounded-md object-cover ring-1"
+                  />
+                ) : (
+                  <div className="bg-muted/80 flex size-8 shrink-0 items-center justify-center rounded-md">
+                    <Music className="text-muted-foreground size-3.5" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 truncate">
+                  <span className="text-foreground/95 block truncate text-xs font-medium">
+                    {entry.track_name}
+                  </span>
+                  <span className="text-muted-foreground block truncate text-[11px]">
+                    {entry.track_artists}
+                  </span>
+                </div>
+                <span className="bg-muted/80 text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
+                  {formatRecentTime(entry.played_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

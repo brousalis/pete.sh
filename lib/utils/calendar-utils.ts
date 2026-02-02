@@ -3,8 +3,14 @@
  * Helper functions for calendar views and event management
  */
 
-import type { DayCell, EventPosition, TimeSlot, WeekDay } from "@/lib/types/calendar-views.types"
-import type { CalendarEvent } from "@/lib/types/calendar.types"
+import type {
+  DayCell,
+  EventPosition,
+  TimeSlot,
+  WeekDay,
+} from '@/lib/types/calendar-views.types'
+import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import {
   addDays,
   addMonths,
@@ -29,8 +35,8 @@ import {
   startOfWeek,
   subDays,
   subMonths,
-  subWeeks
-} from "date-fns"
+  subWeeks,
+} from 'date-fns'
 
 /**
  * Get all days to display in a month view (including days from prev/next months)
@@ -47,7 +53,7 @@ export function getMonthDays(
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
 
-  return days.map((day) => ({
+  return days.map(day => ({
     date: day,
     isCurrentMonth: isSameMonth(day, date),
     isToday: isToday(day),
@@ -71,9 +77,9 @@ export function getWeekDays(
     end: addDays(weekStart, 6),
   })
 
-  return days.map((day) => ({
+  return days.map(day => ({
     date: day,
-    dayName: format(day, "EEE"),
+    dayName: format(day, 'EEE'),
     dayNumber: day.getDate(),
     isToday: isToday(day),
     isSelected: selectedDate ? isSameDay(day, selectedDate) : false,
@@ -84,11 +90,14 @@ export function getWeekDays(
 /**
  * Get events that occur on a specific day
  */
-export function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
+export function getEventsForDay(
+  day: Date,
+  events: CalendarEvent[]
+): CalendarEvent[] {
   const dayStart = startOfDay(day)
   const dayEnd = endOfDay(day)
 
-  return events.filter((event) => {
+  return events.filter(event => {
     const eventStart = getEventStartDate(event)
     const eventEnd = getEventEndDate(event)
 
@@ -105,9 +114,12 @@ export function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEve
     }
 
     // For timed events, check if the event overlaps with the day
-    return isWithinInterval(eventStart, { start: dayStart, end: dayEnd }) ||
-           (eventEnd && isWithinInterval(dayEnd, { start: eventStart, end: eventEnd })) ||
-           (eventEnd && isBefore(eventStart, dayStart) && isAfter(eventEnd, dayEnd))
+    return (
+      isWithinInterval(eventStart, { start: dayStart, end: dayEnd }) ||
+      (eventEnd &&
+        isWithinInterval(dayEnd, { start: eventStart, end: eventEnd })) ||
+      (eventEnd && isBefore(eventStart, dayStart) && isAfter(eventEnd, dayEnd))
+    )
   })
 }
 
@@ -118,7 +130,7 @@ export function getTimeSlots(day: Date, events: CalendarEvent[]): TimeSlot[] {
   const slots: TimeSlot[] = []
 
   for (let hour = 0; hour < 24; hour++) {
-    const slotEvents = events.filter((event) => {
+    const slotEvents = events.filter(event => {
       if (isAllDayEvent(event)) return false
       const eventStart = getEventStartDate(event)
       if (!eventStart) return false
@@ -127,7 +139,7 @@ export function getTimeSlots(day: Date, events: CalendarEvent[]): TimeSlot[] {
 
     slots.push({
       hour,
-      label: format(new Date().setHours(hour, 0, 0, 0), "h a"),
+      label: format(new Date().setHours(hour, 0, 0, 0), 'h a'),
       events: slotEvents,
     })
   }
@@ -137,14 +149,16 @@ export function getTimeSlots(day: Date, events: CalendarEvent[]): TimeSlot[] {
 
 /**
  * Calculate event positions for day/week view (handles overlapping events)
+ * @param hourHeight - pixels per hour, must match the view's HOUR_HEIGHT constant
  */
 export function calculateEventPositions(
   events: CalendarEvent[],
   day: Date,
   startHour: number = 0,
-  endHour: number = 24
+  endHour: number = 24,
+  hourHeight: number = 48
 ): EventPosition[] {
-  const timedEvents = events.filter((e) => !isAllDayEvent(e))
+  const timedEvents = events.filter(e => !isAllDayEvent(e))
   const dayStart = startOfDay(day)
 
   // Sort events by start time, then by duration (longer events first)
@@ -164,14 +178,18 @@ export function calculateEventPositions(
   const positions: EventPosition[] = []
   const columns: { event: CalendarEvent; end: Date }[][] = []
 
-  sortedEvents.forEach((event) => {
+  sortedEvents.forEach(event => {
     const eventStart = getEventStartDate(event)
     const eventEnd = getEventEndDate(event)
     if (!eventStart || !eventEnd) return
 
     // Find a column for this event
-    let columnIndex = columns.findIndex((column) =>
-      column.every((item) => isBefore(item.end, eventStart) || isSameDay(item.end, eventStart) && item.end <= eventStart)
+    let columnIndex = columns.findIndex(column =>
+      column.every(
+        item =>
+          isBefore(item.end, eventStart) ||
+          (isSameDay(item.end, eventStart) && item.end <= eventStart)
+      )
     )
 
     if (columnIndex === -1) {
@@ -181,10 +199,9 @@ export function calculateEventPositions(
 
     columns[columnIndex]?.push({ event, end: eventEnd })
 
-    // Calculate position
+    // Calculate position using the provided hourHeight
     const minutesFromStart = differenceInMinutes(eventStart, dayStart)
     const duration = differenceInMinutes(eventEnd, eventStart)
-    const hourHeight = 60 // pixels per hour
     const minuteHeight = hourHeight / 60
 
     positions.push({
@@ -200,7 +217,7 @@ export function calculateEventPositions(
 
   // Update widths and positions based on total columns
   const totalColumns = columns.length
-  positions.forEach((pos) => {
+  positions.forEach(pos => {
     pos.totalColumns = totalColumns
     pos.width = totalColumns > 0 ? 100 / totalColumns : 100
     pos.left = pos.column * pos.width
@@ -225,7 +242,7 @@ export function getEventStartDate(event: CalendarEvent): Date | null {
   }
   if (event.start.date) {
     // Parse all-day date as local date
-    const [year, month, day] = event.start.date.split("-").map(Number)
+    const [year, month, day] = event.start.date.split('-').map(Number)
     if (year !== undefined && month !== undefined && day !== undefined) {
       return new Date(year, month - 1, day)
     }
@@ -242,7 +259,7 @@ export function getEventEndDate(event: CalendarEvent): Date | null {
   }
   if (event.end.date) {
     // Parse all-day date as local date
-    const [year, month, day] = event.end.date.split("-").map(Number)
+    const [year, month, day] = event.end.date.split('-').map(Number)
     if (year !== undefined && month !== undefined && day !== undefined) {
       return new Date(year, month - 1, day)
     }
@@ -265,23 +282,23 @@ export function getEventDuration(event: CalendarEvent): number {
  */
 export function formatEventTime(event: CalendarEvent): string {
   if (isAllDayEvent(event)) {
-    return "All day"
+    return 'All day'
   }
 
   const start = getEventStartDate(event)
   const end = getEventEndDate(event)
 
-  if (!start) return ""
+  if (!start) return ''
 
   if (end && !isSameDay(start, end)) {
-    return `${format(start, "MMM d, h:mm a")} - ${format(end, "MMM d, h:mm a")}`
+    return `${format(start, 'MMM d, h:mm a')} - ${format(end, 'MMM d, h:mm a')}`
   }
 
   if (end) {
-    return `${format(start, "h:mm a")} - ${format(end, "h:mm a")}`
+    return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`
   }
 
-  return format(start, "h:mm a")
+  return format(start, 'h:mm a')
 }
 
 /**
@@ -289,17 +306,17 @@ export function formatEventTime(event: CalendarEvent): string {
  */
 export function navigateDate(
   date: Date,
-  direction: "prev" | "next",
-  viewMode: "month" | "week" | "day" | "agenda"
+  direction: 'prev' | 'next',
+  viewMode: 'month' | 'week' | 'day' | 'agenda'
 ): Date {
   switch (viewMode) {
-    case "month":
-      return direction === "next" ? addMonths(date, 1) : subMonths(date, 1)
-    case "week":
-      return direction === "next" ? addWeeks(date, 1) : subWeeks(date, 1)
-    case "day":
-    case "agenda":
-      return direction === "next" ? addDays(date, 1) : subDays(date, 1)
+    case 'month':
+      return direction === 'next' ? addMonths(date, 1) : subMonths(date, 1)
+    case 'week':
+      return direction === 'next' ? addWeeks(date, 1) : subWeeks(date, 1)
+    case 'day':
+    case 'agenda':
+      return direction === 'next' ? addDays(date, 1) : subDays(date, 1)
     default:
       return date
   }
@@ -308,35 +325,41 @@ export function navigateDate(
 /**
  * Get the title for the current view
  */
-export function getViewTitle(date: Date, viewMode: "month" | "week" | "day" | "agenda"): string {
+export function getViewTitle(
+  date: Date,
+  viewMode: 'month' | 'week' | 'day' | 'agenda'
+): string {
   switch (viewMode) {
-    case "month":
-      return format(date, "MMMM yyyy")
-    case "week":
+    case 'month':
+      return format(date, 'MMMM yyyy')
+    case 'week':
       const weekStart = startOfWeek(date, { weekStartsOn: 0 })
       const weekEnd = addDays(weekStart, 6)
       if (weekStart.getMonth() === weekEnd.getMonth()) {
-        return `${format(weekStart, "MMM d")} - ${format(weekEnd, "d, yyyy")}`
+        return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'd, yyyy')}`
       }
-      return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`
-    case "day":
-      return format(date, "EEEE, MMMM d, yyyy")
-    case "agenda":
-      return `Upcoming - ${format(date, "MMMM yyyy")}`
+      return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`
+    case 'day':
+      return format(date, 'EEEE, MMMM d, yyyy')
+    case 'agenda':
+      return `Upcoming - ${format(date, 'MMMM yyyy')}`
     default:
-      return format(date, "MMMM yyyy")
+      return format(date, 'MMMM yyyy')
   }
 }
 
 /**
  * Filter events by search query
  */
-export function filterEvents(events: CalendarEvent[], searchQuery: string): CalendarEvent[] {
+export function filterEvents(
+  events: CalendarEvent[],
+  searchQuery: string
+): CalendarEvent[] {
   if (!searchQuery.trim()) return events
 
   const query = searchQuery.toLowerCase()
   return events.filter(
-    (event) =>
+    event =>
       event.summary?.toLowerCase().includes(query) ||
       event.description?.toLowerCase().includes(query) ||
       event.location?.toLowerCase().includes(query)
@@ -351,11 +374,11 @@ export function groupEventsByDate(
 ): Map<string, CalendarEvent[]> {
   const grouped = new Map<string, CalendarEvent[]>()
 
-  events.forEach((event) => {
+  events.forEach(event => {
     const start = getEventStartDate(event)
     if (!start) return
 
-    const dateKey = format(start, "yyyy-MM-dd")
+    const dateKey = format(start, 'yyyy-MM-dd')
     const existing = grouped.get(dateKey) || []
     existing.push(event)
     grouped.set(dateKey, existing)
@@ -379,4 +402,116 @@ export function groupEventsByDate(
   })
 
   return grouped
+}
+
+/**
+ * Generate virtual calendar events from fitness routine for a date range
+ * These events are displayed in the calendar views alongside regular events
+ */
+export function generateFitnessEvents(
+  routine: WeeklyRoutine | null | undefined,
+  startDate: Date,
+  endDate: Date
+): CalendarEvent[] {
+  if (!routine) return []
+
+  const events: CalendarEvent[] = []
+  const days = eachDayOfInterval({ start: startDate, end: endDate })
+
+  // Parse training time from routine (e.g., "12:00 PM")
+  const trainingTimeStr =
+    routine.userProfile?.schedule?.trainingTime || '12:00 PM'
+  const [timeStr, period] = trainingTimeStr.split(' ')
+  const timeParts = timeStr?.split(':').map(Number) || [12, 0]
+  let hours = timeParts[0] || 12
+  const minutes = timeParts[1] || 0
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+
+  const DAYS_MAP: Record<number, DayOfWeek> = {
+    0: 'sunday',
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    5: 'friday',
+    6: 'saturday',
+  }
+
+  days.forEach(day => {
+    const dayOfWeek = DAYS_MAP[day.getDay()] as DayOfWeek
+    const schedule = routine.schedule[dayOfWeek]
+
+    if (!schedule) return
+
+    const isRestDay =
+      schedule.focus === 'Rest' || schedule.focus === 'Active Recovery'
+
+    // Skip rest days - they don't need a calendar block
+    if (isRestDay) return
+
+    // Get completion status for this day
+    const weekNumber = getWeekNumberForDate(day)
+    const week = routine.weeks.find(w => w.weekNumber === weekNumber)
+    const dayData = week?.days[dayOfWeek]
+    const isCompleted = dayData?.workout?.completed || false
+
+    // Create the workout event
+    const startDateTime = new Date(day)
+    startDateTime.setHours(hours, minutes, 0, 0)
+
+    const endDateTime = new Date(startDateTime)
+    // Estimate duration based on focus type
+    const durationMinutes =
+      schedule.focus === 'HIIT'
+        ? 45
+        : schedule.focus === 'Endurance'
+          ? 90
+          : schedule.focus === 'Circuit'
+            ? 60
+            : 75
+    endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
+
+    events.push({
+      id: `fitness-${format(day, 'yyyy-MM-dd')}`,
+      summary: `${schedule.focus}${isCompleted ? ' ✓' : ''}`,
+      description: schedule.goal,
+      start: {
+        dateTime: startDateTime.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      end: {
+        dateTime: endDateTime.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      colorId: isCompleted ? 'fitness-complete' : 'fitness',
+      status: 'confirmed',
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    })
+  })
+
+  return events
+}
+
+/**
+ * Helper to get week number for a date
+ */
+function getWeekNumberForDate(date: Date): number {
+  const startOfYear = new Date(date.getFullYear(), 0, 1)
+  const days = Math.floor(
+    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
+  )
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7)
+}
+
+/**
+ * Check if an event is a fitness event (virtual event)
+ */
+export function isFitnessEvent(event: CalendarEvent): boolean {
+  return (
+    event.id.startsWith('fitness-') ||
+    event.colorId === 'fitness' ||
+    event.colorId === 'fitness-complete'
+  )
 }

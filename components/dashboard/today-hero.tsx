@@ -1,13 +1,25 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Calendar, Clock, Cloud, CloudRain, CloudSnow, Sun, Thermometer, MapPin } from 'lucide-react'
-import { format, parseISO, differenceInHours, isToday, isTomorrow } from 'date-fns'
-import { motion } from 'framer-motion'
-import type { WeatherObservation } from '@/lib/types/weather.types'
-import type { CalendarEvent } from '@/lib/types/calendar.types'
-import { staggerContainerVariants, staggerItemVariants, fadeUpVariants, transitions } from '@/lib/animations'
+import { OfficeQuickControls } from '@/components/dashboard/office-quick-controls'
+import {
+  staggerContainerVariants,
+  staggerItemVariants,
+  transitions,
+} from '@/lib/animations'
 import { apiGet } from '@/lib/api/client'
+import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { WeatherObservation } from '@/lib/types/weather.types'
+import { format, isToday, isTomorrow, parseISO } from 'date-fns'
+import { motion } from 'framer-motion'
+import {
+  Calendar,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  MapPin,
+  Sun,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export function TodayHero() {
   const [time, setTime] = useState(new Date())
@@ -36,19 +48,23 @@ export function TodayHero() {
       .then(response => {
         if (response?.success && response.data?.events) {
           const now = new Date()
-          const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+          const twentyFourHoursLater = new Date(
+            now.getTime() + 24 * 60 * 60 * 1000
+          )
 
           // Find first event within 24 hours
-          const eventIn24Hours = response.data.events.find((event: CalendarEvent) => {
-            const startTime = event.start.dateTime
-              ? parseISO(event.start.dateTime)
-              : event.start.date
-                ? parseISO(event.start.date)
-                : null
+          const eventIn24Hours = response.data.events.find(
+            (event: CalendarEvent) => {
+              const startTime = event.start.dateTime
+                ? parseISO(event.start.dateTime)
+                : event.start.date
+                  ? parseISO(event.start.date)
+                  : null
 
-            if (!startTime) return false
-            return startTime >= now && startTime <= twentyFourHoursLater
-          })
+              if (!startTime) return false
+              return startTime >= now && startTime <= twentyFourHoursLater
+            }
+          )
 
           if (eventIn24Hours) {
             setNextEvent(eventIn24Hours)
@@ -87,8 +103,10 @@ export function TodayHero() {
   const heatIndexC = weather?.properties.heatIndex?.value
   const windChillC = weather?.properties.windChill?.value
   const feelsLikeC = heatIndexC ?? windChillC ?? null
-  const feelsLikeF = feelsLikeC !== null ? Math.round((feelsLikeC * 9) / 5 + 32) : null
-  const showFeelsLike = feelsLikeF !== null && tempF !== null && feelsLikeF !== tempF
+  const feelsLikeF =
+    feelsLikeC !== null ? Math.round((feelsLikeC * 9) / 5 + 32) : null
+  const showFeelsLike =
+    feelsLikeF !== null && tempF !== null && feelsLikeF !== tempF
 
   if (!mounted) {
     return (
@@ -111,13 +129,13 @@ export function TodayHero() {
     >
       {/* Decorative gradient orbs - animated */}
       <motion.div
-        className="pointer-events-none absolute -right-20 -top-20 size-60 rounded-full bg-brand/20 blur-3xl"
+        className="bg-brand/20 pointer-events-none absolute -top-20 -right-20 size-60 rounded-full blur-3xl"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...transitions.smooth, delay: 0.2 }}
       />
       <motion.div
-        className="pointer-events-none absolute -left-10 bottom-0 size-40 rounded-full bg-blue-500/10 blur-2xl"
+        className="pointer-events-none absolute bottom-0 -left-10 size-40 rounded-full bg-blue-500/10 blur-2xl"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...transitions.smooth, delay: 0.3 }}
@@ -146,7 +164,7 @@ export function TodayHero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.smooth, delay: 0.15 }}
             >
-              <span className="text-5xl font-bold tracking-tight text-white md:text-6xl tabular-nums">
+              <span className="text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
                 {timeString}
               </span>
               <span className="text-2xl font-medium text-white/50 md:text-3xl">
@@ -163,96 +181,111 @@ export function TodayHero() {
             </motion.p>
           </motion.div>
 
-          {/* Right: Weather + Next Event */}
+          {/* Right: Office Controls + Weather + Next Event */}
           <motion.div
-            className="flex flex-col gap-4 md:items-end"
+            className="flex flex-col gap-3 md:items-end"
             variants={staggerItemVariants}
           >
-            {/* Weather */}
-            {weather && (
-              <motion.div
-                className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ ...transitions.smooth, delay: 0.25 }}
-                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
-              >
-                <motion.span
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ ...transitions.springBouncy, delay: 0.35 }}
-                >
-                  {getWeatherIcon()}
-                </motion.span>
-                <div className="text-right">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-white md:text-4xl tabular-nums">
-                      {tempF ?? '--'}
-                    </span>
-                    <span className="text-lg text-white/50">°F</span>
-                  </div>
-                  {showFeelsLike && (
-                    <p className="text-xs text-white/50">
-                      Feels like {feelsLikeF}°
-                    </p>
-                  )}
-                  <p className="text-xs text-white/60 font-medium">
-                    {weather.properties.textDescription || 'Weather'}
-                  </p>
-                </div>
-              </motion.div>
-            )}
+            {/* Top row: Office Controls + Weather side by side */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              {/* Office Quick Controls */}
+              <OfficeQuickControls />
 
-            {/* Next Event */}
-            {nextEvent && (() => {
-              const startTime = nextEvent.start.dateTime
-                ? parseISO(nextEvent.start.dateTime)
-                : nextEvent.start.date
-                  ? parseISO(nextEvent.start.date)
-                  : null
-
-              const isAllDay = !nextEvent.start.dateTime && !!nextEvent.start.date
-              const timeDisplay = startTime
-                ? isToday(startTime)
-                  ? `Today, ${format(startTime, 'h:mm a')}`
-                  : isTomorrow(startTime)
-                    ? `Tomorrow, ${format(startTime, 'h:mm a')}`
-                    : isAllDay
-                      ? format(startTime, 'EEE, MMM d')
-                      : `${format(startTime, 'EEE, MMM d')}, ${format(startTime, 'h:mm a')}`
-                : 'All day'
-
-              return (
+              {/* Weather */}
+              {weather && (
                 <motion.div
-                  className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm"
+                  className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm"
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ ...transitions.smooth, delay: 0.3 }}
-                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  transition={{ ...transitions.smooth, delay: 0.25 }}
+                  whileHover={{
+                    scale: 1.02,
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                  }}
                 >
-                  <motion.div
-                    className="flex size-9 items-center justify-center rounded-lg bg-brand/20"
-                    whileHover={{ scale: 1.1 }}
-                    transition={transitions.spring}
+                  <motion.span
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ ...transitions.springBouncy, delay: 0.35 }}
                   >
-                    <Calendar className="size-4 text-brand" />
-                  </motion.div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white">
-                      {nextEvent.summary}
-                    </p>
-                    <p className="text-xs text-white/50">
-                      {timeDisplay}
-                      {nextEvent.location && (
-                        <span className="ml-2">
-                          <MapPin className="mb-0.5 inline size-3" /> {nextEvent.location.split(',')[0]}
-                        </span>
-                      )}
+                    {getWeatherIcon()}
+                  </motion.span>
+                  <div className="text-right">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-white tabular-nums md:text-4xl">
+                        {tempF ?? '--'}
+                      </span>
+                      <span className="text-lg text-white/50">°F</span>
+                    </div>
+                    {showFeelsLike && (
+                      <p className="text-xs text-white/50">
+                        Feels like {feelsLikeF}°
+                      </p>
+                    )}
+                    <p className="text-xs font-medium text-white/60">
+                      {weather.properties.textDescription || 'Weather'}
                     </p>
                   </div>
                 </motion.div>
-              )
-            })()}
+              )}
+            </div>
+
+            {/* Next Event */}
+            {nextEvent &&
+              (() => {
+                const startTime = nextEvent.start.dateTime
+                  ? parseISO(nextEvent.start.dateTime)
+                  : nextEvent.start.date
+                    ? parseISO(nextEvent.start.date)
+                    : null
+
+                const isAllDay =
+                  !nextEvent.start.dateTime && !!nextEvent.start.date
+                const timeDisplay = startTime
+                  ? isToday(startTime)
+                    ? `Today, ${format(startTime, 'h:mm a')}`
+                    : isTomorrow(startTime)
+                      ? `Tomorrow, ${format(startTime, 'h:mm a')}`
+                      : isAllDay
+                        ? format(startTime, 'EEE, MMM d')
+                        : `${format(startTime, 'EEE, MMM d')}, ${format(startTime, 'h:mm a')}`
+                  : 'All day'
+
+                return (
+                  <motion.div
+                    className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm"
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ ...transitions.smooth, delay: 0.3 }}
+                    whileHover={{
+                      scale: 1.02,
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <motion.div
+                      className="bg-brand/20 flex size-9 items-center justify-center rounded-lg"
+                      whileHover={{ scale: 1.1 }}
+                      transition={transitions.spring}
+                    >
+                      <Calendar className="text-brand size-4" />
+                    </motion.div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">
+                        {nextEvent.summary}
+                      </p>
+                      <p className="text-xs text-white/50">
+                        {timeDisplay}
+                        {nextEvent.location && (
+                          <span className="ml-2">
+                            <MapPin className="mb-0.5 inline size-3" />{' '}
+                            {nextEvent.location.split(',')[0]}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </motion.div>
+                )
+              })()}
           </motion.div>
         </motion.div>
       </div>

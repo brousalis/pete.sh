@@ -1,6 +1,6 @@
 /**
  * API Client with Dynamic Base URL
- * 
+ *
  * This module provides a unified way to make API calls that automatically
  * uses the correct base URL based on connectivity status:
  * - When local instance is reachable: calls go to local URL
@@ -56,7 +56,7 @@ export function getApiBaseUrl(): string {
 
 /**
  * Make an API request with automatic base URL routing
- * 
+ *
  * @param path - API path (e.g., "/api/hue/lights")
  * @param options - Fetch options
  * @returns Parsed JSON response

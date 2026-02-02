@@ -1,11 +1,11 @@
 /**
  * Server-side token storage for OAuth tokens
- * 
+ *
  * Stores tokens in a JSON file on disk instead of cookies.
  * This solves the cross-origin cookie problem when pete.sh makes
  * requests to localhost:3000 - cookies set on localhost aren't
  * sent with cross-origin fetch requests.
- * 
+ *
  * The local server can read/write this file regardless of which
  * domain initiated the request.
  */
@@ -75,21 +75,21 @@ export function getGoogleCalendarTokens(): {
 } {
   const tokens = readTokens()
   const calendarTokens = tokens.google_calendar
-  
+
   if (!calendarTokens) {
     return { accessToken: null, refreshToken: null, expiryDate: null }
   }
-  
+
   // Check if access token is expired
   if (calendarTokens.expiry_date && Date.now() > calendarTokens.expiry_date) {
     console.log('[TokenStorage] Google Calendar access token expired')
-    return { 
-      accessToken: null, 
+    return {
+      accessToken: null,
       refreshToken: calendarTokens.refresh_token || null,
       expiryDate: null
     }
   }
-  
+
   return {
     accessToken: calendarTokens.access_token || null,
     refreshToken: calendarTokens.refresh_token || null,
@@ -103,14 +103,14 @@ export function setGoogleCalendarTokens(tokens: {
   expiry_date?: number | null
 }): void {
   const allTokens = readTokens()
-  
+
   allTokens.google_calendar = {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token || allTokens.google_calendar?.refresh_token || undefined,
     expiry_date: tokens.expiry_date || undefined,
     updated_at: new Date().toISOString(),
   }
-  
+
   writeTokens(allTokens)
   console.log('[TokenStorage] Google Calendar tokens saved')
 }
@@ -133,21 +133,21 @@ export function getSpotifyTokens(): {
 } {
   const tokens = readTokens()
   const spotifyTokens = tokens.spotify
-  
+
   if (!spotifyTokens) {
     return { accessToken: null, refreshToken: null, expiryDate: null }
   }
-  
+
   // Check if access token is expired
   if (spotifyTokens.expiry_date && Date.now() > spotifyTokens.expiry_date) {
     console.log('[TokenStorage] Spotify access token expired')
-    return { 
-      accessToken: null, 
+    return {
+      accessToken: null,
       refreshToken: spotifyTokens.refresh_token || null,
       expiryDate: null
     }
   }
-  
+
   return {
     accessToken: spotifyTokens.access_token || null,
     refreshToken: spotifyTokens.refresh_token || null,
@@ -161,14 +161,14 @@ export function setSpotifyTokens(tokens: {
   expiry_date?: number | null
 }): void {
   const allTokens = readTokens()
-  
+
   allTokens.spotify = {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token || allTokens.spotify?.refresh_token || undefined,
     expiry_date: tokens.expiry_date || undefined,
     updated_at: new Date().toISOString(),
   }
-  
+
   writeTokens(allTokens)
   console.log('[TokenStorage] Spotify tokens saved')
 }

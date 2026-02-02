@@ -1,20 +1,32 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
-import { LiveBadge, ReadOnlyNotice } from "@/components/ui/live-badge"
-import { useIsReadOnly, useConnectivity } from "@/components/connectivity-provider"
-import type { HueAllLightsStatus, HueScene, HueZone } from "@/lib/types/hue.types"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
-import { AlertCircle, LayoutGrid, Lightbulb, List, RefreshCw } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
-import { toast } from "sonner"
-import { HueQuickActions } from "./hue-quick-actions"
-import { HueRoomCard } from "./hue-room-card"
-import { HueSyncCard } from "./hue-sync-card"
-import { useApi } from "@/hooks/use-api"
+import {
+  useConnectivity,
+  useIsReadOnly,
+} from '@/components/connectivity-provider'
+import { Button } from '@/components/ui/button'
+import { LiveBadge, ReadOnlyNotice } from '@/components/ui/live-badge'
+import type {
+  HueAllLightsStatus,
+  HueScene,
+  HueZone,
+} from '@/lib/types/hue.types'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import {
+  AlertCircle,
+  LayoutGrid,
+  Lightbulb,
+  List,
+  RefreshCw,
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { HueQuickActions } from './hue-quick-actions'
+import { HueRoomCard } from './hue-room-card'
+import { HueSyncCard } from './hue-sync-card'
 
-type ViewMode = "grid" | "list"
+type ViewMode = 'grid' | 'list'
 
 // Room type priority for sorting
 const ROOM_PRIORITY: Record<string, number> = {
@@ -40,7 +52,7 @@ export function HueControls() {
   const [status, setStatus] = useState<HueAllLightsStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const isReadOnly = useIsReadOnly()
   const { apiBaseUrl, isInitialized } = useConnectivity()
 
@@ -59,10 +71,10 @@ export function HueControls() {
       // Handle zones response
       if (!zonesRes.ok) {
         if (zonesRes.status === 400) {
-          setError("HUE bridge not configured")
+          setError('HUE bridge not configured')
           return
         }
-        throw new Error("Failed to fetch zones")
+        throw new Error('Failed to fetch zones')
       }
 
       const zonesData = await zonesRes.json()
@@ -73,16 +85,18 @@ export function HueControls() {
             id,
           }))
           // Filter to Room and Zone types (exclude Entertainment, Luminaire, LightSource, etc.)
-          .filter((z) => z.type === "Room" || z.type === "Zone")
+          .filter(z => z.type === 'Room' || z.type === 'Zone')
           // Sort by priority
           .sort((a, b) => getRoomPriority(a.name) - getRoomPriority(b.name))
 
         setZones(zonesArray)
 
         // Fetch scenes for each zone
-        const scenesPromises = zonesArray.map(async (zone) => {
+        const scenesPromises = zonesArray.map(async zone => {
           try {
-            const res = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/scenes`)
+            const res = await fetch(
+              `${apiBaseUrl}/api/hue/zones/${zone.id}/scenes`
+            )
             if (res.ok) {
               const data = await res.json()
               return {
@@ -120,8 +134,8 @@ export function HueControls() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load HUE data")
-      toast.error("Failed to load HUE data")
+      setError(err instanceof Error ? err.message : 'Failed to load HUE data')
+      toast.error('Failed to load HUE data')
     } finally {
       setLoading(false)
     }
@@ -137,7 +151,7 @@ export function HueControls() {
   // Auto-refresh every 30 seconds when page is visible
   useEffect(() => {
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         fetchData()
       }
     }, 30000)
@@ -148,14 +162,14 @@ export function HueControls() {
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
+        <div className="border-destructive/30 bg-destructive/5 rounded-2xl border p-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10">
-              <AlertCircle className="size-5 text-destructive" />
+            <div className="bg-destructive/10 flex size-10 items-center justify-center rounded-xl">
+              <AlertCircle className="text-destructive size-5" />
             </div>
             <div>
-              <p className="font-medium text-foreground">{error}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-foreground font-medium">{error}</p>
+              <p className="text-muted-foreground text-sm">
                 Please configure your HUE bridge in .env.local
               </p>
             </div>
@@ -169,20 +183,23 @@ export function HueControls() {
     return (
       <div className="space-y-6">
         {/* Loading skeleton for quick actions */}
-        <div className="rounded-2xl border bg-card p-6">
+        <div className="bg-card rounded-2xl border p-6">
           <div className="flex items-center gap-3">
-            <div className="size-10 animate-pulse rounded-xl bg-muted" />
+            <div className="bg-muted size-10 animate-pulse rounded-xl" />
             <div className="space-y-2">
-              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+              <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+              <div className="bg-muted h-3 w-24 animate-pulse rounded" />
             </div>
           </div>
         </div>
 
         {/* Loading skeleton for rooms */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-48 animate-pulse rounded-2xl bg-muted/50" />
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div
+              key={i}
+              className="bg-muted/50 h-48 animate-pulse rounded-2xl"
+            />
           ))}
         </div>
       </div>
@@ -191,12 +208,14 @@ export function HueControls() {
 
   if (zones.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border bg-card p-12">
-        <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
-          <Lightbulb className="size-8 text-muted-foreground" />
+      <div className="bg-card flex flex-col items-center justify-center rounded-2xl border p-12">
+        <div className="bg-muted flex size-16 items-center justify-center rounded-2xl">
+          <Lightbulb className="text-muted-foreground size-8" />
         </div>
-        <h3 className="mt-4 text-lg font-medium text-foreground">No rooms found</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h3 className="text-foreground mt-4 text-lg font-medium">
+          No rooms found
+        </h3>
+        <p className="text-muted-foreground mt-1 text-sm">
           Configure rooms in your Philips Hue app
         </p>
         <Button onClick={fetchData} variant="outline" className="mt-4 gap-2">
@@ -215,12 +234,12 @@ export function HueControls() {
       {/* Header with refresh and view toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-brand/10">
-            <Lightbulb className="size-5 text-brand" />
+          <div className="bg-brand/10 flex size-10 items-center justify-center rounded-xl">
+            <Lightbulb className="text-brand size-5" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Lighting</h1>
-            <p className="text-xs text-muted-foreground">
+            <h1 className="text-foreground text-lg font-semibold">Lighting</h1>
+            <p className="text-muted-foreground text-xs">
               {zones.length} rooms · {status?.totalLights || 0} lights
             </p>
           </div>
@@ -231,26 +250,26 @@ export function HueControls() {
           <LiveBadge />
 
           {/* View mode toggle */}
-          <div className="flex rounded-lg border bg-muted/50 p-1">
+          <div className="bg-muted/50 flex rounded-lg border p-1">
             <button
-              onClick={() => setViewMode("grid")}
+              onClick={() => setViewMode('grid')}
               className={cn(
-                "rounded-md p-1.5 transition-colors",
-                viewMode === "grid"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                'rounded-md p-1.5 transition-colors',
+                viewMode === 'grid'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               title="Grid view"
             >
               <LayoutGrid className="size-4" />
             </button>
             <button
-              onClick={() => setViewMode("list")}
+              onClick={() => setViewMode('list')}
               className={cn(
-                "rounded-md p-1.5 transition-colors",
-                viewMode === "list"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                'rounded-md p-1.5 transition-colors',
+                viewMode === 'list'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               title="List view"
             >
@@ -265,7 +284,7 @@ export function HueControls() {
             disabled={loading}
             className="gap-2"
           >
-            <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
             Refresh
           </Button>
         </div>
@@ -273,7 +292,7 @@ export function HueControls() {
 
       {/* Quick Actions + Hue Sync (compact) */}
       <motion.div
-        className="rounded-2xl border bg-card p-6"
+        className="bg-card rounded-2xl border p-6"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -281,9 +300,11 @@ export function HueControls() {
           status={status}
           scenes={allScenes}
           onRefresh={fetchData}
-          favoriteSceneNames={["pete red", "pete work"]}
+          favoriteSceneNames={['pete red', 'pete work', 'purple rain']}
           isReadOnly={isReadOnly}
-          brightnessZoneId={zones.find((z) => z.name.toLowerCase().includes("office"))?.id}
+          brightnessZoneId={
+            zones.find(z => z.name.toLowerCase().includes('office'))?.id
+          }
           brightnessZoneName="Office"
         />
         <HueSyncCard
@@ -297,10 +318,10 @@ export function HueControls() {
       {/* Room Cards */}
       <div
         className={cn(
-          "grid gap-4",
-          viewMode === "grid"
-            ? "md:grid-cols-2 lg:grid-cols-3"
-            : "grid-cols-1 max-w-2xl"
+          'grid gap-4',
+          viewMode === 'grid'
+            ? 'md:grid-cols-2 lg:grid-cols-3'
+            : 'max-w-2xl grid-cols-1'
         )}
       >
         {zones.map((zone, index) => (
@@ -319,7 +340,6 @@ export function HueControls() {
           </motion.div>
         ))}
       </div>
-
     </div>
   )
 }

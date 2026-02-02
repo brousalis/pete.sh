@@ -1,7 +1,9 @@
 'use client'
 
+import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { apiGet } from '@/lib/api/client'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import {
@@ -13,17 +15,14 @@ import {
 } from 'date-fns'
 import {
   AlertCircle,
-  ArrowRight,
   Calendar,
   CalendarDays,
   Clock,
+  Database,
   MapPin,
   RefreshCw,
-  Database,
 } from 'lucide-react'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { apiGet } from '@/lib/api/client'
 
 interface CalendarResponse {
   events: CalendarEvent[]
@@ -46,7 +45,9 @@ export function CalendarCard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiGet<CalendarResponse>('/api/calendar/upcoming?maxResults=10')
+      const response = await apiGet<CalendarResponse>(
+        '/api/calendar/upcoming?maxResults=10'
+      )
 
       if (!response.success) {
         console.error('[CalendarCard] Error response:', response)
@@ -189,12 +190,11 @@ export function CalendarCard() {
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="text-brand size-5" />
-            <h3 className="text-foreground text-sm font-semibold">Calendar</h3>
-          </div>
-        </div>
+        <DashboardCardHeader
+          icon={<Calendar className="text-brand size-5" />}
+          iconContainerClassName="bg-brand/10"
+          title="Calendar"
+        />
         <div className="bg-muted/30 rounded-lg border p-4">
           <div className="text-muted-foreground flex items-center gap-2">
             <AlertCircle className="size-4" />
@@ -215,46 +215,40 @@ export function CalendarCard() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="text-brand size-5" />
-          <h3 className="text-foreground text-sm font-semibold">Calendar</h3>
-          {/* Source indicator */}
-          {source === 'cache' && (
-            <span className="flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground" title="Showing cached data">
+      <DashboardCardHeader
+        icon={<Calendar className="text-brand size-5" />}
+        iconContainerClassName="bg-brand/10"
+        title="Calendar"
+        badge={
+          source === 'cache' ? (
+            <span
+              className="bg-muted text-muted-foreground flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px]"
+              title="Showing cached data"
+            >
               <Database className="size-2.5" />
               cached
             </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Auth button when available but not authenticated */}
-          {authAvailable && (source === 'cache' || source === 'none') && authUrl && (
+          ) : undefined
+        }
+        viewHref="/calendar"
+        viewLabel="View All"
+        onRefresh={fetchEvents}
+        refreshing={loading}
+        rightExtra={
+          authAvailable &&
+          (source === 'cache' || source === 'none') &&
+          authUrl ? (
             <Button
               variant="outline"
               size="sm"
               onClick={() => (window.location.href = authUrl)}
-              className="gap-1.5 text-xs"
+              className="h-7 gap-1.5 px-2 text-xs"
             >
               Connect
             </Button>
-          )}
-          <Link href="/calendar">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-              View All
-              <ArrowRight className="size-3.5" />
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchEvents}
-            disabled={loading}
-          >
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {loading && events.length === 0 ? (
         <div className="bg-muted/30 text-muted-foreground flex items-center gap-2 rounded-lg p-4 text-sm">
@@ -270,21 +264,23 @@ export function CalendarCard() {
             No upcoming events
           </p>
           <p className="text-muted-foreground/70 mt-1 text-xs">
-            {authAvailable && !source.includes('live') 
-              ? 'Connect Google Calendar to see your schedule' 
+            {authAvailable && !source.includes('live')
+              ? 'Connect Google Calendar to see your schedule'
               : 'Your schedule is clear'}
           </p>
-          {authAvailable && authUrl && (source === 'cache' || source === 'none') && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => (window.location.href = authUrl)}
-              className="mt-3 gap-1.5"
-            >
-              <Calendar className="size-3.5" />
-              Connect Google Calendar
-            </Button>
-          )}
+          {authAvailable &&
+            authUrl &&
+            (source === 'cache' || source === 'none') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.href = authUrl)}
+                className="mt-3 gap-1.5"
+              >
+                <Calendar className="size-3.5" />
+                Connect Google Calendar
+              </Button>
+            )}
         </div>
       ) : (
         <TooltipProvider delayDuration={300}>

@@ -1,7 +1,7 @@
 'use client'
 
 import { PageTransitionProvider } from '@/components/page-transition'
-import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
+import { TopNavigation } from '@/components/top-navigation'
 import { usePathname } from 'next/navigation'
 import type React from 'react'
 
@@ -39,7 +39,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
-          <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 md:px-6 md:py-6">
+          <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 md:px-6 md:py-6">
             <PageTransitionProvider className="h-full">
               {children}
             </PageTransitionProvider>
@@ -55,7 +55,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Bottom Navigation - persistent footer on small screens */}
-      <MobileBottomNavigation />
+      {/* <MobileBottomNavigation /> */}
     </div>
   )
 }

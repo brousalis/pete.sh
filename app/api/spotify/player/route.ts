@@ -9,7 +9,7 @@ import { isProductionMode, isLocalMode } from "@/lib/utils/mode"
 export async function GET() {
   try {
     const adapter = getSpotifyAdapter()
-    
+
     // In production mode (no local services), read from cache
     if (isProductionMode()) {
       const nowPlaying = await adapter.getNowPlaying()
@@ -45,7 +45,7 @@ export async function GET() {
     }
 
     const { authenticated } = await adapter.initializeWithTokens()
-    
+
     if (!authenticated) {
       // Not authenticated in local mode - return cached data with auth prompt
       try {
@@ -78,7 +78,7 @@ export async function GET() {
 
     // Authenticated - get live data
     const playbackState = await adapter.getPlaybackState()
-    
+
     // Transform to consistent format
     const nowPlaying = {
       isPlaying: playbackState?.is_playing ?? false,
@@ -91,7 +91,7 @@ export async function GET() {
       progressMs: playbackState?.progress_ms ?? 0,
       durationMs: playbackState?.item?.duration_ms ?? 0,
     }
-    
+
     return successResponse({
       playback: nowPlaying,
       source: 'live',

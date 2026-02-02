@@ -1,6 +1,7 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
+import { apiGet } from '@/lib/api/client'
 import type {
   WeatherForecast,
   WeatherObservation,
@@ -18,7 +19,6 @@ import {
   Wind,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { apiGet } from '@/lib/api/client'
 
 export function WeatherCard() {
   const [current, setCurrent] = useState<WeatherObservation | null>(null)
@@ -94,19 +94,23 @@ export function WeatherCard() {
   const forecastDays =
     forecast?.properties.periods.filter(p => p.isDaytime).slice(0, 5) || []
 
+  const conditionIcon = current?.properties.textDescription
+    ?.toLowerCase()
+    .includes('clear')
+    ? Sun
+    : Cloudy
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">Weather</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchData}
-          disabled={loading}
-        >
-          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-        </Button>
-      </div>
+      <DashboardCardHeader
+        icon={
+          <conditionIcon className="size-5 text-sky-500 dark:text-sky-400" />
+        }
+        iconContainerClassName="bg-sky-500/10"
+        title="Weather"
+        onRefresh={fetchData}
+        refreshing={loading}
+      />
 
       {/* Current Conditions */}
       {current && (

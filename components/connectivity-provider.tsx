@@ -1,5 +1,6 @@
-"use client"
+'use client'
 
+import { setApiBaseUrl } from '@/lib/api/client'
 import {
   createContext,
   useCallback,
@@ -9,8 +10,7 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from "react"
-import { setApiBaseUrl } from "@/lib/api/client"
+} from 'react'
 
 // ============================================
 // Types
@@ -105,7 +105,7 @@ export function ConnectivityProvider({
     isInitialized: false,
     isLocalAvailable: false,
     isChecking: false,
-    apiBaseUrl: "", // Empty string means use relative URLs (current host)
+    apiBaseUrl: '', // Empty string means use relative URLs (current host)
     localUrl,
     lastChecked: null,
     lastError: null,
@@ -113,7 +113,9 @@ export function ConnectivityProvider({
   })
 
   // Track if user has forced a mode
-  const [forcedMode, setForcedMode] = useState<"local" | "production" | null>(null)
+  const [forcedMode, setForcedMode] = useState<'local' | 'production' | null>(
+    null
+  )
 
   // Ref to track if component is mounted
   const isMountedRef = useRef(true)
@@ -125,30 +127,34 @@ export function ConnectivityProvider({
   const checkConnectivity = useCallback(async (): Promise<boolean> => {
     // If no local URL configured, we can't check
     if (!localUrl) {
-      console.log("[Connectivity] No local URL configured (NEXT_PUBLIC_LOCAL_API_URL not set)")
-      setState((prev) => ({
+      console.log(
+        '[Connectivity] No local URL configured (NEXT_PUBLIC_LOCAL_API_URL not set)'
+      )
+      setState(prev => ({
         ...prev,
         isInitialized: true,
         isLocalAvailable: false,
-        apiBaseUrl: "",
-        lastError: "No local URL configured",
+        apiBaseUrl: '',
+        lastError: 'No local URL configured',
       }))
       return false
     }
 
-    console.log(`[Connectivity] Checking local availability at ${localUrl}/api/health`)
-    setState((prev) => ({ ...prev, isChecking: true }))
+    console.log(
+      `[Connectivity] Checking local availability at ${localUrl}/api/health`
+    )
+    setState(prev => ({ ...prev, isChecking: true }))
 
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), CHECK_TIMEOUT)
 
       const response = await fetch(`${localUrl}/api/health`, {
-        method: "GET",
+        method: 'GET',
         signal: controller.signal,
         // Don't send credentials to avoid CORS issues
-        credentials: "omit",
-        cache: "no-store",
+        credentials: 'omit',
+        cache: 'no-store',
       })
 
       clearTimeout(timeoutId)
@@ -158,24 +164,26 @@ export function ConnectivityProvider({
       }
 
       const data = await response.json()
-      console.log("[Connectivity] Health check response:", data)
+      console.log('[Connectivity] Health check response:', data)
 
       // Verify it's the right instance
-      if (data.instanceId !== "petehome-local") {
-        throw new Error("Invalid instance response")
+      if (data.instanceId !== 'petehome-local') {
+        throw new Error('Invalid instance response')
       }
 
       // Only in local mode on that instance should we enable controls
-      const isLocalInstance = data.mode === "local"
-      console.log(`[Connectivity] Local mode: ${isLocalInstance}, setting apiBaseUrl to: ${isLocalInstance ? localUrl : "(relative)"}`)
+      const isLocalInstance = data.mode === 'local'
+      console.log(
+        `[Connectivity] Local mode: ${isLocalInstance}, setting apiBaseUrl to: ${isLocalInstance ? localUrl : '(relative)'}`
+      )
 
       if (isMountedRef.current) {
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           isInitialized: true,
           isLocalAvailable: isLocalInstance,
           isChecking: false,
-          apiBaseUrl: isLocalInstance ? localUrl : "",
+          apiBaseUrl: isLocalInstance ? localUrl : '',
           lastChecked: new Date(),
           lastError: null,
           failureCount: 0,
@@ -185,16 +193,16 @@ export function ConnectivityProvider({
       return isLocalInstance
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error"
+        error instanceof Error ? error.message : 'Unknown error'
       console.log(`[Connectivity] Health check failed: ${errorMessage}`)
 
       if (isMountedRef.current) {
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           isInitialized: true,
           isLocalAvailable: false,
           isChecking: false,
-          apiBaseUrl: "",
+          apiBaseUrl: '',
           lastChecked: new Date(),
           lastError: errorMessage,
           failureCount: prev.failureCount + 1,
@@ -211,8 +219,8 @@ export function ConnectivityProvider({
 
   const forceLocal = useCallback(() => {
     if (localUrl) {
-      setForcedMode("local")
-      setState((prev) => ({
+      setForcedMode('local')
+      setState(prev => ({
         ...prev,
         apiBaseUrl: localUrl,
       }))
@@ -220,10 +228,10 @@ export function ConnectivityProvider({
   }, [localUrl])
 
   const forceProduction = useCallback(() => {
-    setForcedMode("production")
-    setState((prev) => ({
+    setForcedMode('production')
+    setState(prev => ({
       ...prev,
-      apiBaseUrl: "",
+      apiBaseUrl: '',
     }))
   }, [])
 
@@ -263,7 +271,7 @@ export function ConnectivityProvider({
 
     const timerId = setInterval(() => {
       // Only check if the tab is visible
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         checkConnectivity()
       }
     }, interval)
@@ -284,7 +292,7 @@ export function ConnectivityProvider({
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         // Check if cache is stale
         const now = new Date()
         const cacheTtl = state.isLocalAvailable
@@ -300,9 +308,9 @@ export function ConnectivityProvider({
       }
     }
 
-    document.addEventListener("visibilitychange", handleVisibilityChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [
     disableAutoCheck,
     forcedMode,
@@ -315,13 +323,15 @@ export function ConnectivityProvider({
   useEffect(() => {
     let effectiveApiBaseUrl = state.apiBaseUrl
 
-    if (forcedMode === "local" && localUrl) {
+    if (forcedMode === 'local' && localUrl) {
       effectiveApiBaseUrl = localUrl
-    } else if (forcedMode === "production") {
-      effectiveApiBaseUrl = ""
+    } else if (forcedMode === 'production') {
+      effectiveApiBaseUrl = ''
     }
 
-    console.log(`[Connectivity] Syncing API base URL: "${effectiveApiBaseUrl || '(relative)'}" (forced: ${forcedMode || 'none'})`)
+    console.log(
+      `[Connectivity] Syncing API base URL: "${effectiveApiBaseUrl || '(relative)'}" (forced: ${forcedMode || 'none'})`
+    )
     setApiBaseUrl(effectiveApiBaseUrl)
   }, [state.apiBaseUrl, forcedMode, localUrl])
 
@@ -334,11 +344,11 @@ export function ConnectivityProvider({
     let effectiveApiBaseUrl = state.apiBaseUrl
     let effectiveIsLocalAvailable = state.isLocalAvailable
 
-    if (forcedMode === "local" && localUrl) {
+    if (forcedMode === 'local' && localUrl) {
       effectiveApiBaseUrl = localUrl
       effectiveIsLocalAvailable = true
-    } else if (forcedMode === "production") {
-      effectiveApiBaseUrl = ""
+    } else if (forcedMode === 'production') {
+      effectiveApiBaseUrl = ''
       effectiveIsLocalAvailable = false
     }
 
@@ -347,14 +357,14 @@ export function ConnectivityProvider({
 
     let statusLabel: string
     if (!state.isInitialized) {
-      statusLabel = "Connecting..."
+      statusLabel = 'Connecting...'
     } else if (forcedMode) {
       statusLabel =
-        forcedMode === "local" ? "Local (Forced)" : "Live View (Forced)"
+        forcedMode === 'local' ? 'Local (Forced)' : 'Live View (Forced)'
     } else if (effectiveIsLocalAvailable) {
-      statusLabel = "Local Mode"
+      statusLabel = 'Local Mode'
     } else {
-      statusLabel = "Live View"
+      statusLabel = 'Live View'
     }
 
     return {
@@ -395,7 +405,7 @@ export function useConnectivity(): ConnectivityContextValue {
 
   if (!context) {
     throw new Error(
-      "useConnectivity must be used within a ConnectivityProvider"
+      'useConnectivity must be used within a ConnectivityProvider'
     )
   }
 

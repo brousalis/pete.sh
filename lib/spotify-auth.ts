@@ -32,13 +32,13 @@ export async function getAuthenticatedSpotifyService(): Promise<{
 
   // First try file-based storage (works for cross-origin requests)
   const fileTokens = getSpotifyTokens()
-  
+
   // Fall back to cookies if file storage is empty
   const cookieStore = await cookies()
   const cookieAccessToken = cookieStore.get("spotify_access_token")?.value
   const cookieRefreshToken = cookieStore.get("spotify_refresh_token")?.value
   const cookieExpiresAt = cookieStore.get("spotify_expires_at")?.value
-  
+
   // Use file tokens if available, otherwise use cookies
   let accessToken = fileTokens.accessToken || cookieAccessToken || null
   const refreshToken = fileTokens.refreshToken || cookieRefreshToken || null

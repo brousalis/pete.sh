@@ -1,11 +1,11 @@
 /**
  * Mode Detection Utilities
  * Determines whether the app is running in local or production mode
- * 
+ *
  * Mode is auto-detected based on service reachability:
  * - Local mode: Local services (like Hue bridge) are reachable
  * - Production mode: Local services are not reachable, read from cache
- * 
+ *
  * DEPLOYMENT_MODE env var is no longer required - mode is auto-detected.
  */
 
@@ -15,7 +15,7 @@ export type DeploymentMode = 'local' | 'production'
 
 /**
  * Get the current deployment mode based on service availability
- * 
+ *
  * This is now auto-detected:
  * - If any local service is reachable: 'local'
  * - If no local services are reachable: 'production'

@@ -1,7 +1,8 @@
-export { CalendarMonthGrid } from "./calendar-month-grid"
-export { CalendarWeekView } from "./calendar-week-view"
-export { CalendarDayView } from "./calendar-day-view"
-export { CalendarAgendaView } from "./calendar-agenda-view"
-export { CalendarEventDetail } from "./calendar-event-detail"
-export { CalendarHeader } from "./calendar-header"
-export { CalendarMini } from "./calendar-mini"
+export { CalendarAgendaView } from './calendar-agenda-view'
+export { CalendarDayView } from './calendar-day-view'
+export { CalendarEventDetail } from './calendar-event-detail'
+export { CalendarFitnessSidebar } from './calendar-fitness-sidebar'
+export { CalendarHeader } from './calendar-header'
+export { CalendarMini } from './calendar-mini'
+export { CalendarMonthGrid } from './calendar-month-grid'
+export { CalendarWeekView } from './calendar-week-view'
