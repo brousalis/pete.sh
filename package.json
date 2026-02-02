@@ -2,7 +2,7 @@
   "name": "petehome",
   "version": "0.1.0",
   "private": true,
-  "description": "Petehome - Modern smart home control center built with Next.js, React, and TypeScript",
+  "description": "petehome - Modern smart home control center built with Next.js, React, and TypeScript",
   "author": "Pete",
   "engines": {
     "node": ">=22.0.0"

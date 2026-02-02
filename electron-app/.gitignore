@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Generated icons (except source)
+build/icon-*.png
+build/icon.ico
+build/icon.icns
+
+# Electron store config (local)
+config.json

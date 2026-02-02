@@ -1,10 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
 
 ## Project Overview
 
-Petehome is a smart home control center built with Next.js 16, React 19, TypeScript 5, and Tailwind CSS 4 with shadcn/ui components. It provides a web dashboard for controlling Philips Hue lights, Sonos speakers, Google Calendar, Chicago Transit (CTA), weather, fitness tracking, coffee machine automation, and more.
+petehome is a smart home control center built with Next.js 16, React 19, TypeScript 5, and Tailwind
+CSS 4 with shadcn/ui components. It provides a web dashboard for controlling Philips Hue lights,
+Sonos speakers, Google Calendar, Chicago Transit (CTA), weather, fitness tracking, coffee machine
+automation, and more.
 
 ## Common Commands
 
@@ -31,20 +35,25 @@ yarn clean                  # Remove build artifacts and cache
 ## Architecture
 
 ### Directory Structure
+
 - `app/` - Next.js App Router with pages and 39 API routes
-  - `app/api/` - API routes organized by service (hue, sonos, calendar, cta, weather, fitness, coffee, etc.)
-  - `app/(dashboard)/` - Dashboard route group with main pages (dashboard, lights, music, calendar, transit, fitness, coffee)
+  - `app/api/` - API routes organized by service (hue, sonos, calendar, cta, weather, fitness,
+    coffee, etc.)
+  - `app/(dashboard)/` - Dashboard route group with main pages (dashboard, lights, music, calendar,
+    transit, fitness, coffee)
 - `components/` - React components
   - `components/ui/` - shadcn/ui components (buttons, dialogs, cards, etc.)
   - `components/dashboard/` - Dashboard-specific widgets and cards
 - `lib/` - Utilities and services
-  - `lib/services/` - External service integrations (HueService, SonosService, CalendarService, WeatherService, CTAService, etc.)
+  - `lib/services/` - External service integrations (HueService, SonosService, CalendarService,
+    WeatherService, CTAService, etc.)
   - `lib/types/` - TypeScript type definitions
   - `lib/config.ts` - Environment configuration with Zod validation
 - `hooks/` - Custom React hooks
 - `data/` - Static data files (fitness routines, workout definitions)
 
 ### Key Patterns
+
 - React Server Components by default; use `"use client"` only when needed
 - Services in `lib/services/` handle external API communication
 - API routes in `app/api/` proxy requests to services
@@ -52,6 +61,7 @@ yarn clean                  # Remove build artifacts and cache
 - Path alias: `@/*` maps to project root
 
 ### External Integrations
+
 - **Hue**: Philips Hue bridge for lighting control
 - **Sonos**: Speaker control with Spotify integration
 - **Calendar**: Google Calendar OAuth integration
@@ -64,24 +74,28 @@ yarn clean                  # Remove build artifacts and cache
 ## Code Style
 
 ### TypeScript
+
 - Strict mode enabled
 - Prefer explicit types for function parameters and return types
 - Use interfaces for object shapes, types for unions/intersections
 - Avoid `any` - use `unknown` when type is truly unknown
 
 ### React
+
 - Functional components with hooks
 - Prefer named exports for components
 - Keep components small and focused
 - Extract custom hooks for reusable logic
 
 ### Naming Conventions
+
 - Components: PascalCase (`LightControls`)
 - Functions: camelCase (`handleClick`)
 - Constants: UPPER_SNAKE_CASE (`API_BASE_URL`)
 - Files: kebab-case (`light-controls.tsx`)
 
 ### Import Order
+
 1. React/Next.js imports
 2. Third-party library imports
 3. Internal imports (components, hooks, utils)
@@ -89,6 +103,7 @@ yarn clean                  # Remove build artifacts and cache
 5. Relative imports last
 
 ## Smart Home Specific
+
 - Device states should be reactive and update in real-time
 - Use optimistic updates for better UX
 - Handle offline scenarios gracefully

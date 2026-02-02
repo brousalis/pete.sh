@@ -1,11 +1,11 @@
 /**
- * Petehome Animation System
+ * petehome Animation System
  *
  * A comprehensive animation library using Framer Motion for fluid,
  * delightful interactions across the entire application.
  */
 
-import type { Variants, Transition } from 'framer-motion'
+import type { Transition, Variants } from 'framer-motion'
 
 // ============================================================================
 // TIMING & EASING
@@ -491,7 +491,10 @@ export function createStaggerContainer(
 /**
  * Create custom fade up with specific offset
  */
-export function createFadeUp(yOffset = 16, duration = durations.normal): Variants {
+export function createFadeUp(
+  yOffset = 16,
+  duration = durations.normal
+): Variants {
   return {
     hidden: { opacity: 0, y: yOffset },
     visible: {

@@ -1,6 +1,6 @@
 /**
  * PM2 Ecosystem Configuration
- * Manages the Petehome application process
+ * Manages the petehome application process
  *
  * Usage:
  *   pm2 start ecosystem.config.js --only petehome
@@ -11,7 +11,7 @@
  *   pm2 status
  */
 
-const path = require('path');
+const path = require('path')
 
 module.exports = {
   apps: [
@@ -62,4 +62,4 @@ module.exports = {
       restart_delay: 4000,
     },
   ],
-};
+}

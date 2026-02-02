@@ -20,13 +20,13 @@ export async function generateMetadata({
 
   if (!post) {
     return {
-      title: 'Post Not Found | Petehome Blog',
+      title: 'Post Not Found | petehome Blog',
     }
   }
 
   return {
-    title: `${post.title} | Petehome Blog`,
-    description: post.excerpt || `Read ${post.title} on Petehome Blog`,
+    title: `${post.title} | petehome Blog`,
+    description: post.excerpt || `Read ${post.title} on petehome Blog`,
     openGraph: {
       title: post.title,
       description: post.excerpt || undefined,

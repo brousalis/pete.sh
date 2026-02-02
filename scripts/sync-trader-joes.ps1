@@ -1,4 +1,4 @@
-# Petehome Trader Joe's Recipe Sync Script
+# petehome Trader Joe's Recipe Sync Script
 # This script scrapes and caches all Trader Joe's recipes from their website.
 # It uses Puppeteer to scrape the recipes, so it may take a while (535 recipes).
 #
@@ -37,37 +37,37 @@ function Invoke-TraderJoesSync {
     try {
         # Build node command with arguments
         $nodeArgs = @("scripts/sync-trader-joes.js")
-        
+
         if ($Force) {
             $nodeArgs += "--force"
         } elseif ($SkipExisting) {
             $nodeArgs += "--skip-existing"
         }
-        
+
         if ($Debug) {
             Write-Log "Running: node $($nodeArgs -join ' ')" "INFO"
         }
 
         # Run the Node.js script directly
         $process = Start-Process -FilePath "node" -ArgumentList $nodeArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput "sync-tj-output.log" -RedirectStandardError "sync-tj-error.log"
-        
+
         # Read the output
         if (Test-Path "sync-tj-output.log") {
             $output = Get-Content "sync-tj-output.log" -Raw
             Write-Host $output
         }
-        
+
         if (Test-Path "sync-tj-error.log") {
             $errors = Get-Content "sync-tj-error.log" -Raw
             if ($errors) {
                 Write-Host $errors -ForegroundColor Red
             }
         }
-        
+
         # Clean up log files
         if (Test-Path "sync-tj-output.log") { Remove-Item "sync-tj-output.log" -ErrorAction SilentlyContinue }
         if (Test-Path "sync-tj-error.log") { Remove-Item "sync-tj-error.log" -ErrorAction SilentlyContinue }
-        
+
         if ($process.ExitCode -eq 0) {
             return $true
         } else {
@@ -78,28 +78,28 @@ function Invoke-TraderJoesSync {
     catch {
         $errorMessage = $_.Exception.Message
         Write-Log "Sync failed: $errorMessage" "ERROR"
-        
+
         # Check if Node.js is installed
         if ($errorMessage -match "cannot find") {
             Write-Log "Node.js is required. Make sure it's installed and in your PATH." "WARN"
         }
-        
+
         # Check if Puppeteer is installed
         if ($errorMessage -match "Cannot find module 'puppeteer'") {
             Write-Log "Puppeteer is required. Install it with: yarn add puppeteer" "WARN"
         }
-        
+
         # Check if dotenv is installed
         if ($errorMessage -match "Cannot find module 'dotenv'") {
             Write-Log "dotenv is required. Install it with: yarn add dotenv" "WARN"
         }
-        
+
         return $false
     }
 }
 
 # Main execution
-Write-Log "Petehome Trader Joe's Recipe Sync Script Started" "INFO"
+Write-Log "petehome Trader Joe's Recipe Sync Script Started" "INFO"
 Write-Log "Skip Existing: $(if ($Force) { 'No (Force mode)' } else { $SkipExisting })" "INFO"
 Write-Log "---" "INFO"
 Write-Log "This will scrape all ~535 Trader Joe's recipes." "PROGRESS"

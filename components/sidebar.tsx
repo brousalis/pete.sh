@@ -95,7 +95,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           className={`group relative flex items-center ${open ? 'min-w-0 flex-1 justify-start' : 'w-full justify-center'} ${onClose ? 'lg:flex-1' : ''}`}
           aria-label="Go to dashboard"
         >
-          {/* Expanded Logo - Full "Petehome" */}
+          {/* Expanded Logo - Full "petehome" */}
           <div
             className={`relative transition-all duration-300 ${
               open

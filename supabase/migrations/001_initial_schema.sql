@@ -1,4 +1,4 @@
--- Petehome Supabase Schema
+-- petehome Supabase Schema
 -- This migration creates all tables needed for the hybrid local/production mode
 
 -- ============================================
@@ -282,24 +282,24 @@ $$ LANGUAGE SQL;
 -- Function to get latest lights state
 CREATE OR REPLACE FUNCTION get_latest_hue_lights()
 RETURNS SETOF hue_lights AS $$
-  SELECT DISTINCT ON (light_id) * 
-  FROM hue_lights 
+  SELECT DISTINCT ON (light_id) *
+  FROM hue_lights
   ORDER BY light_id, recorded_at DESC;
 $$ LANGUAGE SQL;
 
 -- Function to get latest zones state
 CREATE OR REPLACE FUNCTION get_latest_hue_zones()
 RETURNS SETOF hue_zones AS $$
-  SELECT DISTINCT ON (zone_id) * 
-  FROM hue_zones 
+  SELECT DISTINCT ON (zone_id) *
+  FROM hue_zones
   ORDER BY zone_id, recorded_at DESC;
 $$ LANGUAGE SQL;
 
 -- Function to get latest scenes
 CREATE OR REPLACE FUNCTION get_latest_hue_scenes()
 RETURNS SETOF hue_scenes AS $$
-  SELECT DISTINCT ON (scene_id) * 
-  FROM hue_scenes 
+  SELECT DISTINCT ON (scene_id) *
+  FROM hue_scenes
   ORDER BY scene_id, recorded_at DESC;
 $$ LANGUAGE SQL;
 

@@ -2,8 +2,8 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Blog | Petehome',
-    template: '%s | Petehome Blog',
+    default: 'Blog | petehome',
+    template: '%s | petehome Blog',
   },
   description:
     'Thoughts on technology, smart home automation, and software development.',

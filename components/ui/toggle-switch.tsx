@@ -38,14 +38,14 @@ export function ToggleSwitch({
         disabled={disabled}
         onClick={() => !disabled && onCheckedChange(!checked)}
         onKeyDown={handleKeyDown}
-        className={`focus-visible:ring-ring focus-visible:ring-offset-background relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        className={`ring-border focus-visible:ring-ring relative inline-flex h-7 w-12 items-center rounded-full ring-1 transition-colors outline-none ring-inset focus-visible:ring-2 ${
           checked ? 'bg-brand' : 'bg-muted'
         } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       >
         <span
-          className={`bg-background pointer-events-none block size-6 rounded-full shadow-lg ring-0 transition-transform duration-200 ${
-            checked ? 'translate-x-[22px]' : 'translate-x-0.5'
-          }`}
+          className={`absolute top-0.5 left-0.5 size-[22px] rounded-full shadow-sm transition-transform ${
+            checked ? 'translate-x-5.5' : 'translate-x-0'
+          } ${checked ? 'bg-muted dark:bg-white' : 'bg-card dark:bg-foreground'}`}
         />
         <span className="sr-only">{checked ? 'On' : 'Off'}</span>
       </button>

@@ -1,4 +1,4 @@
-# Petehome Sync Cron Script
+# petehome Sync Cron Script
 # This script calls the /api/sync endpoint periodically to keep Supabase data fresh.
 # Run this when you want syncing to happen even when the browser isn't open.
 #
@@ -32,7 +32,7 @@ function Invoke-Sync {
     try {
         $uri = "$BaseUrl/api/sync"
         $body = @{ includeAuth = $false } | ConvertTo-Json
-        
+
         if ($Debug) {
             Write-Log "Calling $uri" "INFO"
         }
@@ -43,10 +43,10 @@ function Invoke-Sync {
             $data = $response.data
             $records = $data.totalRecordsWritten
             $duration = $data.durationMs
-            $services = ($data.services | ForEach-Object { 
+            $services = ($data.services | ForEach-Object {
                 "$($_.service): $(if ($_.success) { $_.recordsWritten } else { 'FAILED' })"
             }) -join ", "
-            
+
             Write-Log "Sync completed: $records records in ${duration}ms [$services]" "SUCCESS"
         } else {
             Write-Log "Sync returned unsuccessful response" "WARN"
@@ -55,7 +55,7 @@ function Invoke-Sync {
     catch {
         $errorMessage = $_.Exception.Message
         Write-Log "Sync failed: $errorMessage" "ERROR"
-        
+
         # Check if server is running
         if ($errorMessage -match "Unable to connect" -or $errorMessage -match "Connection refused") {
             Write-Log "Is the dev server running? Try: yarn dev" "WARN"
@@ -64,13 +64,13 @@ function Invoke-Sync {
 }
 
 # Main execution
-Write-Log "Petehome Sync Script Started" "INFO"
+Write-Log "petehome Sync Script Started" "INFO"
 Write-Log "Base URL: $BaseUrl" "INFO"
 
 if ($Interval -gt 0) {
     Write-Log "Running every $Interval seconds (Ctrl+C to stop)" "INFO"
     Write-Log "---" "INFO"
-    
+
     while ($true) {
         Invoke-Sync
         Start-Sleep -Seconds $Interval

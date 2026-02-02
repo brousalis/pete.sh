@@ -7,7 +7,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Blog | Petehome',
+  title: 'Blog | petehome',
   description:
     'Thoughts on technology, smart home automation, and software development.',
 }
