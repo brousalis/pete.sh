@@ -8,10 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { apiGet, apiPost, apiPut } from '@/lib/api/client'
-import { 
-  Save, 
-  History, 
-  RefreshCw, 
+import {
+  Save,
+  History,
+  RefreshCw,
   AlertCircle,
   User,
   Calendar,
@@ -22,8 +22,8 @@ import {
   Clock,
   FileEdit
 } from 'lucide-react'
-import type { 
-  RoutineVersion, 
+import type {
+  RoutineVersion,
   VersionsListResponse,
   EditorTab,
 } from '@/lib/types/routine-editor.types'
@@ -57,7 +57,7 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   const loadData = useCallback(async (forceRefresh = false) => {
     // Prevent duplicate loading in StrictMode (unless force refresh)
     if (hasLoadedOnce.current && !forceRefresh) return
-    
+
     setIsLoading(true)
     try {
       // Get all versions
@@ -125,7 +125,7 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   // For json-fallback mode, just return the current version (edits save directly)
   const ensureDraft = useCallback(async (): Promise<RoutineVersion | null> => {
     if (draftVersion) return draftVersion
-    
+
     // For json-fallback, use the current version directly
     if (currentVersion?.id === 'json-fallback') {
       setDraftVersion(currentVersion)
@@ -197,13 +197,13 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
         setCurrentVersion(publishedVersion)
         setDraftVersion(null) // Clear draft - we're now viewing the active version
         setIsDirty(false)
-        
+
         // Refresh versions list to get updated active/draft status
         const versionsResponse = await apiGet<VersionsListResponse>(`/api/fitness/routine/versions?routineId=${routineId}`)
         if (versionsResponse.success && versionsResponse.data) {
           setVersions(versionsResponse.data)
         }
-        
+
         toast({
           title: 'Published!',
           description: `Version ${publishedVersion.versionNumber} is now active.`,
@@ -225,7 +225,7 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   // Handle field updates
   const handleUpdate = useCallback((field: string, value: unknown) => {
     if (!currentVersion) return
-    
+
     setCurrentVersion(prev => {
       if (!prev) return prev
       return { ...prev, [field]: value }
@@ -315,9 +315,9 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
               Unsaved
             </Badge>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => saveChanges(currentVersion)}
             disabled={!hasUnsavedChanges || isSaving}
           >
@@ -325,8 +325,8 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             {isLocalMode ? 'Save' : 'Save Draft'}
           </Button>
           {isEditingDraft && (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={publishVersion}
               disabled={isSaving || hasUnsavedChanges}
               title={hasUnsavedChanges ? 'Save your changes first' : 'Make this version active'}
@@ -336,9 +336,9 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             </Button>
           )}
           {!isLocalMode && !isEditingDraft && currentVersion.isActive && (
-            <Button 
+            <Button
               variant="outline"
-              size="sm" 
+              size="sm"
               onClick={async () => {
                 // Create a new draft to start editing
                 const draft = await ensureDraft()
@@ -358,9 +358,9 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
       </div>
 
       {/* Tabs */}
-      <Tabs 
-        value={activeTab} 
-        onValueChange={(v) => setActiveTab(v as EditorTab)} 
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as EditorTab)}
         className="flex-1 flex flex-col min-h-0"
       >
         <TabsList className="mx-4 mt-3 w-fit">
@@ -428,7 +428,7 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
           )}
 
           <div className="grid gap-4 md:grid-cols-2">
-            <ProfileEditor 
+            <ProfileEditor
               profile={currentVersion.userProfile}
               name={currentVersion.name}
               onUpdate={(profile, name) => {
@@ -436,12 +436,12 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
                 if (name) handleUpdate('name', name)
               }}
             />
-            <InjuryProtocolEditor 
+            <InjuryProtocolEditor
               protocol={currentVersion.injuryProtocol}
               onUpdate={(protocol) => handleUpdate('injuryProtocol', protocol)}
             />
           </div>
-          <ScheduleEditor 
+          <ScheduleEditor
             schedule={currentVersion.schedule}
             onUpdate={(schedule) => handleUpdate('schedule', schedule)}
           />

@@ -13,7 +13,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { 
+import {
   GripVertical,
   ChevronDown,
   ChevronRight,
@@ -36,13 +36,13 @@ interface ExerciseEditorProps {
   dragHandleProps?: Record<string, unknown>
 }
 
-export function ExerciseEditor({ 
-  exercise, 
-  index, 
-  onUpdate, 
+export function ExerciseEditor({
+  exercise,
+  index,
+  onUpdate,
   onDelete,
   onDuplicate,
-  dragHandleProps 
+  dragHandleProps
 }: ExerciseEditorProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showAlternative, setShowAlternative] = useState(!!exercise.alternative)
@@ -67,22 +67,22 @@ export function ExerciseEditor({
         <CollapsibleTrigger asChild>
           <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-accent/50">
             {/* Drag Handle */}
-            <div 
-              {...dragHandleProps} 
+            <div
+              {...dragHandleProps}
               className="cursor-grab hover:text-primary"
               onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
-            
+
             {/* Exercise Number */}
             <Badge variant="outline" className="text-xs font-mono">
               {exercise.id?.split('-').pop()?.toUpperCase() || index + 1}
             </Badge>
-            
+
             {/* Exercise Name */}
             <span className="flex-1 font-medium text-sm">{exercise.name}</span>
-            
+
             {/* Quick Info Badges */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               {exercise.sets && exercise.reps && (
@@ -105,7 +105,7 @@ export function ExerciseEditor({
                 <Youtube className="h-3 w-3 text-red-500" />
               )}
             </div>
-            
+
             {/* Expand Icon */}
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -127,7 +127,7 @@ export function ExerciseEditor({
                   placeholder="Exercise name"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label className="text-xs">Exercise ID</Label>
                 <Input
@@ -249,7 +249,7 @@ export function ExerciseEditor({
                 />
                 <Label className="text-xs">Has Alternative Exercise</Label>
               </div>
-              
+
               {showAlternative && (
                 <div className="p-3 bg-muted rounded-lg space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">Alternative (for injury protocol)</p>

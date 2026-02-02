@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { routineId = 'climber-physique' } = body
-    
+
     const adapter = getFitnessAdapter()
     const result = await adapter.cleanupVersions(routineId)
-    
+
     return successResponse(result)
   } catch (error) {
     return handleApiError(error)

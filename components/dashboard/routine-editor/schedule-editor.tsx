@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
+import {
   Calendar,
   Pencil,
   Check,
@@ -166,8 +166,8 @@ export function ScheduleEditor({ schedule, onUpdate }: ScheduleEditorProps) {
             }
 
             return (
-              <Card 
-                key={day} 
+              <Card
+                key={day}
                 className="cursor-pointer hover:bg-accent/50 transition-colors group"
                 onClick={() => setEditingDay(day)}
               >
@@ -176,8 +176,8 @@ export function ScheduleEditor({ schedule, onUpdate }: ScheduleEditorProps) {
                     <span className="text-xs font-medium text-muted-foreground">{DAY_LABELS[day]}</span>
                     <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={`text-xs font-medium ${getFocusColor(dayData.focus)}`}
                   >
                     {dayData.focus}

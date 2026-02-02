@@ -15,10 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { 
-  History, 
-  CheckCircle2, 
-  Clock, 
+import {
+  History,
+  CheckCircle2,
+  Clock,
   FileEdit,
   RotateCcw,
   Eye,
@@ -78,10 +78,10 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
 
   return (
     <>
-      <Card 
+      <Card
         className={`cursor-pointer transition-all ${
-          isSelected 
-            ? 'ring-2 ring-primary bg-primary/5' 
+          isSelected
+            ? 'ring-2 ring-primary bg-primary/5'
             : 'hover:bg-accent/50'
         } ${version.isActive ? 'border-green-500/50' : ''} ${version.isDraft ? 'border-amber-500/50' : ''}`}
         onClick={onSelect}
@@ -95,13 +95,13 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
                   v{version.versionNumber}
                 </Badge>
               </div>
-              
+
               {version.changeSummary && (
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                   {version.changeSummary}
                 </p>
               )}
-              
+
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -115,7 +115,7 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
                 )}
               </div>
             </div>
-            
+
             <div className="flex flex-col items-end gap-2">
               {version.isActive && (
                 <Badge className="bg-green-500 text-white">
@@ -172,10 +172,10 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
   )
 }
 
-export function VersionHistory({ 
-  routineId, 
-  currentVersionId, 
-  versions, 
+export function VersionHistory({
+  routineId,
+  currentVersionId,
+  versions,
   onVersionSelect,
   onRestore,
   onRefresh
@@ -183,17 +183,17 @@ export function VersionHistory({
   const { toast } = useToast()
   const [isCleaning, setIsCleaning] = useState(false)
   const [showCleanupDialog, setShowCleanupDialog] = useState(false)
-  
+
   // Handle local mode (json-fallback)
   const isLocalMode = currentVersionId === 'json-fallback'
-  
+
   const handleCleanup = async () => {
     setIsCleaning(true)
     try {
       const response = await apiPost<{ kept: object; deleted: number }>('/api/fitness/routine/versions/cleanup', {
         routineId,
       })
-      
+
       if (response.success && response.data) {
         toast({
           title: 'Cleanup complete',
@@ -214,7 +214,7 @@ export function VersionHistory({
       setShowCleanupDialog(false)
     }
   }
-  
+
   if (isLocalMode) {
     return (
       <Card>
@@ -236,7 +236,7 @@ export function VersionHistory({
               You&apos;re editing local JSON files directly.
             </p>
             <p className="text-xs text-muted-foreground max-w-xs">
-              To enable version history, configure Supabase in your environment. 
+              To enable version history, configure Supabase in your environment.
               Your changes are saved to <code className="bg-muted px-1 rounded">fitness-routine.json</code>.
             </p>
           </div>
@@ -244,7 +244,7 @@ export function VersionHistory({
       </Card>
     )
   }
-  
+
   if (!versions) {
     return (
       <Card>
@@ -290,7 +290,7 @@ export function VersionHistory({
   }
 
   // Show cleanup option if there are many versions or version numbers are out of order
-  const hasVersionIssues = versionList.length > 3 || 
+  const hasVersionIssues = versionList.length > 3 ||
     (draftVersion && activeVersion && draftVersion.versionNumber < activeVersion.versionNumber)
 
   return (
@@ -309,9 +309,9 @@ export function VersionHistory({
                   </p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowCleanupDialog(true)}
                 disabled={isCleaning}
               >
@@ -373,21 +373,21 @@ export function VersionHistory({
           <div className="relative">
             {/* Timeline line */}
             <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
-            
+
             <div className="space-y-4 pl-10 relative">
               {versionList.map((version, index) => (
                 <div key={version.id} className="relative">
                   {/* Timeline dot */}
-                  <div 
+                  <div
                     className={`absolute -left-10 top-4 w-3 h-3 rounded-full border-2 bg-background ${
-                      version.isActive 
-                        ? 'border-green-500 bg-green-500' 
-                        : version.isDraft 
-                          ? 'border-amber-500' 
+                      version.isActive
+                        ? 'border-green-500 bg-green-500'
+                        : version.isDraft
+                          ? 'border-amber-500'
                           : 'border-muted-foreground'
                     }`}
                   />
-                  
+
                   <VersionItem
                     version={version}
                     isSelected={version.id === currentVersionId}
@@ -414,7 +414,7 @@ export function VersionHistory({
             {(() => {
               const current = versionList.find(v => v.id === currentVersionId)
               if (!current) return null
-              
+
               return (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">

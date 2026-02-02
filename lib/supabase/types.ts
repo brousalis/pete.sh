@@ -1,14 +1,14 @@
 /**
  * Supabase Database Types
  * Generated from the database schema
- * 
+ *
  * Note: In a production setup, these types would be auto-generated using:
  * npx supabase gen types typescript --project-id your-project-id > lib/supabase/types.ts
  */
 
-import type { 
-  SpotifyPlaybackState, 
-  SpotifyDevice, 
+import type {
+  SpotifyPlaybackState,
+  SpotifyDevice,
   SpotifyUser,
   SpotifyListeningHistoryEntry,
   SpotifySyncCursor,
@@ -16,10 +16,10 @@ import type {
 import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { CTABusPrediction, CTATrainPrediction } from '@/lib/types/cta.types'
-import type { 
-  UserProfile, 
-  InjuryProtocol, 
-  WeeklySchedule, 
+import type {
+  UserProfile,
+  InjuryProtocol,
+  WeeklySchedule,
   DailyRoutine,
   DayOfWeek,
   Workout,

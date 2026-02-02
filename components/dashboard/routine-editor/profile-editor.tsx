@@ -8,12 +8,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  User, 
-  Target, 
-  Scale, 
-  Ruler, 
-  Clock, 
+import {
+  User,
+  Target,
+  Scale,
+  Ruler,
+  Clock,
   Footprints,
   X,
   Plus
@@ -262,7 +262,7 @@ export function ProfileEditor({ profile, name = '', onUpdate }: ProfileEditorPro
             <Footprints className="h-3 w-3" />
             Shoe Strategy
           </Label>
-          
+
           {/* Lifting Shoes */}
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Lifting</p>

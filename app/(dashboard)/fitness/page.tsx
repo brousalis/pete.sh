@@ -28,8 +28,8 @@ export default function FitnessPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onValueChange={handleTabChange}
         className="flex h-full min-h-0 flex-col"
       >
@@ -45,7 +45,7 @@ export default function FitnessPage() {
               Edit Routine
             </TabsTrigger>
           </TabsList>
-          
+
           <Link href="/fitness/watch">
             <Button variant="outline" size="sm" className="gap-2">
               <Watch className="h-4 w-4" />

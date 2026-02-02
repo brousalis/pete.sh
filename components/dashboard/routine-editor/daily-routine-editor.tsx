@@ -1,30 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { 
-  Sun, 
-  Moon, 
-  Plus, 
-  Trash2, 
-  GripVertical,
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import type { DailyRoutine } from '@/lib/types/fitness.types'
+import {
   ChevronDown,
   ChevronRight,
   Clock,
+  GripVertical,
   Info,
-  Lightbulb
+  Lightbulb,
+  Moon,
+  Plus,
+  Sun,
+  Trash2,
 } from 'lucide-react'
-import type { DailyRoutine } from '@/lib/types/fitness.types'
+import { useState } from 'react'
 
 interface DailyRoutineEditorProps {
   dailyRoutines?: {
@@ -50,8 +56,16 @@ interface RoutineCardProps {
 
 function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null)
-  const icon = type === 'morning' ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5 text-indigo-500" />
-  const bgColor = type === 'morning' ? 'bg-amber-50 dark:bg-amber-950/20' : 'bg-indigo-50 dark:bg-indigo-950/20'
+  const icon =
+    type === 'morning' ? (
+      <Sun className="h-5 w-5 text-amber-500" />
+    ) : (
+      <Moon className="h-5 w-5 text-indigo-500" />
+    )
+  const bgColor =
+    type === 'morning'
+      ? 'bg-amber-50 dark:bg-amber-950/20'
+      : 'bg-indigo-50 dark:bg-indigo-950/20'
 
   const formatDuration = (seconds: number) => {
     if (seconds >= 60) {
@@ -62,11 +76,16 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
     return `${seconds}s`
   }
 
-  const totalDuration = routine.exercises.reduce((sum, ex) => sum + ex.duration, 0)
+  const totalDuration = routine.exercises.reduce(
+    (sum, ex) => sum + ex.duration,
+    0
+  )
 
   const updateExercise = (index: number, updates: Partial<RoutineExercise>) => {
     const newExercises = [...routine.exercises]
-    newExercises[index] = { ...newExercises[index], ...updates }
+    const current = newExercises[index]
+    if (current == null) return
+    newExercises[index] = { ...current, ...updates } as RoutineExercise
     onUpdate({ ...routine, exercises: newExercises })
   }
 
@@ -97,7 +116,8 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
 
   const moveExercise = (fromIndex: number, toIndex: number) => {
     const newExercises = [...routine.exercises]
-    const [moved] = newExercises.splice(fromIndex, 1)
+    const moved = newExercises.splice(fromIndex, 1)[0]
+    if (moved === undefined) return
     newExercises.splice(toIndex, 0, moved)
     onUpdate({ ...routine, exercises: newExercises })
   }
@@ -110,11 +130,13 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
             {icon}
             <div>
               <CardTitle className="text-lg">{routine.name}</CardTitle>
-              <CardDescription className="text-xs">{routine.description}</CardDescription>
+              <CardDescription className="text-xs">
+                {routine.description}
+              </CardDescription>
             </div>
           </div>
           <Badge variant="secondary">
-            <Clock className="h-3 w-3 mr-1" />
+            <Clock className="mr-1 h-3 w-3" />
             {formatDuration(totalDuration)}
           </Badge>
         </div>
@@ -126,7 +148,7 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
             <Label className="text-xs">Routine Name</Label>
             <Input
               value={routine.name}
-              onChange={(e) => onUpdate({ ...routine, name: e.target.value })}
+              onChange={e => onUpdate({ ...routine, name: e.target.value })}
               className="bg-background"
             />
           </div>
@@ -134,7 +156,7 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
             <Label className="text-xs">ID</Label>
             <Input
               value={routine.id}
-              onChange={(e) => onUpdate({ ...routine, id: e.target.value })}
+              onChange={e => onUpdate({ ...routine, id: e.target.value })}
               className="bg-background font-mono text-xs"
             />
           </div>
@@ -143,7 +165,9 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
           <Label className="text-xs">Description</Label>
           <Textarea
             value={routine.description}
-            onChange={(e) => onUpdate({ ...routine, description: e.target.value })}
+            onChange={e =>
+              onUpdate({ ...routine, description: e.target.value })
+            }
             placeholder="When and why to do this routine..."
             rows={2}
             className="bg-background"
@@ -158,31 +182,35 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
               <Collapsible
                 key={index}
                 open={expandedExercise === index}
-                onOpenChange={(open) => setExpandedExercise(open ? index : null)}
+                onOpenChange={open => setExpandedExercise(open ? index : null)}
               >
                 <Card className="bg-background">
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-accent/50">
-                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                      <span className="flex-1 font-medium text-sm">{exercise.name}</span>
+                    <div className="hover:bg-accent/50 flex cursor-pointer items-center gap-2 p-3">
+                      <GripVertical className="text-muted-foreground h-4 w-4 cursor-grab" />
+                      <span className="flex-1 text-sm font-medium">
+                        {exercise.name}
+                      </span>
                       <Badge variant="outline" className="text-xs">
                         {formatDuration(exercise.duration)}
                       </Badge>
                       {expandedExercise === index ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        <ChevronDown className="text-muted-foreground h-4 w-4" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="text-muted-foreground h-4 w-4" />
                       )}
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <CardContent className="pt-0 pb-3 space-y-3 border-t">
+                    <CardContent className="space-y-3 border-t pt-0 pb-3">
                       <div className="grid grid-cols-2 gap-3 pt-3">
                         <div className="space-y-2">
                           <Label className="text-xs">Name</Label>
                           <Input
                             value={exercise.name}
-                            onChange={(e) => updateExercise(index, { name: e.target.value })}
+                            onChange={e =>
+                              updateExercise(index, { name: e.target.value })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -190,46 +218,58 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
                           <Input
                             type="number"
                             value={exercise.duration}
-                            onChange={(e) => updateExercise(index, { duration: Number(e.target.value) })}
+                            onChange={e =>
+                              updateExercise(index, {
+                                duration: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label className="text-xs flex items-center gap-1">
+                        <Label className="flex items-center gap-1 text-xs">
                           <Info className="h-3 w-3" />
                           Description
                         </Label>
                         <Textarea
                           value={exercise.description}
-                          onChange={(e) => updateExercise(index, { description: e.target.value })}
+                          onChange={e =>
+                            updateExercise(index, {
+                              description: e.target.value,
+                            })
+                          }
                           placeholder="Brief description of the exercise..."
                           rows={2}
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label className="text-xs flex items-center gap-1">
+                        <Label className="flex items-center gap-1 text-xs">
                           <Lightbulb className="h-3 w-3" />
                           Why
                         </Label>
                         <Input
                           value={exercise.why}
-                          onChange={(e) => updateExercise(index, { why: e.target.value })}
+                          onChange={e =>
+                            updateExercise(index, { why: e.target.value })
+                          }
                           placeholder="Why this exercise is important..."
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-xs">Action / How To</Label>
                         <Textarea
                           value={exercise.action}
-                          onChange={(e) => updateExercise(index, { action: e.target.value })}
+                          onChange={e =>
+                            updateExercise(index, { action: e.target.value })
+                          }
                           placeholder="Step by step instructions..."
                           rows={3}
                         />
                       </div>
-                      
+
                       <div className="flex justify-between pt-2">
                         <div className="flex gap-1">
                           <Button
@@ -254,7 +294,7 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
                           size="sm"
                           onClick={() => removeExercise(index)}
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
+                          <Trash2 className="mr-1 h-4 w-4" />
                           Delete
                         </Button>
                       </div>
@@ -264,9 +304,9 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
               </Collapsible>
             ))}
           </div>
-          
+
           <Button variant="outline" className="w-full" onClick={addExercise}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Exercise
           </Button>
         </div>
@@ -275,31 +315,34 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
   )
 }
 
-export function DailyRoutineEditor({ dailyRoutines, onUpdate }: DailyRoutineEditorProps) {
+export function DailyRoutineEditor({
+  dailyRoutines,
+  onUpdate,
+}: DailyRoutineEditorProps) {
   // Handle loading state
   if (!dailyRoutines) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="bg-amber-50 dark:bg-amber-950/20">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-3">
+            <CardTitle className="flex items-center gap-3 text-lg">
               <Sun className="h-5 w-5 text-amber-500" />
               Morning Stretch
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground text-sm">Loading...</p>
           </CardContent>
         </Card>
         <Card className="bg-indigo-50 dark:bg-indigo-950/20">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-3">
+            <CardTitle className="flex items-center gap-3 text-lg">
               <Moon className="h-5 w-5 text-indigo-500" />
               Night Stretch
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground text-sm">Loading...</p>
           </CardContent>
         </Card>
       </div>
@@ -316,14 +359,14 @@ export function DailyRoutineEditor({ dailyRoutines, onUpdate }: DailyRoutineEdit
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <RoutineCard 
-        routine={dailyRoutines.morning} 
-        type="morning" 
+      <RoutineCard
+        routine={dailyRoutines.morning}
+        type="morning"
         onUpdate={updateMorning}
       />
-      <RoutineCard 
-        routine={dailyRoutines.night} 
-        type="night" 
+      <RoutineCard
+        routine={dailyRoutines.night}
+        type="night"
         onUpdate={updateNight}
       />
     </div>

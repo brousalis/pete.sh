@@ -8,10 +8,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  AlertTriangle, 
-  Plus, 
-  X, 
+import {
+  AlertTriangle,
+  Plus,
+  X,
   Clock,
   Activity
 } from 'lucide-react'
@@ -94,7 +94,7 @@ export function InjuryProtocolEditor({ protocol, onUpdate }: InjuryProtocolEdito
 
   if (!isEditing) {
     return (
-      <Card 
+      <Card
         className={`cursor-pointer hover:bg-accent/50 transition-colors ${isActive ? 'border-amber-500/50' : ''}`}
         onClick={() => setIsEditing(true)}
       >
@@ -205,7 +205,7 @@ export function InjuryProtocolEditor({ protocol, onUpdate }: InjuryProtocolEdito
             <Activity className="h-3 w-3" />
             Daily Rehab Exercises
           </Label>
-          
+
           {localProtocol.dailyRehab.length > 0 && (
             <div className="space-y-2">
               {localProtocol.dailyRehab.map((rehab, index) => (
@@ -266,7 +266,7 @@ export function InjuryProtocolEditor({ protocol, onUpdate }: InjuryProtocolEdito
         {/* Rules */}
         <div className="space-y-3">
           <Label>Protocol Rules</Label>
-          
+
           {localProtocol.rules.length > 0 && (
             <div className="space-y-2">
               {localProtocol.rules.map((rule, index) => (

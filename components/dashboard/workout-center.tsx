@@ -100,9 +100,9 @@ export function WorkoutCenter({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["exercises"]) // Main exercises open by default
   )
-  
+
   const isWorkoutCompleted = completion?.completed || false
-  
+
   // When workout is completed, expand all sections so user can see what they did
   useEffect(() => {
     if (isWorkoutCompleted) {
@@ -327,10 +327,10 @@ export function WorkoutCenter({
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="text-xs text-muted-foreground">
-                {isWorkoutCompleted 
+                {isWorkoutCompleted
                   ? `${completion?.exercisesCompleted?.length || totalExercises}/${totalExercises} exercises completed`
-                  : isPreview 
-                    ? `${totalExercises} exercises` 
+                  : isPreview
+                    ? `${totalExercises} exercises`
                     : `${completedExercises.size}/${totalExercises} exercises`
                 }
               </div>

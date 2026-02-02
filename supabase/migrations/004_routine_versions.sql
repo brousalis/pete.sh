@@ -75,26 +75,26 @@ CREATE POLICY "Allow anon delete workout_defs" ON workout_definitions FOR DELETE
 -- Function to get the active version for a routine
 CREATE OR REPLACE FUNCTION get_active_routine_version(p_routine_id TEXT)
 RETURNS fitness_routine_versions AS $$
-  SELECT * FROM fitness_routine_versions 
-  WHERE routine_id = p_routine_id AND is_active = true 
-  ORDER BY created_at DESC 
+  SELECT * FROM fitness_routine_versions
+  WHERE routine_id = p_routine_id AND is_active = true
+  ORDER BY created_at DESC
   LIMIT 1;
 $$ LANGUAGE SQL;
 
 -- Function to get the latest version number for a routine
 CREATE OR REPLACE FUNCTION get_latest_version_number(p_routine_id TEXT)
 RETURNS INTEGER AS $$
-  SELECT COALESCE(MAX(version_number), 0) 
-  FROM fitness_routine_versions 
+  SELECT COALESCE(MAX(version_number), 0)
+  FROM fitness_routine_versions
   WHERE routine_id = p_routine_id;
 $$ LANGUAGE SQL;
 
 -- Function to get workout definitions for a routine
 CREATE OR REPLACE FUNCTION get_workout_definitions(p_routine_id TEXT)
 RETURNS SETOF workout_definitions AS $$
-  SELECT * FROM workout_definitions 
+  SELECT * FROM workout_definitions
   WHERE routine_id = p_routine_id
-  ORDER BY 
+  ORDER BY
     CASE day_of_week
       WHEN 'monday' THEN 1
       WHEN 'tuesday' THEN 2
@@ -111,10 +111,10 @@ CREATE OR REPLACE FUNCTION ensure_single_active_version()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.is_active = true THEN
-    UPDATE fitness_routine_versions 
+    UPDATE fitness_routine_versions
     SET is_active = false, updated_at = NOW()
-    WHERE routine_id = NEW.routine_id 
-      AND id != NEW.id 
+    WHERE routine_id = NEW.routine_id
+      AND id != NEW.id
       AND is_active = true;
   END IF;
   RETURN NEW;

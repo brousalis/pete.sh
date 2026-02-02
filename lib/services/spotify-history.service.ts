@@ -8,6 +8,7 @@ import {
   getSupabaseServiceClient,
   isSupabaseConfigured,
 } from '@/lib/supabase/client'
+import type { SpotifySyncCursorInsert } from '@/lib/supabase/types'
 import type {
   SpotifyHistorySyncResult,
   SpotifyListeningHistoryEntry,
@@ -111,7 +112,8 @@ export class SpotifyHistoryService {
       // Upsert to handle any potential duplicates
       const { error } = await serviceClient
         .from('spotify_listening_history')
-        .upsert(historyEntries, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Insert inferred as never for this table
+        .upsert(historyEntries as any, {
           onConflict: 'track_id,played_at',
           ignoreDuplicates: true,
         })
@@ -211,18 +213,26 @@ export class SpotifyHistoryService {
 
     try {
       // Get total and unique counts
-      const { data: historyData, error: historyError } = await client
+      const { data: rawData, error: historyError } = await client
         .from('spotify_listening_history')
         .select('track_id, track_name, track_artists, duration_ms')
         .gte('played_at', sinceDate.toISOString())
 
-      if (historyError || !historyData) {
+      if (historyError || !rawData) {
         // Don't log "table doesn't exist" errors - expected before migration
         if (historyError?.code !== 'PGRST205') {
           console.error('[SpotifyHistory] Stats error:', historyError)
         }
         return null
       }
+
+      type StatsRow = {
+        track_id: string
+        track_name: string
+        track_artists: string
+        duration_ms: number
+      }
+      const historyData = rawData as StatsRow[]
 
       // Calculate stats in memory
       const totalTracks = historyData.length
@@ -325,13 +335,15 @@ export class SpotifyHistoryService {
 
     const cursor = await this.getSyncCursor()
 
-    await serviceClient.from('spotify_sync_cursor').upsert({
+    const cursorPayload: SpotifySyncCursorInsert = {
       id: 'default',
       last_played_at: lastPlayedAt,
       last_sync_at: new Date().toISOString(),
       total_tracks_synced: cursor.total_tracks_synced + newTracksCount,
       updated_at: new Date().toISOString(),
-    })
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Insert inferred as never for this table
+    await serviceClient.from('spotify_sync_cursor').upsert(cursorPayload as any)
   }
 
   /**
@@ -364,10 +376,10 @@ export class SpotifyHistoryService {
       track_artist_ids: track.artists.map(a => a.id).join(', '),
       album_name: track.album.name,
       album_id: track.album.id,
-      album_image_url: track.album.images?.[0]?.url || null,
+      album_image_url: track.album.images?.[0]?.url ?? undefined,
       duration_ms: track.duration_ms,
-      context_type: item.context?.type || null,
-      context_uri: item.context?.uri || null,
+      context_type: item.context?.type ?? undefined,
+      context_uri: item.context?.uri ?? undefined,
       played_at: item.played_at,
     }
   }
