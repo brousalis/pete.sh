@@ -3,15 +3,19 @@
  * Handles syncing and retrieving Spotify listening history from Supabase
  */
 
-import { getSupabaseClient, getSupabaseServiceClient, isSupabaseConfigured } from "@/lib/supabase/client"
+import {
+  getSupabaseClient,
+  getSupabaseServiceClient,
+  isSupabaseConfigured,
+} from '@/lib/supabase/client'
 import type {
+  SpotifyHistorySyncResult,
   SpotifyListeningHistoryEntry,
   SpotifyListeningStats,
-  SpotifySyncCursor,
-  SpotifyHistorySyncResult,
   SpotifyRecentTrack,
-} from "@/lib/types/spotify.types"
-import { SpotifyService } from "./spotify.service"
+  SpotifySyncCursor,
+} from '@/lib/types/spotify.types'
+import { SpotifyService } from './spotify.service'
 
 export class SpotifyHistoryService {
   private spotifyService: SpotifyService | null = null
@@ -35,6 +39,16 @@ export class SpotifyHistoryService {
   }
 
   /**
+   * Get the best client for reads: service role when available (so server-side
+   * reads see the same data as writes), otherwise anon. Fixes mismatch where
+   * sync inserts with service role but getHistory/getTotalTrackCount used anon
+   * and could see 0 rows due to RLS or missing anon policy.
+   */
+  private getReadClient() {
+    return getSupabaseServiceClient() ?? getSupabaseClient()
+  }
+
+  /**
    * Sync recent plays from Spotify API to Supabase
    * Returns the number of new tracks added
    */
@@ -44,7 +58,7 @@ export class SpotifyHistoryService {
         success: false,
         newTracks: 0,
         totalTracksInDb: 0,
-        error: "Spotify service not initialized",
+        error: 'Spotify service not initialized',
       }
     }
 
@@ -54,18 +68,18 @@ export class SpotifyHistoryService {
         success: false,
         newTracks: 0,
         totalTracksInDb: 0,
-        error: "Supabase service client not available",
+        error: 'Supabase service client not available',
       }
     }
 
     try {
       // Get the sync cursor to know where we left off
       const cursor = await this.getSyncCursor()
-      
+
       // Fetch recent plays from Spotify (max 50)
       // Note: Spotify's recently-played endpoint only returns last 50 tracks
       const recentPlays = await this.spotifyService.getRecentlyPlayed(50)
-      
+
       if (!recentPlays.items || recentPlays.items.length === 0) {
         return {
           success: true,
@@ -77,7 +91,7 @@ export class SpotifyHistoryService {
       // Filter out tracks we've already synced
       const newTracks = cursor.last_played_at
         ? recentPlays.items.filter(
-            (item) => new Date(item.played_at) > new Date(cursor.last_played_at!)
+            item => new Date(item.played_at) > new Date(cursor.last_played_at!)
           )
         : recentPlays.items
 
@@ -90,28 +104,31 @@ export class SpotifyHistoryService {
       }
 
       // Transform and insert new tracks
-      const historyEntries = newTracks.map((item) => this.transformToHistoryEntry(item))
+      const historyEntries = newTracks.map(item =>
+        this.transformToHistoryEntry(item)
+      )
 
       // Upsert to handle any potential duplicates
       const { error } = await serviceClient
-        .from("spotify_listening_history")
-        .upsert(historyEntries, { 
-          onConflict: "track_id,played_at",
-          ignoreDuplicates: true 
+        .from('spotify_listening_history')
+        .upsert(historyEntries, {
+          onConflict: 'track_id,played_at',
+          ignoreDuplicates: true,
         })
 
       if (error) {
         // Only log if it's not a "table doesn't exist" error (which is expected before migration)
-        if (error.code !== "PGRST205") {
-          console.error("[SpotifyHistory] Insert error:", error)
+        if (error.code !== 'PGRST205') {
+          console.error('[SpotifyHistory] Insert error:', error)
         }
         return {
           success: false,
           newTracks: 0,
           totalTracksInDb: 0,
-          error: error.code === "PGRST205" 
-            ? "Table not found - run migration 004_spotify_listening_history.sql" 
-            : error.message,
+          error:
+            error.code === 'PGRST205'
+              ? 'Table not found - run migration 004_spotify_listening_history.sql'
+              : error.message,
         }
       }
 
@@ -131,12 +148,12 @@ export class SpotifyHistoryService {
         newestTrack: historyEntries[0]?.played_at,
       }
     } catch (error) {
-      console.error("[SpotifyHistory] Sync error:", error)
+      console.error('[SpotifyHistory] Sync error:', error)
       return {
         success: false,
         newTracks: 0,
         totalTracksInDb: 0,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -150,31 +167,31 @@ export class SpotifyHistoryService {
     startDate?: Date
     endDate?: Date
   }): Promise<SpotifyListeningHistoryEntry[]> {
-    const client = getSupabaseClient()
+    const client = this.getReadClient()
     if (!client) return []
 
     const { limit = 50, offset = 0, startDate, endDate } = options || {}
 
     let query = client
-      .from("spotify_listening_history")
-      .select("*")
-      .order("played_at", { ascending: false })
+      .from('spotify_listening_history')
+      .select('*')
+      .order('played_at', { ascending: false })
       .limit(limit)
       .range(offset, offset + limit - 1)
 
     if (startDate) {
-      query = query.gte("played_at", startDate.toISOString())
+      query = query.gte('played_at', startDate.toISOString())
     }
     if (endDate) {
-      query = query.lte("played_at", endDate.toISOString())
+      query = query.lte('played_at', endDate.toISOString())
     }
 
     const { data, error } = await query
 
     if (error) {
       // Don't log "table doesn't exist" errors - expected before migration
-      if (error.code !== "PGRST205") {
-        console.error("[SpotifyHistory] Get history error:", error)
+      if (error.code !== 'PGRST205') {
+        console.error('[SpotifyHistory] Get history error:', error)
       }
       return []
     }
@@ -186,7 +203,7 @@ export class SpotifyHistoryService {
    * Get listening stats for a time period
    */
   async getStats(days = 30): Promise<SpotifyListeningStats | null> {
-    const client = getSupabaseClient()
+    const client = this.getReadClient()
     if (!client) return null
 
     const sinceDate = new Date()
@@ -195,27 +212,30 @@ export class SpotifyHistoryService {
     try {
       // Get total and unique counts
       const { data: historyData, error: historyError } = await client
-        .from("spotify_listening_history")
-        .select("track_id, track_name, track_artists, duration_ms")
-        .gte("played_at", sinceDate.toISOString())
+        .from('spotify_listening_history')
+        .select('track_id, track_name, track_artists, duration_ms')
+        .gte('played_at', sinceDate.toISOString())
 
       if (historyError || !historyData) {
         // Don't log "table doesn't exist" errors - expected before migration
-        if (historyError?.code !== "PGRST205") {
-          console.error("[SpotifyHistory] Stats error:", historyError)
+        if (historyError?.code !== 'PGRST205') {
+          console.error('[SpotifyHistory] Stats error:', historyError)
         }
         return null
       }
 
       // Calculate stats in memory
       const totalTracks = historyData.length
-      const uniqueTracks = new Set(historyData.map((t) => t.track_id)).size
-      const uniqueArtists = new Set(historyData.map((t) => t.track_artists)).size
-      const totalListeningTimeMs = historyData.reduce((sum, t) => sum + (t.duration_ms || 0), 0)
+      const uniqueTracks = new Set(historyData.map(t => t.track_id)).size
+      const uniqueArtists = new Set(historyData.map(t => t.track_artists)).size
+      const totalListeningTimeMs = historyData.reduce(
+        (sum, t) => sum + (t.duration_ms || 0),
+        0
+      )
 
       // Find top track
       const trackCounts = new Map<string, number>()
-      historyData.forEach((t) => {
+      historyData.forEach(t => {
         trackCounts.set(t.track_name, (trackCounts.get(t.track_name) || 0) + 1)
       })
       let topTrack: string | undefined
@@ -229,8 +249,11 @@ export class SpotifyHistoryService {
 
       // Find top artist
       const artistCounts = new Map<string, number>()
-      historyData.forEach((t) => {
-        artistCounts.set(t.track_artists, (artistCounts.get(t.track_artists) || 0) + 1)
+      historyData.forEach(t => {
+        artistCounts.set(
+          t.track_artists,
+          (artistCounts.get(t.track_artists) || 0) + 1
+        )
       })
       let topArtist: string | undefined
       let topArtistCount = 0
@@ -254,8 +277,8 @@ export class SpotifyHistoryService {
     } catch (error: unknown) {
       // Don't log "table doesn't exist" errors - expected before migration
       const pgError = error as { code?: string }
-      if (pgError?.code !== "PGRST205") {
-        console.error("[SpotifyHistory] Stats error:", error)
+      if (pgError?.code !== 'PGRST205') {
+        console.error('[SpotifyHistory] Stats error:', error)
       }
       return null
     }
@@ -265,9 +288,9 @@ export class SpotifyHistoryService {
    * Get the sync cursor
    */
   async getSyncCursor(): Promise<SpotifySyncCursor> {
-    const client = getSupabaseClient()
+    const client = this.getReadClient()
     const defaultCursor: SpotifySyncCursor = {
-      id: "default",
+      id: 'default',
       last_played_at: null,
       last_sync_at: new Date().toISOString(),
       total_tracks_synced: 0,
@@ -278,9 +301,9 @@ export class SpotifyHistoryService {
     if (!client) return defaultCursor
 
     const { data, error } = await client
-      .from("spotify_sync_cursor")
-      .select("*")
-      .eq("id", "default")
+      .from('spotify_sync_cursor')
+      .select('*')
+      .eq('id', 'default')
       .single()
 
     if (error || !data) {
@@ -293,33 +316,34 @@ export class SpotifyHistoryService {
   /**
    * Update the sync cursor after successful sync
    */
-  private async updateSyncCursor(lastPlayedAt: string, newTracksCount: number): Promise<void> {
+  private async updateSyncCursor(
+    lastPlayedAt: string,
+    newTracksCount: number
+  ): Promise<void> {
     const serviceClient = getSupabaseServiceClient()
     if (!serviceClient) return
 
     const cursor = await this.getSyncCursor()
-    
-    await serviceClient
-      .from("spotify_sync_cursor")
-      .upsert({
-        id: "default",
-        last_played_at: lastPlayedAt,
-        last_sync_at: new Date().toISOString(),
-        total_tracks_synced: cursor.total_tracks_synced + newTracksCount,
-        updated_at: new Date().toISOString(),
-      })
+
+    await serviceClient.from('spotify_sync_cursor').upsert({
+      id: 'default',
+      last_played_at: lastPlayedAt,
+      last_sync_at: new Date().toISOString(),
+      total_tracks_synced: cursor.total_tracks_synced + newTracksCount,
+      updated_at: new Date().toISOString(),
+    })
   }
 
   /**
    * Get total track count in the history
    */
   private async getTotalTrackCount(): Promise<number> {
-    const client = getSupabaseClient()
+    const client = this.getReadClient()
     if (!client) return 0
 
     const { count, error } = await client
-      .from("spotify_listening_history")
-      .select("*", { count: "exact", head: true })
+      .from('spotify_listening_history')
+      .select('*', { count: 'exact', head: true })
 
     if (error) return 0
     return count || 0
@@ -328,14 +352,16 @@ export class SpotifyHistoryService {
   /**
    * Transform a Spotify recent track to a history entry
    */
-  private transformToHistoryEntry(item: SpotifyRecentTrack): Omit<SpotifyListeningHistoryEntry, "id" | "created_at" | "synced_at"> {
+  private transformToHistoryEntry(
+    item: SpotifyRecentTrack
+  ): Omit<SpotifyListeningHistoryEntry, 'id' | 'created_at' | 'synced_at'> {
     const track = item.track
     return {
       track_id: track.id,
       track_uri: track.uri,
       track_name: track.name,
-      track_artists: track.artists.map((a) => a.name).join(", "),
-      track_artist_ids: track.artists.map((a) => a.id).join(", "),
+      track_artists: track.artists.map(a => a.name).join(', '),
+      track_artist_ids: track.artists.map(a => a.id).join(', '),
       album_name: track.album.name,
       album_id: track.album.id,
       album_image_url: track.album.images?.[0]?.url || null,
@@ -349,7 +375,9 @@ export class SpotifyHistoryService {
   /**
    * Get tracks grouped by day for a given time period
    */
-  async getHistoryByDay(days = 7): Promise<Map<string, SpotifyListeningHistoryEntry[]>> {
+  async getHistoryByDay(
+    days = 7
+  ): Promise<Map<string, SpotifyListeningHistoryEntry[]>> {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
     startDate.setHours(0, 0, 0, 0)
@@ -360,12 +388,12 @@ export class SpotifyHistoryService {
     })
 
     const byDay = new Map<string, SpotifyListeningHistoryEntry[]>()
-    
-    history.forEach((entry) => {
-      const date = new Date(entry.played_at).toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
+
+    history.forEach(entry => {
+      const date = new Date(entry.played_at).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
       })
       if (!byDay.has(date)) {
         byDay.set(date, [])

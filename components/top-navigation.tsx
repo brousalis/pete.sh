@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bus,
   Calendar,
+  ChefHat,
   Coffee,
   Command,
   Dumbbell,
@@ -26,10 +27,9 @@ import {
   Menu,
   Music,
   Settings,
-  X,
-  ChefHat,
   Wifi,
   WifiOff,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -45,7 +45,7 @@ type NavItem = {
 
 // Main navigation items (excludes Deck which has its own icon)
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Home', icon: Home, shortcut: '1' },
+  { href: '/', label: 'Home', icon: Home, shortcut: '1' },
   { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
   { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
 
 // All items including Deck for keyboard shortcuts
 const allNavItems: NavItem[] = [
-  { href: '/dashboard', label: 'Home', icon: Home, shortcut: '1' },
+  { href: '/', label: 'Home', icon: Home, shortcut: '1' },
   { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
   { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
@@ -85,7 +85,10 @@ export function TopNavigation() {
     if (!mobileMenuOpen) return
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+      if (
+        headerRef.current &&
+        !headerRef.current.contains(event.target as Node)
+      ) {
         setMobileMenuOpen(false)
       }
     }
@@ -102,7 +105,11 @@ export function TopNavigation() {
       }
 
       // Keyboard navigation shortcuts (Cmd/Ctrl + number)
-      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey) {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        !event.altKey
+      ) {
         const num = parseInt(event.key)
         const navItem = allNavItems[num - 1]
         if (num >= 1 && num <= allNavItems.length && navItem) {
@@ -120,12 +127,15 @@ export function TopNavigation() {
     pathname === href || (href !== '/' && pathname?.startsWith(href))
 
   return (
-    <header ref={headerRef} className="bg-card border-border/50 sticky top-0 z-50 border-b">
+    <header
+      ref={headerRef}
+      className="bg-card border-border/50 sticky top-0 z-50 border-b"
+    >
       <div className="mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:px-4 md:gap-4 md:px-5 lg:px-6">
         {/* Logo */}
         <div className="flex shrink-0 items-center gap-2">
           <Link
-            href="/dashboard"
+            href="/"
             className="group relative flex items-center"
             aria-label="Go to dashboard"
           >
@@ -133,23 +143,27 @@ export function TopNavigation() {
               petehome
             </span>
             {/* Keyboard shortcut indicator */}
-            <span className="ml-2 hidden items-center gap-0.5 rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground xl:flex">
+            <span className="border-border/60 bg-muted/50 text-muted-foreground ml-2 hidden items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] xl:flex">
               <Command className="size-2.5" />K
             </span>
           </Link>
-          
+
           {/* Local Mode Indicator - shows when in production but connected to local */}
           {isInitialized && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               className={cn(
-                "hidden sm:flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                'hidden items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:flex',
                 isLocalAvailable
-                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                  : "bg-muted text-muted-foreground"
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                  : 'bg-muted text-muted-foreground'
               )}
-              title={isLocalAvailable ? "Connected to local services" : "Read-only mode (cached data)"}
+              title={
+                isLocalAvailable
+                  ? 'Connected to local services'
+                  : 'Read-only mode (cached data)'
+              }
             >
               {isLocalAvailable ? (
                 <>
@@ -167,8 +181,11 @@ export function TopNavigation() {
         </div>
 
         {/* Desktop Navigation - visible on tablet (768px+) */}
-        <nav className="hidden flex-1 items-center justify-center md:flex" aria-label="Primary navigation">
-          <div className="flex items-center gap-0.5 rounded-xl bg-muted/40 p-1 lg:gap-1">
+        <nav
+          className="hidden flex-1 items-center justify-center md:flex"
+          aria-label="Primary navigation"
+        >
+          <div className="bg-muted/40 flex items-center gap-0.5 rounded-xl p-1 lg:gap-1">
             {navItems.map(({ href, label, icon: Icon, shortcut }) => {
               const active = isActive(href)
               return (
@@ -180,7 +197,7 @@ export function TopNavigation() {
                   className={cn(
                     'group relative flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors lg:gap-2 lg:px-3',
                     'min-h-[40px] min-w-[40px] justify-center lg:min-w-0 lg:justify-start', // Touch-friendly minimum
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
                     active
                       ? 'text-brand'
                       : 'text-muted-foreground hover:text-foreground'
@@ -197,7 +214,9 @@ export function TopNavigation() {
                   <Icon
                     className={cn(
                       'relative size-4 shrink-0 transition-colors',
-                      active ? 'text-brand' : 'text-muted-foreground group-hover:text-foreground'
+                      active
+                        ? 'text-brand'
+                        : 'text-muted-foreground group-hover:text-foreground'
                     )}
                   />
                   {/* Labels visible at 1024px+ (iPad Mini landscape and up) */}
@@ -233,8 +252,8 @@ export function TopNavigation() {
 
           {/* Settings */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50">
-              <Settings className="size-5 text-muted-foreground" aria-hidden />
+            <DropdownMenuTrigger className="hover:bg-muted/80 focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none">
+              <Settings className="text-muted-foreground size-5" aria-hidden />
               <span className="sr-only">Open settings</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -260,7 +279,7 @@ export function TopNavigation() {
           <Link
             href="/deck"
             className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50',
+              'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
               isActive('/deck')
                 ? 'bg-brand/10 text-brand'
                 : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
@@ -274,14 +293,14 @@ export function TopNavigation() {
           {/* Mobile menu button - visible below tablet (768px) */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/50 md:hidden"
+            className="hover:bg-muted/80 focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none md:hidden"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
-              <X className="size-5 text-muted-foreground" />
+              <X className="text-muted-foreground size-5" />
             ) : (
-              <Menu className="size-5 text-muted-foreground" />
+              <Menu className="text-muted-foreground size-5" />
             )}
           </button>
         </div>
@@ -296,7 +315,7 @@ export function TopNavigation() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={transitions.smooth}
-            className="overflow-hidden border-t border-border/50 md:hidden"
+            className="border-border/50 overflow-hidden border-t md:hidden"
           >
             <nav className="bg-card" aria-label="Mobile navigation">
               <motion.ul
@@ -314,10 +333,7 @@ export function TopNavigation() {
                 {navItems.map(({ href, label, icon: Icon }) => {
                   const active = isActive(href)
                   return (
-                    <motion.li
-                      key={href}
-                      variants={staggerItemVariants}
-                    >
+                    <motion.li key={href} variants={staggerItemVariants}>
                       <Link
                         href={href}
                         aria-current={active ? 'page' : undefined}
@@ -330,11 +346,14 @@ export function TopNavigation() {
                         )}
                       >
                         <Icon
-                          className={cn('size-5 shrink-0', active && 'text-brand')}
+                          className={cn(
+                            'size-5 shrink-0',
+                            active && 'text-brand'
+                          )}
                         />
                         <span
                           className={cn(
-                            'text-[11px] font-medium leading-tight',
+                            'text-[11px] leading-tight font-medium',
                             active && 'font-semibold'
                           )}
                         >
@@ -373,7 +392,7 @@ export function MobileBottomNavigation() {
   // Deck is accessed via the icon in the top bar
   return (
     <nav
-      className="bg-card/98 border-border/50 fixed bottom-0 left-0 right-0 z-50 border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-xl md:hidden"
+      className="bg-card/98 border-border/50 fixed right-0 bottom-0 left-0 z-50 border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-xl md:hidden"
       aria-label="Mobile navigation"
     >
       <ul className="flex h-[60px] items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
@@ -387,9 +406,7 @@ export function MobileBottomNavigation() {
                 className={cn(
                   'relative flex w-full flex-col items-center justify-center gap-0.5 transition-colors',
                   'touch-manipulation active:opacity-70', // Native feel on press
-                  active
-                    ? 'text-brand'
-                    : 'text-muted-foreground'
+                  active ? 'text-brand' : 'text-muted-foreground'
                 )}
               >
                 {/* Animated active indicator bar */}
@@ -415,8 +432,10 @@ export function MobileBottomNavigation() {
                 {/* Label */}
                 <span
                   className={cn(
-                    'w-full truncate text-center text-[10px] font-medium leading-tight',
-                    active ? 'text-brand font-semibold' : 'text-muted-foreground'
+                    'w-full truncate text-center text-[10px] leading-tight font-medium',
+                    active
+                      ? 'text-brand font-semibold'
+                      : 'text-muted-foreground'
                   )}
                 >
                   {label}

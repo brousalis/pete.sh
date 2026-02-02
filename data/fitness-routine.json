@@ -232,9 +232,15 @@
         "thursday": {},
         "friday": {},
         "saturday": {},
-        "sunday": {}
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-01T22:37:38.979Z"
+          }
+        }
       }
     }
   ],
-  "updatedAt": "2026-02-01T13:59:56.049Z"
+  "updatedAt": "2026-02-02T03:04:46.036Z"
 }

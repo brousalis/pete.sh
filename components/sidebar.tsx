@@ -26,7 +26,7 @@ type Item = {
 }
 
 const items: Item[] = [
-  { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/', label: 'Home', icon: Home },
   { href: '/deck', label: 'Deck', icon: Grid3x3 },
   { href: '/lights', label: 'Lights', icon: Lightbulb },
   { href: '/music', label: 'Music', icon: Music },
@@ -90,7 +90,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           <X className="size-5" />
         </button>
         <Link
-          href="/dashboard"
+          href="/"
           onClick={handleLinkClick}
           className={`group relative flex items-center ${open ? 'min-w-0 flex-1 justify-start' : 'w-full justify-center'} ${onClose ? 'lg:flex-1' : ''}`}
           aria-label="Go to dashboard"

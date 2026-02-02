@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { google } from "googleapis"
-import { config } from "@/lib/config"
-import { setGoogleCalendarTokens } from "@/lib/services/token-storage"
+import { config } from '@/lib/config'
+import { setGoogleCalendarTokens } from '@/lib/services/token-storage'
+import { google } from 'googleapis'
+import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * OAuth callback handler for Google Calendar
@@ -14,39 +14,49 @@ import { setGoogleCalendarTokens } from "@/lib/services/token-storage"
  */
 export async function GET(request: NextRequest) {
   // Get the app base URL for redirects (use NEXT_PUBLIC_APP_URL or fallback to localhost)
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL
 
   try {
     if (!config.google.isConfigured) {
-      return NextResponse.json({ error: "Google Calendar not configured" }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Google Calendar not configured' },
+        { status: 400 }
+      )
     }
 
     const searchParams = request.nextUrl.searchParams
-    const code = searchParams.get("code")
-    const error = searchParams.get("error")
+    const code = searchParams.get('code')
+    const error = searchParams.get('error')
 
-    console.log("[Calendar Callback] Received:", {
-      code: code ? "present" : "missing",
+    console.log('[Calendar Callback] Received:', {
+      code: code ? 'present' : 'missing',
       error,
       appBaseUrl,
     })
 
     // Handle OAuth errors
     if (error) {
-      return NextResponse.redirect(new URL(`/?error=${encodeURIComponent(error)}`, appBaseUrl))
+      return NextResponse.redirect(
+        new URL(`/?error=${encodeURIComponent(error)}`, appBaseUrl)
+      )
     }
 
     // Exchange authorization code for tokens
     if (!code) {
-      return NextResponse.json({ error: "Missing authorization code" }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing authorization code' },
+        { status: 400 }
+      )
     }
 
     // Create OAuth2 client with dynamic redirect URI
     // IMPORTANT: Must match the redirect URI used in CalendarService.getAuthUrl() EXACTLY
     // Always use GOOGLE_REDIRECT_URI env var for consistency, or fallback to localhost
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/calendar/callback"
+    const redirectUri =
+      process.env.GOOGLE_REDIRECT_URI ||
+      'http://localhost:3000/api/calendar/callback'
 
-    console.log("[Calendar Callback] Using redirect URI:", redirectUri)
+    console.log('[Calendar Callback] Using redirect URI:', redirectUri)
 
     const oauth2Client = new google.auth.OAuth2(
       config.google.clientId,
@@ -58,13 +68,15 @@ export async function GET(request: NextRequest) {
     const { tokens } = await oauth2Client.getToken(code)
 
     if (!tokens.access_token) {
-      throw new Error("No access token received")
+      throw new Error('No access token received')
     }
 
-    console.log("[Calendar Callback] OAuth tokens received:", {
+    console.log('[Calendar Callback] OAuth tokens received:', {
       hasAccessToken: !!tokens.access_token,
       hasRefreshToken: !!tokens.refresh_token,
-      expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
+      expiryDate: tokens.expiry_date
+        ? new Date(tokens.expiry_date).toISOString()
+        : null,
     })
 
     // Store tokens in file-based storage (for cross-origin requests)
@@ -82,44 +94,61 @@ export async function GET(request: NextRequest) {
       ? new Date(tokens.expiry_date)
       : new Date(Date.now() + 3600 * 1000) // 1 hour fallback
 
-    console.log("[Calendar Callback] Storing access token, expires:", expiresIn.toISOString())
+    console.log(
+      '[Calendar Callback] Storing access token, expires:',
+      expiresIn.toISOString()
+    )
 
-    cookieStore.set("google_calendar_access_token", tokens.access_token, {
+    cookieStore.set('google_calendar_access_token', tokens.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       expires: expiresIn,
-      path: "/",
+      path: '/',
     })
 
     // Store refresh token if available (longer expiry)
     // Note: Google only provides refresh token on first authorization or when prompt=consent is used
     if (tokens.refresh_token) {
       const refreshExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
-      console.log("[Calendar Callback] Storing refresh token in cookie, expires:", refreshExpiry.toISOString())
-      cookieStore.set("google_calendar_refresh_token", tokens.refresh_token, {
+      console.log(
+        '[Calendar Callback] Storing refresh token in cookie, expires:',
+        refreshExpiry.toISOString()
+      )
+      cookieStore.set('google_calendar_refresh_token', tokens.refresh_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
         expires: refreshExpiry,
-        path: "/",
+        path: '/',
       })
     } else {
       // Check if we already have a refresh token stored
-      const existingRefreshToken = cookieStore.get("google_calendar_refresh_token")?.value
+      const existingRefreshToken = cookieStore.get(
+        'google_calendar_refresh_token'
+      )?.value
       if (existingRefreshToken) {
-        console.log("[Calendar Callback] No new refresh token, but keeping existing one")
+        console.log(
+          '[Calendar Callback] No new refresh token, but keeping existing one'
+        )
       } else {
-        console.warn("[Calendar Callback] WARNING: No refresh token received and none exists! User will need to re-authenticate when access token expires.")
-        console.warn("[Calendar Callback] This usually means the OAuth flow didn't use prompt=consent. The auth route should force this.")
+        console.warn(
+          '[Calendar Callback] WARNING: No refresh token received and none exists! User will need to re-authenticate when access token expires.'
+        )
+        console.warn(
+          "[Calendar Callback] This usually means the OAuth flow didn't use prompt=consent. The auth route should force this."
+        )
       }
     }
 
     // Redirect to home or calendar page
-    return NextResponse.redirect(new URL("/calendar?auth=success", appBaseUrl))
+    return NextResponse.redirect(new URL('/calendar?auth=success', appBaseUrl))
   } catch (error) {
-    console.error("[Calendar Callback] OAuth error:", error)
-    const errorMessage = error instanceof Error ? error.message : "Calendar authentication failed"
-    return NextResponse.redirect(new URL(`/calendar?error=${encodeURIComponent(errorMessage)}`, appBaseUrl))
+    console.error('[Calendar Callback] OAuth error:', error)
+    const errorMessage =
+      error instanceof Error ? error.message : 'Calendar authentication failed'
+    return NextResponse.redirect(
+      new URL(`/calendar?error=${encodeURIComponent(errorMessage)}`, appBaseUrl)
+    )
   }
 }

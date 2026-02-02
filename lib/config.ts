@@ -32,13 +32,9 @@ const envSchema = z.object({
   CTA_API_KEY: z.string().optional(),
   CTA_TRAIN_API_KEY: z.string().optional(),
 
-  // Desktop Features
-  NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES: z.string().optional(),
-
   // Spotify
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
-
 })
 
 // Parse and validate environment variables
@@ -66,7 +62,9 @@ export const config = {
     username: env.HUE_BRIDGE_USERNAME,
     clientKey: env.HUE_CLIENT_KEY, // For entertainment streaming
     isConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME),
-    isEntertainmentConfigured: Boolean(env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME && env.HUE_CLIENT_KEY),
+    isEntertainmentConfigured: Boolean(
+      env.HUE_BRIDGE_IP && env.HUE_BRIDGE_USERNAME && env.HUE_CLIENT_KEY
+    ),
   },
   google: {
     clientId: env.GOOGLE_CLIENT_ID,
@@ -89,14 +87,13 @@ export const config = {
     isConfigured: Boolean(env.CTA_API_KEY),
     isTrainConfigured: Boolean(env.CTA_TRAIN_API_KEY),
   },
-  desktop: {
-    enabled: env.NEXT_PUBLIC_ENABLE_DESKTOP_FEATURES === 'true',
-  },
   spotify: {
     clientId: env.NEXT_SPOTIFY_CLIENT_ID,
     clientSecret: env.NEXT_SPOTIFY_CLIENT_SECRET,
     redirectUri: 'http://127.0.0.1:3000/spotify/callback',
-    isConfigured: Boolean(env.NEXT_SPOTIFY_CLIENT_ID && env.NEXT_SPOTIFY_CLIENT_SECRET),
+    isConfigured: Boolean(
+      env.NEXT_SPOTIFY_CLIENT_ID && env.NEXT_SPOTIFY_CLIENT_SECRET
+    ),
     scopes: [
       'user-read-playback-state',
       'user-modify-playback-state',
