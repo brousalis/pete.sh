@@ -10,6 +10,9 @@
  * - Server: Hario V60 Glass Server (1000ml)
  * - Scale: Acaia Pearl
  * - Kettle: Fellow Stagg EKG
+ *
+ * Note: This service provides default/fallback data. For database-backed
+ * configuration management, use the CoffeeConfigService instead.
  */
 
 import type {
@@ -73,7 +76,11 @@ export class CoffeeService {
         switchSetting: 'hybrid',
         timingCues: [
           { time: 0, label: 'Flush', action: 'Pour 60g fast with switch DOWN' },
-          { time: 45, label: 'Steep', action: 'Switch UP, pour to 300g, swirl' },
+          {
+            time: 45,
+            label: 'Steep',
+            action: 'Switch UP, pour to 300g, swirl',
+          },
           { time: 150, label: 'Release', action: 'Switch DOWN, let drain' },
         ],
       },
@@ -90,8 +97,16 @@ export class CoffeeService {
         technique: 'Gentle Flush. One soft swirl during steep.',
         switchSetting: 'hybrid',
         timingCues: [
-          { time: 0, label: 'Flush', action: 'Pour 60g gently with switch DOWN' },
-          { time: 45, label: 'Steep', action: 'Switch UP, pour to 300g, one soft swirl' },
+          {
+            time: 0,
+            label: 'Flush',
+            action: 'Pour 60g gently with switch DOWN',
+          },
+          {
+            time: 45,
+            label: 'Steep',
+            action: 'Switch UP, pour to 300g, one soft swirl',
+          },
           { time: 150, label: 'Release', action: 'Switch DOWN, let drain' },
         ],
       },
@@ -105,7 +120,8 @@ export class CoffeeService {
         ratio: '1:18',
         coffee: 16.5,
         temp: '195°F',
-        technique: 'V60 Mode Only. Switch OPEN. Pour slowly center. No immersion.',
+        technique:
+          'V60 Mode Only. Switch OPEN. Pour slowly center. No immersion.',
         switchSetting: 'open',
       },
       // 2 CUPS (600ml) - Standard V60 Pour-Over
@@ -157,7 +173,8 @@ export class CoffeeService {
         ratio: '1:18',
         coffee: 33,
         temp: '195°F',
-        technique: 'Center Pour Only. Steady in center (quarter size). No stir.',
+        technique:
+          'Center Pour Only. Steady in center (quarter size). No stir.',
         switchSetting: 'open',
       },
       // 3-4 CUPS (1000ml) - "The Sunday Theater"
@@ -209,7 +226,8 @@ export class CoffeeService {
         ratio: '1:18',
         coffee: 56,
         temp: '195°F',
-        technique: 'No Stir. Gentle bloom. Pour very slowly center to avoid overflow.',
+        technique:
+          'No Stir. Gentle bloom. Pour very slowly center to avoid overflow.',
         switchSetting: 'open',
       },
     ]
@@ -274,7 +292,9 @@ export class CoffeeService {
         temp: 'Default',
         technique: 'Stir at 0:45. Break the crust thoroughly.',
         moccaSetting: 'full',
-        timingCues: [{ time: 45, label: 'Stir', action: 'Break the crust (3 circles)' }],
+        timingCues: [
+          { time: 45, label: 'Stir', action: 'Break the crust (3 circles)' },
+        ],
       },
       {
         id: 'mocca-8-medium',
@@ -288,7 +308,9 @@ export class CoffeeService {
         temp: 'Default',
         technique: 'Gentle Stir at 0:45. Just 3 circles to mix.',
         moccaSetting: 'full',
-        timingCues: [{ time: 45, label: 'Stir', action: 'Gentle stir (3 circles)' }],
+        timingCues: [
+          { time: 45, label: 'Stir', action: 'Gentle stir (3 circles)' },
+        ],
       },
       {
         id: 'mocca-8-dark',
@@ -300,7 +322,8 @@ export class CoffeeService {
         ratio: '1:18',
         coffee: 56,
         temp: 'Default',
-        technique: 'NO STIR. Use 1:18. Stirring will cause clogging and ashiness.',
+        technique:
+          'NO STIR. Use 1:18. Stirring will cause clogging and ashiness.',
         moccaSetting: 'full',
       },
       // 10 CUPS / 1.25L - Max Batch
@@ -314,9 +337,12 @@ export class CoffeeService {
         ratio: '1:17',
         coffee: 73.5,
         temp: 'Default',
-        technique: 'Safety Stir at 1:00. Watch for overflow. Fold filter edges HARD.',
+        technique:
+          'Safety Stir at 1:00. Watch for overflow. Fold filter edges HARD.',
         moccaSetting: 'full',
-        timingCues: [{ time: 60, label: 'Stir', action: 'Safety stir, watch overflow' }],
+        timingCues: [
+          { time: 60, label: 'Stir', action: 'Safety stir, watch overflow' },
+        ],
       },
       {
         id: 'mocca-10-medium',
@@ -330,7 +356,9 @@ export class CoffeeService {
         temp: 'Default',
         technique: 'Safety Stir at 1:00. Be careful if beans are fresh/bloomy.',
         moccaSetting: 'full',
-        timingCues: [{ time: 60, label: 'Stir', action: 'Safety stir if needed' }],
+        timingCues: [
+          { time: 60, label: 'Stir', action: 'Safety stir if needed' },
+        ],
       },
       {
         id: 'mocca-10-dark',
@@ -342,7 +370,8 @@ export class CoffeeService {
         ratio: '1:18',
         coffee: 69,
         temp: 'Default',
-        technique: 'ABSOLUTELY NO STIR. Basket full of foam. Stirring causes overflow.',
+        technique:
+          'ABSOLUTELY NO STIR. Basket full of foam. Stirring causes overflow.',
         moccaSetting: 'full',
       },
     ]
@@ -384,19 +413,23 @@ export class CoffeeService {
     return [
       {
         title: 'RDT Spray',
-        description: 'Spray beans with one spritz of water before grinding. Shake to coat. Prevents static.',
+        description:
+          'Spray beans with one spritz of water before grinding. Shake to coat. Prevents static.',
       },
       {
         title: 'Filter Rinse',
-        description: 'ALWAYS rinse paper filters with hot water before adding coffee. Removes cardboard taste.',
+        description:
+          'ALWAYS rinse paper filters with hot water before adding coffee. Removes cardboard taste.',
       },
       {
         title: 'Water Quality',
-        description: 'Moccamaster: Filtered tap is fine. Switch: Use Third Wave Water for fruit clarity.',
+        description:
+          'Moccamaster: Filtered tap is fine. Switch: Use Third Wave Water for fruit clarity.',
       },
       {
         title: 'Bean Storage',
-        description: 'Keep in original bag, squeezed tight, in cupboard. Freeze if not finishing in 3 weeks.',
+        description:
+          'Keep in original bag, squeezed tight, in cupboard. Freeze if not finishing in 3 weeks.',
       },
     ]
   }
@@ -405,15 +438,21 @@ export class CoffeeService {
    * Get all recipes for a specific method
    */
   getRecipesByMethod(method: BrewMethod): CoffeeRecipe[] {
-    return method === 'switch' ? this.getSwitchRecipes() : this.getMoccamasterRecipes()
+    return method === 'switch'
+      ? this.getSwitchRecipes()
+      : this.getMoccamasterRecipes()
   }
 
   /**
    * Get a recipe by method, cup size, and roast
    */
-  getRecipe(method: BrewMethod, cupSize: CupSize, roast: RoastLevel): CoffeeRecipe | null {
+  getRecipe(
+    method: BrewMethod,
+    cupSize: CupSize,
+    roast: RoastLevel
+  ): CoffeeRecipe | null {
     const recipes = this.getRecipesByMethod(method)
-    return recipes.find((r) => r.cupSize === cupSize && r.roast === roast) || null
+    return recipes.find(r => r.cupSize === cupSize && r.roast === roast) || null
   }
 
   /**
@@ -437,7 +476,11 @@ export class CoffeeService {
   /**
    * Get recommended recipe based on time of day
    */
-  getRecommendedRecipe(): { method: BrewMethod; cupSize: CupSize; roast: RoastLevel } {
+  getRecommendedRecipe(): {
+    method: BrewMethod
+    cupSize: CupSize
+    roast: RoastLevel
+  } {
     const hour = new Date().getHours()
     const day = new Date().getDay()
 

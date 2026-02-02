@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import * as React from "react"
+import * as React from 'react'
 
 export function ToggleSwitch({
   checked,
@@ -16,7 +16,7 @@ export function ToggleSwitch({
   const id = React.useId()
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
       if (!disabled) {
         onCheckedChange(!checked)
@@ -27,7 +27,7 @@ export function ToggleSwitch({
   return (
     <div className="inline-flex items-center gap-3">
       {label && (
-        <label htmlFor={id} className="text-xs text-muted-foreground">
+        <label htmlFor={id} className="text-muted-foreground text-xs">
           {label}
         </label>
       )}
@@ -38,16 +38,16 @@ export function ToggleSwitch({
         disabled={disabled}
         onClick={() => !disabled && onCheckedChange(!checked)}
         onKeyDown={handleKeyDown}
-        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors outline-none ring-1 ring-inset ring-border focus-visible:ring-2 focus-visible:ring-ring ${
-          checked ? "bg-brand" : "bg-muted"
-        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+        className={`focus-visible:ring-ring focus-visible:ring-offset-background relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+          checked ? 'bg-brand' : 'bg-muted'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       >
         <span
-          className={`absolute left-0.5 top-0.5 size-[22px] rounded-full shadow-sm transition-transform ${
-            checked ? "translate-x-5.5" : "translate-x-0"
-          } ${checked ? "bg-muted dark:bg-white" : "bg-card dark:bg-foreground"}`}
+          className={`bg-background pointer-events-none block size-6 rounded-full shadow-lg ring-0 transition-transform duration-200 ${
+            checked ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
         />
-        <span className="sr-only">{checked ? "On" : "Off"}</span>
+        <span className="sr-only">{checked ? 'On' : 'Off'}</span>
       </button>
     </div>
   )

@@ -21,6 +21,7 @@ import {
   Coffee,
   Command,
   Dumbbell,
+  FileText,
   Grid3x3,
   Home,
   Lightbulb,
@@ -53,6 +54,7 @@ const navItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
+  { href: '/posts', label: 'Blog', icon: FileText, shortcut: '9' },
 ]
 
 // All items including Deck for keyboard shortcuts
@@ -65,7 +67,8 @@ const allNavItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
-  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
+  { href: '/posts', label: 'Blog', icon: FileText, shortcut: '9' },
+  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '0' },
 ]
 
 export function TopNavigation() {

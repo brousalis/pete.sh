@@ -1,69 +1,50 @@
 'use client'
 
-import { useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
 import { FitnessSingleView } from '@/components/dashboard/fitness-single-view'
 import { RoutineEditor } from '@/components/dashboard/routine-editor'
-import { Dumbbell, Settings, Watch, ExternalLink } from 'lucide-react'
-import Link from 'next/link'
+import { isValid, parseISO } from 'date-fns'
+import { useSearchParams } from 'next/navigation'
+import { useMemo, useState } from 'react'
 
 type FitnessTab = 'today' | 'edit'
 
 export default function FitnessPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
+  const dayParam = searchParams.get('day') // e.g., "2026-02-04"
   const [activeTab, setActiveTab] = useState<FitnessTab>(
     tabParam === 'edit' ? 'edit' : 'today'
   )
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value as FitnessTab)
+  // Parse the day param to get the initial date to display
+  const initialDate = useMemo((): Date | null => {
+    if (!dayParam) return null
+    try {
+      const date = parseISO(dayParam)
+      if (!isValid(date)) return null
+      return date
+    } catch {
+      return null
+    }
+  }, [dayParam])
+
+  const handleTabChange = (tab: FitnessTab) => {
+    setActiveTab(tab)
     // Update URL without full navigation
-    const newUrl = value === 'today' ? '/fitness' : `/fitness?tab=${value}`
+    const newUrl = tab === 'today' ? '/fitness' : `/fitness?tab=${tab}`
     window.history.replaceState(null, '', newUrl)
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="flex h-full min-h-0 flex-col"
-      >
-        {/* Tab Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <TabsList>
-            <TabsTrigger value="today" className="gap-2">
-              <Dumbbell className="h-4 w-4" />
-              Today
-            </TabsTrigger>
-            <TabsTrigger value="edit" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Edit Routine
-            </TabsTrigger>
-          </TabsList>
-
-          <Link href="/fitness/watch">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Watch className="h-4 w-4" />
-              Watch Data
-              <ExternalLink className="h-3 w-3 opacity-50" />
-            </Button>
-          </Link>
-        </div>
-
-        {/* Tab Content */}
-        <TabsContent value="today" className="flex-1 min-h-0 m-0 data-[state=inactive]:hidden">
-          <FitnessSingleView />
-        </TabsContent>
-
-        <TabsContent value="edit" className="flex-1 min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden">
-          <RoutineEditor />
-        </TabsContent>
-      </Tabs>
+      {activeTab === 'today' ? (
+        <FitnessSingleView
+          initialDate={initialDate}
+          onSwitchToEdit={() => handleTabChange('edit')}
+        />
+      ) : (
+        <RoutineEditor onBack={() => handleTabChange('today')} />
+      )}
     </div>
   )
 }

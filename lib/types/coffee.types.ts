@@ -21,6 +21,9 @@ export interface CoffeeRecipe {
   switchSetting?: 'open' | 'closed' | 'hybrid' // for Hario Switch
   moccaSetting?: 'half' | 'full' // for Moccamaster (Half Jug / Full Jug)
   timingCues?: TimingCue[]
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface TimingCue {
@@ -30,17 +33,26 @@ export interface TimingCue {
 }
 
 export interface RoastStrategy {
+  id?: string
   roast: RoastLevel
   goal: string
   temp: string
   technique: string
   ratio: string
+  sortOrder?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface QuickDose {
+  id?: string
+  method?: BrewMethod
   label: string
   grams: number
   note?: string
+  sortOrder?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface CoffeeGuideData {
@@ -52,8 +64,119 @@ export interface CoffeeGuideData {
 }
 
 export interface GoldenRule {
+  id?: string
   title: string
   description: string
+  sortOrder?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CoffeeRecommendation {
+  id?: string
+  name: string
+  dayOfWeek: number | null // 0-6 (Sunday-Saturday), null = any day
+  hourStart: number
+  hourEnd: number
+  method: BrewMethod
+  cupSize: CupSize
+  roast: RoastLevel
+  priority: number
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+// Config management types
+export interface CoffeeConfig {
+  roastStrategies: RoastStrategy[]
+  recipes: CoffeeRecipe[]
+  quickDoses: QuickDose[]
+  goldenRules: GoldenRule[]
+  recommendations: CoffeeRecommendation[]
+}
+
+export interface CoffeeConfigUpdatePayload {
+  type:
+    | 'roastStrategy'
+    | 'recipe'
+    | 'quickDose'
+    | 'goldenRule'
+    | 'recommendation'
+  action: 'create' | 'update' | 'delete'
+  data:
+    | RoastStrategy
+    | CoffeeRecipe
+    | QuickDose
+    | GoldenRule
+    | CoffeeRecommendation
+}
+
+// Database row types (snake_case)
+export interface DbCoffeeRecipe {
+  id: string
+  method: string
+  cup_size: string
+  cup_size_label: string
+  water_ml: number
+  roast: string
+  ratio: string
+  coffee: number
+  temp: string
+  technique: string
+  switch_setting: string | null
+  mocca_setting: string | null
+  timing_cues: TimingCue[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface DbRoastStrategy {
+  id: string
+  roast: string
+  goal: string
+  temp: string
+  technique: string
+  ratio: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DbQuickDose {
+  id: string
+  method: string
+  label: string
+  grams: number
+  note: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DbGoldenRule {
+  id: string
+  title: string
+  description: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DbCoffeeRecommendation {
+  id: string
+  name: string
+  day_of_week: number | null
+  hour_start: number
+  hour_end: number
+  method: string
+  cup_size: string
+  roast: string
+  priority: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 // Legacy types for backward compatibility (can be removed later)

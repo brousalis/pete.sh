@@ -2,56 +2,163 @@
 
 import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { apiGet } from '@/lib/api/client'
 import { CoffeeService } from '@/lib/services/coffee.service'
-import type { CoffeeRecipe } from '@/lib/types/coffee.types'
+import type { CoffeeConfig, CoffeeRecipe } from '@/lib/types/coffee.types'
 import { ArrowRight, Coffee, Droplets, Flame, Scale } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-const coffeeService = new CoffeeService()
+// Fallback service for when database is unavailable
+const fallbackService = new CoffeeService()
 
 export function CoffeeCard() {
   const [recipe, setRecipe] = useState<CoffeeRecipe | null>(null)
   const [timeLabel, setTimeLabel] = useState('')
+  const [quickDoses, setQuickDoses] = useState<
+    { label: string; grams: number }[]
+  >([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const recommended = coffeeService.getRecommendedRecipe()
-    const recipeData = coffeeService.getRecipe(
-      recommended.method,
-      recommended.cupSize,
-      recommended.roast
-    )
-    if (recipeData) {
-      setRecipe(recipeData)
-    }
-
-    // Set time-based label
+  const loadData = useCallback(async () => {
     const hour = new Date().getHours()
     const day = new Date().getDay()
-    if (day === 0 && hour >= 8 && hour < 14) {
-      setTimeLabel('Sunday Brunch')
-    } else if (hour >= 5 && hour < 12) {
-      setTimeLabel('Morning Batch')
-    } else if (hour >= 12 && hour < 18) {
-      setTimeLabel('Afternoon Cup')
-    } else {
-      setTimeLabel('Evening')
+
+    try {
+      const response = await apiGet<CoffeeConfig>('/api/coffee/config')
+
+      if (response.success && response.data) {
+        const config = response.data
+
+        // Find matching recommendation
+        const recommendations = config.recommendations
+          .filter(r => r.isActive !== false)
+          .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+
+        let matched = recommendations.find(r => {
+          const dayMatch = r.dayOfWeek === null || r.dayOfWeek === day
+          const hourMatch = hour >= r.hourStart && hour < r.hourEnd
+          return dayMatch && hourMatch
+        })
+
+        if (!matched && recommendations.length > 0) {
+          matched = recommendations[recommendations.length - 1]
+        }
+
+        // Find the recipe
+        if (matched) {
+          const recipeData = config.recipes.find(
+            r =>
+              r.method === matched!.method &&
+              r.cupSize === matched!.cupSize &&
+              r.roast === matched!.roast
+          )
+          if (recipeData) {
+            setRecipe(recipeData)
+          }
+          // Use the recommendation name as the time label
+          setTimeLabel(matched.name)
+        }
+
+        // Build quick doses from config (pick 4 representative ones)
+        const doses: { label: string; grams: number }[] = []
+        const switchDoses = config.quickDoses.filter(d => d.method === 'switch')
+        const moccaDoses = config.quickDoses.filter(
+          d => d.method === 'moccamaster'
+        )
+
+        // Pick 2 from each method
+        if (switchDoses[0])
+          doses.push({ label: '1c', grams: switchDoses[0].grams })
+        if (switchDoses[1])
+          doses.push({ label: '2c', grams: switchDoses[1].grams })
+
+        // Find 8-cup and 10-cup moccamaster doses
+        const mocca8 = moccaDoses.find(d => d.label.includes('8'))
+        const mocca10 = moccaDoses.find(d => d.label.includes('10'))
+        if (mocca8) doses.push({ label: '8c', grams: mocca8.grams })
+        if (mocca10) doses.push({ label: '10c', grams: mocca10.grams })
+
+        setQuickDoses(doses)
+      } else {
+        throw new Error('Failed to load config')
+      }
+    } catch (error) {
+      console.error('Failed to load coffee config, using fallback:', error)
+
+      // Use fallback service
+      const recommended = fallbackService.getRecommendedRecipe()
+      const recipeData = fallbackService.getRecipe(
+        recommended.method,
+        recommended.cupSize,
+        recommended.roast
+      )
+      if (recipeData) {
+        setRecipe(recipeData)
+      }
+
+      // Set time-based label from fallback logic
+      if (day === 0 && hour >= 8 && hour < 14) {
+        setTimeLabel('Sunday Brunch')
+      } else if (hour >= 5 && hour < 12) {
+        setTimeLabel('Morning Batch')
+      } else if (hour >= 12 && hour < 18) {
+        setTimeLabel('Afternoon Cup')
+      } else {
+        setTimeLabel('Evening')
+      }
+
+      // Fallback quick doses
+      setQuickDoses([
+        { label: '1c', grams: 18.8 },
+        { label: '2c', grams: 37.5 },
+        { label: '8c', grams: 59 },
+        { label: '10c', grams: 73.5 },
+      ])
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  // Quick doses for display
-  const quickDoses = [
-    { label: '1c', grams: 18.8, method: 'switch' },
-    { label: '2c', grams: 37.5, method: 'switch' },
-    { label: '8c', grams: 59, method: 'mocca' },
-    { label: '10c', grams: 73.5, method: 'mocca' },
-  ]
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <DashboardCardHeader
+          icon={
+            <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
+          }
+          iconContainerClassName="bg-amber-500/10"
+          title="Coffee Guide"
+          viewHref="/coffee"
+          viewLabel="View"
+        />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    )
+  }
 
   if (!recipe) {
     return (
-      <div className="text-muted-foreground flex items-center gap-2">
-        <Coffee className="size-5 animate-pulse" />
-        <span className="text-sm">Loading...</span>
+      <div className="space-y-4">
+        <DashboardCardHeader
+          icon={
+            <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
+          }
+          iconContainerClassName="bg-amber-500/10"
+          title="Coffee Guide"
+          viewHref="/coffee"
+          viewLabel="View"
+        />
+        <div className="text-muted-foreground flex items-center gap-2">
+          <Coffee className="size-5" />
+          <span className="text-sm">No recipe available</span>
+        </div>
       </div>
     )
   }

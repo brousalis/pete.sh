@@ -7,10 +7,10 @@
  * Wrap your page content with this component for fade/slide animations.
  */
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { transitions } from '@/lib/animations'
+import { AnimatePresence, motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { transitions } from '@/lib/animations'
 
 interface PageTransitionProviderProps {
   children: ReactNode
@@ -20,13 +20,13 @@ interface PageTransitionProviderProps {
 // Simple, robust page transition variants that don't depend on children
 const simplePageVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const }
+    transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const },
   },
-  exit: { 
+  exit: {
     opacity: 0,
-    transition: { duration: 0.15, ease: [0, 0, 0.2, 1] as const }
+    transition: { duration: 0.15, ease: [0, 0, 0.2, 1] as const },
   },
 }
 
@@ -47,7 +47,7 @@ export function PageTransitionProvider({
   const pathname = usePathname()
 
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={pathname}
         initial="hidden"
@@ -88,7 +88,10 @@ export function PageFade({ children, className }: PageTransitionProviderProps) {
  * PageContent - Animate page content on mount (no exit animation)
  * Use this when you want initial animation but not exit animations
  */
-export function PageContent({ children, className }: PageTransitionProviderProps) {
+export function PageContent({
+  children,
+  className,
+}: PageTransitionProviderProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

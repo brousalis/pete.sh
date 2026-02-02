@@ -162,14 +162,14 @@ export function HueControls() {
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="border-destructive/30 bg-destructive/5 rounded-2xl border p-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-destructive/10 flex size-10 items-center justify-center rounded-xl">
-              <AlertCircle className="text-destructive size-5" />
+        <div className="border-destructive/20 bg-destructive/5 rounded-2xl border p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-destructive/10 flex size-12 items-center justify-center rounded-xl">
+              <AlertCircle className="text-destructive size-6" />
             </div>
             <div>
-              <p className="text-foreground font-medium">{error}</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-foreground font-semibold">{error}</p>
+              <p className="text-muted-foreground mt-0.5 text-sm">
                 Please configure your HUE bridge in .env.local
               </p>
             </div>
@@ -181,14 +181,57 @@ export function HueControls() {
 
   if (loading && zones.length === 0) {
     return (
-      <div className="space-y-6">
-        {/* Loading skeleton for quick actions */}
-        <div className="bg-card rounded-2xl border p-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-muted size-10 animate-pulse rounded-xl" />
-            <div className="space-y-2">
+      <div className="space-y-5">
+        {/* Loading skeleton for combined header + quick actions card */}
+        <div className="bg-card border-border/60 overflow-hidden rounded-2xl border">
+          {/* Header row skeleton */}
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-muted size-9 animate-pulse rounded-xl" />
+              <div className="space-y-1.5">
+                <div className="bg-muted h-4 w-20 animate-pulse rounded" />
+                <div className="bg-muted h-3 w-28 animate-pulse rounded" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-muted h-7 w-16 animate-pulse rounded-lg" />
+              <div className="bg-muted h-7 w-16 animate-pulse rounded-lg" />
+            </div>
+          </div>
+          {/* Quick actions skeleton */}
+          <div className="border-border/40 border-t px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-muted h-8 w-8 animate-pulse rounded-lg" />
+              <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+              <div className="bg-muted/50 h-5 w-px" />
+              <div className="flex gap-1.5">
+                <div className="bg-muted h-7 w-16 animate-pulse rounded-lg" />
+                <div className="bg-muted h-7 w-16 animate-pulse rounded-lg" />
+              </div>
+              <div className="bg-muted/50 h-5 w-px" />
+              <div className="flex gap-1.5">
+                <div className="bg-muted h-7 w-20 animate-pulse rounded-lg" />
+                <div className="bg-muted h-7 w-24 animate-pulse rounded-lg" />
+                <div className="bg-muted h-7 w-20 animate-pulse rounded-lg" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="bg-muted h-3 w-12 animate-pulse rounded" />
+              <div className="flex gap-1">
+                <div className="bg-muted h-7 w-14 animate-pulse rounded-lg" />
+                <div className="bg-muted h-7 w-16 animate-pulse rounded-lg" />
+                <div className="bg-muted h-7 w-14 animate-pulse rounded-lg" />
+              </div>
+              <div className="bg-muted/50 h-5 w-px" />
+              <div className="bg-muted h-2 flex-1 animate-pulse rounded-full" />
+              <div className="bg-muted h-4 w-8 animate-pulse rounded" />
+            </div>
+          </div>
+          {/* Hue sync skeleton */}
+          <div className="border-border/40 bg-muted/5 border-t px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <div className="bg-muted h-8 w-8 animate-pulse rounded-lg" />
               <div className="bg-muted h-4 w-32 animate-pulse rounded" />
-              <div className="bg-muted h-3 w-24 animate-pulse rounded" />
             </div>
           </div>
         </div>
@@ -198,7 +241,8 @@ export function HueControls() {
           {[1, 2, 3, 4, 5, 6].map(i => (
             <div
               key={i}
-              className="bg-muted/50 h-48 animate-pulse rounded-2xl"
+              className="bg-muted/30 h-48 animate-pulse rounded-2xl"
+              style={{ animationDelay: `${i * 80}ms` }}
             />
           ))}
         </div>
@@ -208,17 +252,17 @@ export function HueControls() {
 
   if (zones.length === 0) {
     return (
-      <div className="bg-card flex flex-col items-center justify-center rounded-2xl border p-12">
-        <div className="bg-muted flex size-16 items-center justify-center rounded-2xl">
-          <Lightbulb className="text-muted-foreground size-8" />
+      <div className="bg-card flex flex-col items-center justify-center rounded-2xl border p-16">
+        <div className="bg-muted flex size-20 items-center justify-center rounded-2xl">
+          <Lightbulb className="text-muted-foreground size-10" />
         </div>
-        <h3 className="text-foreground mt-4 text-lg font-medium">
+        <h3 className="text-foreground mt-6 text-xl font-semibold">
           No rooms found
         </h3>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-muted-foreground mt-2 text-sm">
           Configure rooms in your Philips Hue app
         </p>
-        <Button onClick={fetchData} variant="outline" className="mt-4 gap-2">
+        <Button onClick={fetchData} variant="outline" className="mt-6 gap-2">
           <RefreshCw className="size-4" />
           Retry
         </Button>
@@ -227,92 +271,101 @@ export function HueControls() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Read-only notice for production mode */}
       <ReadOnlyNotice className="rounded-xl" />
 
-      {/* Header with refresh and view toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand/10 flex size-10 items-center justify-center rounded-xl">
-            <Lightbulb className="text-brand size-5" />
-          </div>
-          <div>
-            <h1 className="text-foreground text-lg font-semibold">Lighting</h1>
-            <p className="text-muted-foreground text-xs">
-              {zones.length} rooms · {status?.totalLights || 0} lights
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Live badge for production mode */}
-          <LiveBadge />
-
-          {/* View mode toggle */}
-          <div className="bg-muted/50 flex rounded-lg border p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                'rounded-md p-1.5 transition-colors',
-                viewMode === 'grid'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              title="Grid view"
-            >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'rounded-md p-1.5 transition-colors',
-                viewMode === 'list'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              title="List view"
-            >
-              <List className="size-4" />
-            </button>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchData}
-            disabled={loading}
-            className="gap-2"
-          >
-            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Quick Actions + Hue Sync (compact) */}
+      {/* Combined Header + Quick Actions Card */}
       <motion.div
-        className="bg-card rounded-2xl border p-6"
+        className="bg-card border-border/60 overflow-hidden rounded-2xl border"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <HueQuickActions
-          status={status}
-          scenes={allScenes}
-          onRefresh={fetchData}
-          favoriteSceneNames={['pete red', 'pete work', 'purple rain']}
-          isReadOnly={isReadOnly}
-          brightnessZoneId={
-            zones.find(z => z.name.toLowerCase().includes('office'))?.id
-          }
-          brightnessZoneName="Office"
-        />
-        <HueSyncCard
-          areaName="office"
-          onUpdate={fetchData}
-          isReadOnly={isReadOnly}
-          compact
-        />
+        {/* Header Row */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-brand/15 flex size-9 items-center justify-center rounded-xl">
+              <Lightbulb className="text-brand size-[18px]" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="text-foreground text-base font-semibold">
+                Lighting
+              </h1>
+              <p className="text-muted-foreground text-xs">
+                {zones.length} rooms · {status?.totalLights || 0} lights
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <LiveBadge />
+
+            <div className="border-border/50 bg-muted/40 flex rounded-lg border p-0.5">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'rounded-md p-1.5 transition-all',
+                  viewMode === 'grid'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Grid view"
+              >
+                <LayoutGrid className="size-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'rounded-md p-1.5 transition-all',
+                  viewMode === 'list'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="List view"
+              >
+                <List className="size-3.5" />
+              </button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchData}
+              disabled={loading}
+              className="h-7 gap-1.5 px-2 text-xs"
+            >
+              <RefreshCw
+                className={cn('size-3.5', loading && 'animate-spin')}
+              />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Actions - Compact */}
+        <div className="border-border/40 border-t px-4 py-3">
+          <HueQuickActions
+            status={status}
+            scenes={allScenes}
+            onRefresh={fetchData}
+            favoriteSceneNames={['pete red', 'pete work', 'purple rain']}
+            isReadOnly={isReadOnly}
+            brightnessZoneId={
+              zones.find(z => z.name.toLowerCase().includes('office'))?.id
+            }
+            brightnessZoneName="Office"
+          />
+        </div>
+
+        {/* Hue Sync Row */}
+        <div className="border-border/40 bg-muted/5 border-t px-4 py-2.5">
+          <HueSyncCard
+            areaName="office"
+            onUpdate={fetchData}
+            isReadOnly={isReadOnly}
+            compact
+          />
+        </div>
       </motion.div>
 
       {/* Room Cards */}
@@ -329,7 +382,7 @@ export function HueControls() {
             key={zone.id}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            transition={{ delay: index * 0.04, duration: 0.3 }}
           >
             <HueRoomCard
               zone={zone}

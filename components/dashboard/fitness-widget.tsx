@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   Check,
+  ChevronRight,
   Dumbbell,
   Flame,
   Footprints,

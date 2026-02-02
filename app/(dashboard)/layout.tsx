@@ -1,8 +1,4 @@
-'use client'
-
-import { PageTransitionProvider } from '@/components/page-transition'
 import { TopNavigation } from '@/components/top-navigation'
-import { usePathname } from 'next/navigation'
 import type React from 'react'
 
 export default function DashboardLayout({
@@ -10,23 +6,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname()
-  const isDeckRoute = pathname === '/deck'
-
-  if (isDeckRoute) {
-    // Deck route: full screen, no padding, no scrolling
-    return (
-      <div className="bg-background fixed inset-0 flex h-screen w-screen flex-col overflow-hidden">
-        <div className="bg-muted flex h-full w-full flex-1 overflow-hidden">
-          <PageTransitionProvider className="flex h-full w-full flex-1">
-            {children}
-          </PageTransitionProvider>
-        </div>
-      </div>
-    )
-  }
-
-  // Regular dashboard route: full height layout with scrollable content
   return (
     <div className="bg-background fixed inset-0 flex flex-col overflow-hidden">
       {/* Outer container with padding */}
@@ -40,9 +19,7 @@ export default function DashboardLayout({
 
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
           <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 md:px-6 md:py-6">
-            <PageTransitionProvider className="h-full">
-              {children}
-            </PageTransitionProvider>
+            <div className="h-full">{children}</div>
           </main>
 
           {/* Footer - constrains layout, visible on tablet and below */}
@@ -53,9 +30,6 @@ export default function DashboardLayout({
           </footer>
         </div>
       </div>
-
-      {/* Mobile Bottom Navigation - persistent footer on small screens */}
-      {/* <MobileBottomNavigation /> */}
     </div>
   )
 }

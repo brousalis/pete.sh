@@ -1,52 +1,57 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { apiGet, apiPost, apiPut } from '@/lib/api/client'
-import {
-  Save,
-  History,
-  RefreshCw,
-  AlertCircle,
-  User,
-  Calendar,
-  Dumbbell,
-  Moon,
-  Sun,
-  CheckCircle2,
-  Clock,
-  FileEdit
-} from 'lucide-react'
+import type { DayOfWeek } from '@/lib/types/fitness.types'
 import type {
+  EditorTab,
   RoutineVersion,
   VersionsListResponse,
-  EditorTab,
 } from '@/lib/types/routine-editor.types'
-import type { DayOfWeek } from '@/lib/types/fitness.types'
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Dumbbell,
+  FileEdit,
+  History,
+  RefreshCw,
+  Save,
+  Sun,
+  User,
+} from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { DailyRoutineEditor } from './daily-routine-editor'
+import { InjuryProtocolEditor } from './injury-protocol-editor'
 import { ProfileEditor } from './profile-editor'
 import { ScheduleEditor } from './schedule-editor'
-import { InjuryProtocolEditor } from './injury-protocol-editor'
-import { WorkoutDayEditor } from './workout-day-editor'
-import { DailyRoutineEditor } from './daily-routine-editor'
 import { VersionHistory } from './version-history'
+import { WorkoutDayEditor } from './workout-day-editor'
 
 interface RoutineEditorProps {
   routineId?: string
+  onBack?: () => void
 }
 
-export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorProps) {
+export function RoutineEditor({
+  routineId = 'climber-physique',
+  onBack,
+}: RoutineEditorProps) {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<EditorTab>('overview')
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>('monday')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
-  const [currentVersion, setCurrentVersion] = useState<RoutineVersion | null>(null)
+  const [currentVersion, setCurrentVersion] = useState<RoutineVersion | null>(
+    null
+  )
   const [draftVersion, setDraftVersion] = useState<RoutineVersion | null>(null)
   const [versions, setVersions] = useState<VersionsListResponse | null>(null)
   const [lastSaved, setLastSaved] = useState<string | null>(null)
@@ -54,66 +59,78 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   const hasLoadedOnce = useRef(false)
 
   // Load versions and current data
-  const loadData = useCallback(async (forceRefresh = false) => {
-    // Prevent duplicate loading in StrictMode (unless force refresh)
-    if (hasLoadedOnce.current && !forceRefresh) return
+  const loadData = useCallback(
+    async (forceRefresh = false) => {
+      // Prevent duplicate loading in StrictMode (unless force refresh)
+      if (hasLoadedOnce.current && !forceRefresh) return
 
-    setIsLoading(true)
-    try {
-      // Get all versions
-      const versionsResponse = await apiGet<VersionsListResponse>(`/api/fitness/routine/versions?routineId=${routineId}`)
-      if (!versionsResponse.success || !versionsResponse.data) {
-        throw new Error('Failed to fetch versions')
-      }
-      const versionsData = versionsResponse.data
-      setVersions(versionsData)
-
-      // If there's a draft, load it; otherwise load active version
-      if (versionsData.draftVersion) {
-        const draftResponse = await apiGet<RoutineVersion>(`/api/fitness/routine/versions/${versionsData.draftVersion.id}`)
-        if (draftResponse.success && draftResponse.data) {
-          setDraftVersion(draftResponse.data)
-          setCurrentVersion(draftResponse.data)
+      setIsLoading(true)
+      try {
+        // Get all versions
+        const versionsResponse = await apiGet<VersionsListResponse>(
+          `/api/fitness/routine/versions?routineId=${routineId}`
+        )
+        if (!versionsResponse.success || !versionsResponse.data) {
+          throw new Error('Failed to fetch versions')
         }
-      } else if (versionsData.activeVersion) {
-        const activeResponse = await apiGet<RoutineVersion>(`/api/fitness/routine/versions/${versionsData.activeVersion.id}`)
-        if (activeResponse.success && activeResponse.data) {
-          setCurrentVersion(activeResponse.data)
-          // For json-fallback, treat it as a draft since changes save directly to files
-          if (activeResponse.data.id === 'json-fallback') {
-            setDraftVersion(activeResponse.data)
-          } else {
-            setDraftVersion(null)
+        const versionsData = versionsResponse.data
+        setVersions(versionsData)
+
+        // If there's a draft, load it; otherwise load active version
+        if (versionsData.draftVersion) {
+          const draftResponse = await apiGet<RoutineVersion>(
+            `/api/fitness/routine/versions/${versionsData.draftVersion.id}`
+          )
+          if (draftResponse.success && draftResponse.data) {
+            setDraftVersion(draftResponse.data)
+            setCurrentVersion(draftResponse.data)
+          }
+        } else if (versionsData.activeVersion) {
+          const activeResponse = await apiGet<RoutineVersion>(
+            `/api/fitness/routine/versions/${versionsData.activeVersion.id}`
+          )
+          if (activeResponse.success && activeResponse.data) {
+            setCurrentVersion(activeResponse.data)
+            // For json-fallback, treat it as a draft since changes save directly to files
+            if (activeResponse.data.id === 'json-fallback') {
+              setDraftVersion(activeResponse.data)
+            } else {
+              setDraftVersion(null)
+            }
+          }
+        } else if (!isCreatingVersion.current) {
+          // No versions exist, create initial from current data (only once)
+          isCreatingVersion.current = true
+          try {
+            const newVersionResponse = await apiPost<RoutineVersion>(
+              '/api/fitness/routine/versions',
+              {
+                routineId,
+                name: 'Initial Version',
+                changeSummary: 'Initial version from existing routine',
+              }
+            )
+            if (newVersionResponse.success && newVersionResponse.data) {
+              setDraftVersion(newVersionResponse.data)
+              setCurrentVersion(newVersionResponse.data)
+            }
+          } finally {
+            isCreatingVersion.current = false
           }
         }
-      } else if (!isCreatingVersion.current) {
-        // No versions exist, create initial from current data (only once)
-        isCreatingVersion.current = true
-        try {
-          const newVersionResponse = await apiPost<RoutineVersion>('/api/fitness/routine/versions', {
-            routineId,
-            name: 'Initial Version',
-            changeSummary: 'Initial version from existing routine',
-          })
-          if (newVersionResponse.success && newVersionResponse.data) {
-            setDraftVersion(newVersionResponse.data)
-            setCurrentVersion(newVersionResponse.data)
-          }
-        } finally {
-          isCreatingVersion.current = false
-        }
+        hasLoadedOnce.current = true
+      } catch (error) {
+        toast({
+          title: 'Error loading routine',
+          description: 'Failed to load routine data. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
       }
-      hasLoadedOnce.current = true
-    } catch (error) {
-      toast({
-        title: 'Error loading routine',
-        description: 'Failed to load routine data. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [routineId, toast])
+    },
+    [routineId, toast]
+  )
 
   useEffect(() => {
     if (!hasLoadedOnce.current) {
@@ -133,10 +150,13 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
     }
 
     try {
-      const response = await apiPost<RoutineVersion>('/api/fitness/routine/versions', {
-        routineId,
-        changeSummary: 'Draft changes',
-      })
+      const response = await apiPost<RoutineVersion>(
+        '/api/fitness/routine/versions',
+        {
+          routineId,
+          changeSummary: 'Draft changes',
+        }
+      )
       if (response.success && response.data) {
         setDraftVersion(response.data)
         setCurrentVersion(response.data)
@@ -154,35 +174,41 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   }, [draftVersion, currentVersion, routineId, toast])
 
   // Save changes to draft
-  const saveChanges = useCallback(async (updates: Partial<RoutineVersion>) => {
-    const draft = await ensureDraft()
-    if (!draft) return
+  const saveChanges = useCallback(
+    async (updates: Partial<RoutineVersion>) => {
+      const draft = await ensureDraft()
+      if (!draft) return
 
-    setIsSaving(true)
-    try {
-      const response = await apiPut<RoutineVersion>(`/api/fitness/routine/versions/${draft.id}`, updates)
-      if (response.success && response.data) {
-        setDraftVersion(response.data)
-        setCurrentVersion(response.data)
-        setIsDirty(false)
-        setLastSaved(new Date().toISOString())
+      setIsSaving(true)
+      try {
+        const response = await apiPut<RoutineVersion>(
+          `/api/fitness/routine/versions/${draft.id}`,
+          updates
+        )
+        if (response.success && response.data) {
+          setDraftVersion(response.data)
+          setCurrentVersion(response.data)
+          setIsDirty(false)
+          setLastSaved(new Date().toISOString())
+          toast({
+            title: 'Changes saved',
+            description: 'Your changes have been saved to the draft.',
+          })
+        } else {
+          throw new Error('Failed to save')
+        }
+      } catch (error) {
         toast({
-          title: 'Changes saved',
-          description: 'Your changes have been saved to the draft.',
+          title: 'Error saving',
+          description: 'Failed to save changes. Please try again.',
+          variant: 'destructive',
         })
-      } else {
-        throw new Error('Failed to save')
+      } finally {
+        setIsSaving(false)
       }
-    } catch (error) {
-      toast({
-        title: 'Error saving',
-        description: 'Failed to save changes. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSaving(false)
-    }
-  }, [ensureDraft, toast])
+    },
+    [ensureDraft, toast]
+  )
 
   // Publish (activate) the draft
   const publishVersion = useCallback(async () => {
@@ -190,16 +216,25 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
 
     setIsSaving(true)
     try {
-      const response = await apiPost<RoutineVersion>(`/api/fitness/routine/versions/${draftVersion.id}/activate`, {})
+      const response = await apiPost<RoutineVersion>(
+        `/api/fitness/routine/versions/${draftVersion.id}/activate`,
+        {}
+      )
       if (response.success && response.data) {
         // Update the published version to show it's now active
-        const publishedVersion = { ...response.data, isActive: true, isDraft: false }
+        const publishedVersion = {
+          ...response.data,
+          isActive: true,
+          isDraft: false,
+        }
         setCurrentVersion(publishedVersion)
         setDraftVersion(null) // Clear draft - we're now viewing the active version
         setIsDirty(false)
 
         // Refresh versions list to get updated active/draft status
-        const versionsResponse = await apiGet<VersionsListResponse>(`/api/fitness/routine/versions?routineId=${routineId}`)
+        const versionsResponse = await apiGet<VersionsListResponse>(
+          `/api/fitness/routine/versions?routineId=${routineId}`
+        )
         if (versionsResponse.success && versionsResponse.data) {
           setVersions(versionsResponse.data)
         }
@@ -247,10 +282,10 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
     return (
       <Card className="m-4">
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <AlertCircle className="text-muted-foreground mb-4 h-12 w-12" />
           <p className="text-muted-foreground">No routine found</p>
           <Button onClick={() => loadData(true)} className="mt-4">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </CardContent>
@@ -264,29 +299,39 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
   const hasUnsavedChanges = isDirty
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 flex items-center justify-between border-b px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="h-8 w-8 p-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">{currentVersion.name}</h2>
               {!isLocalMode && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   v{currentVersion.versionNumber}
                 </span>
               )}
             </div>
             {/* Status line */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
               {isLocalMode ? (
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
                   Editing local files directly
                 </span>
               ) : isEditingDraft ? (
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                   Editing draft
                   {activeVersion && activeVersion.id !== draftVersion?.id && (
                     <span className="text-muted-foreground/70">
@@ -296,12 +341,12 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
                 </span>
               ) : currentVersion.isActive ? (
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                   Active version
                 </span>
               ) : null}
               {lastSaved && (
-                <span className="flex items-center gap-1 ml-2">
+                <span className="ml-2 flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   Saved {new Date(lastSaved).toLocaleTimeString()}
                 </span>
@@ -321,7 +366,7 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             onClick={() => saveChanges(currentVersion)}
             disabled={!hasUnsavedChanges || isSaving}
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="mr-2 h-4 w-4" />
             {isLocalMode ? 'Save' : 'Save Draft'}
           </Button>
           {isEditingDraft && (
@@ -329,9 +374,13 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
               size="sm"
               onClick={publishVersion}
               disabled={isSaving || hasUnsavedChanges}
-              title={hasUnsavedChanges ? 'Save your changes first' : 'Make this version active'}
+              title={
+                hasUnsavedChanges
+                  ? 'Save your changes first'
+                  : 'Make this version active'
+              }
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="mr-2 h-4 w-4" />
               Publish v{currentVersion.versionNumber}
             </Button>
           )}
@@ -360,8 +409,8 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
       {/* Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as EditorTab)}
-        className="flex-1 flex flex-col min-h-0"
+        onValueChange={v => setActiveTab(v as EditorTab)}
+        className="flex min-h-0 flex-1 flex-col"
       >
         <TabsList className="mx-4 mt-3 w-fit">
           <TabsTrigger value="overview" className="gap-2">
@@ -383,35 +432,49 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="flex-1 overflow-auto p-4 space-y-4">
+        <TabsContent
+          value="overview"
+          className="flex-1 space-y-4 overflow-auto p-4"
+        >
           {/* Status Summary Card */}
           {!isLocalMode && (
-            <Card className={`border-l-4 ${isEditingDraft ? 'border-l-amber-500 bg-amber-500/5' : 'border-l-green-500 bg-green-500/5'}`}>
-              <CardContent className="py-3 px-4">
+            <Card
+              className={`border-l-4 ${isEditingDraft ? 'border-l-amber-500 bg-amber-500/5' : 'border-l-green-500 bg-green-500/5'}`}
+            >
+              <CardContent className="px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {isEditingDraft ? (
                       <>
-                        <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">
                           <FileEdit className="h-4 w-4 text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Editing Draft v{currentVersion.versionNumber}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {activeVersion ? `Active: v${activeVersion.versionNumber}` : 'No active version yet'}
-                            {hasUnsavedChanges ? ' • Save your changes before publishing' : ' • Ready to publish'}
+                          <p className="text-sm font-medium">
+                            Editing Draft v{currentVersion.versionNumber}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {activeVersion
+                              ? `Active: v${activeVersion.versionNumber}`
+                              : 'No active version yet'}
+                            {hasUnsavedChanges
+                              ? ' • Save your changes before publishing'
+                              : ' • Ready to publish'}
                           </p>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20">
                           <CheckCircle2 className="h-4 w-4 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Active Version v{currentVersion.versionNumber}</p>
-                          <p className="text-xs text-muted-foreground">
-                            This version is live • Create a new version to make changes
+                          <p className="text-sm font-medium">
+                            Active Version v{currentVersion.versionNumber}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            This version is live • Create a new version to make
+                            changes
                           </p>
                         </div>
                       </>
@@ -438,12 +501,12 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             />
             <InjuryProtocolEditor
               protocol={currentVersion.injuryProtocol}
-              onUpdate={(protocol) => handleUpdate('injuryProtocol', protocol)}
+              onUpdate={protocol => handleUpdate('injuryProtocol', protocol)}
             />
           </div>
           <ScheduleEditor
             schedule={currentVersion.schedule}
-            onUpdate={(schedule) => handleUpdate('schedule', schedule)}
+            onUpdate={schedule => handleUpdate('schedule', schedule)}
           />
         </TabsContent>
 
@@ -454,15 +517,20 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             schedule={currentVersion.schedule}
             selectedDay={selectedDay}
             onSelectDay={setSelectedDay}
-            onUpdate={(definitions) => handleUpdate('workoutDefinitions', definitions)}
+            onUpdate={definitions =>
+              handleUpdate('workoutDefinitions', definitions)
+            }
           />
         </TabsContent>
 
         {/* Daily Routines Tab */}
-        <TabsContent value="daily-routines" className="flex-1 overflow-auto p-4">
+        <TabsContent
+          value="daily-routines"
+          className="flex-1 overflow-auto p-4"
+        >
           <DailyRoutineEditor
             dailyRoutines={currentVersion.dailyRoutines}
-            onUpdate={(routines) => handleUpdate('dailyRoutines', routines)}
+            onUpdate={routines => handleUpdate('dailyRoutines', routines)}
           />
         </TabsContent>
 
@@ -472,18 +540,23 @@ export function RoutineEditor({ routineId = 'climber-physique' }: RoutineEditorP
             routineId={routineId}
             currentVersionId={currentVersion.id}
             versions={versions}
-            onVersionSelect={async (versionId) => {
-              const response = await apiGet<RoutineVersion>(`/api/fitness/routine/versions/${versionId}`)
+            onVersionSelect={async versionId => {
+              const response = await apiGet<RoutineVersion>(
+                `/api/fitness/routine/versions/${versionId}`
+              )
               if (response.success && response.data) {
                 setCurrentVersion(response.data)
               }
             }}
-            onRestore={async (versionId) => {
-              const response = await apiPost<RoutineVersion>('/api/fitness/routine/versions', {
-                routineId,
-                basedOnVersionId: versionId,
-                changeSummary: 'Restored from previous version',
-              })
+            onRestore={async versionId => {
+              const response = await apiPost<RoutineVersion>(
+                '/api/fitness/routine/versions',
+                {
+                  routineId,
+                  basedOnVersionId: versionId,
+                  changeSummary: 'Restored from previous version',
+                }
+              )
               if (response.success && response.data) {
                 setDraftVersion(response.data)
                 setCurrentVersion(response.data)

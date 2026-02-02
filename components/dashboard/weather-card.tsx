@@ -94,17 +94,19 @@ export function WeatherCard() {
   const forecastDays =
     forecast?.properties.periods.filter(p => p.isDaytime).slice(0, 5) || []
 
-  const conditionIcon = current?.properties.textDescription
+  const isClear = current?.properties.textDescription
     ?.toLowerCase()
     .includes('clear')
-    ? Sun
-    : Cloudy
 
   return (
     <div className="space-y-4">
       <DashboardCardHeader
         icon={
-          <conditionIcon className="size-5 text-sky-500 dark:text-sky-400" />
+          isClear ? (
+            <Sun className="size-5 text-sky-500 dark:text-sky-400" />
+          ) : (
+            <Cloudy className="size-5 text-sky-500 dark:text-sky-400" />
+          )
         }
         iconContainerClassName="bg-sky-500/10"
         title="Weather"

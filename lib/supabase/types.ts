@@ -6,32 +6,33 @@
  * npx supabase gen types typescript --project-id your-project-id > lib/supabase/types.ts
  */
 
-import type {
-  SpotifyPlaybackState,
-  SpotifyDevice,
-  SpotifyUser,
-  SpotifyListeningHistoryEntry,
-  SpotifySyncCursor,
-} from '@/lib/types/spotify.types'
-import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
-import type { CTABusPrediction, CTATrainPrediction } from '@/lib/types/cta.types'
 import type {
-  UserProfile,
-  InjuryProtocol,
-  WeeklySchedule,
+  RecipeDifficulty,
+  RecipeSource,
+  RecipeStep,
+  ShoppingListItem,
+  ShoppingListStatus,
+  WeeklyMeals,
+} from '@/lib/types/cooking.types'
+import type {
+  CTABusPrediction,
+  CTATrainPrediction,
+} from '@/lib/types/cta.types'
+import type {
   DailyRoutine,
   DayOfWeek,
+  InjuryProtocol,
+  UserProfile,
+  WeeklySchedule,
   Workout,
 } from '@/lib/types/fitness.types'
+import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type {
-  RecipeSource,
-  RecipeDifficulty,
-  RecipeStep,
-  WeeklyMeals,
-  ShoppingListStatus,
-  ShoppingListItem,
-} from '@/lib/types/cooking.types'
+  SpotifyDevice,
+  SpotifyPlaybackState,
+  SpotifyUser,
+} from '@/lib/types/spotify.types'
 
 // Service name type
 export type ServiceName = 'spotify' | 'hue' | 'cta' | 'calendar' | 'fitness'
@@ -817,6 +818,172 @@ export interface TraderJoesRecipeInsert {
   created_at?: string
 }
 
+// Coffee Config types
+export interface CoffeeRoastStrategyRow {
+  id: string
+  roast: string
+  goal: string
+  temp: string
+  technique: string
+  ratio: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CoffeeRoastStrategyInsert {
+  id?: string
+  roast: string
+  goal: string
+  temp: string
+  technique: string
+  ratio: string
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CoffeeRecipeRow {
+  id: string
+  method: string
+  cup_size: string
+  cup_size_label: string
+  water_ml: number
+  roast: string
+  ratio: string
+  coffee: number
+  temp: string
+  technique: string
+  switch_setting: string | null
+  mocca_setting: string | null
+  timing_cues: unknown[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CoffeeRecipeInsert {
+  id?: string
+  method: string
+  cup_size: string
+  cup_size_label: string
+  water_ml: number
+  roast: string
+  ratio: string
+  coffee: number
+  temp: string
+  technique: string
+  switch_setting?: string | null
+  mocca_setting?: string | null
+  timing_cues?: unknown[]
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CoffeeQuickDoseRow {
+  id: string
+  method: string
+  label: string
+  grams: number
+  note: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CoffeeQuickDoseInsert {
+  id?: string
+  method: string
+  label: string
+  grams: number
+  note?: string | null
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CoffeeGoldenRuleRow {
+  id: string
+  title: string
+  description: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CoffeeGoldenRuleInsert {
+  id?: string
+  title: string
+  description: string
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CoffeeRecommendationRow {
+  id: string
+  name: string
+  day_of_week: number | null
+  hour_start: number
+  hour_end: number
+  method: string
+  cup_size: string
+  roast: string
+  priority: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CoffeeRecommendationInsert {
+  id?: string
+  name: string
+  day_of_week?: number | null
+  hour_start: number
+  hour_end: number
+  method: string
+  cup_size: string
+  roast: string
+  priority?: number
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+// Blog Types
+export interface BlogPostRow {
+  id: string
+  title: string
+  slug: string
+  excerpt: string | null
+  content: Record<string, unknown>
+  content_html: string | null
+  featured_image: string | null
+  status: 'draft' | 'published'
+  tags: string[]
+  reading_time_minutes: number | null
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BlogPostInsert {
+  id?: string
+  title: string
+  slug: string
+  excerpt?: string | null
+  content: Record<string, unknown>
+  content_html?: string | null
+  featured_image?: string | null
+  status?: 'draft' | 'published'
+  tags?: string[]
+  reading_time_minutes?: number | null
+  published_at?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
 // Database interface for Supabase client
 export interface Database {
   public: {
@@ -946,6 +1113,38 @@ export interface Database {
         Row: TraderJoesRecipeRow
         Insert: TraderJoesRecipeInsert
         Update: Partial<TraderJoesRecipeInsert>
+      }
+      // Coffee config tables
+      coffee_roast_strategies: {
+        Row: CoffeeRoastStrategyRow
+        Insert: CoffeeRoastStrategyInsert
+        Update: Partial<CoffeeRoastStrategyInsert>
+      }
+      coffee_recipes: {
+        Row: CoffeeRecipeRow
+        Insert: CoffeeRecipeInsert
+        Update: Partial<CoffeeRecipeInsert>
+      }
+      coffee_quick_doses: {
+        Row: CoffeeQuickDoseRow
+        Insert: CoffeeQuickDoseInsert
+        Update: Partial<CoffeeQuickDoseInsert>
+      }
+      coffee_golden_rules: {
+        Row: CoffeeGoldenRuleRow
+        Insert: CoffeeGoldenRuleInsert
+        Update: Partial<CoffeeGoldenRuleInsert>
+      }
+      coffee_recommendations: {
+        Row: CoffeeRecommendationRow
+        Insert: CoffeeRecommendationInsert
+        Update: Partial<CoffeeRecommendationInsert>
+      }
+      // Blog tables
+      blog_posts: {
+        Row: BlogPostRow
+        Insert: BlogPostInsert
+        Update: Partial<BlogPostInsert>
       }
       // Spotify listening history tables
       spotify_listening_history: {

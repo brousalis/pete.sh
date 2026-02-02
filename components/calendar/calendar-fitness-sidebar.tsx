@@ -113,9 +113,14 @@ export function CalendarFitnessSidebar({
   const week = routine?.weeks.find(w => w.weekNumber === weekNumber)
   const dayData = week?.days[dayOfWeek]
 
-  // Get focus config
+  // Get focus config with fallback
   const focusKey = daySchedule?.focus || 'Rest'
-  const focusConfig = FOCUS_CONFIG[focusKey] || FOCUS_CONFIG.Rest
+  const focusConfig = FOCUS_CONFIG[focusKey] ??
+    FOCUS_CONFIG.Rest ?? {
+      icon: Dumbbell,
+      color: 'text-slate-400',
+      bg: 'bg-slate-500/10',
+    }
   const FocusIcon = focusConfig.icon
 
   // Calculate week's completion for the mini week view
