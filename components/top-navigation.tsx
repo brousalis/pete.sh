@@ -1,16 +1,6 @@
 'use client'
 
-import { ColorThemePicker } from '@/components/color-theme'
 import { useConnectivity } from '@/components/connectivity-provider'
-import { ThemeToggle } from '@/components/theme-toggle'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { staggerItemVariants, transitions } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -253,30 +243,20 @@ export function TopNavigation() {
             </DropdownMenuContent>
           </DropdownMenu> */}
 
-          {/* Settings */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="hover:bg-muted/80 focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none">
-              <Settings className="text-muted-foreground size-5" aria-hidden />
-              <span className="sr-only">Open settings</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Settings</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <button className="w-full text-left">Manage users</button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <button className="w-full text-left">Network</button>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5">
-                <ThemeToggle />
-              </div>
-              <div className="px-2 pb-2">
-                <ColorThemePicker />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Settings Link */}
+          <Link
+            href="/settings"
+            className={cn(
+              'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+              isActive('/settings')
+                ? 'bg-brand/10 text-brand'
+                : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+            )}
+            title="Settings"
+            aria-label="Open Settings"
+          >
+            <Settings className="size-5" aria-hidden />
+          </Link>
 
           {/* Deck Mode - quick access to dashboard grid view */}
           <Link

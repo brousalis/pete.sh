@@ -226,7 +226,18 @@
       "weekNumber": 6,
       "startDate": "2026-02-02T06:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-02T22:43:58.515Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-02T22:44:07.840Z"
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -247,5 +258,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-02T22:32:11.150Z"
+  "updatedAt": "2026-02-02T23:16:46.762Z"
 }
