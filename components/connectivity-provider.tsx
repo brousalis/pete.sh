@@ -100,6 +100,21 @@ export function ConnectivityProvider({
   // Get local URL from prop or environment variable
   const localUrl = localUrlProp ?? process.env.NEXT_PUBLIC_LOCAL_API_URL ?? null
 
+  // When the page is loaded from production (e.g. pete.sh), always use relative URLs
+  // so API calls stay on production. This fixes Apple Watch and other cloud data
+  // when using the Electron app or extension loading prod.
+  const productionOrigin =
+    typeof process.env.NEXT_PUBLIC_APP_URL === 'string' &&
+    process.env.NEXT_PUBLIC_APP_URL
+      ? (() => {
+          try {
+            return new URL(process.env.NEXT_PUBLIC_APP_URL).origin
+          } catch {
+            return null
+          }
+        })()
+      : null
+
   // State
   const [state, setState] = useState<ConnectivityState>({
     isInitialized: false,
@@ -125,6 +140,29 @@ export function ConnectivityProvider({
   // ============================================
 
   const checkConnectivity = useCallback(async (): Promise<boolean> => {
+    // When loaded from production (e.g. pete.sh), always use relative URLs so
+    // API calls go to production. Ensures Apple Watch and other cloud data
+    // work in Electron app and when extension loads prod.
+    if (
+      typeof window !== 'undefined' &&
+      productionOrigin &&
+      window.location.origin === productionOrigin
+    ) {
+      console.log(
+        '[Connectivity] Production origin detected, using relative API URLs'
+      )
+      setState(prev => ({
+        ...prev,
+        isInitialized: true,
+        isLocalAvailable: false,
+        apiBaseUrl: '',
+        isChecking: false,
+        lastError: null,
+        failureCount: 0,
+      }))
+      return false
+    }
+
     // If no local URL configured, we can't check
     if (!localUrl) {
       console.log(
@@ -211,7 +249,7 @@ export function ConnectivityProvider({
 
       return false
     }
-  }, [localUrl])
+  }, [localUrl, productionOrigin])
 
   // ============================================
   // Force Mode Functions

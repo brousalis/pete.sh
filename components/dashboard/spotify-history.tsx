@@ -661,18 +661,32 @@ export function SpotifyHistory({
                           <div className="text-foreground truncate leading-tight font-semibold">
                             {entry.track_name}
                           </div>
-                          <button
-                            onClick={e =>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={e => {
+                              e.stopPropagation()
                               handleArtistClick(
                                 entry.track_artists.split(',')[0]?.trim() ||
                                   entry.track_artists,
                                 e
                               )
-                            }
-                            className="text-muted-foreground mt-0.5 truncate text-sm transition-colors hover:text-green-500 hover:underline"
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleArtistClick(
+                                  entry.track_artists.split(',')[0]?.trim() ||
+                                    entry.track_artists,
+                                  e
+                                )
+                              }
+                            }}
+                            className="text-muted-foreground mt-0.5 cursor-pointer truncate text-sm transition-colors hover:text-green-500 hover:underline"
                           >
                             {entry.track_artists}
-                          </button>
+                          </span>
                           {viewMode !== 'compact' && (
                             <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-2 text-xs">
                               <span className="truncate">

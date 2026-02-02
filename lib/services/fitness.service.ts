@@ -5,17 +5,21 @@
  */
 
 import type {
-    ConsistencyStats,
-    DayOfWeek,
-    FitnessProgress,
-    WeeklyRoutine,
-    Workout
-} from "@/lib/types/fitness.types"
-import { promises as fs } from "fs"
-import path from "path"
+  ConsistencyStats,
+  DayOfWeek,
+  FitnessProgress,
+  WeeklyRoutine,
+  Workout,
+} from '@/lib/types/fitness.types'
+import { promises as fs } from 'fs'
+import path from 'path'
 
-const ROUTINE_FILE = path.join(process.cwd(), "data", "fitness-routine.json")
-const WORKOUT_DEFINITIONS_FILE = path.join(process.cwd(), "data", "workout-definitions.json")
+const ROUTINE_FILE = path.join(process.cwd(), 'data', 'fitness-routine.json')
+const WORKOUT_DEFINITIONS_FILE = path.join(
+  process.cwd(),
+  'data',
+  'workout-definitions.json'
+)
 
 // Export file paths for adapter use
 export const ROUTINE_FILE_PATH = ROUTINE_FILE
@@ -39,7 +43,7 @@ export class FitnessService {
    */
   async getWorkoutDefinitions(): Promise<Record<DayOfWeek, Workout>> {
     try {
-      const data = await fs.readFile(WORKOUT_DEFINITIONS_FILE, "utf-8")
+      const data = await fs.readFile(WORKOUT_DEFINITIONS_FILE, 'utf-8')
       return JSON.parse(data) as Record<DayOfWeek, Workout>
     } catch {
       return {} as Record<DayOfWeek, Workout>
@@ -49,16 +53,25 @@ export class FitnessService {
   /**
    * Update all workout definitions
    */
-  async updateWorkoutDefinitions(definitions: Record<DayOfWeek, Workout>): Promise<Record<DayOfWeek, Workout>> {
+  async updateWorkoutDefinitions(
+    definitions: Record<DayOfWeek, Workout>
+  ): Promise<Record<DayOfWeek, Workout>> {
     await this.ensureDataDir()
-    await fs.writeFile(WORKOUT_DEFINITIONS_FILE, JSON.stringify(definitions, null, 2), "utf-8")
+    await fs.writeFile(
+      WORKOUT_DEFINITIONS_FILE,
+      JSON.stringify(definitions, null, 2),
+      'utf-8'
+    )
     return definitions
   }
 
   /**
    * Update workout definition for a specific day
    */
-  async updateWorkoutDefinition(day: DayOfWeek, workout: Workout): Promise<Workout> {
+  async updateWorkoutDefinition(
+    day: DayOfWeek,
+    workout: Workout
+  ): Promise<Workout> {
     const definitions = await this.getWorkoutDefinitions()
     definitions[day] = workout
     await this.updateWorkoutDefinitions(definitions)
@@ -71,7 +84,9 @@ export class FitnessService {
   private getCurrentWeekNumber(): number {
     const now = new Date()
     const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
+    const days = Math.floor(
+      (now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
+    )
     const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7)
     return weekNumber
   }
@@ -92,7 +107,7 @@ export class FitnessService {
    * Get or create week routine
    */
   private async getOrCreateWeek(routine: WeeklyRoutine, weekNumber: number) {
-    let week = routine.weeks.find((w) => w.weekNumber === weekNumber)
+    let week = routine.weeks.find(w => w.weekNumber === weekNumber)
     if (!week) {
       const startDate = this.getWeekStartDate(weekNumber)
       week = {
@@ -112,7 +127,7 @@ export class FitnessService {
   async getRoutine(): Promise<WeeklyRoutine | null> {
     try {
       await this.ensureDataDir()
-      const data = await fs.readFile(ROUTINE_FILE, "utf-8")
+      const data = await fs.readFile(ROUTINE_FILE, 'utf-8')
       const routine = JSON.parse(data) as WeeklyRoutine
 
       // Ensure current week exists
@@ -123,10 +138,18 @@ export class FitnessService {
       const workoutDefinitions = await this.getWorkoutDefinitions()
 
       // Ensure all days have workout definitions in current week
-      const week = routine.weeks.find((w) => w.weekNumber === currentWeek)
+      const week = routine.weeks.find(w => w.weekNumber === currentWeek)
       if (week) {
-        const days: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        days.forEach((day) => {
+        const days: DayOfWeek[] = [
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+          'sunday',
+        ]
+        days.forEach(day => {
           if (!week.days[day]) {
             week.days[day] = {}
           }
@@ -147,7 +170,10 @@ export class FitnessService {
   /**
    * Get workout for a specific day
    */
-  async getWorkoutForDay(day: DayOfWeek, weekNumber?: number): Promise<Workout | null> {
+  async getWorkoutForDay(
+    day: DayOfWeek,
+    weekNumber?: number
+  ): Promise<Workout | null> {
     const workoutDefinitions = await this.getWorkoutDefinitions()
     return workoutDefinitions[day] || null
   }
@@ -158,17 +184,45 @@ export class FitnessService {
   async updateRoutine(routine: WeeklyRoutine): Promise<WeeklyRoutine> {
     await this.ensureDataDir()
     routine.updatedAt = new Date().toISOString()
-    await fs.writeFile(ROUTINE_FILE, JSON.stringify(routine, null, 2), "utf-8")
+    await fs.writeFile(ROUTINE_FILE, JSON.stringify(routine, null, 2), 'utf-8')
     return routine
   }
 
   /**
-   * Mark workout as complete
+   * Collect all exercise IDs from a workout (warmup, main, finisher, metabolic, mobility).
    */
-  async markWorkoutComplete(day: DayOfWeek, weekNumber: number, exercisesCompleted?: string[]): Promise<void> {
+  private getAllExerciseIdsFromWorkout(workout: Workout): string[] {
+    const ids: string[] = []
+    if (workout.warmup?.exercises?.length) {
+      ids.push(...workout.warmup.exercises.map(e => e.id))
+    }
+    if (workout.exercises?.length) {
+      ids.push(...workout.exercises.map(e => e.id))
+    }
+    if (workout.finisher?.length) {
+      ids.push(...workout.finisher.map(e => e.id))
+    }
+    if (workout.metabolicFlush?.exercises?.length) {
+      ids.push(...workout.metabolicFlush.exercises.map(e => e.id))
+    }
+    if (workout.mobility?.exercises?.length) {
+      ids.push(...workout.mobility.exercises.map(e => e.id))
+    }
+    return ids
+  }
+
+  /**
+   * Mark workout as complete. If exercisesCompleted is missing or empty, all exercises
+   * in the workout are auto-completed.
+   */
+  async markWorkoutComplete(
+    day: DayOfWeek,
+    weekNumber: number,
+    exercisesCompleted?: string[]
+  ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
 
     const week = await this.getOrCreateWeek(routine, weekNumber)
@@ -181,11 +235,16 @@ export class FitnessService {
       throw new Error(`No workout definition found for ${day}`)
     }
 
+    const allIds = this.getAllExerciseIdsFromWorkout(workoutDef)
+    const resolved = Array.from(
+      new Set([...allIds, ...(exercisesCompleted ?? [])])
+    )
+
     week.days[day]!.workout = {
       workoutId: workoutDef.id,
       completed: true,
       completedAt: new Date().toISOString(),
-      exercisesCompleted: exercisesCompleted || [],
+      exercisesCompleted: resolved,
     }
 
     await this.updateRoutine(routine)
@@ -195,13 +254,13 @@ export class FitnessService {
    * Mark daily routine as complete
    */
   async markRoutineComplete(
-    routineType: "morning" | "night",
+    routineType: 'morning' | 'night',
     day: DayOfWeek,
     weekNumber: number
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
 
     const week = await this.getOrCreateWeek(routine, weekNumber)
@@ -223,13 +282,13 @@ export class FitnessService {
    * Mark daily routine as incomplete (undo completion)
    */
   async markRoutineIncomplete(
-    routineType: "morning" | "night",
+    routineType: 'morning' | 'night',
     day: DayOfWeek,
     weekNumber: number
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
 
     const week = await this.getOrCreateWeek(routine, weekNumber)
@@ -254,11 +313,11 @@ export class FitnessService {
     const targetWeek = weekNumber || this.getCurrentWeekNumber()
     const routine = await this.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
 
     const week = await this.getOrCreateWeek(routine, targetWeek)
-    const workoutsByDay: FitnessProgress["workoutsByDay"] = {}
+    const workoutsByDay: FitnessProgress['workoutsByDay'] = {}
 
     let completedWorkouts = 0
     let totalWorkouts = 0
@@ -267,10 +326,18 @@ export class FitnessService {
     let completedNightRoutines = 0
     let totalNightRoutines = 0
 
-    const days: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    const days: DayOfWeek[] = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ]
     const workoutDefinitions = await this.getWorkoutDefinitions()
 
-    days.forEach((day) => {
+    days.forEach(day => {
       const dayData = week.days[day]
       const hasWorkout = !!workoutDefinitions[day]
 
@@ -356,10 +423,12 @@ export class FitnessService {
     for (let i = 0; i < 30; i++) {
       const checkDate = new Date(now)
       checkDate.setDate(checkDate.getDate() - i)
-      const dayOfWeek = checkDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as DayOfWeek
+      const dayOfWeek = checkDate
+        .toLocaleDateString('en-US', { weekday: 'long' })
+        .toLowerCase() as DayOfWeek
       const weekNum = this.getCurrentWeekNumber() - Math.floor(i / 7)
 
-      const week = routine.weeks.find((w) => w.weekNumber === weekNum)
+      const week = routine.weeks.find(w => w.weekNumber === weekNum)
       const dayData = week?.days[dayOfWeek]
 
       // Check if any activity happened
@@ -393,20 +462,19 @@ export class FitnessService {
       }
     }
 
-    const weeklyCompletion = totalWorkoutDays > 0
-      ? (completedWorkoutDays / totalWorkoutDays) * 100
-      : 0
+    const weeklyCompletion =
+      totalWorkoutDays > 0 ? (completedWorkoutDays / totalWorkoutDays) * 100 : 0
 
-    const monthlyCompletion = totalWorkoutDays > 0
-      ? (completedWorkoutDays / totalWorkoutDays) * 100
-      : 0
+    const monthlyCompletion =
+      totalWorkoutDays > 0 ? (completedWorkoutDays / totalWorkoutDays) * 100 : 0
 
     return {
       currentStreak,
       longestStreak,
       weeklyCompletion: Math.round(weeklyCompletion),
       monthlyCompletion: Math.round(monthlyCompletion),
-      totalDaysActive: completedWorkoutDays + completedMorningDays + completedNightDays,
+      totalDaysActive:
+        completedWorkoutDays + completedMorningDays + completedNightDays,
       lastActiveDate: lastActiveDate?.toISOString(),
       streaks: {
         workouts: currentStreak,
@@ -423,7 +491,7 @@ export class FitnessService {
   async getConsistencyStats(): Promise<ConsistencyStats> {
     const routine = await this.getRoutine()
     if (!routine) {
-      throw new Error("No routine found")
+      throw new Error('No routine found')
     }
     return this.getConsistencyStatsForRoutine(routine)
   }

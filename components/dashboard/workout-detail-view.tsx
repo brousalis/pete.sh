@@ -1,20 +1,32 @@
-"use client"
+'use client'
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { YouTubePlayer } from "@/components/ui/youtube-player"
-import { apiGet, apiPost } from "@/lib/api/client"
-import type { DayOfWeek, Exercise, Workout } from "@/lib/types/fitness.types"
-import { cn } from "@/lib/utils"
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, PersonStanding, RotateCcw, StretchVertical, Video, VideoOff } from "lucide-react"
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
+} from '@/components/ui/collapsible'
+import { YouTubePlayer } from '@/components/ui/youtube-player'
+import { apiGet, apiPost } from '@/lib/api/client'
+import type { DayOfWeek, Exercise, Workout } from '@/lib/types/fitness.types'
+import { cn } from '@/lib/utils'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Clock,
+  PersonStanding,
+  RotateCcw,
+  StretchVertical,
+  Video,
+  VideoOff,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface WorkoutDetailViewProps {
   day: DayOfWeek
@@ -24,10 +36,14 @@ interface WorkoutDetailViewProps {
 export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   const [workout, setWorkout] = useState<Workout | null>(null)
   const [loading, setLoading] = useState(true)
-  const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set())
+  const [completedExercises, setCompletedExercises] = useState<Set<string>>(
+    new Set()
+  )
   const [isCompleting, setIsCompleting] = useState(false)
   const [openVideos, setOpenVideos] = useState<Set<string>>(new Set())
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["exercises"]))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(['exercises'])
+  )
 
   useEffect(() => {
     const fetchWorkout = async () => {
@@ -37,7 +53,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           setWorkout(response.data)
         }
       } catch (error) {
-        console.error("Failed to fetch workout", error)
+        console.error('Failed to fetch workout', error)
       } finally {
         setLoading(false)
       }
@@ -46,7 +62,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   }, [day])
 
   const toggleExercise = (exerciseId: string) => {
-    setCompletedExercises((prev) => {
+    setCompletedExercises(prev => {
       const next = new Set(prev)
       if (next.has(exerciseId)) {
         next.delete(exerciseId)
@@ -57,17 +73,28 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     })
   }
 
+  const getAllExerciseIds = (): string[] => {
+    if (!workout) return []
+    const ids: string[] = []
+    workout.warmup?.exercises.forEach(ex => ids.push(ex.id))
+    workout.exercises.forEach(ex => ids.push(ex.id))
+    workout.finisher?.forEach(ex => ids.push(ex.id))
+    workout.metabolicFlush?.exercises.forEach(ex => ids.push(ex.id))
+    workout.mobility?.exercises.forEach(ex => ids.push(ex.id))
+    return Array.from(new Set([...ids, ...completedExercises]))
+  }
+
   const handleComplete = async () => {
     setIsCompleting(true)
     try {
       const response = await apiPost(`/api/fitness/workout/${day}/complete`, {
-        exercisesCompleted: Array.from(completedExercises)
+        exercisesCompleted: getAllExerciseIds(),
       })
-      if (!response.success) throw new Error("Failed to mark workout complete")
-      toast.success("Workout completed!")
+      if (!response.success) throw new Error('Failed to mark workout complete')
+      toast.success('Workout completed!')
       onComplete?.()
     } catch (error) {
-      toast.error("Failed to complete workout")
+      toast.error('Failed to complete workout')
     } finally {
       setIsCompleting(false)
     }
@@ -100,14 +127,22 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   const getAllVideoIds = (): string[] => {
     if (!workout) return []
     const ids: string[] = []
-    workout.warmup?.exercises.forEach(ex => { if (ex.youtubeVideoId) ids.push(ex.id) })
+    workout.warmup?.exercises.forEach(ex => {
+      if (ex.youtubeVideoId) ids.push(ex.id)
+    })
     workout.exercises.forEach(ex => {
       if (ex.youtubeVideoId) ids.push(ex.id)
       if (ex.alternative?.youtubeVideoId) ids.push(`${ex.id}-alt`)
     })
-    workout.finisher?.forEach(ex => { if (ex.youtubeVideoId) ids.push(ex.id) })
-    workout.metabolicFlush?.exercises.forEach(ex => { if (ex.youtubeVideoId) ids.push(ex.id) })
-    workout.mobility?.exercises.forEach(ex => { if (ex.youtubeVideoId) ids.push(ex.id) })
+    workout.finisher?.forEach(ex => {
+      if (ex.youtubeVideoId) ids.push(ex.id)
+    })
+    workout.metabolicFlush?.exercises.forEach(ex => {
+      if (ex.youtubeVideoId) ids.push(ex.id)
+    })
+    workout.mobility?.exercises.forEach(ex => {
+      if (ex.youtubeVideoId) ids.push(ex.id)
+    })
     return ids
   }
 
@@ -121,14 +156,28 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   }
 
   if (loading) {
-    return <Card><CardContent className="py-6 text-sm text-muted-foreground">Loading...</CardContent></Card>
+    return (
+      <Card>
+        <CardContent className="text-muted-foreground py-6 text-sm">
+          Loading...
+        </CardContent>
+      </Card>
+    )
   }
 
   if (!workout) {
-    return <Card><CardContent className="py-6 text-sm text-muted-foreground">No workout found</CardContent></Card>
+    return (
+      <Card>
+        <CardContent className="text-muted-foreground py-6 text-sm">
+          No workout found
+        </CardContent>
+      </Card>
+    )
   }
 
-  const hasElbowSafe = workout.exercises.some((ex) => ex.isElbowSafe === false && ex.alternative)
+  const hasElbowSafe = workout.exercises.some(
+    ex => ex.isElbowSafe === false && ex.alternative
+  )
 
   // Compact Exercise Row Component
   const ExerciseRow = ({
@@ -136,7 +185,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     showCheckbox = false,
     isCompleted = false,
     onClick,
-    className
+    className,
   }: {
     exercise: Exercise
     showCheckbox?: boolean
@@ -146,15 +195,17 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   }) => {
     const shouldUseAlt = exercise.isElbowSafe === false && exercise.alternative
     const display = shouldUseAlt ? exercise.alternative! : exercise
-    const videoId = shouldUseAlt ? display.youtubeVideoId : exercise.youtubeVideoId
+    const videoId = shouldUseAlt
+      ? display.youtubeVideoId
+      : exercise.youtubeVideoId
     const isVideoOpen = openVideos.has(exercise.id)
 
     return (
       <div
         className={cn(
-          "flex items-start gap-2 p-2 rounded-md transition-colors",
-          showCheckbox && "cursor-pointer hover:bg-muted/50",
-          isCompleted && "bg-green-500/10",
+          'flex items-start gap-2 rounded-md p-2 transition-colors',
+          showCheckbox && 'hover:bg-muted/50 cursor-pointer',
+          isCompleted && 'bg-green-500/10',
           className
         )}
         onClick={onClick}
@@ -164,42 +215,53 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
             {isCompleted ? (
               <CheckCircle2 className="size-4 text-green-500" />
             ) : (
-              <Circle className="size-4 text-muted-foreground" />
+              <Circle className="text-muted-foreground size-4" />
             )}
           </div>
         )}
 
-        <div className={cn("flex-1 min-w-0", isVideoOpen && videoId && "w-[50%]")}>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn("text-sm font-medium", isCompleted && "line-through text-muted-foreground")}>
+        <div
+          className={cn('min-w-0 flex-1', isVideoOpen && videoId && 'w-[50%]')}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                'text-sm font-medium',
+                isCompleted && 'text-muted-foreground line-through'
+              )}
+            >
               {display.name}
             </span>
             {shouldUseAlt && (
-              <Badge variant="outline" className="text-[10px] py-0 h-4">Alt</Badge>
+              <Badge variant="outline" className="h-4 py-0 text-[10px]">
+                Alt
+              </Badge>
             )}
             {display.sets && display.reps && (
-              <Badge variant="secondary" className="text-[10px] py-0 h-4">
+              <Badge variant="secondary" className="h-4 py-0 text-[10px]">
                 {display.sets}×{display.reps}
               </Badge>
             )}
             {exercise.duration && !shouldUseAlt && (
-              <Badge variant="secondary" className="text-[10px] py-0 h-4">
+              <Badge variant="secondary" className="h-4 py-0 text-[10px]">
                 {exercise.duration}s
               </Badge>
             )}
           </div>
           {display.form && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{display.form}</p>
+            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+              {display.form}
+            </p>
           )}
         </div>
 
         {videoId && (
           <div
             className={cn(
-              "shrink-0 transition-all",
-              isVideoOpen ? "flex-1 max-w-[50%]" : "w-28"
+              'shrink-0 transition-all',
+              isVideoOpen ? 'max-w-[50%] flex-1' : 'w-28'
             )}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <YouTubePlayer
               videoId={videoId}
@@ -222,7 +284,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     iconColor,
     duration,
     count,
-    bgColor
+    bgColor,
   }: {
     id: string
     title: string
@@ -237,15 +299,23 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       <button
         onClick={() => toggleSection(id)}
         className={cn(
-          "flex items-center gap-2 w-full p-2 rounded-md text-left transition-colors hover:bg-muted/50",
+          'hover:bg-muted/50 flex w-full items-center gap-2 rounded-md p-2 text-left transition-colors',
           bgColor
         )}
       >
-        <Icon className={cn("size-4 shrink-0", iconColor)} />
-        <span className="font-medium text-sm flex-1">{title}</span>
-        {duration && <span className="text-xs text-muted-foreground">{duration}m</span>}
-        {count && <span className="text-xs text-muted-foreground">{count} ex</span>}
-        {isExpanded ? <ChevronDown className="size-4 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
+        <Icon className={cn('size-4 shrink-0', iconColor)} />
+        <span className="flex-1 text-sm font-medium">{title}</span>
+        {duration && (
+          <span className="text-muted-foreground text-xs">{duration}m</span>
+        )}
+        {count && (
+          <span className="text-muted-foreground text-xs">{count} ex</span>
+        )}
+        {isExpanded ? (
+          <ChevronDown className="text-muted-foreground size-4" />
+        ) : (
+          <ChevronRight className="text-muted-foreground size-4" />
+        )}
       </button>
     )
   }
@@ -258,24 +328,35 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold truncate">{workout.name}</h2>
+                <h2 className="truncate font-semibold">{workout.name}</h2>
                 {hasElbowSafe && (
-                  <Badge variant="destructive" className="text-[10px] py-0 h-4 gap-0.5">
+                  <Badge
+                    variant="destructive"
+                    className="h-4 gap-0.5 py-0 text-[10px]"
+                  >
                     <AlertTriangle className="size-3" />
                     Injury
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground truncate">{workout.goal}</p>
+              <p className="text-muted-foreground truncate text-xs">
+                {workout.goal}
+              </p>
             </div>
             <Button
-              variant={openVideos.size > 0 ? "default" : "outline"}
+              variant={openVideos.size > 0 ? 'default' : 'outline'}
               size="sm"
               onClick={toggleAllVideos}
-              className="shrink-0 h-7 text-xs gap-1"
+              className="h-7 shrink-0 gap-1 text-xs"
             >
-              {openVideos.size > 0 ? <VideoOff className="size-3" /> : <Video className="size-3" />}
-              <span className="hidden sm:inline">{openVideos.size > 0 ? "Hide" : "Videos"}</span>
+              {openVideos.size > 0 ? (
+                <VideoOff className="size-3" />
+              ) : (
+                <Video className="size-3" />
+              )}
+              <span className="hidden sm:inline">
+                {openVideos.size > 0 ? 'Hide' : 'Videos'}
+              </span>
             </Button>
           </div>
         </CardContent>
@@ -285,7 +366,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       {workout.warmup && workout.warmup.exercises.length > 0 && (
         <Card>
           <CardContent className="p-2">
-            <Collapsible open={expandedSections.has("warmup")} onOpenChange={() => toggleSection("warmup")}>
+            <Collapsible
+              open={expandedSections.has('warmup')}
+              onOpenChange={() => toggleSection('warmup')}
+            >
               <CollapsibleTrigger asChild>
                 <SectionHeader
                   id="warmup"
@@ -298,8 +382,12 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-1 space-y-0.5">
-                  {workout.warmup.exercises.map((ex) => (
-                    <ExerciseRow key={ex.id} exercise={ex} className="bg-muted/30" />
+                  {workout.warmup.exercises.map(ex => (
+                    <ExerciseRow
+                      key={ex.id}
+                      exercise={ex}
+                      className="bg-muted/30"
+                    />
                   ))}
                 </div>
               </CollapsibleContent>
@@ -311,7 +399,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       {/* Main Exercises */}
       <Card>
         <CardContent className="p-2">
-          <Collapsible open={expandedSections.has("exercises")} onOpenChange={() => toggleSection("exercises")}>
+          <Collapsible
+            open={expandedSections.has('exercises')}
+            onOpenChange={() => toggleSection('exercises')}
+          >
             <CollapsibleTrigger asChild>
               <SectionHeader
                 id="exercises"
@@ -323,7 +414,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-1 space-y-0.5">
-                {workout.exercises.map((ex) => (
+                {workout.exercises.map(ex => (
                   <ExerciseRow
                     key={ex.id}
                     exercise={ex}
@@ -342,7 +433,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       {workout.finisher && workout.finisher.length > 0 && (
         <Card>
           <CardContent className="p-2">
-            <Collapsible open={expandedSections.has("finisher")} onOpenChange={() => toggleSection("finisher")}>
+            <Collapsible
+              open={expandedSections.has('finisher')}
+              onOpenChange={() => toggleSection('finisher')}
+            >
               <CollapsibleTrigger asChild>
                 <SectionHeader
                   id="finisher"
@@ -354,8 +448,12 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-1 space-y-0.5">
-                  {workout.finisher.map((ex) => (
-                    <ExerciseRow key={ex.id} exercise={ex} className="bg-red-500/5" />
+                  {workout.finisher.map(ex => (
+                    <ExerciseRow
+                      key={ex.id}
+                      exercise={ex}
+                      className="bg-red-500/5"
+                    />
                   ))}
                 </div>
               </CollapsibleContent>
@@ -365,36 +463,47 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       )}
 
       {/* Metabolic Flush */}
-      {workout.metabolicFlush && workout.metabolicFlush.exercises.length > 0 && (
-        <Card>
-          <CardContent className="p-2">
-            <Collapsible open={expandedSections.has("metabolic")} onOpenChange={() => toggleSection("metabolic")}>
-              <CollapsibleTrigger asChild>
-                <SectionHeader
-                  id="metabolic"
-                  title={workout.metabolicFlush.name}
-                  icon={PersonStanding}
-                  iconColor="text-orange-500"
-                  duration={workout.metabolicFlush.duration}
-                />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-1 space-y-0.5">
-                  {workout.metabolicFlush.exercises.map((ex) => (
-                    <ExerciseRow key={ex.id} exercise={ex} className="bg-orange-500/5" />
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
-      )}
+      {workout.metabolicFlush &&
+        workout.metabolicFlush.exercises.length > 0 && (
+          <Card>
+            <CardContent className="p-2">
+              <Collapsible
+                open={expandedSections.has('metabolic')}
+                onOpenChange={() => toggleSection('metabolic')}
+              >
+                <CollapsibleTrigger asChild>
+                  <SectionHeader
+                    id="metabolic"
+                    title={workout.metabolicFlush.name}
+                    icon={PersonStanding}
+                    iconColor="text-orange-500"
+                    duration={workout.metabolicFlush.duration}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-1 space-y-0.5">
+                    {workout.metabolicFlush.exercises.map(ex => (
+                      <ExerciseRow
+                        key={ex.id}
+                        exercise={ex}
+                        className="bg-orange-500/5"
+                      />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Mobility */}
       {workout.mobility && workout.mobility.exercises.length > 0 && (
         <Card>
           <CardContent className="p-2">
-            <Collapsible open={expandedSections.has("mobility")} onOpenChange={() => toggleSection("mobility")}>
+            <Collapsible
+              open={expandedSections.has('mobility')}
+              onOpenChange={() => toggleSection('mobility')}
+            >
               <CollapsibleTrigger asChild>
                 <SectionHeader
                   id="mobility"
@@ -406,8 +515,12 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-1 space-y-0.5">
-                  {workout.mobility.exercises.map((ex) => (
-                    <ExerciseRow key={ex.id} exercise={ex} className="bg-purple-500/5" />
+                  {workout.mobility.exercises.map(ex => (
+                    <ExerciseRow
+                      key={ex.id}
+                      exercise={ex}
+                      className="bg-purple-500/5"
+                    />
                   ))}
                 </div>
               </CollapsibleContent>
@@ -425,10 +538,10 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
             className="w-full"
             size="sm"
           >
-            {isCompleting ? "Completing..." : "Complete Workout"}
+            {isCompleting ? 'Completing...' : 'Complete Workout'}
           </Button>
           {completedExercises.size > 0 && (
-            <p className="text-center text-xs text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-center text-xs">
               {completedExercises.size}/{workout.exercises.length} done
             </p>
           )}
