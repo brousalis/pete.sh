@@ -1,0 +1,21 @@
+{
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/api/calendar/upcoming/route": "app/api/calendar/upcoming/route.js",
+  "/api/coffee/config/route": "app/api/coffee/config/route.js",
+  "/api/cooking/meal-plans/route": "app/api/cooking/meal-plans/route.js",
+  "/api/cooking/recipes/route": "app/api/cooking/recipes/route.js",
+  "/api/cta/all/route": "app/api/cta/all/route.js",
+  "/api/fitness/consistency/route": "app/api/fitness/consistency/route.js",
+  "/api/fitness/routine/route": "app/api/fitness/routine/route.js",
+  "/api/fitness/workout/[day]/route": "app/api/fitness/workout/[day]/route.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/api/hue/zones/[id]/scenes/route": "app/api/hue/zones/[id]/scenes/route.js",
+  "/api/hue/zones/route": "app/api/hue/zones/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
+  "/api/spotify/history/route": "app/api/spotify/history/route.js",
+  "/api/spotify/me/route": "app/api/spotify/me/route.js",
+  "/api/spotify/player/route": "app/api/spotify/player/route.js",
+  "/api/sync/route": "app/api/sync/route.js",
+  "/api/weather/current/route": "app/api/weather/current/route.js",
+  "/api/weather/forecast/route": "app/api/weather/forecast/route.js"
+}

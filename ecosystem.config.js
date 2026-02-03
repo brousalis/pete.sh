@@ -13,13 +13,15 @@
 
 const path = require('path')
 
+const webAppDir = path.join(__dirname, 'apps', 'web')
+
 module.exports = {
   apps: [
     {
       // Production mode - runs built app
       name: 'petehome',
-      script: path.join(__dirname, 'scripts', 'pm2-start-prod.js'),
-      cwd: __dirname,
+      script: path.join(webAppDir, 'scripts', 'pm2-start-prod.js'),
+      cwd: webAppDir,
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -30,9 +32,9 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      error_file: './logs/pm2-error.log',
-      out_file: './logs/pm2-out.log',
-      log_file: './logs/pm2-combined.log',
+      error_file: path.join(__dirname, 'logs', 'pm2-error.log'),
+      out_file: path.join(__dirname, 'logs', 'pm2-out.log'),
+      log_file: path.join(__dirname, 'logs', 'pm2-combined.log'),
       time: true,
       min_uptime: '10s',
       max_restarts: 10,
@@ -41,8 +43,8 @@ module.exports = {
     {
       // Development mode - hot reload enabled
       name: 'petehome-dev',
-      script: path.join(__dirname, 'scripts', 'pm2-start-dev.js'),
-      cwd: __dirname,
+      script: path.join(webAppDir, 'scripts', 'pm2-start-dev.js'),
+      cwd: webAppDir,
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -53,9 +55,9 @@ module.exports = {
       autorestart: true,
       watch: false, // Next.js handles its own watching
       max_memory_restart: '2G',
-      error_file: './logs/pm2-dev-error.log',
-      out_file: './logs/pm2-dev-out.log',
-      log_file: './logs/pm2-dev-combined.log',
+      error_file: path.join(__dirname, 'logs', 'pm2-dev-error.log'),
+      out_file: path.join(__dirname, 'logs', 'pm2-dev-out.log'),
+      log_file: path.join(__dirname, 'logs', 'pm2-dev-combined.log'),
       time: true,
       min_uptime: '10s',
       max_restarts: 10,

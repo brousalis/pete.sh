@@ -1,0 +1,262 @@
+{
+  "id": "climber-physique",
+  "name": "Initial Version",
+  "userProfile": {
+    "goal": "Climber physique (Wire-strong, vascular, no bulk) + 20 lbs Weight Loss",
+    "stats": {
+      "height": "5'11\"",
+      "weight": 205
+    },
+    "schedule": {
+      "fasted": true,
+      "startDay": "monday",
+      "trainingTime": "12:00 PM"
+    },
+    "shoeStrategy": {
+      "cardio": [
+        "Cushioned Running shoes"
+      ],
+      "lifting": [
+        "Zero Drop",
+        "Flat shoes (Vans, Converse)"
+      ]
+    }
+  },
+  "injuryProtocol": {
+    "name": "Golfer's Elbow",
+    "rules": [
+      "Use [ELBOW SAFE] alternatives listed for at least 2 weeks",
+      "Do not return to standard exercises until you can hang from a bar pain-free",
+      "Use lifting straps for Deadlifts/Rows to offload the grip"
+    ],
+    "status": "active",
+    "dailyRehab": [
+      {
+        "name": "Forearm Smash",
+        "duration": 2,
+        "frequency": "daily",
+        "description": "Massage the meaty part of your inner forearm with a lacrosse ball/hard object"
+      }
+    ],
+    "description": "Currently feeling strain near the funny bone (inner elbow)"
+  },
+  "schedule": {
+    "friday": {
+      "goal": "Circuit (Elbow Safe) + 30m Bike + Deep Stretch",
+      "focus": "Circuit"
+    },
+    "monday": {
+      "goal": "Lift (Elbow Safe) + 40m Bike + Deep Stretch",
+      "focus": "Strength"
+    },
+    "sunday": {
+      "goal": "10k Steps (No Gym)",
+      "focus": "Rest"
+    },
+    "tuesday": {
+      "goal": "Core Routine + 45m Steep Hike + Deep Stretch",
+      "focus": "Core/Posture"
+    },
+    "saturday": {
+      "goal": "Sprints (20m) + 20m Walk + Deep Stretch",
+      "focus": "HIIT"
+    },
+    "thursday": {
+      "goal": "Run (4mi Slow) + 20m Recovery Spin",
+      "focus": "Endurance"
+    },
+    "wednesday": {
+      "goal": "Run (2mi) + Hike (45-60m) + Tibialis Work",
+      "focus": "Hybrid"
+    }
+  },
+  "dailyRoutines": {
+    "night": {
+      "id": "release-the-brakes",
+      "name": "Night Stretch",
+      "type": "night",
+      "duration": 5,
+      "exercises": [
+        {
+          "why": "Fixes tight hip flexors from running and hiking",
+          "name": "Couch Stretch",
+          "action": "Kneel in front of a couch (or wall). Put one shin vertical against the couch cushion behind you. Squeeze your glute and stand tall. You should feel a massive pull in the front of your hip/thigh. 60 seconds per side.",
+          "duration": 120,
+          "description": "The #1 stretch for you. Running and hiking tighten the hip flexors. Tight hip flexors cause lower back pain and \"weak\" glutes."
+        },
+        {
+          "why": "Opens chest for better breathing and posture",
+          "name": "Doorway Pec Stretch",
+          "action": "Put your forearms against a doorframe at 90 degrees. Step through gently until you feel a stretch across your chest.",
+          "duration": 60,
+          "description": "Climbers and heavy lifters tend to roll their shoulders forward. This opens the chest so you can breathe better and stand taller."
+        },
+        {
+          "why": "Loosens lats and lower back",
+          "name": "Child's Pose with Side Reach",
+          "action": "Kneel, sit back on your heels, and reach arms far forward on the floor. Then, walk both hands to the left (stretches right lat), hold, then walk to the right.",
+          "duration": 120,
+          "description": "Loosens the lats (from all the pull-ups) and the lower back (from the RDLs and hiking)."
+        }
+      ],
+      "description": "Do this 30 minutes before bed. The goal is to lengthen the muscles that tightened up during your run or lift."
+    },
+    "morning": {
+      "id": "oil-the-hinge",
+      "name": "Morning Stretch",
+      "type": "morning",
+      "duration": 3,
+      "exercises": [
+        {
+          "why": "Opens ankles, knees, and hips for the day",
+          "name": "Deep Squat Hold",
+          "action": "Drop into the deepest squat you can. Keep heels flat. Use your elbows to push your knees out. Rock side to side gently.",
+          "duration": 60,
+          "description": "Opens ankles, knees, and hips for the day. Essential for the \"high step\" moves in climbing."
+        },
+        {
+          "why": "Prevents hunchback posture from pulling and carrying",
+          "name": "T-Spine Rotation",
+          "action": "On hands and knees, put one hand behind your head. Rotate that elbow down to touch the opposite wrist, then rotate it all the way up to the ceiling. 30 seconds per side.",
+          "duration": 60,
+          "description": "Prevents developing a \"hunchback\" posture from all the pulling and carrying."
+        },
+        {
+          "why": "Decompresses spine and wakes up grip",
+          "name": "Dead Hang",
+          "action": "Just hang from a bar (or doorframe if sturdy). Let your back crack and pop.",
+          "duration": 60,
+          "description": "Decompresses your spine and wakes up your grip."
+        }
+      ],
+      "description": "Do this right after you wake up. The goal is to open up your hips and upper back, which get stiff from sleeping."
+    }
+  },
+  "weeks": [
+    {
+      "weekNumber": 4,
+      "startDate": "2026-01-19T06:00:00.000Z",
+      "days": {
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": false
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": false
+          }
+        },
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-01-24T23:25:15.597Z",
+            "exercisesCompleted": [
+              "sat-intervals",
+              "sat-cooldown",
+              "sat-finisher",
+              "sat-warmup-1"
+            ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-01-24T23:28:40.726Z"
+          }
+        },
+        "sunday": {}
+      }
+    },
+    {
+      "weekNumber": 5,
+      "startDate": "2026-01-26T06:00:00.000Z",
+      "days": {
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": false
+          }
+        },
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": true,
+            "completedAt": "2026-01-29T21:56:46.535Z",
+            "exercisesCompleted": [
+              "thu-run",
+              "thu-flush"
+            ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-01-29T21:56:49.277Z"
+          }
+        },
+        "friday": {},
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-02-01T03:35:25.009Z",
+            "exercisesCompleted": []
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-01T03:52:34.856Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-01T03:35:27.543Z"
+          }
+        },
+        "sunday": {}
+      }
+    },
+    {
+      "weekNumber": 6,
+      "startDate": "2026-02-02T06:00:00.000Z",
+      "days": {
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-02T22:43:58.515Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-02T22:44:07.840Z"
+          }
+        },
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-01T22:37:38.979Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-02T05:13:11.914Z"
+          }
+        }
+      }
+    }
+  ],
+  "updatedAt": "2026-02-03T01:50:29.697Z"
+}
