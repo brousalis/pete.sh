@@ -6,24 +6,24 @@ import { staggerItemVariants, transitions } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    Bus,
-    Calendar,
-    ChefHat,
-    Coffee,
-    Command,
-    Dumbbell,
-    FileText,
-    Grid3x3,
-    Home,
-    Lightbulb,
-    Loader2,
-    Menu,
-    Music,
-    RefreshCw,
-    Settings,
-    Wifi,
-    WifiOff,
-    X,
+  Bus,
+  Calendar,
+  ChefHat,
+  Coffee,
+  Command,
+  Dumbbell,
+  FileText,
+  Grid3x3,
+  Home,
+  Lightbulb,
+  Loader2,
+  Menu,
+  Music,
+  RefreshCw,
+  Settings,
+  Wifi,
+  WifiOff,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -40,14 +40,14 @@ type NavItem = {
 // Main navigation items (excludes Deck which has its own icon)
 const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home, shortcut: '1' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
-  { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
+  { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
-  { href: '/posts', label: 'Blog', icon: FileText, shortcut: '9' },
+  { href: '/posts', label: 'Posts', icon: FileText, shortcut: '9' },
 ]
 
 // All items including Deck for keyboard shortcuts

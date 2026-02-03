@@ -84,11 +84,13 @@ const EXERCISE_WORKOUT_MAPPING: Record<string, string[]> = {
   bike: ['cycling'],
   cycle: ['cycling'],
   'recovery spin': ['cycling'],
+  'recovery flush': ['cycling'], // Stationary bike recovery
   'incline walk': ['walking'],
   walk: ['walking'],
   // Rowing
   row: ['rowing'],
   rowing: ['rowing'],
+  rower: ['rowing'],
   // Strength
   strength: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
   lift: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
@@ -101,15 +103,16 @@ const EXERCISE_WORKOUT_MAPPING: Record<string, string[]> = {
 
 // Helper function to match exercise to HealthKit workout
 function matchExerciseToWorkout(
-  exerciseName: string,
+  exercise: { name: string; notes?: string },
   workouts: AppleWorkout[]
 ): AppleWorkout | null {
-  const lowerName = exerciseName.toLowerCase()
+  // Combine name and notes for matching (notes often contain equipment details like "Stationary Bike")
+  const searchText = `${exercise.name} ${exercise.notes || ''}`.toLowerCase()
 
   // Find matching workout types for this exercise
   let matchingTypes: string[] = []
   for (const [keyword, types] of Object.entries(EXERCISE_WORKOUT_MAPPING)) {
-    if (lowerName.includes(keyword)) {
+    if (searchText.includes(keyword)) {
       matchingTypes = [...matchingTypes, ...types]
     }
   }
@@ -168,6 +171,11 @@ export function WorkoutCenter({
 
   const isWorkoutCompleted = completion?.completed || false
 
+  // Sync completedExercises when completion prop changes (e.g., viewing different dates)
+  useEffect(() => {
+    setCompletedExercises(new Set(completion?.exercisesCompleted || []))
+  }, [completion?.exercisesCompleted])
+
   // Match exercises to Apple Watch workouts
   const exerciseWorkoutMap = useMemo(() => {
     const map = new Map<string, AppleWorkout>()
@@ -188,7 +196,7 @@ export function WorkoutCenter({
     // Match exercises to workouts (prioritize first match)
     for (const exercise of allExercises) {
       const matchedWorkout = matchExerciseToWorkout(
-        exercise.name,
+        exercise,
         appleWorkouts.filter(w => !usedWorkouts.has(w.id))
       )
       if (matchedWorkout) {

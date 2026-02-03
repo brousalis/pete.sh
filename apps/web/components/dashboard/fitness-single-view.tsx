@@ -1225,11 +1225,14 @@ export function FitnessSingleView({
           </div>
 
           {/* Secondary Row: Activity Summary + Streaks */}
-          {isViewingToday && (appleWorkouts.length > 0 || dailyMetrics || consistencyStats) && (
+          {((isViewingToday && (appleWorkouts.length > 0 || dailyMetrics)) ||
+            (!isViewingToday && selectedDayAppleWorkouts.length > 0) ||
+            consistencyStats) && (
             <UnifiedActivitySummary
-              workouts={appleWorkouts}
-              metrics={dailyMetrics}
+              workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
+              metrics={isViewingToday ? dailyMetrics : null}
               consistencyStats={consistencyStats}
+              viewingDate={viewingDate}
               onWorkoutClick={id => router.push(`/fitness/watch?workout=${id}`)}
               onViewAll={() => router.push('/fitness/watch')}
             />
@@ -1295,6 +1298,7 @@ interface UnifiedActivitySummaryProps {
   workouts: AppleWorkout[]
   metrics: DailyMetrics | null
   consistencyStats: ConsistencyStats | null
+  viewingDate?: Date | null
   onWorkoutClick?: (workoutId: string) => void
   onViewAll?: () => void
 }
@@ -1347,22 +1351,24 @@ function UnifiedActivitySummary({
   workouts,
   metrics,
   consistencyStats,
+  viewingDate,
   onWorkoutClick,
   onViewAll,
 }: UnifiedActivitySummaryProps) {
-  const todayWorkouts = workouts.filter(w => {
+  // Filter workouts to the date being viewed (or today if not specified)
+  const targetDate = viewingDate || new Date()
+  const dateWorkouts = workouts.filter(w => {
     const workoutDate = new Date(w.start_date)
-    const today = new Date()
     return (
-      workoutDate.getDate() === today.getDate() &&
-      workoutDate.getMonth() === today.getMonth() &&
-      workoutDate.getFullYear() === today.getFullYear()
+      workoutDate.getDate() === targetDate.getDate() &&
+      workoutDate.getMonth() === targetDate.getMonth() &&
+      workoutDate.getFullYear() === targetDate.getFullYear()
     )
   })
 
-  const totalDuration = todayWorkouts.reduce((sum, w) => sum + w.duration, 0)
-  const totalCalories = todayWorkouts.reduce((sum, w) => sum + w.active_calories, 0)
-  const totalDistance = todayWorkouts.reduce((sum, w) => sum + (w.distance_miles || 0), 0)
+  const totalDuration = dateWorkouts.reduce((sum, w) => sum + w.duration, 0)
+  const totalCalories = dateWorkouts.reduce((sum, w) => sum + w.active_calories, 0)
+  const totalDistance = dateWorkouts.reduce((sum, w) => sum + (w.distance_miles || 0), 0)
 
   // Activity ring progress
   const moveProgress = metrics
@@ -1375,7 +1381,7 @@ function UnifiedActivitySummary({
     ? Math.min((metrics.stand_hours / (metrics.stand_goal || 12)) * 100, 100)
     : 0
 
-  const hasActivity = todayWorkouts.length > 0 || metrics
+  const hasActivity = dateWorkouts.length > 0 || metrics
   const hasStats = consistencyStats
 
   if (!hasActivity && !hasStats) return null
@@ -1455,24 +1461,24 @@ function UnifiedActivitySummary({
         </div>
       )}
 
-      {/* Today's Workouts */}
-      {todayWorkouts.length > 0 ? (
+      {/* Date's Workouts */}
+      {dateWorkouts.length > 0 ? (
         <>
           {/* Workout Count */}
           <div className="flex items-center gap-2 pr-3 border-r border-border/50">
             <div className="text-center">
               <div className="text-lg font-bold leading-none tabular-nums">
-                {todayWorkouts.length}
+                {dateWorkouts.length}
               </div>
               <div className="text-[9px] text-muted-foreground">
-                {todayWorkouts.length === 1 ? 'Workout' : 'Workouts'}
+                {dateWorkouts.length === 1 ? 'Workout' : 'Workouts'}
               </div>
             </div>
           </div>
 
           {/* Workout Pills - Scrollable */}
           <div className="flex flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
-            {todayWorkouts.slice(0, 5).map(workout => {
+            {dateWorkouts.slice(0, 5).map(workout => {
               const defaultStyle = { icon: Dumbbell, color: 'text-slate-500', bg: 'bg-slate-500/15' }
               const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
               const Icon = typeStyle.icon
@@ -1509,9 +1515,9 @@ function UnifiedActivitySummary({
                 </Tooltip>
               )
             })}
-            {todayWorkouts.length > 5 && (
+            {dateWorkouts.length > 5 && (
               <Badge variant="secondary" className="text-[10px] shrink-0">
-                +{todayWorkouts.length - 5}
+                +{dateWorkouts.length - 5}
               </Badge>
             )}
           </div>

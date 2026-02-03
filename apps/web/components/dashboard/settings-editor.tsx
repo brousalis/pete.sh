@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { apiGet, apiPost } from '@/lib/api/client'
-import { Activity, Layout, Loader2, Palette, Settings, Watch } from 'lucide-react'
+import { Activity, Layout, Loader2, Palette, Settings, Sunrise, Watch } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -28,10 +28,18 @@ interface BackfillSummary {
   preview?: boolean
 }
 
+interface RoutineBackfillSummary {
+  daysProcessed: number
+  routinesCompleted: number
+  dryRun: boolean
+  dateRange: { start: string; end: string }
+}
+
 export function SettingsEditor() {
   const { settings, isLoading, error, updateSettings } = useSettings()
   const [backfillLoading, setBackfillLoading] = useState(false)
   const [backfillPreview, setBackfillPreview] = useState<BackfillSummary | null>(null)
+  const [routineBackfillLoading, setRoutineBackfillLoading] = useState(false)
 
   // Preview backfill
   const handlePreviewBackfill = async () => {
@@ -71,6 +79,30 @@ export function SettingsEditor() {
       toast.error('Failed to execute backfill')
     } finally {
       setBackfillLoading(false)
+    }
+  }
+
+  // Execute routine backfill for January 2026
+  const handleRoutineBackfill = async () => {
+    setRoutineBackfillLoading(true)
+    try {
+      const response = await apiPost<{ summary: RoutineBackfillSummary }>('/api/fitness/backfill-routines', {
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+        types: ['morning', 'night'],
+      })
+      if (response.success && response.data) {
+        const summary = response.data.summary
+        toast.success(
+          `Routine backfill complete! Marked ${summary.routinesCompleted} routines complete across ${summary.daysProcessed} days`
+        )
+      } else {
+        toast.error('Failed to execute routine backfill')
+      }
+    } catch (err) {
+      toast.error('Failed to execute routine backfill')
+    } finally {
+      setRoutineBackfillLoading(false)
     }
   }
 
@@ -242,6 +274,35 @@ export function SettingsEditor() {
                 Click Preview first to see how many workouts will be processed.
               </p>
             )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t" />
+
+          {/* Daily Routines Backfill */}
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                Daily Routines Backfill
+              </label>
+              <p className="text-muted-foreground text-xs">
+                Mark all morning and night stretch routines as complete for January 2026.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRoutineBackfill}
+              disabled={routineBackfillLoading}
+            >
+              {routineBackfillLoading ? (
+                <Loader2 className="mr-2 size-3 animate-spin" />
+              ) : (
+                <Sunrise className="mr-2 size-3" />
+              )}
+              Complete January Routines
+            </Button>
           </div>
         </CardContent>
       </Card>

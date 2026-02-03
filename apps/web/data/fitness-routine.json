@@ -151,6 +151,40 @@
               "friday-circuit-d",
               "fri-mobility-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:01.569Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:02.321Z"
+          }
+        },
+        "thursday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:41:59.984Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:00.817Z"
+          }
+        },
+        "saturday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:03.069Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:03.833Z"
           }
         }
       }
@@ -179,6 +213,16 @@
               "monday-mobility-2",
               "monday-flush"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:06.062Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:07.248Z"
           }
         },
         "wednesday": {
@@ -191,6 +235,16 @@
               "wed-phase2",
               "wed-prehab-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:09.572Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:10.304Z"
           }
         },
         "friday": {
@@ -200,6 +254,16 @@
             "exercisesCompleted": [
               "friday-circuit-d"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:12.486Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:13.218Z"
           }
         },
         "saturday": {
@@ -213,6 +277,52 @@
               "sat-cooldown",
               "sat-finisher"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:13.954Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:14.670Z"
+          }
+        },
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:04.592Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:05.362Z"
+          }
+        },
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:08.065Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:08.861Z"
+          }
+        },
+        "thursday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:11.026Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:11.767Z"
           }
         }
       }
@@ -228,6 +338,16 @@
             "exercisesCompleted": [
               "monday-flush"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:16.890Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:17.641Z"
           }
         },
         "tuesday": {
@@ -244,6 +364,16 @@
               "tuesday-d",
               "tue-mobility-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:18.339Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:19.030Z"
           }
         },
         "wednesday": {
@@ -256,6 +386,16 @@
               "wed-phase2",
               "wed-prehab-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:19.789Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:20.633Z"
           }
         },
         "friday": {
@@ -272,6 +412,52 @@
               "friday-circuit-d",
               "fri-mobility-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:22.819Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:23.564Z"
+          }
+        },
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:15.381Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:16.139Z"
+          }
+        },
+        "thursday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:21.344Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:22.125Z"
+          }
+        },
+        "saturday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:24.301Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:25.034Z"
           }
         }
       }
@@ -283,11 +469,13 @@
         "monday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
-            "completed": false
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:27.274Z"
           },
           "nightRoutine": {
             "routineId": "release-the-brakes",
-            "completed": false
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:28.064Z"
           }
         },
         "tuesday": {
@@ -304,9 +492,30 @@
               "tuesday-d",
               "tue-mobility-1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:28.822Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:29.467Z"
           }
         },
-        "wednesday": {},
+        "wednesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:30.137Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:30.830Z"
+          }
+        },
         "thursday": {
           "workout": {
             "workoutId": "thursday-endurance",
@@ -314,9 +523,30 @@
             "exercisesCompleted": [
               "thu-run"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:31.492Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:32.170Z"
           }
         },
-        "friday": {},
+        "friday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:32.840Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:33.489Z"
+          }
+        },
         "saturday": {
           "workout": {
             "workoutId": "saturday-hiit-sprints",
@@ -332,7 +562,12 @@
           "morningRoutine": {
             "routineId": "oil-the-hinge",
             "completed": true,
-            "completedAt": "2026-01-24T23:28:40.726Z"
+            "completedAt": "2026-02-03T04:42:34.131Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:34.812Z"
           }
         },
         "sunday": {
@@ -343,6 +578,16 @@
             "exercisesCompleted": [
               "sun-walk"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:25.797Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:26.549Z"
           }
         }
       }
@@ -354,7 +599,8 @@
         "monday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
-            "completed": false
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:37.179Z"
           },
           "workout": {
             "workoutId": "monday-density-strength",
@@ -368,9 +614,25 @@
               "monday-d",
               "monday-flush"
             ]
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:37.841Z"
           }
         },
-        "tuesday": {},
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:38.508Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:39.158Z"
+          }
+        },
         "wednesday": {
           "workout": {
             "workoutId": "wednesday-fat-incinerator",
@@ -378,6 +640,16 @@
             "exercisesCompleted": [
               "wed-phase1"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:39.999Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:40.838Z"
           }
         },
         "thursday": {
@@ -393,7 +665,12 @@
           "morningRoutine": {
             "routineId": "oil-the-hinge",
             "completed": true,
-            "completedAt": "2026-01-29T21:56:49.277Z"
+            "completedAt": "2026-02-03T04:42:41.520Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:42.318Z"
           }
         },
         "friday": {
@@ -406,6 +683,16 @@
               "friday-circuit-c",
               "friday-circuit-d"
             ]
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:43.034Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:43.705Z"
           }
         },
         "saturday": {
@@ -428,7 +715,18 @@
             "completedAt": "2026-02-01T03:35:27.543Z"
           }
         },
-        "sunday": {}
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:35.655Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:42:36.368Z"
+          }
+        }
       }
     },
     {
@@ -749,9 +1047,21 @@
               "tue-mobility-1"
             ]
           }
+        },
+        "wednesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-03T04:41:58.377Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-03T04:41:59.200Z"
+          }
         }
       }
     }
   ],
-  "updatedAt": "2026-02-03T04:17:54.147Z"
+  "updatedAt": "2026-02-03T04:48:24.228Z"
 }
