@@ -67,10 +67,16 @@ const allNavItems: NavItem[] = [
 export function TopNavigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isLocalAvailable, isInitialized } = useConnectivity()
   const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
+
+  // Prevent hydration mismatch by only showing dynamic content after mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -146,7 +152,7 @@ export function TopNavigation() {
           </Link>
 
           {/* Local Mode Indicator - shows when in production but connected to local */}
-          {isInitialized && (
+          {mounted && isInitialized && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
