@@ -1,0 +1,915 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AAA00001 /* PeteTrainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001 /* PeteTrainApp.swift */; };
+		AAA00002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00002 /* ContentView.swift */; };
+		AAA00003 /* DayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00003 /* DayView.swift */; };
+		AAA00004 /* SectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00004 /* SectionDetailView.swift */; };
+		AAA00005 /* ExerciseRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005 /* ExerciseRow.swift */; };
+		AAA00006 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00006 /* HistoryView.swift */; };
+		AAA00007 /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007 /* Day.swift */; };
+		AAA00009 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00009 /* Exercise.swift */; };
+		AAA00010 /* WorkoutRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00010 /* WorkoutRecord.swift */; };
+		AAA00011 /* WorkoutData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011 /* WorkoutData.swift */; };
+		AAA00012 /* CycleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012 /* CycleManager.swift */; };
+		AAA00013 /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013 /* WorkoutViewModel.swift */; };
+		AAA00014 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014 /* HistoryViewModel.swift */; };
+		AAA00015 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00015 /* Extensions.swift */; };
+		AAA00016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBB00016 /* Assets.xcassets */; };
+		AAA00017 /* DayPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017 /* DayPickerView.swift */; };
+		AAA00018 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00018 /* SettingsView.swift */; };
+		AAA00020 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00020 /* HealthKitManager.swift */; };
+		AAA00022 /* StepCountCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00022 /* StepCountCard.swift */; };
+		AAA00023 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00023 /* WorkoutCompleteView.swift */; };
+		AAA00024 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00024 /* HealthKit.framework */; };
+		AAA00025 /* TrainingCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00025 /* TrainingCycle.swift */; };
+		AAA00026 /* ExerciseLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00026 /* ExerciseLog.swift */; };
+		AAA00027 /* PRManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00027 /* PRManager.swift */; };
+		AAA00028 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00028 /* DataExporter.swift */; };
+		AAA00030 /* WeightInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00030 /* WeightInputSheet.swift */; };
+		AAA00031 /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00031 /* ExerciseHistoryView.swift */; };
+		AAA00032 /* DataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00032 /* DataExportView.swift */; };
+		AAA00034 /* WorkoutFlowComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00034 /* WorkoutFlowComponents.swift */; };
+		AAA00036 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00036 /* LocationManager.swift */; };
+		AAA00037 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00037 /* CoreLocation.framework */; };
+		AAA00038 /* ProgressAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00038 /* ProgressAnalytics.swift */; };
+		AAA00039 /* WeeklyVolumeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00039 /* WeeklyVolumeView.swift */; };
+		AAA00040 /* BodyWeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00040 /* BodyWeight.swift */; };
+		AAA00041 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00041 /* BodyWeightView.swift */; };
+		AAA00042 /* WeeklySummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00042 /* WeeklySummaryCard.swift */; };
+		AAA00043 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00043 /* NotificationManager.swift */; };
+		AAA00044 /* FatigueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00044 /* FatigueManager.swift */; };
+		AAA00045 /* FatigueIndicatorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00045 /* FatigueIndicatorCard.swift */; };
+		AAA00046 /* MonthlyCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00046 /* MonthlyCalendarView.swift */; };
+		AAA00051 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00051 /* KeychainHelper.swift */; };
+		AAA00052 /* PetehomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00052 /* PetehomeModels.swift */; };
+		AAA00053 /* PetehomeAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00053 /* PetehomeAPI.swift */; };
+		AAA00054 /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00054 /* SyncManager.swift */; };
+		AAA00055 /* UnifiedExerciseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00055 /* UnifiedExerciseListView.swift */; };
+		AAA00056 /* SettingsHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00056 /* SettingsHistoryView.swift */; };
+		CBB3A45F2F0C2DCE00D10471 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
+		CBB3A4602F0C2DCE00D10471 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */; };
+		CBB3A46D2F0C2DD100D10471 /* PeteTrainWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CBCC38F22F2D7D720013DFC7 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F12F2D7D720013DFC7 /* WebKit.framework */; };
+		CBCC38F42F2D7D790013DFC7 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */; };
+		CBCC38F62F2D7D7E0013DFC7 /* HealthKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */; };
+		CBEB93D52EEB33AC008E365D /* WorkoutSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CBB3A46B2F0C2DD100D10471 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = JJJ00001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CBB3A45D2F0C2DCE00D10471;
+			remoteInfo = PeteTrainWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CBB3A3D72F0C2CCE00D10471 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CBB3A46D2F0C2DD100D10471 /* PeteTrainWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BBB00001 /* PeteTrainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeteTrainApp.swift; sourceTree = "<group>"; };
+		BBB00002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BBB00003 /* DayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayView.swift; sourceTree = "<group>"; };
+		BBB00004 /* SectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionDetailView.swift; sourceTree = "<group>"; };
+		BBB00005 /* ExerciseRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseRow.swift; sourceTree = "<group>"; };
+		BBB00006 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		BBB00007 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Day.swift; sourceTree = "<group>"; };
+		BBB00009 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		BBB00010 /* WorkoutRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRecord.swift; sourceTree = "<group>"; };
+		BBB00011 /* WorkoutData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutData.swift; sourceTree = "<group>"; };
+		BBB00012 /* CycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleManager.swift; sourceTree = "<group>"; };
+		BBB00013 /* WorkoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
+		BBB00014 /* HistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModel.swift; sourceTree = "<group>"; };
+		BBB00015 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		BBB00016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BBB00017 /* DayPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPickerView.swift; sourceTree = "<group>"; };
+		BBB00018 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BBB00019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BBB00020 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		BBB00022 /* StepCountCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCountCard.swift; sourceTree = "<group>"; };
+		BBB00023 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
+		BBB00024 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		BBB00025 /* TrainingCycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingCycle.swift; sourceTree = "<group>"; };
+		BBB00026 /* ExerciseLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLog.swift; sourceTree = "<group>"; };
+		BBB00027 /* PRManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRManager.swift; sourceTree = "<group>"; };
+		BBB00028 /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExporter.swift; sourceTree = "<group>"; };
+		BBB00030 /* WeightInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInputSheet.swift; sourceTree = "<group>"; };
+		BBB00031 /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
+		BBB00032 /* DataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportView.swift; sourceTree = "<group>"; };
+		BBB00034 /* WorkoutFlowComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFlowComponents.swift; sourceTree = "<group>"; };
+		BBB00036 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		BBB00037 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		BBB00038 /* ProgressAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressAnalytics.swift; sourceTree = "<group>"; };
+		BBB00039 /* WeeklyVolumeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyVolumeView.swift; sourceTree = "<group>"; };
+		BBB00040 /* BodyWeight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeight.swift; sourceTree = "<group>"; };
+		BBB00041 /* BodyWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightView.swift; sourceTree = "<group>"; };
+		BBB00042 /* WeeklySummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklySummaryCard.swift; sourceTree = "<group>"; };
+		BBB00043 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		BBB00044 /* FatigueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueManager.swift; sourceTree = "<group>"; };
+		BBB00045 /* FatigueIndicatorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueIndicatorCard.swift; sourceTree = "<group>"; };
+		BBB00046 /* MonthlyCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyCalendarView.swift; sourceTree = "<group>"; };
+		BBB00051 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		BBB00052 /* PetehomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetehomeModels.swift; sourceTree = "<group>"; };
+		BBB00053 /* PetehomeAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetehomeAPI.swift; sourceTree = "<group>"; };
+		BBB00054 /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
+		BBB00055 /* UnifiedExerciseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedExerciseListView.swift; sourceTree = "<group>"; };
+		BBB00056 /* SettingsHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHistoryView.swift; sourceTree = "<group>"; };
+		CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PeteTrainWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBB3A4772F0C2EA400D10471 /* PeteTrainWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PeteTrainWidgetsExtension.entitlements; sourceTree = "<group>"; };
+		CBCC38CB2F2D69350013DFC7 /*  .app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = " .app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBCC38F12F2D7D720013DFC7 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
+		CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKit.framework; sourceTree = DEVELOPER_DIR; };
+		CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKitUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKitUI.framework; sourceTree = DEVELOPER_DIR; };
+		CBEB93D32EEB1B87008E365D /* PeteTrain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PeteTrain.entitlements; sourceTree = "<group>"; };
+		CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSection.swift; sourceTree = "<group>"; };
+		CCC00001 /* PeteTrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeteTrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CBB3A46E2F0C2DD100D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CBB3A45D2F0C2DCE00D10471 /* PeteTrainWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CBB3A3C82F0C2CCB00D10471 /* petetrain */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = petetrain; sourceTree = "<group>"; };
+		CBB3A4442F0C2D2800D10471 /* PeteTrainWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PeteTrainWidgets; sourceTree = "<group>"; };
+		CBB3A4612F0C2DCE00D10471 /* PeteTrainWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBB3A46E2F0C2DD100D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PeteTrainWidgets; sourceTree = "<group>"; };
+		CBCC38CC2F2D69350013DFC7 /* PeteTrainiOS */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PeteTrainiOS; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CBB3A45B2F0C2DCE00D10471 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBB3A4602F0C2DCE00D10471 /* SwiftUI.framework in Frameworks */,
+				CBB3A45F2F0C2DCE00D10471 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBCC38C82F2D69350013DFC7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBCC38F22F2D7D720013DFC7 /* WebKit.framework in Frameworks */,
+				CBCC38F42F2D7D790013DFC7 /* HealthKit.framework in Frameworks */,
+				CBCC38F62F2D7D7E0013DFC7 /* HealthKitUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DDD00001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA00024 /* HealthKit.framework in Frameworks */,
+				AAA00037 /* CoreLocation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CBB3A3C32F0C2CCB00D10471 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */,
+				CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */,
+				CBCC38F12F2D7D720013DFC7 /* WebKit.framework */,
+				CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */,
+				CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CBEB93D22EEB19BC008E365D /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00024 /* HealthKit.framework */,
+				BBB00037 /* CoreLocation.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		EEE00001 = {
+			isa = PBXGroup;
+			children = (
+				CBB3A4772F0C2EA400D10471 /* PeteTrainWidgetsExtension.entitlements */,
+				EEE00002 /* PeteTrain */,
+				CBB3A3C82F0C2CCB00D10471 /* petetrain */,
+				CBB3A4442F0C2D2800D10471 /* PeteTrainWidgets */,
+				CBB3A4612F0C2DCE00D10471 /* PeteTrainWidgets */,
+				CBCC38CC2F2D69350013DFC7 /* PeteTrainiOS */,
+				CBB3A3C32F0C2CCB00D10471 /* Frameworks */,
+				EEE00003 /* Products */,
+				CBEB93D22EEB19BC008E365D /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		EEE00002 /* PeteTrain */ = {
+			isa = PBXGroup;
+			children = (
+				CBEB93D32EEB1B87008E365D /* PeteTrain.entitlements */,
+				EEE00004 /* App */,
+				EEE00005 /* Models */,
+				EEE00006 /* Views */,
+				EEE00007 /* ViewModels */,
+				EEE00008 /* Data */,
+				EEE00009 /* Utilities */,
+				BBB00016 /* Assets.xcassets */,
+				BBB00019 /* Info.plist */,
+			);
+			path = PeteTrain;
+			sourceTree = "<group>";
+		};
+		EEE00003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CCC00001 /* PeteTrain.app */,
+				CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */,
+				CBCC38CB2F2D69350013DFC7 /*  .app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EEE00004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00001 /* PeteTrainApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EEE00005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00007 /* Day.swift */,
+				BBB00009 /* Exercise.swift */,
+				CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */,
+				BBB00010 /* WorkoutRecord.swift */,
+				BBB00025 /* TrainingCycle.swift */,
+				BBB00026 /* ExerciseLog.swift */,
+				BBB00040 /* BodyWeight.swift */,
+				BBB00052 /* PetehomeModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		EEE00006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00002 /* ContentView.swift */,
+				BBB00003 /* DayView.swift */,
+				BBB00004 /* SectionDetailView.swift */,
+				BBB00005 /* ExerciseRow.swift */,
+				BBB00006 /* HistoryView.swift */,
+				BBB00017 /* DayPickerView.swift */,
+				BBB00018 /* SettingsView.swift */,
+				BBB00022 /* StepCountCard.swift */,
+				BBB00023 /* WorkoutCompleteView.swift */,
+				BBB00055 /* UnifiedExerciseListView.swift */,
+				BBB00056 /* SettingsHistoryView.swift */,
+				BBB00030 /* WeightInputSheet.swift */,
+				BBB00031 /* ExerciseHistoryView.swift */,
+				BBB00032 /* DataExportView.swift */,
+				BBB00034 /* WorkoutFlowComponents.swift */,
+				BBB00039 /* WeeklyVolumeView.swift */,
+				BBB00041 /* BodyWeightView.swift */,
+				BBB00042 /* WeeklySummaryCard.swift */,
+				BBB00045 /* FatigueIndicatorCard.swift */,
+				BBB00046 /* MonthlyCalendarView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		EEE00007 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00013 /* WorkoutViewModel.swift */,
+				BBB00014 /* HistoryViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		EEE00008 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00011 /* WorkoutData.swift */,
+				BBB00012 /* CycleManager.swift */,
+				BBB00020 /* HealthKitManager.swift */,
+				BBB00027 /* PRManager.swift */,
+				BBB00028 /* DataExporter.swift */,
+				BBB00036 /* LocationManager.swift */,
+				BBB00038 /* ProgressAnalytics.swift */,
+				BBB00043 /* NotificationManager.swift */,
+				BBB00044 /* FatigueManager.swift */,
+				BBB00051 /* KeychainHelper.swift */,
+				BBB00053 /* PetehomeAPI.swift */,
+				BBB00054 /* SyncManager.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		EEE00009 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00015 /* Extensions.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CBB3A45D2F0C2DCE00D10471 /* PeteTrainWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBB3A46F2F0C2DD100D10471 /* Build configuration list for PBXNativeTarget "PeteTrainWidgetsExtension" */;
+			buildPhases = (
+				CBB3A45A2F0C2DCE00D10471 /* Sources */,
+				CBB3A45B2F0C2DCE00D10471 /* Frameworks */,
+				CBB3A45C2F0C2DCE00D10471 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CBB3A4612F0C2DCE00D10471 /* PeteTrainWidgets */,
+			);
+			name = PeteTrainWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = PeteTrainWidgetsExtension;
+			productReference = CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CBCC38CA2F2D69350013DFC7 /*   */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBCC38D72F2D693A0013DFC7 /* Build configuration list for PBXNativeTarget " " */;
+			buildPhases = (
+				CBCC38C72F2D69350013DFC7 /* Sources */,
+				CBCC38C82F2D69350013DFC7 /* Frameworks */,
+				CBCC38C92F2D69350013DFC7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CBCC38CC2F2D69350013DFC7 /* PeteTrainiOS */,
+			);
+			name = " ";
+			packageProductDependencies = (
+			);
+			productName = PeteTrainiOS;
+			productReference = CBCC38CB2F2D69350013DFC7 /*  .app */;
+			productType = "com.apple.product-type.application";
+		};
+		FFF00001 /* PeteTrain */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = GGG00001 /* Build configuration list for PBXNativeTarget "PeteTrain" */;
+			buildPhases = (
+				HHH00001 /* Sources */,
+				DDD00001 /* Frameworks */,
+				III00001 /* Resources */,
+				CBB3A3D72F0C2CCE00D10471 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CBB3A46C2F0C2DD100D10471 /* PBXTargetDependency */,
+			);
+			name = PeteTrain;
+			productName = PeteTrain;
+			productReference = CCC00001 /* PeteTrain.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		JJJ00001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2610;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					CBB3A45D2F0C2DCE00D10471 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					CBCC38CA2F2D69350013DFC7 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					FFF00001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = KKK00001 /* Build configuration list for PBXProject "PeteTrain" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = EEE00001;
+			productRefGroup = EEE00003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FFF00001 /* PeteTrain */,
+				CBB3A45D2F0C2DCE00D10471 /* PeteTrainWidgetsExtension */,
+				CBCC38CA2F2D69350013DFC7 /*   */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CBB3A45C2F0C2DCE00D10471 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBCC38C92F2D69350013DFC7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		III00001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA00016 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CBB3A45A2F0C2DCE00D10471 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBCC38C72F2D69350013DFC7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		HHH00001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA00001 /* PeteTrainApp.swift in Sources */,
+				AAA00002 /* ContentView.swift in Sources */,
+				AAA00003 /* DayView.swift in Sources */,
+				AAA00004 /* SectionDetailView.swift in Sources */,
+				AAA00005 /* ExerciseRow.swift in Sources */,
+				AAA00006 /* HistoryView.swift in Sources */,
+				AAA00007 /* Day.swift in Sources */,
+				AAA00009 /* Exercise.swift in Sources */,
+				CBEB93D52EEB33AC008E365D /* WorkoutSection.swift in Sources */,
+				AAA00010 /* WorkoutRecord.swift in Sources */,
+				AAA00011 /* WorkoutData.swift in Sources */,
+				AAA00012 /* CycleManager.swift in Sources */,
+				AAA00013 /* WorkoutViewModel.swift in Sources */,
+				AAA00014 /* HistoryViewModel.swift in Sources */,
+				AAA00015 /* Extensions.swift in Sources */,
+				AAA00017 /* DayPickerView.swift in Sources */,
+				AAA00018 /* SettingsView.swift in Sources */,
+				AAA00020 /* HealthKitManager.swift in Sources */,
+				AAA00022 /* StepCountCard.swift in Sources */,
+				AAA00023 /* WorkoutCompleteView.swift in Sources */,
+				AAA00025 /* TrainingCycle.swift in Sources */,
+				AAA00026 /* ExerciseLog.swift in Sources */,
+				AAA00027 /* PRManager.swift in Sources */,
+				AAA00028 /* DataExporter.swift in Sources */,
+				AAA00055 /* UnifiedExerciseListView.swift in Sources */,
+				AAA00056 /* SettingsHistoryView.swift in Sources */,
+				AAA00030 /* WeightInputSheet.swift in Sources */,
+				AAA00031 /* ExerciseHistoryView.swift in Sources */,
+				AAA00032 /* DataExportView.swift in Sources */,
+				AAA00034 /* WorkoutFlowComponents.swift in Sources */,
+				AAA00036 /* LocationManager.swift in Sources */,
+				AAA00038 /* ProgressAnalytics.swift in Sources */,
+				AAA00039 /* WeeklyVolumeView.swift in Sources */,
+				AAA00040 /* BodyWeight.swift in Sources */,
+				AAA00041 /* BodyWeightView.swift in Sources */,
+				AAA00042 /* WeeklySummaryCard.swift in Sources */,
+				AAA00043 /* NotificationManager.swift in Sources */,
+				AAA00044 /* FatigueManager.swift in Sources */,
+				AAA00045 /* FatigueIndicatorCard.swift in Sources */,
+				AAA00046 /* MonthlyCalendarView.swift in Sources */,
+				AAA00051 /* KeychainHelper.swift in Sources */,
+				AAA00052 /* PetehomeModels.swift in Sources */,
+				AAA00053 /* PetehomeAPI.swift in Sources */,
+				AAA00054 /* SyncManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CBB3A46C2F0C2DD100D10471 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CBB3A45D2F0C2DCE00D10471 /* PeteTrainWidgetsExtension */;
+			targetProxy = CBB3A46B2F0C2DD100D10471 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CBB3A4702F0C2DD100D10471 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PeteTrainWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrainWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PeteTrainWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.app.PeteTrainWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		CBB3A4712F0C2DD100D10471 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PeteTrainWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrainWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PeteTrainWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.app.PeteTrainWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
+		CBCC38D52F2D693A0013DFC7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PeteTrainiOS/PeteTrainiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = petehome;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "petehome training app for my own uses pete brousalis tracking healthkit";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.ios.PeteTrainiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CBCC38D62F2D693A0013DFC7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PeteTrainiOS/PeteTrainiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = petehome;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "petehome training app for my own uses pete brousalis tracking healthkit";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.ios.PeteTrainiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		LLL00001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		LLL00002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		MMM00001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PeteTrain/PeteTrain.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrain/Info.plist;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		MMM00002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PeteTrain/PeteTrain.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4K496YHEJE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrain/Info.plist;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petetrain.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CBB3A46F2F0C2DD100D10471 /* Build configuration list for PBXNativeTarget "PeteTrainWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBB3A4702F0C2DD100D10471 /* Debug */,
+				CBB3A4712F0C2DD100D10471 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CBCC38D72F2D693A0013DFC7 /* Build configuration list for PBXNativeTarget " " */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBCC38D52F2D693A0013DFC7 /* Debug */,
+				CBCC38D62F2D693A0013DFC7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		GGG00001 /* Build configuration list for PBXNativeTarget "PeteTrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				MMM00001 /* Debug */,
+				MMM00002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		KKK00001 /* Build configuration list for PBXProject "PeteTrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LLL00001 /* Debug */,
+				LLL00002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = JJJ00001 /* Project object */;
+}

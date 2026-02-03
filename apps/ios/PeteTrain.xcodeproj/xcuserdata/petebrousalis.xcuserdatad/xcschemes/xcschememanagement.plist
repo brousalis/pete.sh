@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>SchemeUserState</key>
+	<dict>
+		<key>PeteTrain.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
+		<key>PeteTrainWidgetsExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>PeteTrainiOS.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>CBB3A3C12F0C2CCB00D10471</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>CBB3A4402F0C2D2800D10471</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>CBCC38CA2F2D69350013DFC7</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>FFF00001</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+	</dict>
+</dict>
+</plist>
