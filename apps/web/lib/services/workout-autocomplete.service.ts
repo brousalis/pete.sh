@@ -64,12 +64,12 @@ const WORKOUT_TYPE_PATTERNS: Record<AppleWorkoutType, string[]> = {
  * Minimum duration (seconds) for a workout type to trigger autocomplete
  * Prevents short warm-up activities from completing main workout sections
  */
-const MIN_DURATION_FOR_SECTION: Record<string, number> = {
+const MIN_DURATION_FOR_SECTION = {
   exercises: 600,      // 10 minutes for main workout
   metabolicFlush: 900, // 15 minutes for cardio flush
   warmup: 180,         // 3 minutes for warmup
   mobility: 300,       // 5 minutes for mobility
-}
+} as const
 
 // ============================================
 // Service Class

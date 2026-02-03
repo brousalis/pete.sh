@@ -478,6 +478,25 @@ export interface SpotifySyncCursorInsert {
   updated_at?: string
 }
 
+// App Settings Types
+export interface AppSettingsRow {
+  id: string
+  rounded_layout: boolean
+  theme: 'light' | 'dark' | 'system'
+  brand_color: 'purple' | 'blue' | 'teal' | 'orange' | 'pink' | 'yellow'
+  created_at: string
+  updated_at: string
+}
+
+export interface AppSettingsInsert {
+  id?: string
+  rounded_layout?: boolean
+  theme?: 'light' | 'dark' | 'system'
+  brand_color?: 'purple' | 'blue' | 'teal' | 'orange' | 'pink' | 'yellow'
+  created_at?: string
+  updated_at?: string
+}
+
 // Apple Health Types
 export interface AppleHealthWorkoutRow {
   id: string
@@ -1156,6 +1175,12 @@ export interface Database {
         Row: SpotifySyncCursorRow
         Insert: SpotifySyncCursorInsert
         Update: Partial<SpotifySyncCursorInsert>
+      }
+      // App settings table
+      app_settings: {
+        Row: AppSettingsRow
+        Insert: AppSettingsInsert
+        Update: Partial<AppSettingsInsert>
       }
     }
     Views: {

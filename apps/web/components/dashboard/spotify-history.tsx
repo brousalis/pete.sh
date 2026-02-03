@@ -226,7 +226,7 @@ export function SpotifyHistory({
   }, [filteredHistory, visibleCount])
 
   // Handle artist filter click
-  const handleArtistClick = (artist: string, e: React.MouseEvent) => {
+  const handleArtistClick = (artist: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation()
     if (artistFilter === artist) {
       setArtistFilter(null)

@@ -89,8 +89,9 @@ class SettingsService {
         // Update existing row
         const { data, error } = await supabase
           .from('app_settings')
+          // @ts-expect-error - app_settings table types not fully generated
           .update(updates)
-          .eq('id', existing.id)
+          .eq('id', (existing as { id: string }).id)
           .select()
           .single()
 
@@ -104,6 +105,7 @@ class SettingsService {
         // Insert new row with defaults + updates
         const { data, error } = await supabase
           .from('app_settings')
+          // @ts-expect-error - app_settings table types not fully generated
           .insert({ ...DEFAULT_SETTINGS, ...updates })
           .select()
           .single()
