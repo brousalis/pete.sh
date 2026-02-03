@@ -1,42 +1,45 @@
 'use client'
 
+import type { AppleWorkout } from '@/components/dashboard/fitness-dashboard'
+import { HealthKitExerciseData } from '@/components/dashboard/healthkit-exercise-data'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { YouTubePlayer } from '@/components/ui/youtube-player'
 import type {
-  DayOfWeek,
-  Exercise,
-  Workout,
-  WorkoutCompletion,
+    DayOfWeek,
+    Exercise,
+    Workout,
+    WorkoutCompletion,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Dumbbell,
-  Footprints,
-  PersonStanding,
-  Play,
-  RotateCcw,
-  StretchVertical,
-  Zap,
+    AlertTriangle,
+    ChevronDown,
+    ChevronRight,
+    Dumbbell,
+    Footprints,
+    PersonStanding,
+    Play,
+    RotateCcw,
+    StretchVertical,
+    Watch,
+    Zap,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface WorkoutCenterProps {
   /** The workout data for today */
@@ -61,8 +64,64 @@ interface WorkoutCenterProps {
   onVideoToggle?: (exerciseId: string | null) => void
   /** Whether viewing in preview mode (another day) */
   isPreview?: boolean
+  /** Apple Watch workouts for today */
+  appleWorkouts?: AppleWorkout[]
   /** Custom class name */
   className?: string
+}
+
+// Exercise-to-workout type mapping
+const EXERCISE_WORKOUT_MAPPING: Record<string, string[]> = {
+  // Running exercises
+  'endurance run': ['running'],
+  'zone 2 run': ['running'],
+  run: ['running'],
+  jog: ['running'],
+  'tempo run': ['running'],
+  sprint: ['running', 'hiit'],
+  intervals: ['running', 'hiit'],
+  // Cycling/Bike exercises
+  bike: ['cycling'],
+  cycle: ['cycling'],
+  'recovery spin': ['cycling'],
+  'incline walk': ['walking'],
+  walk: ['walking'],
+  // Rowing
+  row: ['rowing'],
+  rowing: ['rowing'],
+  // Strength
+  strength: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
+  lift: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
+  // HIIT
+  hiit: ['hiit'],
+  circuit: ['hiit', 'functionalStrengthTraining'],
+  // Core
+  core: ['coreTraining'],
+}
+
+// Helper function to match exercise to HealthKit workout
+function matchExerciseToWorkout(
+  exerciseName: string,
+  workouts: AppleWorkout[]
+): AppleWorkout | null {
+  const lowerName = exerciseName.toLowerCase()
+
+  // Find matching workout types for this exercise
+  let matchingTypes: string[] = []
+  for (const [keyword, types] of Object.entries(EXERCISE_WORKOUT_MAPPING)) {
+    if (lowerName.includes(keyword)) {
+      matchingTypes = [...matchingTypes, ...types]
+    }
+  }
+
+  if (matchingTypes.length === 0) return null
+
+  // Find the best matching workout
+  const matchingWorkout = workouts.find(w =>
+    matchingTypes.includes(w.workout_type)
+  )
+
+  return matchingWorkout || null
 }
 
 interface SectionConfig {
@@ -97,6 +156,7 @@ export function WorkoutCenter({
   openVideoId,
   onVideoToggle,
   isPreview = false,
+  appleWorkouts = [],
   className,
 }: WorkoutCenterProps) {
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
@@ -107,6 +167,38 @@ export function WorkoutCenter({
   )
 
   const isWorkoutCompleted = completion?.completed || false
+
+  // Match exercises to Apple Watch workouts
+  const exerciseWorkoutMap = useMemo(() => {
+    const map = new Map<string, AppleWorkout>()
+    if (!workout || appleWorkouts.length === 0) return map
+
+    // Track which workouts have been matched to avoid duplicates
+    const usedWorkouts = new Set<string>()
+
+    // Collect all exercises
+    const allExercises: Exercise[] = [
+      ...(workout.warmup?.exercises || []),
+      ...workout.exercises,
+      ...(workout.finisher || []),
+      ...(workout.metabolicFlush?.exercises || []),
+      ...(workout.mobility?.exercises || []),
+    ]
+
+    // Match exercises to workouts (prioritize first match)
+    for (const exercise of allExercises) {
+      const matchedWorkout = matchExerciseToWorkout(
+        exercise.name,
+        appleWorkouts.filter(w => !usedWorkouts.has(w.id))
+      )
+      if (matchedWorkout) {
+        map.set(exercise.id, matchedWorkout)
+        usedWorkouts.add(matchedWorkout.id)
+      }
+    }
+
+    return map
+  }, [workout, appleWorkouts])
 
   // When workout is completed, expand all sections so user can see what they did
   useEffect(() => {
@@ -347,6 +439,8 @@ export function WorkoutCenter({
                 onVideoToggle={handleVideoToggle}
                 hasInjuryProtocol={hasInjuryProtocol}
                 isPreview={isPreview}
+                exerciseWorkoutMap={exerciseWorkoutMap}
+                isWorkoutCompleted={isWorkoutCompleted}
               />
             ))}
 
@@ -420,6 +514,13 @@ export function WorkoutCenter({
   )
 }
 
+// Workout types that should be shown at section level (not per-exercise)
+const SECTION_LEVEL_WORKOUT_TYPES = [
+  'functionalStrengthTraining',
+  'traditionalStrengthTraining',
+  'coreTraining',
+]
+
 // Section Component
 interface WorkoutSectionProps {
   section: SectionConfig
@@ -431,6 +532,8 @@ interface WorkoutSectionProps {
   onVideoToggle: (id: string) => void
   hasInjuryProtocol?: boolean
   isPreview?: boolean
+  exerciseWorkoutMap?: Map<string, AppleWorkout>
+  isWorkoutCompleted?: boolean
 }
 
 function WorkoutSection({
@@ -443,11 +546,41 @@ function WorkoutSection({
   onVideoToggle,
   hasInjuryProtocol,
   isPreview,
+  exerciseWorkoutMap,
+  isWorkoutCompleted,
 }: WorkoutSectionProps) {
   const Icon = section.icon
   const completedCount = section.exercises.filter(ex =>
     completedExercises.has(ex.id)
   ).length
+
+  // Collect all linked workouts for this section
+  const linkedWorkouts = useMemo(() => {
+    if (!exerciseWorkoutMap) return []
+    const workouts: AppleWorkout[] = []
+    const seenIds = new Set<string>()
+
+    section.exercises.forEach(ex => {
+      const workout = exerciseWorkoutMap.get(ex.id)
+      if (workout && !seenIds.has(workout.id)) {
+        workouts.push(workout)
+        seenIds.add(workout.id)
+      }
+    })
+    return workouts
+  }, [section.exercises, exerciseWorkoutMap])
+
+  // Separate section-level workouts (strength/core) from exercise-level workouts (cardio)
+  const sectionLevelWorkouts = linkedWorkouts.filter(w =>
+    SECTION_LEVEL_WORKOUT_TYPES.includes(w.workout_type)
+  )
+  const exerciseLevelWorkoutIds = new Set(
+    linkedWorkouts
+      .filter(w => !SECTION_LEVEL_WORKOUT_TYPES.includes(w.workout_type))
+      .map(w => w.id)
+  )
+
+  const hasLinkedWorkouts = linkedWorkouts.length > 0
 
   return (
     <div className={cn('overflow-hidden rounded-lg border', section.bgColor)}>
@@ -456,6 +589,14 @@ function WorkoutSection({
           <button className="hover:bg-muted/30 flex w-full items-center gap-2 p-2.5 text-left transition-colors">
             <Icon className={cn('size-4 shrink-0', section.iconColor)} />
             <span className="flex-1 text-sm font-medium">{section.title}</span>
+            {hasLinkedWorkouts && isWorkoutCompleted && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Watch className="size-3.5 text-green-500" />
+                </TooltipTrigger>
+                <TooltipContent>Apple Watch data linked</TooltipContent>
+              </Tooltip>
+            )}
             {section.duration && (
               <span className="text-muted-foreground text-[11px]">
                 {section.duration}m
@@ -474,22 +615,59 @@ function WorkoutSection({
 
         <CollapsibleContent>
           <div className="space-y-1 px-2 pb-2">
-            {section.exercises.map(exercise => (
-              <ExerciseRow
-                key={exercise.id}
-                exercise={exercise}
-                isCompleted={completedExercises.has(exercise.id)}
-                onToggle={() => onExerciseToggle(exercise.id)}
-                isVideoOpen={openVideoId === exercise.id}
-                onVideoToggle={() => onVideoToggle(exercise.id)}
-                useAlternative={
-                  hasInjuryProtocol &&
-                  exercise.isElbowSafe === false &&
-                  !!exercise.alternative
-                }
-                isPreview={isPreview}
-              />
-            ))}
+            {/* Section-level workouts (strength/core) shown at top */}
+            {sectionLevelWorkouts.length > 0 && isWorkoutCompleted && (
+              <div className="mb-2 space-y-2">
+                {sectionLevelWorkouts.map(workout => (
+                  <HealthKitExerciseData
+                    key={workout.id}
+                    workoutId={workout.id}
+                    workoutType={workout.workout_type}
+                    variant="detailed"
+                    expandable={true}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Exercise list */}
+            {section.exercises.map(exercise => {
+              const linkedWorkout = exerciseWorkoutMap?.get(exercise.id)
+              const isCompleted = completedExercises.has(exercise.id)
+              // Only show inline if it's an exercise-level workout (cardio)
+              const showInlineWorkout =
+                linkedWorkout && exerciseLevelWorkoutIds.has(linkedWorkout.id)
+
+              return (
+                <div key={exercise.id} className="space-y-1">
+                  <ExerciseRow
+                    exercise={exercise}
+                    isCompleted={isCompleted}
+                    onToggle={() => onExerciseToggle(exercise.id)}
+                    isVideoOpen={openVideoId === exercise.id}
+                    onVideoToggle={() => onVideoToggle(exercise.id)}
+                    useAlternative={
+                      hasInjuryProtocol &&
+                      exercise.isElbowSafe === false &&
+                      !!exercise.alternative
+                    }
+                    isPreview={isPreview}
+                    hasLinkedWorkout={!!linkedWorkout}
+                  />
+                  {/* Show linked HealthKit workout data for cardio exercises */}
+                  {showInlineWorkout && (isCompleted || isWorkoutCompleted) && (
+                    <div className="ml-6">
+                      <HealthKitExerciseData
+                        workoutId={linkedWorkout.id}
+                        workoutType={linkedWorkout.workout_type}
+                        variant="detailed"
+                        expandable={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -506,6 +684,7 @@ interface ExerciseRowProps {
   onVideoToggle: () => void
   useAlternative?: boolean
   isPreview?: boolean
+  hasLinkedWorkout?: boolean
 }
 
 function ExerciseRow({
@@ -516,6 +695,7 @@ function ExerciseRow({
   onVideoToggle,
   useAlternative,
   isPreview,
+  hasLinkedWorkout,
 }: ExerciseRowProps) {
   const display =
     useAlternative && exercise.alternative ? exercise.alternative : exercise
@@ -596,6 +776,22 @@ function ExerciseRow({
               >
                 Safe
               </Badge>
+            )}
+            {hasLinkedWorkout && isCompleted && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="h-4 gap-0.5 border-green-500/30 bg-green-500/10 py-0 text-[9px] text-green-600"
+                    >
+                      <Watch className="size-2.5" />
+                      Tracked
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>Apple Watch workout linked</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
 

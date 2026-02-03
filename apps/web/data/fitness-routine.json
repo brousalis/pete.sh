@@ -273,16 +273,22 @@
           },
           "workout": {
             "workoutId": "monday-density-strength",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-03T03:43:34.853Z",
             "exercisesCompleted": [
               "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
               "monday-a1",
               "monday-a2",
               "monday-b1",
               "monday-b2",
               "monday-c",
               "monday-d",
-              "monday-flush"
+              "monday-flush",
+              "monday-mobility-1",
+              "monday-mobility-2"
             ]
           }
         },
@@ -306,5 +312,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-03T03:36:03.822Z"
+  "updatedAt": "2026-02-03T04:01:04.931Z"
 }
