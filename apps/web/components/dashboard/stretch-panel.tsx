@@ -120,14 +120,18 @@ export function StretchPanel({
   if (isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col h-full min-h-0 overflow-hidden bg-green-500/5 border-green-500/20 py-0",
+        "flex flex-col h-full min-h-0 overflow-hidden py-0 ring-1 ring-green-500/50",
         className
       )}>
         <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
           {/* Header */}
-          <div className="flex items-center gap-2 p-3 border-b border-green-500/20 bg-green-500/5">
-            <div className={cn("rounded-md p-1.5", "bg-green-500/10")}>
-              <Icon className={cn("size-4", "text-green-500")} />
+          <div className={cn(
+            "flex items-center gap-2 p-3 border-b",
+            themeColors.accentBg,
+            themeColors.borderColor
+          )}>
+            <div className={cn("rounded-md p-1.5", themeColors.iconBg)}>
+              <Icon className={cn("size-4", themeColors.iconColor)} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">{routine.name}</div>
@@ -143,21 +147,21 @@ export function StretchPanel({
             <div className="p-2 space-y-1">
               {routine.exercises.map((exercise, idx) => {
                 const videoId = getVideoId(exercise.name)
-                
+
                 return (
                   <div
                     key={idx}
-                    className="rounded-md bg-green-500/5 border border-green-500/10 p-2"
+                    className="rounded-md bg-muted/30 border border-transparent p-2"
                   >
                     <div className="flex items-start gap-2">
                       <Check className="size-3.5 text-green-500 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-foreground/80">
                           {exercise.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <span className="text-[10px] text-muted-foreground/70">
+                        <span className="text-[10px] text-muted-foreground">
                           {exercise.duration}s
                         </span>
                         {videoId && (
@@ -167,7 +171,7 @@ export function StretchPanel({
                             className="h-5 w-5 p-0"
                             onClick={() => openVideoModal(videoId, exercise.name)}
                           >
-                            <Play className="size-3 text-muted-foreground/70" />
+                            <Play className="size-3 text-muted-foreground" />
                           </Button>
                         )}
                       </div>
@@ -179,7 +183,7 @@ export function StretchPanel({
           </div>
 
           {/* Footer with Undo - only show when not in preview mode */}
-          <div className="p-2 border-t border-green-500/20">
+          <div className={cn("p-2 border-t", themeColors.borderColor)}>
             {isPreview ? (
               <div className="text-center text-[11px] text-muted-foreground">
                 Completed
@@ -295,7 +299,7 @@ export function StretchPanel({
                   className={cn(
                     "rounded-md border transition-colors",
                     isExerciseCompleted
-                      ? "bg-green-500/5 border-green-500/20"
+                      ? "bg-muted/30 border-transparent"
                       : "bg-muted/30 border-transparent",
                     isTimerActive && "ring-1 ring-blue-500/50"
                   )}

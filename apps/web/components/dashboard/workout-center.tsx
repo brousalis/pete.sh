@@ -7,37 +7,37 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { YouTubePlayer } from '@/components/ui/youtube-player'
 import type {
-    DayOfWeek,
-    Exercise,
-    Workout,
-    WorkoutCompletion,
+  DayOfWeek,
+  Exercise,
+  Workout,
+  WorkoutCompletion,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-    AlertTriangle,
-    ChevronDown,
-    ChevronRight,
-    Dumbbell,
-    Footprints,
-    PersonStanding,
-    Play,
-    RotateCcw,
-    StretchVertical,
-    Watch,
-    Zap,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Dumbbell,
+  Footprints,
+  PersonStanding,
+  Play,
+  RotateCcw,
+  StretchVertical,
+  Watch,
+  Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -364,7 +364,7 @@ export function WorkoutCenter({
     <Card
       className={cn(
         'flex h-full min-h-0 flex-col overflow-hidden py-0',
-        isWorkoutCompleted && 'border-green-500/20 bg-green-500/5',
+        isWorkoutCompleted && 'ring-1 ring-green-500/50',
         isPreview && !isWorkoutCompleted && 'border-dashed border-blue-500/30',
         className
       )}
@@ -467,7 +467,7 @@ export function WorkoutCenter({
         <div
           className={cn(
             'border-t p-3',
-            isWorkoutCompleted ? 'bg-green-500/10' : 'bg-muted/20'
+            'bg-muted/20'
           )}
         >
           <div className="flex items-center gap-3">
@@ -727,7 +727,7 @@ function ExerciseRow({
       className={cn(
         'rounded-md border transition-colors',
         isCompleted
-          ? 'border-green-500/20 bg-green-500/5'
+          ? 'border-transparent bg-muted/30'
           : 'bg-background/50 border-transparent'
       )}
     >

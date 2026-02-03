@@ -152,14 +152,41 @@ class WorkoutAutocompleteService {
     const matches: ExerciseMatch[] = []
     const patterns = WORKOUT_TYPE_PATTERNS[workoutType] || []
 
-    // Strength workouts complete all main exercises
+    // Strength workouts complete ALL sections (warmup, exercises, mobility)
     if (patterns.includes('*')) {
       // Check duration threshold for main exercises
       if (duration >= MIN_DURATION_FOR_SECTION.exercises) {
+        // Add warmup exercises
+        if (workout.warmup?.exercises) {
+          for (const exercise of workout.warmup.exercises) {
+            if (exercise.id) {
+              matches.push({ exerciseId: exercise.id, section: 'warmup' })
+            }
+          }
+        }
+
         // Add all main exercises
         for (const exercise of workout.exercises) {
           if (exercise.id) {
             matches.push({ exerciseId: exercise.id, section: 'exercises' })
+          }
+        }
+
+        // Add finisher exercises
+        if (workout.finisher) {
+          for (const exercise of workout.finisher) {
+            if (exercise.id) {
+              matches.push({ exerciseId: exercise.id, section: 'exercises' })
+            }
+          }
+        }
+
+        // Add mobility exercises (cooldown)
+        if (workout.mobility?.exercises) {
+          for (const exercise of workout.mobility.exercises) {
+            if (exercise.id) {
+              matches.push({ exerciseId: exercise.id, section: 'mobility' })
+            }
           }
         }
       }
