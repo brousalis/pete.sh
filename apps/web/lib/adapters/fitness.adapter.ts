@@ -1,45 +1,39 @@
 /**
  * Fitness Adapter
  * Replaces JSON file storage with Supabase for fitness routines and progress
- * 
+ *
  * Fitness data is primarily stored in Supabase. The local JSON file
  * serves as a fallback/seed when Supabase has no data or is unavailable.
  */
 
-import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
 import { FitnessService } from '@/lib/services/fitness.service'
 import type {
-  WeeklyRoutine,
-  FitnessProgress,
-  ConsistencyStats,
-  DayOfWeek,
-  Workout,
+    FitnessRoutineInsert,
+    FitnessRoutineRow,
+    FitnessRoutineVersionInsert,
+    FitnessRoutineVersionRow,
+    FitnessWeekInsert,
+    FitnessWeekRow
+} from '@/lib/supabase/types'
+import type {
+    ConsistencyStats,
+    DayOfWeek,
+    FitnessProgress,
+    WeeklyRoutine,
+    Workout,
 } from '@/lib/types/fitness.types'
 import type {
-  RoutineVersion,
-  RoutineVersionSummary,
-  CreateVersionRequest,
-  UpdateVersionRequest,
-  VersionsListResponse,
+    CreateVersionRequest,
+    RoutineVersion,
+    RoutineVersionSummary,
+    UpdateVersionRequest,
+    VersionsListResponse,
 } from '@/lib/types/routine-editor.types'
-import type {
-  FitnessRoutineVersionRow,
-  FitnessRoutineVersionInsert,
-  WorkoutDefinitionRow,
-  WorkoutDefinitionInsert,
-} from '@/lib/supabase/types'
-import type {
-  FitnessRoutineRow,
-  FitnessRoutineInsert,
-  FitnessWeekRow,
-  FitnessWeekInsert,
-  FitnessProgressRow,
-  FitnessProgressInsert,
-} from '@/lib/supabase/types'
+import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
 
 /**
  * Fitness Adapter - manages fitness routines and progress
- * 
+ *
  * This adapter uses Supabase as the primary data store.
  * The JSON file is used as a fallback/seed when Supabase has no data.
  */
@@ -104,7 +98,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
-      
+
       // Get the routine
       const { data: routineData, error: routineError } = await clientAny
         .from('fitness_routines')
@@ -188,7 +182,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
-      
+
       const { error: routineError } = await clientAny
         .from('fitness_routines')
         .upsert(routineInsert, { onConflict: 'id' })
@@ -320,7 +314,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   ): Promise<void> {
     // Update via the service (which updates JSON)
     await this.fitnessService.markWorkoutComplete(day, weekNumber, exercisesCompleted)
-    
+
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
       const routine = await this.fitnessService.getRoutine()
@@ -328,6 +322,29 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         await this.saveRoutineToSupabase(routine)
       }
     }
+  }
+
+  /**
+   * Add exercises to the completed list without necessarily marking the workout complete
+   * Used by workout autocomplete to incrementally complete exercises
+   */
+  async addCompletedExercises(
+    day: DayOfWeek,
+    weekNumber: number,
+    exerciseIds: string[]
+  ): Promise<{ allComplete: boolean; exercisesCompleted: string[] }> {
+    // Update via the service (which updates JSON)
+    const result = await this.fitnessService.addCompletedExercises(day, weekNumber, exerciseIds)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+
+    return result
   }
 
   /**
@@ -340,7 +357,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   ): Promise<void> {
     // Update via the service (which updates JSON)
     await this.fitnessService.markRoutineComplete(routineType, day, weekNumber)
-    
+
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
       const routine = await this.fitnessService.getRoutine()
@@ -360,7 +377,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   ): Promise<void> {
     // Update via the service (which updates JSON)
     await this.fitnessService.markRoutineIncomplete(routineType, day, weekNumber)
-    
+
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
       const routine = await this.fitnessService.getRoutine()
@@ -376,12 +393,12 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   async updateRoutine(routine: WeeklyRoutine): Promise<WeeklyRoutine> {
     // Update JSON file
     const updated = await this.fitnessService.updateRoutine(routine)
-    
+
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
       await this.saveRoutineToSupabase(updated)
     }
-    
+
     return updated
   }
 
@@ -457,7 +474,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
             }))
 
             const activeVersion = versions.find(v => v.isActive)
-            
+
             // Only consider drafts newer than active version as "the draft"
             // (older drafts are orphaned and should be cleaned up)
             const activeVersionNum = activeVersion?.versionNumber ?? 0
@@ -485,10 +502,10 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           isDraft: false,
           createdAt: routine.updatedAt ?? new Date().toISOString(),
         }
-        return { 
-          versions: [virtualVersion], 
+        return {
+          versions: [virtualVersion],
           activeVersion: virtualVersion,
-          draftVersion: undefined 
+          draftVersion: undefined
         }
       }
     } catch (error) {
@@ -508,7 +525,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       try {
         const routine = await this.fitnessService.getRoutine()
         const workoutDefinitions = await this.fitnessService.getWorkoutDefinitions()
-        
+
         if (!routine) return null
 
         return {
@@ -572,7 +589,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // Create version from current JSON files if Supabase not available
       const routine = await this.fitnessService.getRoutine()
       const workoutDefinitions = await this.fitnessService.getWorkoutDefinitions()
-      
+
       if (!routine) return null
 
       // Return a mock version object
@@ -633,7 +650,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // Fall back to JSON files
           const routine = await this.fitnessService.getRoutine()
           const workoutDefinitions = await this.fitnessService.getWorkoutDefinitions()
-          
+
           if (!routine) return null
 
           baseData = {
@@ -688,7 +705,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)))
         return this.createVersion(request, retryCount + 1)
       }
-      
+
       this.logError('Error creating version', error)
       return null
     }
@@ -716,7 +733,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
             night: updates.dailyRoutines.night ?? routine.dailyRoutines.night,
           }
         }
-        
+
         await this.fitnessService.updateRoutine(routine)
 
         // Update workout definitions if provided
@@ -906,10 +923,10 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
 
       // Find active version
       const activeVersion = allVersions.find((v: { is_active: boolean }) => v.is_active)
-      
+
       // Find newest draft that's newer than active (or any draft if no active)
       const activeVersionNum = activeVersion?.version_number ?? 0
-      const newerDrafts = allVersions.filter((v: { is_draft: boolean; version_number: number }) => 
+      const newerDrafts = allVersions.filter((v: { is_draft: boolean; version_number: number }) =>
         v.is_draft && v.version_number > activeVersionNum
       )
       const newestDraft = newerDrafts[0] // Already sorted desc
@@ -926,7 +943,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
 
       // Delete everything else
       const toDelete = allVersions.filter((v: { id: string }) => !keepIds.has(v.id))
-      
+
       if (toDelete.length > 0) {
         const deleteIds = toDelete.map((v: { id: string }) => v.id)
         const { error: deleteError } = await clientAny

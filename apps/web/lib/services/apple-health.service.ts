@@ -4,26 +4,26 @@
  * Used by the PeteWatch app to sync workout data
  */
 
+import { workoutAutocompleteService } from '@/lib/services/workout-autocomplete.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
-  AppleHealthWorkout,
-  AppleHealthWorkoutPayload,
-  DailyHealthMetrics,
-  HeartRateSample,
-  CadenceSample,
-  PaceSample,
-  HeartRateZone,
-} from '@/lib/types/apple-health.types'
-import type {
-  AppleHealthWorkoutRow,
-  AppleHealthWorkoutInsert,
-  AppleHealthHrSampleInsert,
-  AppleHealthCadenceSampleInsert,
-  AppleHealthPaceSampleInsert,
-  AppleHealthRouteInsert,
-  AppleHealthDailyMetricsInsert,
-  AppleHealthDailyMetricsRow,
+    AppleHealthCadenceSampleInsert,
+    AppleHealthDailyMetricsInsert,
+    AppleHealthHrSampleInsert,
+    AppleHealthPaceSampleInsert,
+    AppleHealthRouteInsert,
+    AppleHealthWorkoutInsert
 } from '@/lib/supabase/types'
+import type {
+    AppleHealthWorkout,
+    AppleHealthWorkoutPayload,
+    CadenceSample,
+    DailyHealthMetrics,
+    HeartRateSample,
+    HeartRateZone,
+    PaceSample,
+} from '@/lib/types/apple-health.types'
+import type { DayOfWeek } from '@/lib/types/fitness.types'
 
 // ============================================
 // DATABASE TYPES (matching Supabase schema)
@@ -197,6 +197,30 @@ export class AppleHealthService {
     // Save route if available
     if (workout.route) {
       await this.saveRoute(workoutId, workout.route)
+    }
+
+    // Trigger workout autocomplete if linked to a day
+    if (linkedDay) {
+      try {
+        const autocompleteResult = await workoutAutocompleteService.triggerAutocomplete({
+          healthkitWorkoutId: workoutId,
+          workoutType: workout.workoutType,
+          linkedDay: linkedDay as DayOfWeek,
+          weekNumber,
+          year,
+          duration: workout.duration,
+        })
+
+        if (autocompleteResult.success && autocompleteResult.exercisesCompleted.length > 0) {
+          console.log(
+            `[AppleHealth] Auto-completed ${autocompleteResult.exercisesCompleted.length} exercises ` +
+            `in sections: ${autocompleteResult.sectionsCompleted.join(', ')}`
+          )
+        }
+      } catch (error) {
+        // Log but don't fail the workout save if autocomplete fails
+        console.error('[AppleHealth] Autocomplete failed (non-fatal):', error)
+      }
     }
 
     return { id: workoutId, success: true }

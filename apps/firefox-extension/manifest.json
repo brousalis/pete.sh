@@ -1,9 +1,0 @@
-{
-  "manifest_version": 2,
-  "name": "Pete Home New Tab",
-  "version": "1.0.0",
-  "description": "Opens pete.sh as the new tab page",
-  "chrome_url_overrides": {
-    "newtab": "newtab.html"
-  }
-}

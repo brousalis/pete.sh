@@ -4276,6 +4276,47 @@ class FitnessService {
         await this.updateRoutine(routine);
     }
     /**
+   * Add exercises to the completed list without necessarily marking the workout as complete.
+   * If all exercises are completed, marks the workout as complete.
+   * Used by workout autocomplete to add exercises incrementally.
+   */ async addCompletedExercises(day, weekNumber, exerciseIds) {
+        const routine = await this.getRoutine();
+        if (!routine) {
+            throw new Error('No routine found');
+        }
+        const week = await this.getOrCreateWeek(routine, weekNumber);
+        if (!week.days[day]) {
+            week.days[day] = {};
+        }
+        const workoutDef = await this.getWorkoutForDay(day, weekNumber);
+        if (!workoutDef) {
+            throw new Error(`No workout definition found for ${day}`);
+        }
+        // Get all exercise IDs from the workout definition
+        const allIds = this.getAllExerciseIdsFromWorkout(workoutDef);
+        // Get currently completed exercises (or empty array)
+        const currentlyCompleted = week.days[day]?.workout?.exercisesCompleted ?? [];
+        // Merge with new exercise IDs (deduped)
+        const updatedCompleted = Array.from(new Set([
+            ...currentlyCompleted,
+            ...exerciseIds
+        ]));
+        // Check if all exercises are now complete
+        const allComplete = allIds.every((id)=>updatedCompleted.includes(id));
+        // Update the workout completion state
+        week.days[day].workout = {
+            workoutId: workoutDef.id,
+            completed: allComplete,
+            completedAt: allComplete ? new Date().toISOString() : undefined,
+            exercisesCompleted: updatedCompleted
+        };
+        await this.updateRoutine(routine);
+        return {
+            allComplete,
+            exercisesCompleted: updatedCompleted
+        };
+    }
+    /**
    * Mark daily routine as complete
    */ async markRoutineComplete(routineType, day, weekNumber) {
         const routine = await this.getRoutine();
@@ -4723,6 +4764,21 @@ class FitnessAdapter extends __TURBOPACK__imported__module__$5b$project$5d2f$lib
                 await this.saveRoutineToSupabase(routine);
             }
         }
+    }
+    /**
+   * Add exercises to the completed list without necessarily marking the workout complete
+   * Used by workout autocomplete to incrementally complete exercises
+   */ async addCompletedExercises(day, weekNumber, exerciseIds) {
+        // Update via the service (which updates JSON)
+        const result = await this.fitnessService.addCompletedExercises(day, weekNumber, exerciseIds);
+        // Also update Supabase if available
+        if (this.isSupabaseAvailable()) {
+            const routine = await this.fitnessService.getRoutine();
+            if (routine) {
+                await this.saveRoutineToSupabase(routine);
+            }
+        }
+        return result;
     }
     /**
    * Mark a daily routine (morning/night) as complete

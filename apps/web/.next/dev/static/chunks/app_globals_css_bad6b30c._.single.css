@@ -1511,6 +1511,10 @@
     height: 60px;
   }
 
+  .h-\[120px\] {
+    height: 120px;
+  }
+
   .h-\[calc\(100\%\+24px\)\] {
     height: calc(100% + 24px);
   }
@@ -3385,6 +3389,16 @@
 
   .border-l-red-500 {
     border-left-color: var(--color-red-500);
+  }
+
+  .border-l-red-500\/30 {
+    border-left-color: #fb2c364d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-l-red-500\/30 {
+      border-left-color: color-mix(in oklab, var(--color-red-500) 30%, transparent);
+    }
   }
 
   .border-l-transparent {

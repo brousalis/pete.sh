@@ -3,18 +3,76 @@
 import { ColorThemePicker } from '@/components/color-theme'
 import { useSettings } from '@/components/settings-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { Layout, Loader2, Palette, Settings } from 'lucide-react'
+import { apiGet, apiPost } from '@/lib/api/client'
+import { Activity, Layout, Loader2, Palette, Settings, Watch } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+
+interface BackfillSummary {
+  totalWorkouts: number
+  processedWorkouts?: number
+  wouldProcess?: number
+  skippedWorkouts?: number
+  wouldSkip?: number
+  exercisesCompleted?: number
+  dryRun?: boolean
+  preview?: boolean
+}
 
 export function SettingsEditor() {
   const { settings, isLoading, error, updateSettings } = useSettings()
+  const [backfillLoading, setBackfillLoading] = useState(false)
+  const [backfillPreview, setBackfillPreview] = useState<BackfillSummary | null>(null)
+
+  // Preview backfill
+  const handlePreviewBackfill = async () => {
+    setBackfillLoading(true)
+    try {
+      const response = await apiGet<{ summary: BackfillSummary }>('/api/fitness/backfill')
+      if (response.success && response.data) {
+        setBackfillPreview(response.data.summary)
+      } else {
+        toast.error('Failed to preview backfill')
+      }
+    } catch (err) {
+      toast.error('Failed to preview backfill')
+    } finally {
+      setBackfillLoading(false)
+    }
+  }
+
+  // Execute backfill
+  const handleExecuteBackfill = async () => {
+    setBackfillLoading(true)
+    try {
+      const response = await apiPost<{ summary: BackfillSummary }>('/api/fitness/backfill', {
+        dryRun: false,
+      })
+      if (response.success && response.data) {
+        const summary = response.data.summary
+        toast.success(
+          `Backfill complete! Processed ${summary.processedWorkouts} workouts, ` +
+          `completed ${summary.exercisesCompleted} exercises`
+        )
+        setBackfillPreview(null)
+      } else {
+        toast.error('Failed to execute backfill')
+      }
+    } catch (err) {
+      toast.error('Failed to execute backfill')
+    } finally {
+      setBackfillLoading(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -113,8 +171,80 @@ export function SettingsEditor() {
         </CardContent>
       </Card>
 
-      {/* Future: Environment Config Section */}
-      {/* This section will be for user-provided API keys, etc. */}
+      {/* Fitness Data Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="text-muted-foreground size-4" />
+            <CardTitle className="text-base">Fitness Data</CardTitle>
+          </div>
+          <CardDescription>
+            Manage your fitness tracking data and Apple Watch integration
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* HealthKit Backfill */}
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                HealthKit Workout Backfill
+              </label>
+              <p className="text-muted-foreground text-xs">
+                Link historical Apple Watch workouts to your fitness routines.
+                This will auto-complete exercises based on your synced workout data.
+              </p>
+            </div>
+
+            {backfillPreview && (
+              <div className="bg-muted/50 rounded-lg border p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2">
+                  <Watch className="size-4 text-red-500" />
+                  <span className="font-medium">Preview Results</span>
+                </div>
+                <div className="text-muted-foreground space-y-1 text-xs">
+                  <p>Total workouts found: <span className="text-foreground font-medium">{backfillPreview.totalWorkouts}</span></p>
+                  <p>Would process: <span className="text-foreground font-medium">{backfillPreview.wouldProcess ?? backfillPreview.processedWorkouts ?? 0}</span></p>
+                  <p>Would skip (already linked): <span className="text-foreground font-medium">{backfillPreview.wouldSkip ?? backfillPreview.skippedWorkouts ?? 0}</span></p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewBackfill}
+                disabled={backfillLoading}
+              >
+                {backfillLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <Watch className="mr-2 size-3" />
+                )}
+                Preview
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleExecuteBackfill}
+                disabled={backfillLoading || (!backfillPreview)}
+              >
+                {backfillLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <Activity className="mr-2 size-3" />
+                )}
+                Run Backfill
+              </Button>
+            </div>
+            {!backfillPreview && (
+              <p className="text-muted-foreground text-xs">
+                Click Preview first to see how many workouts will be processed.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,29 +1,38 @@
 'use client'
 
+import {
+    HealthKitWorkoutBadge,
+    HealthKitWorkoutModal,
+} from '@/components/dashboard/healthkit-workout-modal'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { YouTubePlayer } from '@/components/ui/youtube-player'
 import { apiGet, apiPost } from '@/lib/api/client'
-import type { DayOfWeek, Exercise, Workout } from '@/lib/types/fitness.types'
+import type {
+    DayOfWeek,
+    Exercise,
+    LinkedHealthKitWorkoutSummary,
+    WorkoutWithLinkedHealthKit,
+} from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-  Clock,
-  PersonStanding,
-  RotateCcw,
-  StretchVertical,
-  Video,
-  VideoOff,
+    AlertTriangle,
+    CheckCircle2,
+    ChevronDown,
+    ChevronRight,
+    Circle,
+    Clock,
+    PersonStanding,
+    RotateCcw,
+    StretchVertical,
+    Video,
+    VideoOff,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -34,7 +43,7 @@ interface WorkoutDetailViewProps {
 }
 
 export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
-  const [workout, setWorkout] = useState<Workout | null>(null)
+  const [workout, setWorkout] = useState<WorkoutWithLinkedHealthKit | null>(null)
   const [loading, setLoading] = useState(true)
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
     new Set()
@@ -44,11 +53,14 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['exercises'])
   )
+  // HealthKit workout modal state
+  const [selectedHealthKitWorkout, setSelectedHealthKitWorkout] = useState<string | null>(null)
+  const [healthKitModalOpen, setHealthKitModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchWorkout = async () => {
       try {
-        const response = await apiGet<Workout>(`/api/fitness/workout/${day}`)
+        const response = await apiGet<WorkoutWithLinkedHealthKit>(`/api/fitness/workout/${day}`)
         if (response.success && response.data) {
           setWorkout(response.data)
         }
@@ -60,6 +72,17 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     }
     fetchWorkout()
   }, [day])
+
+  // Helper to get linked workouts for an exercise
+  const getLinkedWorkouts = (exerciseId: string): LinkedHealthKitWorkoutSummary[] => {
+    return workout?.linkedHealthKitWorkouts?.[exerciseId] || []
+  }
+
+  // Open the HealthKit workout modal
+  const openHealthKitModal = (workoutId: string) => {
+    setSelectedHealthKitWorkout(workoutId)
+    setHealthKitModalOpen(true)
+  }
 
   const toggleExercise = (exerciseId: string) => {
     setCompletedExercises(prev => {
@@ -186,12 +209,14 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
     isCompleted = false,
     onClick,
     className,
+    linkedWorkouts = [],
   }: {
     exercise: Exercise
     showCheckbox?: boolean
     isCompleted?: boolean
     onClick?: () => void
     className?: string
+    linkedWorkouts?: LinkedHealthKitWorkoutSummary[]
   }) => {
     const shouldUseAlt = exercise.isElbowSafe === false && exercise.alternative
     const display = shouldUseAlt ? exercise.alternative! : exercise
@@ -199,6 +224,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
       ? display.youtubeVideoId
       : exercise.youtubeVideoId
     const isVideoOpen = openVideos.has(exercise.id)
+    const hasLinkedWorkouts = linkedWorkouts.length > 0
 
     return (
       <div
@@ -206,6 +232,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           'flex items-start gap-2 rounded-md p-2 transition-colors',
           showCheckbox && 'hover:bg-muted/50 cursor-pointer',
           isCompleted && 'bg-green-500/10',
+          hasLinkedWorkouts && !isCompleted && 'bg-red-500/5 border-l-2 border-l-red-500/30',
           className
         )}
         onClick={onClick}
@@ -247,6 +274,16 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                 {exercise.duration}s
               </Badge>
             )}
+            {/* HealthKit linked workout badges */}
+            {linkedWorkouts.map(hw => (
+              <HealthKitWorkoutBadge
+                key={hw.id}
+                workoutId={hw.id}
+                workoutType={hw.workoutType}
+                duration={hw.duration}
+                onClick={() => openHealthKitModal(hw.id)}
+              />
+            ))}
           </div>
           {display.form && (
             <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
@@ -387,6 +424,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                       key={ex.id}
                       exercise={ex}
                       className="bg-muted/30"
+                      linkedWorkouts={getLinkedWorkouts(ex.id)}
                     />
                   ))}
                 </div>
@@ -421,6 +459,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                     showCheckbox
                     isCompleted={completedExercises.has(ex.id)}
                     onClick={() => toggleExercise(ex.id)}
+                    linkedWorkouts={getLinkedWorkouts(ex.id)}
                   />
                 ))}
               </div>
@@ -453,6 +492,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                       key={ex.id}
                       exercise={ex}
                       className="bg-red-500/5"
+                      linkedWorkouts={getLinkedWorkouts(ex.id)}
                     />
                   ))}
                 </div>
@@ -487,6 +527,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                         key={ex.id}
                         exercise={ex}
                         className="bg-orange-500/5"
+                        linkedWorkouts={getLinkedWorkouts(ex.id)}
                       />
                     ))}
                   </div>
@@ -520,6 +561,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                       key={ex.id}
                       exercise={ex}
                       className="bg-purple-500/5"
+                      linkedWorkouts={getLinkedWorkouts(ex.id)}
                     />
                   ))}
                 </div>
@@ -547,6 +589,13 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* HealthKit Workout Detail Modal */}
+      <HealthKitWorkoutModal
+        workoutId={selectedHealthKitWorkout}
+        open={healthKitModalOpen}
+        onOpenChange={setHealthKitModalOpen}
+      />
     </div>
   )
 }

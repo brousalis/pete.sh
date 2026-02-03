@@ -1,26 +1,29 @@
 'use client'
 
 import { useConnectivity } from '@/components/connectivity-provider'
+import { useIOSSync } from '@/hooks/use-ios-sync'
 import { staggerItemVariants, transitions } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Bus,
-  Calendar,
-  ChefHat,
-  Coffee,
-  Command,
-  Dumbbell,
-  FileText,
-  Grid3x3,
-  Home,
-  Lightbulb,
-  Menu,
-  Music,
-  Settings,
-  Wifi,
-  WifiOff,
-  X,
+    Bus,
+    Calendar,
+    ChefHat,
+    Coffee,
+    Command,
+    Dumbbell,
+    FileText,
+    Grid3x3,
+    Home,
+    Lightbulb,
+    Loader2,
+    Menu,
+    Music,
+    RefreshCw,
+    Settings,
+    Wifi,
+    WifiOff,
+    X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -67,6 +70,7 @@ export function TopNavigation() {
   const menuRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isLocalAvailable, isInitialized } = useConnectivity()
+  const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -242,6 +246,27 @@ export function TopNavigation() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu> */}
+
+          {/* iOS Sync Button - only visible in iOS app */}
+          {isIOSApp && (
+            <button
+              onClick={openSyncSheet}
+              disabled={isSyncing}
+              className={cn(
+                'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                isSyncing && 'cursor-not-allowed opacity-50'
+              )}
+              title="Sync with HealthKit"
+              aria-label="Sync with HealthKit"
+            >
+              {isSyncing ? (
+                <Loader2 className="size-5 animate-spin" aria-hidden />
+              ) : (
+                <RefreshCw className="size-5" aria-hidden />
+              )}
+            </button>
+          )}
 
           {/* Settings Link */}
           <Link

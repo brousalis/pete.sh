@@ -207,3 +207,24 @@ export interface FitnessStats {
   favoriteWorkout?: string
   consistency: ConsistencyStats
 }
+
+// ============================================
+// HealthKit Integration Types
+// ============================================
+
+export interface LinkedHealthKitWorkoutSummary {
+  id: string
+  workoutType: string
+  duration: number // seconds
+  activeCalories: number
+  hrAverage?: number
+  distanceMiles?: number
+}
+
+export interface LinkedHealthKitWorkouts {
+  [exerciseId: string]: LinkedHealthKitWorkoutSummary[]
+}
+
+export interface WorkoutWithLinkedHealthKit extends Workout {
+  linkedHealthKitWorkouts?: LinkedHealthKitWorkouts
+}
