@@ -351,10 +351,14 @@ export class AppleHealthService {
 
   /**
    * Get recent workouts
+   * @param workoutType - Filter by workout type
+   * @param limit - Max number of workouts to return
+   * @param date - Filter to specific date (YYYY-MM-DD format)
    */
   async getRecentWorkouts(
     workoutType?: string,
-    limit: number = 10
+    limit: number = 10,
+    date?: string
   ): Promise<DbWorkout[]> {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return []
@@ -370,6 +374,14 @@ export class AppleHealthService {
 
     if (workoutType) {
       query = query.eq('workout_type', workoutType)
+    }
+
+    // Filter by specific date if provided
+    if (date) {
+      // Get start and end of the day in ISO format
+      const startOfDay = `${date}T00:00:00.000Z`
+      const endOfDay = `${date}T23:59:59.999Z`
+      query = query.gte('start_date', startOfDay).lte('start_date', endOfDay)
     }
 
     const { data, error } = await query

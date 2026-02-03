@@ -134,6 +134,149 @@
   },
   "weeks": [
     {
+      "weekNumber": 1,
+      "startDate": "2025-12-29T06:00:00.000Z",
+      "days": {
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "fri-warmup-1",
+              "fri-warmup-2",
+              "fri-warmup-3",
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "fri-mobility-1"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 2,
+      "startDate": "2026-01-05T06:00:00.000Z",
+      "days": {
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:41.313Z",
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-mobility-1",
+              "monday-mobility-2",
+              "monday-flush"
+            ]
+          }
+        },
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:43.129Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ]
+          }
+        },
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "friday-circuit-d"
+            ]
+          }
+        },
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:45.737Z",
+            "exercisesCompleted": [
+              "sat-warmup-1",
+              "sat-intervals",
+              "sat-cooldown",
+              "sat-finisher"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 3,
+      "startDate": "2026-01-12T06:00:00.000Z",
+      "days": {
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": false,
+            "exercisesCompleted": [
+              "monday-flush"
+            ]
+          }
+        },
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-mobility-1"
+            ]
+          }
+        },
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:49.667Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ]
+          }
+        },
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "fri-warmup-1",
+              "fri-warmup-2",
+              "fri-warmup-3",
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "fri-mobility-1"
+            ]
+          }
+        }
+      }
+    },
+    {
       "weekNumber": 4,
       "startDate": "2026-01-19T06:00:00.000Z",
       "days": {
@@ -147,9 +290,32 @@
             "completed": false
           }
         },
-        "tuesday": {},
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-mobility-1"
+            ]
+          }
+        },
         "wednesday": {},
-        "thursday": {},
+        "thursday": {
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": false,
+            "exercisesCompleted": [
+              "thu-run"
+            ]
+          }
+        },
         "friday": {},
         "saturday": {
           "workout": {
@@ -169,7 +335,16 @@
             "completedAt": "2026-01-24T23:28:40.726Z"
           }
         },
-        "sunday": {}
+        "sunday": {
+          "workout": {
+            "workoutId": "sunday-active-recovery",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:52.240Z",
+            "exercisesCompleted": [
+              "sun-walk"
+            ]
+          }
+        }
       }
     },
     {
@@ -310,7 +485,273 @@
           }
         }
       }
+    },
+    {
+      "weekNumber": 48,
+      "startDate": "2026-11-23T06:00:00.000Z",
+      "days": {
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-mobility-1"
+            ]
+          }
+        },
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:21.064Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ]
+          }
+        },
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "fri-warmup-1",
+              "fri-warmup-2",
+              "fri-warmup-3",
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "fri-mobility-1"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 49,
+      "startDate": "2026-11-30T06:00:00.000Z",
+      "days": {
+        "sunday": {
+          "workout": {
+            "workoutId": "sunday-active-recovery",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:22.477Z",
+            "exercisesCompleted": [
+              "sun-walk"
+            ]
+          }
+        },
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": false,
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-mobility-1",
+              "monday-mobility-2"
+            ]
+          }
+        },
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-mobility-1"
+            ]
+          }
+        },
+        "thursday": {
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:24.892Z",
+            "exercisesCompleted": [
+              "thu-run",
+              "thu-flush"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 50,
+      "startDate": "2026-12-07T06:00:00.000Z",
+      "days": {
+        "sunday": {
+          "workout": {
+            "workoutId": "sunday-active-recovery",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:25.375Z",
+            "exercisesCompleted": [
+              "sun-walk"
+            ]
+          }
+        },
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:26.563Z",
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-mobility-1",
+              "monday-mobility-2",
+              "monday-flush"
+            ]
+          }
+        },
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:27.642Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ]
+          }
+        },
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": false,
+            "exercisesCompleted": [
+              "sat-intervals"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 51,
+      "startDate": "2026-12-14T06:00:00.000Z",
+      "days": {
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": false,
+            "exercisesCompleted": [
+              "wed-phase1"
+            ]
+          }
+        },
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "friday-circuit-d"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 52,
+      "startDate": "2026-12-21T06:00:00.000Z",
+      "days": {
+        "sunday": {
+          "workout": {
+            "workoutId": "sunday-active-recovery",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:32.275Z",
+            "exercisesCompleted": [
+              "sun-walk"
+            ]
+          }
+        },
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:34.001Z",
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-mobility-1",
+              "monday-mobility-2",
+              "monday-flush"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "weekNumber": 53,
+      "startDate": "2026-12-28T06:00:00.000Z",
+      "days": {
+        "sunday": {
+          "workout": {
+            "workoutId": "sunday-active-recovery",
+            "completed": true,
+            "completedAt": "2026-02-03T04:17:34.654Z",
+            "exercisesCompleted": [
+              "sun-walk"
+            ]
+          }
+        },
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-mobility-1"
+            ]
+          }
+        }
+      }
     }
   ],
-  "updatedAt": "2026-02-03T04:10:22.144Z"
+  "updatedAt": "2026-02-03T04:17:54.147Z"
 }

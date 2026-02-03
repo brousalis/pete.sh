@@ -580,6 +580,7 @@ export function FitnessSingleView({
   const [consistencyStats, setConsistencyStats] =
     useState<ConsistencyStats | null>(null)
   const [appleWorkouts, setAppleWorkouts] = useState<AppleWorkout[]>([])
+  const [selectedDayAppleWorkouts, setSelectedDayAppleWorkouts] = useState<AppleWorkout[]>([])
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [completingMorning, setCompletingMorning] = useState(false)
@@ -671,17 +672,32 @@ export function FitnessSingleView({
   }, [])
 
   // Fetch workout for selected day
-  const fetchSelectedDayWorkout = useCallback(async (day: DayOfWeek) => {
+  const fetchSelectedDayWorkout = useCallback(async (day: DayOfWeek, date?: Date) => {
     try {
+      // Fetch the workout definition
       const response = await apiGet<Workout>(`/api/fitness/workout/${day}`)
       if (response.success && response.data) {
         setSelectedDayWorkout(response.data)
       } else {
         setSelectedDayWorkout(null)
       }
+
+      // If we have a specific date, fetch Apple Watch workouts for that date
+      if (date) {
+        const dateStr = format(date, 'yyyy-MM-dd')
+        const appleRes = await apiGet<AppleWorkout[]>(`/api/apple-health/workout?date=${dateStr}&limit=10`)
+        if (appleRes.success && appleRes.data) {
+          setSelectedDayAppleWorkouts(appleRes.data)
+        } else {
+          setSelectedDayAppleWorkouts([])
+        }
+      } else {
+        setSelectedDayAppleWorkouts([])
+      }
     } catch (error) {
       console.error('Failed to fetch workout for day', error)
       setSelectedDayWorkout(null)
+      setSelectedDayAppleWorkouts([])
     }
   }, [])
 
@@ -690,9 +706,16 @@ export function FitnessSingleView({
     if (day === today) {
       setSelectedDay(null)
       setSelectedDayWorkout(null)
+      setSelectedDayAppleWorkouts([])
     } else {
       setSelectedDay(day)
-      fetchSelectedDayWorkout(day)
+      // For day picker (same week), calculate the date
+      const todayDate = new Date()
+      const todayDayIndex = DAYS_OF_WEEK.indexOf(today)
+      const selectedDayIndex = DAYS_OF_WEEK.indexOf(day)
+      const dayDiff = selectedDayIndex - todayDayIndex
+      const selectedDate = addDays(todayDate, dayDiff)
+      fetchSelectedDayWorkout(day, selectedDate)
     }
     setDayPickerOpen(false)
   }
@@ -704,6 +727,7 @@ export function FitnessSingleView({
       if (isDateToday(date)) {
         setSelectedDay(null)
         setSelectedDayWorkout(null)
+        setSelectedDayAppleWorkouts([])
         setViewingDate(null)
         window.history.replaceState(null, '', '/fitness')
         return
@@ -715,7 +739,7 @@ export function FitnessSingleView({
 
       setSelectedDay(dayOfWeek)
       setViewingDate(date)
-      fetchSelectedDayWorkout(dayOfWeek)
+      fetchSelectedDayWorkout(dayOfWeek, date)
 
       // Update URL with the new date
       const dateStr = format(date, 'yyyy-MM-dd')
@@ -740,6 +764,7 @@ export function FitnessSingleView({
       // If trying to go to today or future, just go to today view
       setSelectedDay(null)
       setSelectedDayWorkout(null)
+      setSelectedDayAppleWorkouts([])
       setViewingDate(null)
       window.history.replaceState(null, '', '/fitness')
       return
@@ -759,7 +784,7 @@ export function FitnessSingleView({
         .toLowerCase() as DayOfWeek
       const todayDay = getCurrentDay()
       if (initialDayOfWeek !== todayDay) {
-        fetchSelectedDayWorkout(initialDayOfWeek)
+        fetchSelectedDayWorkout(initialDayOfWeek, initialDate)
       }
     }
   }, [initialDate, fetchSelectedDayWorkout])
@@ -1241,7 +1266,7 @@ export function FitnessSingleView({
             openVideoId={openVideoId}
             onVideoToggle={handleVideoToggle}
             isPreview={!isViewingToday}
-            appleWorkouts={isViewingToday ? appleWorkouts : []}
+            appleWorkouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
           />
 
           {/* Night Panel - Shows viewed day's data */}

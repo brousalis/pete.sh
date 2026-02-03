@@ -4,8 +4,8 @@
  * GET - Get recent workouts
  */
 
-import { appleHealthService } from '@/lib/services/apple-health.service'
 import { verifyPeteWatchAuth } from '@/lib/api/petewatch-auth'
+import { appleHealthService } from '@/lib/services/apple-health.service'
 import type { AppleHealthWorkoutPayload } from '@/lib/types/apple-health.types'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -54,14 +54,16 @@ export async function POST(request: NextRequest) {
  * Query params:
  *   - type: Filter by workout type (e.g., 'running', 'functionalStrengthTraining')
  *   - limit: Number of workouts to return (default 10)
+ *   - date: Filter by specific date (YYYY-MM-DD format)
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const workoutType = searchParams.get('type') || undefined
     const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const date = searchParams.get('date') || undefined
 
-    const workouts = await appleHealthService.getRecentWorkouts(workoutType, limit)
+    const workouts = await appleHealthService.getRecentWorkouts(workoutType, limit, date)
 
     return NextResponse.json({
       success: true,
