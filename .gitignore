@@ -24,6 +24,7 @@ node_modules
 # Misc
 .DS_Store
 *.pem
+certs/
 .vscode-test
 
 # OAuth tokens (stored locally for hybrid mode)

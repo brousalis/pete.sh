@@ -100,21 +100,6 @@ export function ConnectivityProvider({
   // Get local URL from prop or environment variable
   const localUrl = localUrlProp ?? process.env.NEXT_PUBLIC_LOCAL_API_URL ?? null
 
-  // When the page is loaded from production (e.g. pete.sh), always use relative URLs
-  // so API calls stay on production. This fixes Apple Watch and other cloud data
-  // when using the Electron app or extension loading prod.
-  const productionOrigin =
-    typeof process.env.NEXT_PUBLIC_APP_URL === 'string' &&
-    process.env.NEXT_PUBLIC_APP_URL
-      ? (() => {
-          try {
-            return new URL(process.env.NEXT_PUBLIC_APP_URL).origin
-          } catch {
-            return null
-          }
-        })()
-      : null
-
   // State
   const [state, setState] = useState<ConnectivityState>({
     isInitialized: false,
@@ -140,31 +125,9 @@ export function ConnectivityProvider({
   // ============================================
 
   const checkConnectivity = useCallback(async (): Promise<boolean> => {
-    // When loaded from production (e.g. pete.sh), always use relative URLs so
-    // API calls go to production. Ensures Apple Watch and other cloud data
-    // work in Electron app and when extension loads prod.
-    if (
-      typeof window !== 'undefined' &&
-      productionOrigin &&
-      window.location.origin === productionOrigin
-    ) {
-      console.log(
-        '[Connectivity] Production origin detected, using relative API URLs'
-      )
-      setState(prev => ({
-        ...prev,
-        isInitialized: true,
-        isLocalAvailable: false,
-        apiBaseUrl: '',
-        isChecking: false,
-        lastError: null,
-        failureCount: 0,
-      }))
-      return false
-    }
-
-    // Prevent mixed content errors: if we're on HTTPS and the local URL is HTTP,
-    // browsers will block the request. Skip the check and use relative URLs.
+    // When loaded from production HTTPS (e.g. https://pete.sh), we can't check
+    // HTTP local URLs due to mixed content restrictions. Use relative URLs.
+    // This also ensures cloud data (Apple Watch, etc.) works in Electron when loading prod.
     if (
       typeof window !== 'undefined' &&
       window.location.protocol === 'https:' &&
@@ -271,7 +234,7 @@ export function ConnectivityProvider({
 
       return false
     }
-  }, [localUrl, productionOrigin])
+  }, [localUrl])
 
   // ============================================
   // Force Mode Functions

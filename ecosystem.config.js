@@ -63,5 +63,28 @@ module.exports = {
       max_restarts: 10,
       restart_delay: 4000,
     },
+    {
+      // HTTPS development mode - for hybrid mode from production site
+      name: 'petehome-https',
+      script: path.join(webAppDir, 'scripts', 'pm2-start-https.js'),
+      cwd: webAppDir,
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'development',
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0',
+      },
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      error_file: path.join(__dirname, 'logs', 'pm2-https-error.log'),
+      out_file: path.join(__dirname, 'logs', 'pm2-https-out.log'),
+      log_file: path.join(__dirname, 'logs', 'pm2-https-combined.log'),
+      time: true,
+      min_uptime: '10s',
+      max_restarts: 10,
+      restart_delay: 4000,
+    },
   ],
 }
