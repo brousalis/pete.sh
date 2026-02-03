@@ -155,7 +155,7 @@
           "workout": {
             "workoutId": "saturday-hiit-sprints",
             "completed": true,
-            "completedAt": "2026-01-24T23:25:15.597Z",
+            "completedAt": "2026-02-03T03:15:24.744Z",
             "exercisesCompleted": [
               "sat-intervals",
               "sat-cooldown",
@@ -180,15 +180,36 @@
           "morningRoutine": {
             "routineId": "oil-the-hinge",
             "completed": false
+          },
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": false,
+            "exercisesCompleted": [
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-flush"
+            ]
           }
         },
         "tuesday": {},
-        "wednesday": {},
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": false,
+            "exercisesCompleted": [
+              "wed-phase1"
+            ]
+          }
+        },
         "thursday": {
           "workout": {
             "workoutId": "thursday-endurance",
             "completed": true,
-            "completedAt": "2026-01-29T21:56:46.535Z",
+            "completedAt": "2026-02-03T03:15:28.019Z",
             "exercisesCompleted": [
               "thu-run",
               "thu-flush"
@@ -200,13 +221,26 @@
             "completedAt": "2026-01-29T21:56:49.277Z"
           }
         },
-        "friday": {},
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "exercisesCompleted": [
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d"
+            ]
+          }
+        },
         "saturday": {
           "workout": {
             "workoutId": "saturday-hiit-sprints",
-            "completed": true,
-            "completedAt": "2026-02-01T03:35:25.009Z",
-            "exercisesCompleted": []
+            "completed": false,
+            "exercisesCompleted": [
+              "sat-intervals",
+              "sat-warmup-1"
+            ]
           },
           "morningRoutine": {
             "routineId": "oil-the-hinge",
@@ -236,6 +270,20 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-02T22:44:07.840Z"
+          },
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": false,
+            "exercisesCompleted": [
+              "warmup-1",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-flush"
+            ]
           }
         },
         "tuesday": {},
@@ -258,5 +306,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-03T02:55:37.175Z"
+  "updatedAt": "2026-02-03T03:15:31.341Z"
 }

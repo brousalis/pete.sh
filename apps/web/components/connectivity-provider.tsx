@@ -2,14 +2,14 @@
 
 import { setApiBaseUrl } from '@/lib/api/client'
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
 } from 'react'
 
 // ============================================
@@ -158,6 +158,28 @@ export function ConnectivityProvider({
         apiBaseUrl: '',
         isChecking: false,
         lastError: null,
+        failureCount: 0,
+      }))
+      return false
+    }
+
+    // Prevent mixed content errors: if we're on HTTPS and the local URL is HTTP,
+    // browsers will block the request. Skip the check and use relative URLs.
+    if (
+      typeof window !== 'undefined' &&
+      window.location.protocol === 'https:' &&
+      localUrl?.startsWith('http://')
+    ) {
+      console.log(
+        '[Connectivity] HTTPS page cannot check HTTP local URL (mixed content), using relative API URLs'
+      )
+      setState(prev => ({
+        ...prev,
+        isInitialized: true,
+        isLocalAvailable: false,
+        apiBaseUrl: '',
+        isChecking: false,
+        lastError: 'Mixed content blocked',
         failureCount: 0,
       }))
       return false

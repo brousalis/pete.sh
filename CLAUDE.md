@@ -9,7 +9,7 @@ petehome is a smart home ecosystem with multiple client applications:
 
 - **Web App** (`apps/web/`) - Next.js 16 dashboard for controlling Philips Hue lights, Sonos
   speakers, Google Calendar, Chicago Transit (CTA), weather, fitness tracking, coffee automation
-- **Electron App** (`apps/electron/`) - Desktop wrapper that loads the web app
+- **Desktop App** (`apps/desktop/`) - Electron wrapper that loads the web app
 - **iOS App** (`apps/ios/`) - watchOS workout tracking app with HealthKit integration
 - **Firefox Extension** (`apps/firefox-extension/`) - New tab page that embeds the web dashboard
 
@@ -19,13 +19,15 @@ petehome is a smart home ecosystem with multiple client applications:
 # Development (from root)
 yarn dev                    # Start web dev server (0.0.0.0:3000)
 yarn build                  # Build web app for production
-yarn electron               # Start Electron app
+yarn desktop                # Start desktop (Electron) app
 
 # PM2 Management (from root)
-yarn p:start                # Start production via PM2
-yarn p:start:dev            # Start dev mode via PM2
-yarn p:restart              # Restart PM2 process
-yarn p:logs                 # View PM2 logs
+yarn p:start                # Start dev mode via PM2
+yarn p:start:prod           # Start production via PM2
+yarn p:restart              # Restart dev PM2 process
+yarn p:restart:prod         # Restart prod PM2 process
+yarn p:logs                 # View dev PM2 logs
+yarn p:logs:prod            # View prod PM2 logs
 
 # Code Quality
 yarn lint                   # Run ESLint
