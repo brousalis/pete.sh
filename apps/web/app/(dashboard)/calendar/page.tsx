@@ -1,15 +1,16 @@
 'use client'
 
 import {
-  CalendarAgendaView,
-  CalendarDayView,
-  CalendarEventDetail,
-  CalendarFitnessSidebar,
-  CalendarHeader,
-  CalendarMini,
-  CalendarMonthGrid,
-  CalendarWeekView,
+    CalendarAgendaView,
+    CalendarDayView,
+    CalendarEventDetail,
+    CalendarFitnessSidebar,
+    CalendarHeader,
+    CalendarMini,
+    CalendarMonthGrid,
+    CalendarWeekView,
 } from '@/components/calendar'
+import { useConnectivity } from '@/components/connectivity-provider'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useSwipe } from '@/hooks/use-swipe'
@@ -19,9 +20,9 @@ import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { ConsistencyStats, WeeklyRoutine } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  filterEvents,
-  generateFitnessEvents,
-  navigateDate,
+    filterEvents,
+    generateFitnessEvents,
+    navigateDate,
 } from '@/lib/utils/calendar-utils'
 import { format, isSameDay } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -66,6 +67,7 @@ export default function CalendarPage() {
 
   const searchParams = useSearchParams()
   const hasTriedRetry = useRef(false)
+  const { isInitialized: isConnectivityInitialized } = useConnectivity()
 
   // Fetch events with optional retry for post-OAuth race condition
   const fetchEvents = useCallback(
@@ -127,6 +129,12 @@ export default function CalendarPage() {
   }, [])
 
   useEffect(() => {
+    // Wait for connectivity check to complete before fetching
+    // This ensures we use the correct API base URL (local vs prod)
+    if (!isConnectivityInitialized) {
+      return
+    }
+
     const init = async () => {
       const isAuthSuccess = searchParams.get('auth') === 'success'
 
@@ -153,7 +161,7 @@ export default function CalendarPage() {
       fetchFitnessData()
     }, 300000)
     return () => clearInterval(interval)
-  }, [fetchEvents, fetchFitnessData, searchParams])
+  }, [fetchEvents, fetchFitnessData, searchParams, isConnectivityInitialized])
 
   // Keyboard navigation
   useEffect(() => {
