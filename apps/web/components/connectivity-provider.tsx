@@ -126,7 +126,8 @@ export function ConnectivityProvider({
 
   const checkConnectivity = useCallback(async (): Promise<boolean> => {
     // When loaded from production HTTPS (e.g. https://pete.sh), we can't check
-    // HTTP local URLs due to mixed content restrictions. Use relative URLs.
+    // HTTP local URLs due to mixed content restrictions. Use an HTTPS local URL
+    // (e.g. local server with SSL / same-domain) so production can talk to local.
     // This also ensures cloud data (Apple Watch, etc.) works in Electron when loading prod.
     if (
       typeof window !== 'undefined' &&

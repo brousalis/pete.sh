@@ -1,8 +1,14 @@
 'use client'
 
 import { useConnectivity } from '@/components/connectivity-provider'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useIOSSync } from '@/hooks/use-ios-sync'
 import { staggerItemVariants, transitions } from '@/lib/animations'
+import { apiGet, apiPost } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -74,7 +80,7 @@ export function TopNavigation() {
   const { isLocalAvailable, isInitialized } = useConnectivity()
   const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
 
-  // Fetch current display input when local is available
+  // Fetch current display input when local is available (uses apiBaseUrl so production + local hits local)
   useEffect(() => {
     if (!isLocalAvailable) {
       setCurrentInput(null)
@@ -83,10 +89,11 @@ export function TopNavigation() {
 
     const fetchCurrentInput = async () => {
       try {
-        const response = await fetch('/api/desktop/kvm')
-        if (response.ok) {
-          const data = await response.json()
-          setCurrentInput(data.data?.currentInput ?? 'unknown')
+        const response = await apiGet<{ currentInput: 'hdmi' | 'displayport' | 'unknown' }>(
+          '/api/desktop/kvm'
+        )
+        if (response.success && response.data) {
+          setCurrentInput(response.data.currentInput ?? 'unknown')
         }
       } catch (error) {
         console.error('Failed to fetch display input:', error)
@@ -96,21 +103,19 @@ export function TopNavigation() {
     fetchCurrentInput()
   }, [isLocalAvailable])
 
-  // Display input switch handler
+  // Display input switch handler (uses apiBaseUrl so production + local hits local)
   const handleDisplaySwitch = async (target: 'hdmi' | 'displayport') => {
     if (displaySwitching) return
     setDisplaySwitching(target)
     try {
-      const response = await fetch('/api/desktop/kvm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target }),
-      })
-      if (response.ok) {
+      const response = await apiPost<{ success: boolean; target: string }>(
+        '/api/desktop/kvm',
+        { target }
+      )
+      if (response.success) {
         setCurrentInput(target)
       } else {
-        const data = await response.json()
-        console.error('Display switch failed:', data.error)
+        console.error('Display switch failed:', response.error)
       }
     } catch (error) {
       console.error('Display switch error:', error)
@@ -443,44 +448,58 @@ export function TopNavigation() {
           {/* Display Input Switch Buttons - only visible when connected locally */}
           {mounted && isLocalAvailable && (
             <>
-              <button
-                onClick={() => handleDisplaySwitch('hdmi')}
-                disabled={displaySwitching !== null || currentInput === 'hdmi'}
-                className={cn(
-                  'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
-                  currentInput === 'hdmi'
-                    ? 'bg-brand/10 text-brand'
-                    : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
-                  displaySwitching === 'hdmi' && 'cursor-not-allowed opacity-50'
-                )}
-                title={currentInput === 'hdmi' ? 'HDMI (active)' : 'Switch to HDMI'}
-                aria-label="Switch display to HDMI"
-              >
-                {displaySwitching === 'hdmi' ? (
-                  <Loader2 className="size-5 animate-spin" aria-hidden />
-                ) : (
-                  <Tv className="size-5" aria-hidden />
-                )}
-              </button>
-              <button
-                onClick={() => handleDisplaySwitch('displayport')}
-                disabled={displaySwitching !== null || currentInput === 'displayport'}
-                className={cn(
-                  'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
-                  currentInput === 'displayport'
-                    ? 'bg-brand/10 text-brand'
-                    : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
-                  displaySwitching === 'displayport' && 'cursor-not-allowed opacity-50'
-                )}
-                title={currentInput === 'displayport' ? 'DisplayPort (active)' : 'Switch to DisplayPort'}
-                aria-label="Switch display to DisplayPort"
-              >
-                {displaySwitching === 'displayport' ? (
-                  <Loader2 className="size-5 animate-spin" aria-hidden />
-                ) : (
-                  <Monitor className="size-5" aria-hidden />
-                )}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => handleDisplaySwitch('hdmi')}
+                    disabled={displaySwitching !== null || currentInput === 'hdmi'}
+                    className={cn(
+                      'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                      currentInput === 'hdmi'
+                        ? 'bg-brand/10 text-brand'
+                        : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                      displaySwitching === 'hdmi' && 'cursor-not-allowed opacity-50'
+                    )}
+                    aria-label="Switch display to HDMI"
+                  >
+                    {displaySwitching === 'hdmi' ? (
+                      <Loader2 className="size-5 animate-spin" aria-hidden />
+                    ) : (
+                      <Tv className="size-5" aria-hidden />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {currentInput === 'hdmi' ? 'HDMI (active)' : 'Switch to HDMI'}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => handleDisplaySwitch('displayport')}
+                    disabled={displaySwitching !== null || currentInput === 'displayport'}
+                    className={cn(
+                      'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                      currentInput === 'displayport'
+                        ? 'bg-brand/10 text-brand'
+                        : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                      displaySwitching === 'displayport' && 'cursor-not-allowed opacity-50'
+                    )}
+                    aria-label="Switch display to DisplayPort"
+                  >
+                    {displaySwitching === 'displayport' ? (
+                      <Loader2 className="size-5 animate-spin" aria-hidden />
+                    ) : (
+                      <Monitor className="size-5" aria-hidden />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {currentInput === 'displayport'
+                    ? 'DisplayPort (active)'
+                    : 'Switch to DisplayPort'}
+                </TooltipContent>
+              </Tooltip>
             </>
           )}
 
