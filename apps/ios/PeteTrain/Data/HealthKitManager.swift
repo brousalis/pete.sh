@@ -395,6 +395,12 @@ final class HealthKitManager {
         healthStore.execute(query)
     }
 
+    // MARK: - Errors
+
+    enum HealthKitError: Error {
+        case notAvailable
+    }
+
     // MARK: - Weekly Stats
 
     func fetchWeeklyStats() async {
