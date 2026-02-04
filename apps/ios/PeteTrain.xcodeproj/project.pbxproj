@@ -28,7 +28,6 @@
 		AAA00022 /* StepCountCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00022 /* StepCountCard.swift */; };
 		AAA00023 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00023 /* WorkoutCompleteView.swift */; };
 		AAA00024 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00024 /* HealthKit.framework */; };
-		AAA00025 /* TrainingCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00025 /* TrainingCycle.swift */; };
 		AAA00026 /* ExerciseLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00026 /* ExerciseLog.swift */; };
 		AAA00027 /* PRManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00027 /* PRManager.swift */; };
 		AAA00028 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00028 /* DataExporter.swift */; };
@@ -39,10 +38,6 @@
 		AAA00036 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00036 /* LocationManager.swift */; };
 		AAA00037 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00037 /* CoreLocation.framework */; };
 		AAA00038 /* ProgressAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00038 /* ProgressAnalytics.swift */; };
-		AAA00039 /* WeeklyVolumeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00039 /* WeeklyVolumeView.swift */; };
-		AAA00040 /* BodyWeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00040 /* BodyWeight.swift */; };
-		AAA00041 /* BodyWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00041 /* BodyWeightView.swift */; };
-		AAA00042 /* WeeklySummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00042 /* WeeklySummaryCard.swift */; };
 		AAA00043 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00043 /* NotificationManager.swift */; };
 		AAA00044 /* FatigueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00044 /* FatigueManager.swift */; };
 		AAA00045 /* FatigueIndicatorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00045 /* FatigueIndicatorCard.swift */; };
@@ -109,7 +104,6 @@
 		BBB00022 /* StepCountCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCountCard.swift; sourceTree = "<group>"; };
 		BBB00023 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
 		BBB00024 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		BBB00025 /* TrainingCycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingCycle.swift; sourceTree = "<group>"; };
 		BBB00026 /* ExerciseLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLog.swift; sourceTree = "<group>"; };
 		BBB00027 /* PRManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRManager.swift; sourceTree = "<group>"; };
 		BBB00028 /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExporter.swift; sourceTree = "<group>"; };
@@ -120,10 +114,6 @@
 		BBB00036 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		BBB00037 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		BBB00038 /* ProgressAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressAnalytics.swift; sourceTree = "<group>"; };
-		BBB00039 /* WeeklyVolumeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyVolumeView.swift; sourceTree = "<group>"; };
-		BBB00040 /* BodyWeight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeight.swift; sourceTree = "<group>"; };
-		BBB00041 /* BodyWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightView.swift; sourceTree = "<group>"; };
-		BBB00042 /* WeeklySummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklySummaryCard.swift; sourceTree = "<group>"; };
 		BBB00043 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		BBB00044 /* FatigueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueManager.swift; sourceTree = "<group>"; };
 		BBB00045 /* FatigueIndicatorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueIndicatorCard.swift; sourceTree = "<group>"; };
@@ -273,9 +263,7 @@
 				BBB00009 /* Exercise.swift */,
 				CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */,
 				BBB00010 /* WorkoutRecord.swift */,
-				BBB00025 /* TrainingCycle.swift */,
 				BBB00026 /* ExerciseLog.swift */,
-				BBB00040 /* BodyWeight.swift */,
 				BBB00052 /* PetehomeModels.swift */,
 			);
 			path = Models;
@@ -299,9 +287,6 @@
 				BBB00031 /* ExerciseHistoryView.swift */,
 				BBB00032 /* DataExportView.swift */,
 				BBB00034 /* WorkoutFlowComponents.swift */,
-				BBB00039 /* WeeklyVolumeView.swift */,
-				BBB00041 /* BodyWeightView.swift */,
-				BBB00042 /* WeeklySummaryCard.swift */,
 				BBB00045 /* FatigueIndicatorCard.swift */,
 				BBB00046 /* MonthlyCalendarView.swift */,
 			);
@@ -515,7 +500,6 @@
 				AAA00020 /* HealthKitManager.swift in Sources */,
 				AAA00022 /* StepCountCard.swift in Sources */,
 				AAA00023 /* WorkoutCompleteView.swift in Sources */,
-				AAA00025 /* TrainingCycle.swift in Sources */,
 				AAA00026 /* ExerciseLog.swift in Sources */,
 				AAA00027 /* PRManager.swift in Sources */,
 				AAA00028 /* DataExporter.swift in Sources */,
@@ -527,10 +511,6 @@
 				AAA00034 /* WorkoutFlowComponents.swift in Sources */,
 				AAA00036 /* LocationManager.swift in Sources */,
 				AAA00038 /* ProgressAnalytics.swift in Sources */,
-				AAA00039 /* WeeklyVolumeView.swift in Sources */,
-				AAA00040 /* BodyWeight.swift in Sources */,
-				AAA00041 /* BodyWeightView.swift in Sources */,
-				AAA00042 /* WeeklySummaryCard.swift in Sources */,
 				AAA00043 /* NotificationManager.swift in Sources */,
 				AAA00044 /* FatigueManager.swift in Sources */,
 				AAA00045 /* FatigueIndicatorCard.swift in Sources */,

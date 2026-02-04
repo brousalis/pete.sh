@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"import base64; print\\(base64.b64decode\\(''N3NmajFqN210cmdqc3FtdmE5aDIybDU1bWtAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ==''\\).decode\\(\\)\\)\")"
+      "Bash(python -c \"import base64; print\\(base64.b64decode\\(''N3NmajFqN210cmdqc3FtdmE5aDIybDU1bWtAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ==''\\).decode\\(\\)\\)\")",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

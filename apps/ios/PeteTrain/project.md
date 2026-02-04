@@ -25,7 +25,6 @@ Pete Train is a workout tracking app designed specifically for Apple Watch. It d
 - **Exercise Completion Tracking**: Tap to toggle exercises complete with haptic feedback
 - **Progress Indicators**: Shows X/Y exercises complete per section and per day
 - **Workout History**: View past workouts with completion status and calendar view
-- **Streak Tracking**: Counts consecutive days with completed workouts
 - **HealthKit Integration**: Live step count, Activity rings, heart rate zones
 - **Live Workout Sessions**: Start tracked workouts that contribute to Activity rings
 - **Workout Logging**: Save completed workouts to Apple Health
@@ -71,19 +70,12 @@ Pete Train is a workout tracking app designed specifically for Apple Watch. It d
 - **PR Display**: Shows current PRs per exercise with dates
 - **Exercise History**: View all logged data per exercise with summary stats
 
-### ✅ Training Cycles
-
-- **Deload Week Detection**: Automatic 5-week cycle tracking
-- **Manual Deload**: Mark current week as deload
-- **Cycle Progress**: Visual indicator of position in training cycle
-
 ### ✅ Data Management
 
 - **Data Export**: JSON backup of all workout records, logs, and PRs
 - **Dev Mode**: Override current day for testing
 - **Workout Notes**: Add notes to daily workout records
 - **Duration Tracking**: Automatic start/end time recording
-- **Body Weight Tracking**: Daily weight logging with morning reminder card
 
 ### ✅ Watch Face Complications
 
@@ -111,9 +103,7 @@ PeteTrain/
 │   ├── WorkoutSection.swift        # WorkoutSection model
 │   ├── Exercise.swift              # Exercise model (stable IDs, rest times)
 │   ├── WorkoutRecord.swift         # SwiftData @Model for workout persistence
-│   ├── ExerciseLog.swift           # SwiftData @Model for weight/rep logging
-│   ├── BodyWeight.swift            # Body weight tracking model & manager
-│   └── TrainingCycle.swift         # SwiftData @Model for deload tracking
+│   └── ExerciseLog.swift           # SwiftData @Model for weight/rep logging
 ├── ViewModels/
 │   ├── WorkoutViewModel.swift      # Manages daily workout state
 │   └── HistoryViewModel.swift      # Manages history and stats
@@ -125,8 +115,7 @@ PeteTrain/
 │   │   ├── DayHeaderView           # Day name, progress, start button
 │   │   ├── WorkoutStatusCard       # Live workout timer & controls
 │   │   ├── LiveSectionNav          # Section navigation during workout
-│   │   ├── LiveSectionButton       # Individual section button
-│   │   └── BodyWeightReminderCard  # Morning weight reminder
+│   │   └── LiveSectionButton       # Individual section button
 │   ├── SectionPageView.swift       # Full section page with exercises
 │   │   ├── SectionPageHeader       # Section name, progress, guided button
 │   │   ├── SectionCompleteCard     # Section completion celebration
@@ -141,7 +130,6 @@ PeteTrain/
 │   ├── RestTimerView.swift         # Rest countdown timer
 │   ├── WeightInputSheet.swift      # Weight/reps logging modal
 │   ├── ExerciseHistoryView.swift   # Per-exercise history and PRs
-│   ├── BodyWeightView.swift        # Body weight history & input
 │   ├── DataExportView.swift        # JSON data export
 │   ├── ActiveWorkoutView.swift     # Live workout session UI
 │   ├── StepCountCard.swift         # Step counter for recovery days
@@ -263,21 +251,6 @@ final class PersonalRecord {
 }
 ```
 
-### TrainingCycle (SwiftData)
-
-```swift
-@Model
-final class TrainingCycle {
-    var id: UUID
-    var startDate: Date
-    var weekNumber: Int              // 1-5
-    var isDeloadWeek: Bool
-
-    static let cycleLength = 5       // Deload every 5th week
-    var weeksUntilDeload: Int        // Computed
-}
-```
-
 ## Weekly Schedule
 
 | Day | Weekday   | Workout              | Type                |
@@ -294,8 +267,8 @@ final class TrainingCycle {
 
 ### Permissions Required
 
-- **Read**: Step Count, Heart Rate, Active Energy, Workouts, Body Mass
-- **Write**: Active Energy, Workouts, Body Mass
+- **Read**: Step Count, Heart Rate, Active Energy, Workouts
+- **Write**: Active Energy, Workouts
 
 ### Workout Type Mapping
 
@@ -315,11 +288,6 @@ Day 7 → .walking
 - **Live Workouts**: Tracks heart rate, calories, duration; contributes to Activity rings
 - **Manual Logging**: Save completed workout to Health app with estimated calories
 - **Elapsed Timer**: Updates every 10ms for centisecond display
-- **Body Weight Sync**: Two-way sync between Pete Train and Apple Health
-  - Auto-sync new weight entries to HealthKit
-  - Import weight from HealthKit on app launch
-  - Shows sync status (heart icon) on each entry
-  - Bulk sync for any unsynced entries
 - **Workout Metadata**: Workouts include brand name "Pete Train" and proper location type
 
 ## Key Implementation Details
