@@ -191,7 +191,7 @@ export default function MePage() {
               i built this site for personal use on an iPad mini mounted in my kitchen
             </p>
             <p className="text-muted-foreground text-sm">
-              then took it too far
+              then took it too far, and now you can creep on my life
             </p>
           </div>
 
