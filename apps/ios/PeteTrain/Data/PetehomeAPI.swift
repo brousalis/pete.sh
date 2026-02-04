@@ -184,6 +184,51 @@ final class PetehomeAPI {
         return Set(listResponse.data.map { $0.healthkit_id })
     }
 
+    /// Result type for workout definitions fetch
+    struct WorkoutDefinitionsResult {
+        let definitions: [String: APIWorkout]
+        let version: APIVersionInfo?
+    }
+
+    /// Fetch workout definitions from the API
+    /// - Parameter routineId: The routine ID to fetch (defaults to "climber-physique")
+    /// - Returns: WorkoutDefinitionsResult containing definitions and version info
+    func fetchWorkoutDefinitions(routineId: String = "climber-physique") async throws -> WorkoutDefinitionsResult {
+        var components = URLComponents(url: baseURL.appendingPathComponent("api/fitness/workout-definitions"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "routineId", value: routineId)]
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled {
+            logRequest(request, body: nil)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled {
+            logResponse(response, data: data)
+        }
+
+        try handleResponse(response, data: data)
+
+        let apiResponse = try decoder.decode(APIWorkoutDefinitionsResponse.self, from: data)
+
+        guard apiResponse.success, let responseData = apiResponse.data else {
+            throw PetehomeAPIError.httpError(0, apiResponse.error ?? "No workout definitions returned")
+        }
+
+        let versionStr = responseData.version.map { "v\($0.number) (\($0.name))" } ?? "unknown"
+        print("📚 Fetched \(responseData.definitions.count) workout definitions - \(versionStr)")
+
+        return WorkoutDefinitionsResult(
+            definitions: responseData.definitions,
+            version: responseData.version
+        )
+    }
+
     /// Test the API connection and credentials
     func testConnection() async throws -> Bool {
         print("🔌 Testing connection to \(baseURL.absoluteString)...")

@@ -1,8 +1,13 @@
 import Foundation
 
 enum WorkoutData {
+    /// All workout days - bundled static data
+    /// For dynamic data from API/cache, use WorkoutDataManager.shared.days on MainActor
     static let days: [Day] = [day1, day2, day3, day4, day5, day6, day7]
-    
+
+    /// Alias for backwards compatibility with WorkoutDataManager
+    static var fallbackDays: [Day] { days }
+
     // MARK: - Day 1: Density Strength (Monday)
     
     static let day1 = Day(

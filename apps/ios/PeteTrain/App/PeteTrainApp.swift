@@ -9,7 +9,7 @@ struct PeteTrainApp: App {
             ExerciseLog.self,
             PersonalRecord.self,
         ])
-        
+
         // CloudKit disabled - standalone watchOS app
         let modelConfiguration = ModelConfiguration(
             schema: schema,
@@ -22,6 +22,14 @@ struct PeteTrainApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+
+    init() {
+        // Load workout definitions on app launch
+        // This loads from cache immediately, then refreshes from API in background
+        Task { @MainActor in
+            await WorkoutDataManager.shared.loadWorkouts()
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
