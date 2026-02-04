@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button"
 import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
 import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
+import { useConnectivity } from "@/components/connectivity-provider"
+import { useSmoothProgress } from "@/hooks/use-smooth-progress"
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -51,7 +53,6 @@ export function DeckMusic() {
   const [cachedPlayback, setCachedPlayback] = useState<SpotifyPlaybackResponse['playback'] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState(0)
   const [isSkipping, setIsSkipping] = useState<"next" | "previous" | null>(null)
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -60,7 +61,9 @@ export function DeckMusic() {
 
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
-  
+
+  const { isInitialized: isConnectivityInitialized } = useConnectivity()
+
   // Compute full auth URL based on API base (for cross-origin local mode)
   // Include returnTo param so localhost knows to redirect back to pete.sh
   const fullAuthUrl = authUrl ? (() => {
@@ -110,18 +113,16 @@ export function DeckMusic() {
         setSource(response.data.source)
         setIsAuthenticated(response.data.authenticated)
         setCachedPlayback(response.data.playback)
-        
-        if (response.data.playback?.durationMs > 0) {
-          setProgress((response.data.playback.progressMs / response.data.playback.durationMs) * 100)
-        }
       }
     } catch {
       // Silent fail
     }
   }, [])
 
-  // Initial load
+  // Initial load: wait for connectivity so we hit the correct origin (local vs prod)
   useEffect(() => {
+    if (!isConnectivityInitialized) return
+
     const init = async () => {
       setLoading(true)
       setError(null)
@@ -132,37 +133,32 @@ export function DeckMusic() {
       setLoading(false)
     }
     init()
-  }, [fetchUser, fetchPlayback])
+  }, [isConnectivityInitialized, fetchUser, fetchPlayback])
 
-  // Poll playback state
+  // Poll playback state: more often when playing
+  const isPlaying = cachedPlayback?.isPlaying ?? false
   useEffect(() => {
     if (!user) return
 
+    const pollMs = isPlaying ? 5000 : 30_000
     const interval = setInterval(() => {
       fetchPlayback()
-    }, 5000)
+    }, pollMs)
 
     return () => clearInterval(interval)
-  }, [user, fetchPlayback])
+  }, [user, fetchPlayback, isPlaying])
 
-  // Update progress bar smoothly
-  useEffect(() => {
-    if (!playbackState?.is_playing || !playbackState.item) return
-
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const duration = playbackState.item?.duration_ms || 1
-        const increment = (1000 / duration) * 100
-        return Math.min(prev + increment, 100)
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [playbackState?.is_playing, playbackState?.item])
+  // Smooth progress from last poll; interpolates between API updates
+  const progress = useSmoothProgress(
+    isPlaying,
+    cachedPlayback?.progressMs ?? 0,
+    cachedPlayback?.durationMs ?? 0
+  )
 
   // Play/Pause
   const handlePlayPause = async () => {
-    const endpoint = playbackState?.is_playing
+    const currentlyPlaying = playbackState?.is_playing ?? cachedPlayback?.isPlaying ?? false
+    const endpoint = currentlyPlaying
       ? "/api/spotify/player/pause"
       : "/api/spotify/player/play"
     lastActionTime.current = Date.now()
@@ -214,7 +210,6 @@ export function DeckMusic() {
   
   // Get display track info from cached playback
   const displayTrack = cachedPlayback?.track
-  const isPlaying = cachedPlayback?.isPlaying ?? false
 
   // Not connected and no cached data state
   if (!loading && !user && !displayTrack) {
@@ -336,7 +331,7 @@ export function DeckMusic() {
             {/* Progress Bar */}
             <div className="h-1 overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full transition-all duration-1000 ${showControls ? "bg-green-500" : "bg-green-500/50"}`}
+                className={`h-full transition-[width] duration-100 ease-linear ${showControls ? "bg-green-500" : "bg-green-500/50"}`}
                 style={{ width: `${progress}%` }}
               />
             </div>

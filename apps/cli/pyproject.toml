@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "petehome-cli"
+version = "1.0.0"
+description = "Interactive CLI for petehome development management"
+requires-python = ">=3.11"
+dependencies = [
+    "questionary>=2.0.0",
+    "rich>=13.0.0",
+    "aiohttp>=3.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+petehome-cli = "petehome_cli.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]

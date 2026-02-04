@@ -2,9 +2,9 @@
 
 import { useConnectivity } from '@/components/connectivity-provider'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useIOSSync } from '@/hooks/use-ios-sync'
 import { staggerItemVariants, transitions } from '@/lib/animations'
@@ -12,25 +12,25 @@ import { apiGet, apiPost } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Bus,
-  Calendar,
-  ChefHat,
-  Coffee,
-  Command,
-  Dumbbell,
-  Grid3x3,
-  Lightbulb,
-  Loader2,
-  Menu,
-  Monitor,
-  Music,
-  RefreshCw,
-  Settings,
-  Tv,
-  User,
-  Wifi,
-  WifiOff,
-  X,
+    Bus,
+    Calendar,
+    ChefHat,
+    Coffee,
+    Command,
+    Dumbbell,
+    Grid3x3,
+    Lightbulb,
+    Loader2,
+    Menu,
+    Monitor,
+    Music,
+    RefreshCw,
+    Settings,
+    Tv,
+    User,
+    Wifi,
+    WifiOff,
+    X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

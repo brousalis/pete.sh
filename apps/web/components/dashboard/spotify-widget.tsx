@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useConnectivity } from '@/components/connectivity-provider'
+import { useSmoothProgress } from '@/hooks/use-smooth-progress'
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -71,7 +73,6 @@ export function SpotifyWidget() {
     SpotifyPlaybackResponse['playback'] | null
   >(null)
   const [loading, setLoading] = useState(true)
-  const [progress, setProgress] = useState(0)
   const [isSkipping, setIsSkipping] = useState<'next' | 'previous' | null>(null)
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -83,6 +84,8 @@ export function SpotifyWidget() {
 
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
+
+  const { isInitialized: isConnectivityInitialized } = useConnectivity()
 
   // Format relative time for recent songs
   const formatRecentTime = (dateStr: string) => {
@@ -169,23 +172,16 @@ export function SpotifyWidget() {
         setSource(response.data.source)
         setIsAuthenticated(response.data.authenticated)
         setCachedPlayback(response.data.playback)
-
-        // Update progress
-        if (response.data.playback?.durationMs > 0) {
-          setProgress(
-            (response.data.playback.progressMs /
-              response.data.playback.durationMs) *
-              100
-          )
-        }
       }
     } catch {
       // Silent fail
     }
   }, [])
 
-  // Initial load
+  // Initial load: wait for connectivity so we hit the correct origin (local vs prod)
   useEffect(() => {
+    if (!isConnectivityInitialized) return
+
     const init = async () => {
       setLoading(true)
       const isAuth = await fetchUser()
@@ -195,7 +191,7 @@ export function SpotifyWidget() {
       setLoading(false)
     }
     init()
-  }, [fetchUser, fetchPlayback, fetchRecentHistory])
+  }, [isConnectivityInitialized, fetchUser, fetchPlayback, fetchRecentHistory])
 
   // Poll playback state: more often when playing, less when idle
   const isPlaying = cachedPlayback?.isPlaying ?? false
@@ -210,24 +206,17 @@ export function SpotifyWidget() {
     return () => clearInterval(intervalId)
   }, [user, fetchPlayback, isPlaying])
 
-  // Update progress bar smoothly
-  useEffect(() => {
-    if (!playbackState?.is_playing || !playbackState.item) return
-
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const duration = playbackState.item?.duration_ms || 1
-        const increment = (1000 / duration) * 100
-        return Math.min(prev + increment, 100)
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [playbackState?.is_playing, playbackState?.item])
+  // Smooth progress from last poll; interpolates between API updates
+  const progress = useSmoothProgress(
+    isPlaying,
+    cachedPlayback?.progressMs ?? 0,
+    cachedPlayback?.durationMs ?? 0
+  )
 
   // Play/Pause
   const handlePlayPause = async () => {
-    const endpoint = playbackState?.is_playing
+    const currentlyPlaying = playbackState?.is_playing ?? cachedPlayback?.isPlaying ?? false
+    const endpoint = currentlyPlaying
       ? '/api/spotify/player/pause'
       : '/api/spotify/player/play'
     lastActionTime.current = Date.now()
@@ -459,7 +448,7 @@ export function SpotifyWidget() {
                   <div className="ml-auto max-w-20 flex-1 px-1">
                     <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                       <div
-                        className="h-full rounded-full bg-green-500 transition-[width] duration-1000 ease-out"
+                        className="h-full rounded-full bg-green-500 transition-[width] duration-100 ease-linear"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -469,7 +458,7 @@ export function SpotifyWidget() {
                 <div className="mt-2">
                   <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                     <div
-                      className="h-full rounded-full bg-green-500/50 transition-[width] duration-1000"
+                      className="h-full rounded-full bg-green-500/50 transition-[width] duration-100 ease-linear"
                       style={{ width: `${progress}%` }}
                     />
                   </div>

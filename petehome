@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export PYTHONPATH="$SCRIPT_DIR/apps/cli:$PYTHONPATH"
+
+# Check for .venv in repo root
+if [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+    "$SCRIPT_DIR/.venv/bin/python" -m petehome_cli "$@"
+else
+    python -m petehome_cli "$@"
+fi

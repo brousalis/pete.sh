@@ -44,6 +44,8 @@ import type {
   SpotifyRepeatMode,
 } from "@/lib/types/spotify.types"
 import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
+import { useConnectivity } from "@/components/connectivity-provider"
+import { useSmoothProgress } from "@/hooks/use-smooth-progress"
 
 interface SpotifyPlayerProps {
   onAuthRequired?: () => void
@@ -93,7 +95,6 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [volume, setVolume] = useState(50)
-  const [progress, setProgress] = useState(0)
   const [showPlaylists, setShowPlaylists] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [isSkipping, setIsSkipping] = useState<"next" | "previous" | null>(null)
@@ -104,7 +105,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
-  
+
+  const { isInitialized: isConnectivityInitialized } = useConnectivity()
+
   // Compute full auth URL based on API base (for cross-origin local mode)
   // Include returnTo param so localhost knows to redirect back to pete.sh
   const fullAuthUrl = authUrl ? (() => {
@@ -163,16 +166,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
         
         // If live data, update full playback state (for controls)
         if (response.data.source === 'live' && response.data.authenticated) {
-          // Fetch full playback state for control purposes
-          // The simplified playback format doesn't have all the fields
-          setPlaybackState(null) // Will be updated by other logic if needed
+          setPlaybackState(null) // Simplified format; controls use cachedPlayback
         } else {
           setPlaybackState(null)
-        }
-        
-        // Update progress from cached playback
-        if (response.data.playback?.durationMs > 0) {
-          setProgress((response.data.playback.progressMs / response.data.playback.durationMs) * 100)
         }
       }
     } catch {
@@ -204,8 +200,10 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     }
   }, [])
 
-  // Initial load
+  // Initial load: wait for connectivity so we hit the correct origin (local vs prod)
   useEffect(() => {
+    if (!isConnectivityInitialized) return
+
     const init = async () => {
       setLoading(true)
       const isAuth = await fetchUser()
@@ -215,37 +213,32 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
       setLoading(false)
     }
     init()
-  }, [fetchUser, fetchPlayback, fetchDevices, fetchPlaylists])
+  }, [isConnectivityInitialized, fetchUser, fetchPlayback, fetchDevices, fetchPlaylists])
 
-  // Poll playback state
+  // Poll playback state: more often when playing
+  const isPlaying = cachedPlayback?.isPlaying ?? false
   useEffect(() => {
     if (!user) return
 
+    const pollMs = isPlaying ? 3000 : 15_000
     const interval = setInterval(() => {
       fetchPlayback()
-    }, 3000)
+    }, pollMs)
 
     return () => clearInterval(interval)
-  }, [user, fetchPlayback])
+  }, [user, fetchPlayback, isPlaying])
 
-  // Update progress bar smoothly
-  useEffect(() => {
-    if (!playbackState?.is_playing || !playbackState.item) return
-
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const duration = playbackState.item?.duration_ms || 1
-        const increment = (1000 / duration) * 100
-        return Math.min(prev + increment, 100)
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [playbackState?.is_playing, playbackState?.item])
+  // Smooth progress from last poll; interpolates between API updates
+  const progress = useSmoothProgress(
+    isPlaying,
+    cachedPlayback?.progressMs ?? 0,
+    cachedPlayback?.durationMs ?? 0
+  )
 
   // Play/Pause
   const handlePlayPause = async () => {
-    const endpoint = playbackState?.is_playing ? "/api/spotify/player/pause" : "/api/spotify/player/play"
+    const currentlyPlaying = playbackState?.is_playing ?? cachedPlayback?.isPlaying ?? false
+    const endpoint = currentlyPlaying ? "/api/spotify/player/pause" : "/api/spotify/player/play"
     // Mark action time to debounce polling
     lastActionTime.current = Date.now()
     // Optimistically update UI
@@ -658,11 +651,15 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
             {/* Progress bar */}
             <div className="flex items-center gap-2 pt-1">
               <span className="text-xs tabular-nums text-muted-foreground">
-                {formatTime(cachedPlayback?.progressMs || playbackState?.progress_ms || 0)}
+                {formatTime(
+                  isPlaying && cachedPlayback?.durationMs
+                    ? (progress / 100) * cachedPlayback.durationMs
+                    : (cachedPlayback?.progressMs ?? playbackState?.progress_ms ?? 0)
+                )}
               </span>
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-green-500 transition-all duration-1000"
+                  className="h-full bg-green-500 transition-[width] duration-100 ease-linear"
                   style={{ width: `${progress}%` }}
                 />
               </div>
