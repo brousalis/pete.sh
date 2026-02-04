@@ -136,6 +136,8 @@ export function ConnectivityProvider({
       console.log(
         '[Connectivity] HTTPS page cannot check HTTP local URL (mixed content), using relative API URLs'
       )
+      // Set API base URL BEFORE state update to prevent race conditions
+      setApiBaseUrl('')
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -153,6 +155,8 @@ export function ConnectivityProvider({
       console.log(
         '[Connectivity] No local URL configured (NEXT_PUBLIC_LOCAL_API_URL not set)'
       )
+      // Set API base URL BEFORE state update to prevent race conditions
+      setApiBaseUrl('')
       setState(prev => ({
         ...prev,
         isInitialized: true,
@@ -196,9 +200,14 @@ export function ConnectivityProvider({
 
       // Only in local mode on that instance should we enable controls
       const isLocalInstance = data.mode === 'local'
+      const effectiveApiBaseUrl = isLocalInstance ? localUrl : ''
       console.log(
-        `[Connectivity] Local mode: ${isLocalInstance}, setting apiBaseUrl to: ${isLocalInstance ? localUrl : '(relative)'}`
+        `[Connectivity] Local mode: ${isLocalInstance}, setting apiBaseUrl to: ${effectiveApiBaseUrl || '(relative)'}`
       )
+
+      // Set API base URL BEFORE state update to prevent race conditions
+      // This ensures any component that reads isInitialized will also see the correct apiBaseUrl
+      setApiBaseUrl(effectiveApiBaseUrl)
 
       if (isMountedRef.current) {
         setState(prev => ({
@@ -206,7 +215,7 @@ export function ConnectivityProvider({
           isInitialized: true,
           isLocalAvailable: isLocalInstance,
           isChecking: false,
-          apiBaseUrl: isLocalInstance ? localUrl : '',
+          apiBaseUrl: effectiveApiBaseUrl,
           lastChecked: new Date(),
           lastError: null,
           failureCount: 0,
@@ -218,6 +227,9 @@ export function ConnectivityProvider({
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error'
       console.log(`[Connectivity] Health check failed: ${errorMessage}`)
+
+      // Set API base URL BEFORE state update to prevent race conditions
+      setApiBaseUrl('')
 
       if (isMountedRef.current) {
         setState(prev => ({
@@ -242,6 +254,8 @@ export function ConnectivityProvider({
 
   const forceLocal = useCallback(() => {
     if (localUrl) {
+      // Set API base URL BEFORE state update to prevent race conditions
+      setApiBaseUrl(localUrl)
       setForcedMode('local')
       setState(prev => ({
         ...prev,
@@ -251,6 +265,8 @@ export function ConnectivityProvider({
   }, [localUrl])
 
   const forceProduction = useCallback(() => {
+    // Set API base URL BEFORE state update to prevent race conditions
+    setApiBaseUrl('')
     setForcedMode('production')
     setState(prev => ({
       ...prev,
