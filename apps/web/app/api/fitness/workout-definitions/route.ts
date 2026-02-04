@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 /**
  * GET /api/fitness/workout-definitions
  * Get all workout definitions for a routine
+ * Returns definitions with version info from active version
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,18 @@ export async function GET(request: NextRequest) {
     const adapter = getFitnessAdapter()
     const definitions = await adapter.getWorkoutDefinitions(routineId)
 
-    return successResponse(definitions)
+    // Get version info from active version
+    const versions = await adapter.getVersions(routineId)
+    const activeVersion = versions.activeVersion
+
+    return successResponse({
+      definitions,
+      version: activeVersion ? {
+        number: activeVersion.versionNumber,
+        name: activeVersion.name,
+        activatedAt: activeVersion.activatedAt,
+      } : null,
+    })
   } catch (error) {
     return handleApiError(error)
   }

@@ -475,10 +475,11 @@ final class SyncManager {
     }
 
     /// Try to match a HealthKit workout to a Pete Train day based on workout type and day of week
+    /// WorkoutData.days automatically uses dynamic data from WorkoutDataManager when available
     private func matchWorkoutToDay(_ workout: HKWorkout) -> Day? {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: workout.startDate)
-        
+
         // Convert to Pete Train day number (Mon=1, Sun=7)
         let dayNumber: Int
         if weekday == 1 {
@@ -486,24 +487,24 @@ final class SyncManager {
         } else {
             dayNumber = weekday - 1
         }
-        
-        // Find the day
+
+        // Find the day (WorkoutData.days uses dynamic data when available)
         guard let day = WorkoutData.days.first(where: { $0.id == dayNumber }) else {
             return nil
         }
-        
+
         // Verify the workout type matches what Pete Train would have recorded
         let expectedType = day.startingActivityType.healthKitType
         if workout.workoutActivityType == expectedType {
             return day
         }
-        
+
         // Also check if it's a Pete Train workout by brand name
         if let brand = workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String,
            brand.contains("Pete Train") {
             return day
         }
-        
+
         return nil
     }
     

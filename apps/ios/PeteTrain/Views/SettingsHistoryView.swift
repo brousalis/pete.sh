@@ -9,6 +9,7 @@ struct SettingsHistoryView: View {
     @State private var locationManager = LocationManager.shared
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
+    @State private var workoutDataManager = WorkoutDataManager.shared
 
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @AppStorage("devDayOverride") private var devDayOverride = 1
@@ -22,6 +23,9 @@ struct SettingsHistoryView: View {
             // MARK: - Sync & Data Section (at top)
             syncDataSection
 
+            // MARK: - Workout Data Section
+            workoutDataSection
+
             // MARK: - Automation Section
             automationSection
 
@@ -32,6 +36,23 @@ struct SettingsHistoryView: View {
         .sheet(isPresented: $showHistoricalSync) {
             HistoricalSyncSheet(syncManager: syncManager, result: $historicalSyncResult)
         }
+    }
+
+    // MARK: - Workout Data Section
+
+    @ViewBuilder
+    private var workoutDataSection: some View {
+        // Section header
+        Text("WORKOUT DATA")
+            .font(.system(size: 10, weight: .semibold, design: .rounded))
+            .foregroundStyle(.secondary)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 4, trailing: 8))
+
+        // Workout data row
+        WorkoutDataRow(manager: workoutDataManager)
+            .listRowBackground(Color.white.opacity(0.06))
+            .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
     }
 
     // MARK: - Automation Section
@@ -488,6 +509,87 @@ private struct PetehomeSyncRow: View {
         if line.contains("⚠️") { return .orange }
         if line.contains("📤") { return .cyan }
         return .secondary
+    }
+}
+
+// MARK: - Workout Data Row
+
+private struct WorkoutDataRow: View {
+    @Bindable var manager: WorkoutDataManager
+
+    private var sourceColor: Color {
+        switch manager.dataSource {
+        case .api:
+            return .green
+        case .cache:
+            return .cyan
+        case .fallback:
+            return .orange
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Header
+            HStack {
+                Image(systemName: "dumbbell.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .frame(width: 24)
+                Text("Workout Definitions")
+                    .font(.system(size: 13, design: .rounded))
+                Spacer()
+                if manager.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                }
+            }
+
+            // Status
+            VStack(spacing: 6) {
+                HStack {
+                    Circle()
+                        .fill(sourceColor)
+                        .frame(width: 6, height: 6)
+                    Text(manager.statusDescription)
+                        .font(.system(size: 9, design: .rounded))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+
+                // Error message
+                if let error = manager.lastError {
+                    Text(error)
+                        .font(.system(size: 8, design: .rounded))
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                }
+
+                // Refresh button
+                Button {
+                    Task {
+                        WKInterfaceDevice.current().play(.click)
+                        await manager.refreshFromAPI()
+                        WKInterfaceDevice.current().play(manager.lastError == nil ? .success : .failure)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 9))
+                        Text("Refresh from API")
+                            .font(.system(size: 9, design: .rounded))
+                    }
+                    .foregroundStyle(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.green.opacity(0.15)))
+                }
+                .buttonStyle(.plain)
+                .disabled(manager.isLoading)
+            }
+            .padding(.leading, 28)
+        }
+        .padding(.vertical, 4)
     }
 }
 

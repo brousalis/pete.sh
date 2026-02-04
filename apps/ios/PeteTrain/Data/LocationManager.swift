@@ -32,11 +32,15 @@ final class LocationManager: NSObject {
     var showGymCleared = false
     var showHomeCleared = false
     
-    // MARK: - Settings (persisted)
-    
+    // MARK: - Settings (persisted but observable)
+
+    // Stored property that syncs with UserDefaults but is also @Observable
+    private var _isEnabled: Bool = UserDefaults.standard.bool(forKey: "locationAutoWorkoutEnabled")
+
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "locationAutoWorkoutEnabled") }
+        get { _isEnabled }
         set {
+            _isEnabled = newValue
             UserDefaults.standard.set(newValue, forKey: "locationAutoWorkoutEnabled")
             if newValue && isAuthorized {
                 startMonitoring()
@@ -135,11 +139,16 @@ final class LocationManager: NSObject {
         UserDefaults.standard.removeObject(forKey: "gymLongitude")
         UserDefaults.standard.removeObject(forKey: "homeLatitude")
         UserDefaults.standard.removeObject(forKey: "homeLongitude")
-        print("📍 Reset to default locations")
+        // Also clear stale gym session state
+        wasAtGym = false
+        leftGymTime = nil
+        isAtGym = false
+        isAtHome = false
+        print("📍 Reset to default locations and cleared session state")
     }
 
     // Thresholds in meters
-    static let gymRadius: Double = 100
+    static let gymRadius: Double = 50
     static let homeRadius: Double = 50
     static nonisolated let minimumAccuracy: Double = 200  // Ignore locations less accurate than this
     

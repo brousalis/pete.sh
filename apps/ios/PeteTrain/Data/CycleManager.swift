@@ -45,6 +45,7 @@ enum CycleManager {
     }
     
     /// Returns the Day object for the current day of the week
+    /// WorkoutData.days automatically uses dynamic data from WorkoutDataManager when available
     static func currentDay(for date: Date = Date()) -> Day {
         let dayNumber = currentDayNumber(for: date)
         return WorkoutData.days.first { $0.id == dayNumber } ?? WorkoutData.days[0]

@@ -48,6 +48,10 @@
 		AAA00054 /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00054 /* SyncManager.swift */; };
 		AAA00055 /* UnifiedExerciseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00055 /* UnifiedExerciseListView.swift */; };
 		AAA00056 /* SettingsHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00056 /* SettingsHistoryView.swift */; };
+		AAA00057 /* APIWorkoutModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00057 /* APIWorkoutModels.swift */; };
+		AAA00058 /* WorkoutMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00058 /* WorkoutMapper.swift */; };
+		AAA00059 /* WorkoutDefinitionsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00059 /* WorkoutDefinitionsCache.swift */; };
+		AAA00060 /* WorkoutDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00060 /* WorkoutDataManager.swift */; };
 		CBB3A45F2F0C2DCE00D10471 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
 		CBB3A4602F0C2DCE00D10471 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */; };
 		CBB3A46D2F0C2DD100D10471 /* PeteTrainWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -124,6 +128,10 @@
 		BBB00054 /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
 		BBB00055 /* UnifiedExerciseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedExerciseListView.swift; sourceTree = "<group>"; };
 		BBB00056 /* SettingsHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHistoryView.swift; sourceTree = "<group>"; };
+		BBB00057 /* APIWorkoutModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWorkoutModels.swift; sourceTree = "<group>"; };
+		BBB00058 /* WorkoutMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMapper.swift; sourceTree = "<group>"; };
+		BBB00059 /* WorkoutDefinitionsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDefinitionsCache.swift; sourceTree = "<group>"; };
+		BBB00060 /* WorkoutDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDataManager.swift; sourceTree = "<group>"; };
 		CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PeteTrainWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -265,6 +273,7 @@
 				BBB00010 /* WorkoutRecord.swift */,
 				BBB00026 /* ExerciseLog.swift */,
 				BBB00052 /* PetehomeModels.swift */,
+				BBB00057 /* APIWorkoutModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -317,6 +326,9 @@
 				BBB00051 /* KeychainHelper.swift */,
 				BBB00053 /* PetehomeAPI.swift */,
 				BBB00054 /* SyncManager.swift */,
+				BBB00058 /* WorkoutMapper.swift */,
+				BBB00059 /* WorkoutDefinitionsCache.swift */,
+				BBB00060 /* WorkoutDataManager.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -519,6 +531,10 @@
 				AAA00052 /* PetehomeModels.swift in Sources */,
 				AAA00053 /* PetehomeAPI.swift in Sources */,
 				AAA00054 /* SyncManager.swift in Sources */,
+				AAA00057 /* APIWorkoutModels.swift in Sources */,
+				AAA00058 /* WorkoutMapper.swift in Sources */,
+				AAA00059 /* WorkoutDefinitionsCache.swift in Sources */,
+				AAA00060 /* WorkoutDataManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
