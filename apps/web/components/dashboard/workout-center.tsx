@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     Tooltip,
     TooltipContent,
@@ -322,16 +321,16 @@ export function WorkoutCenter({
     return (
       <Card
         className={cn(
-          'flex h-full flex-col border-blue-500/20 bg-blue-500/5 py-0',
+          'flex flex-col border-blue-500/20 bg-blue-500/5 py-0 md:h-full',
           className
         )}
       >
-        <CardContent className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-          <div className="mb-4 rounded-full bg-blue-500/10 p-4 text-blue-500">
-            <Footprints className="size-8" />
+        <CardContent className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 text-center">
+          <div className="mb-3 sm:mb-4 rounded-full bg-blue-500/10 p-3 sm:p-4 text-blue-500">
+            <Footprints className="size-6 sm:size-8" />
           </div>
-          <h2 className="mb-1 text-xl font-semibold">{dayName} - Rest Day</h2>
-          <p className="text-muted-foreground mb-4 text-sm">
+          <h2 className="mb-1 text-lg sm:text-xl font-semibold">{dayName} - Rest Day</h2>
+          <p className="text-muted-foreground mb-3 sm:mb-4 text-sm">
             {goal || 'Active Recovery'}
           </p>
           <Badge variant="secondary" className="text-xs">
@@ -415,32 +414,32 @@ export function WorkoutCenter({
   return (
     <Card
       className={cn(
-        'flex h-full min-h-0 flex-col overflow-hidden py-0',
+        'flex flex-col py-0 md:h-full md:min-h-0 md:overflow-hidden',
         isWorkoutSkipped && 'opacity-60',
         isPreview && !isWorkoutCompleted && !isWorkoutSkipped && 'border-dashed border-muted-foreground/20',
         className
       )}
     >
-      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+      <CardContent className="flex flex-col p-0 md:min-h-0 md:flex-1 md:overflow-hidden">
         {/* Header */}
         <div
           className={cn(
-            'flex items-center gap-3 border-b p-3',
+            'flex items-center gap-2 sm:gap-3 border-b p-2.5 sm:p-3',
             isWorkoutCompleted ? 'bg-muted/20 border-border/30' : isWorkoutSkipped ? 'bg-muted/10 border-border/20' : 'bg-muted/30'
           )}
         >
           <div
             className={cn(
-              'rounded-md p-2',
+              'rounded-md p-1.5 sm:p-2 shrink-0',
               isWorkoutCompleted ? 'bg-muted/30 text-foreground/60' : isWorkoutSkipped ? 'bg-muted/20 text-muted-foreground' : 'bg-blue-500/10 text-blue-500'
             )}
           >
-            <Dumbbell className="size-5" />
+            <Dumbbell className="size-4 sm:size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <h2 className={cn(
-                "truncate text-base font-semibold",
+                "truncate text-sm sm:text-base font-semibold",
                 isWorkoutCompleted && "text-foreground/80",
                 isWorkoutSkipped && "text-muted-foreground"
               )}>
@@ -448,7 +447,7 @@ export function WorkoutCenter({
               </h2>
               {hasInjuryProtocol && (
                 <Badge
-                  className="h-5 shrink-0 gap-0.5 text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-500 border-0"
+                  className="h-4 sm:h-5 shrink-0 gap-0.5 text-[9px] sm:text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-500 border-0"
                 >
                   <AlertTriangle className="size-2.5" />
                   Injury
@@ -456,28 +455,28 @@ export function WorkoutCenter({
               )}
               {isWorkoutCompleted && (
                 <Badge
-                  className="h-5 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[10px] font-medium"
+                  className="h-4 sm:h-5 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[9px] sm:text-[10px] font-medium"
                 >
                   Done
                 </Badge>
               )}
               {isWorkoutSkipped && (
                 <Badge
-                  className="h-5 shrink-0 gap-0.5 bg-muted/50 text-muted-foreground border-0 text-[10px] font-medium"
+                  className="h-4 sm:h-5 shrink-0 gap-0.5 bg-muted/50 text-muted-foreground border-0 text-[9px] sm:text-[10px] font-medium"
                 >
                   <Ban className="size-2.5" />
                   Skipped
                 </Badge>
               )}
             </div>
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <div className="text-muted-foreground flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs mt-0.5">
               <span className={cn("font-medium", isWorkoutCompleted || isWorkoutSkipped ? "text-muted-foreground" : "text-foreground/80")}>{dayName}</span>
               <span>·</span>
               <span>{focus}</span>
               {workout.goal && (
                 <>
-                  <span>·</span>
-                  <span className="truncate">{workout.goal}</span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="truncate hidden sm:inline">{workout.goal}</span>
                 </>
               )}
             </div>
@@ -493,8 +492,8 @@ export function WorkoutCenter({
           </div>
         )}
 
-        {/* Sections - Scrollable */}
-        <ScrollArea className="min-h-0 flex-1">
+        {/* Sections - Scrollable on desktop only */}
+        <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
           <div className="space-y-2 p-2">
             {sections.map(section => (
               <WorkoutSection
@@ -530,19 +529,19 @@ export function WorkoutCenter({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div
           className={cn(
-            'border-t p-3',
+            'border-t p-2.5 sm:p-3',
             isWorkoutCompleted ? 'bg-muted/10 border-border/30' : isWorkoutSkipped ? 'bg-muted/5 border-border/20' : 'bg-muted/20'
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex-1">
               <div className={cn(
-                "text-xs",
+                "text-[11px] sm:text-xs",
                 isWorkoutCompleted || isWorkoutSkipped ? "text-muted-foreground/60" : "text-muted-foreground"
               )}>
                 {isWorkoutSkipped
@@ -553,21 +552,21 @@ export function WorkoutCenter({
               </div>
             </div>
             {/* Actions: Complete and Skip */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
                 {isWorkoutSkipped ? (
                   <>
-                    <span className="text-[10px] text-muted-foreground/60 font-medium">
+                    <span className="text-[10px] text-muted-foreground/60 font-medium hidden sm:inline">
                       Skipped
                     </span>
                     {onUnskip && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 gap-1 text-[10px] text-muted-foreground/60 hover:text-foreground"
+                        className="h-8 sm:h-6 gap-1 px-2.5 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground/60 hover:text-foreground touch-manipulation"
                         onClick={handleUnskip}
                         disabled={isSkipping}
                       >
-                        <Undo2 className="size-2.5" />
+                        <Undo2 className="size-3 sm:size-2.5" />
                         Undo
                       </Button>
                     )}
@@ -580,13 +579,13 @@ export function WorkoutCenter({
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 gap-1 text-muted-foreground hover:text-foreground"
+                            className="h-9 sm:h-8 gap-1 px-2.5 sm:px-2 text-muted-foreground hover:text-foreground touch-manipulation"
                           >
-                            <Ban className="size-3.5" />
-                            Skip
+                            <Ban className="size-4 sm:size-3.5" />
+                            <span className="hidden sm:inline">Skip</span>
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
                           <DialogHeader>
                           <DialogTitle>Skip Workout</DialogTitle>
                           <DialogDescription>
@@ -606,12 +605,14 @@ export function WorkoutCenter({
                                     handleSkipSubmit()
                                   }
                                 }}
+                                className="h-11 sm:h-10 text-base sm:text-sm"
                               />
                             </div>
                           </div>
-                          <DialogFooter>
+                          <DialogFooter className="gap-2 sm:gap-0">
                             <Button
                               variant="outline"
+                              className="h-11 sm:h-10 touch-manipulation"
                               onClick={() => {
                                 setSkipDialogOpen(false)
                                 setSkipReason('')
@@ -620,6 +621,7 @@ export function WorkoutCenter({
                               Cancel
                             </Button>
                             <Button
+                              className="h-11 sm:h-10 touch-manipulation"
                               onClick={handleSkipSubmit}
                               disabled={!skipReason.trim() || isSkipping}
                             >
@@ -630,19 +632,19 @@ export function WorkoutCenter({
                       </Dialog>
                     )}
                     {isWorkoutCompleted ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium hidden sm:inline">
                           Completed
                         </span>
                         {onUncomplete && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-6 gap-1 text-[10px] text-muted-foreground/60 hover:text-foreground"
+                            className="h-8 sm:h-6 gap-1 px-2.5 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground/60 hover:text-foreground touch-manipulation"
                             onClick={onUncomplete}
                             disabled={isCompleting}
                           >
-                            <Undo2 className="size-2.5" />
+                            <Undo2 className="size-3 sm:size-2.5" />
                             Undo
                           </Button>
                         )}
@@ -650,11 +652,11 @@ export function WorkoutCenter({
                     ) : (
                       <Button
                         size="sm"
-                        className="h-8"
+                        className="h-10 sm:h-8 px-4 sm:px-3 text-sm sm:text-xs touch-manipulation"
                         onClick={handleComplete}
                         disabled={isCompleting}
                       >
-                        {isCompleting ? 'Completing...' : 'Complete Workout'}
+                        {isCompleting ? 'Completing...' : 'Complete'}
                       </Button>
                     )}
                   </>
@@ -739,8 +741,8 @@ function WorkoutSection({
     <div className={cn('overflow-hidden rounded-lg border', section.bgColor)}>
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger asChild>
-          <button className="hover:bg-muted/30 flex w-full items-center gap-2 p-2.5 text-left transition-colors">
-            <Icon className={cn('size-4 shrink-0', section.iconColor)} />
+          <button className="active:bg-muted/30 hover:bg-muted/30 flex w-full items-center gap-2 p-3 sm:p-2.5 text-left transition-colors touch-manipulation">
+            <Icon className={cn('size-4 sm:size-4 shrink-0', section.iconColor)} />
             <span className="flex-1 text-sm font-medium">{section.title}</span>
             {hasLinkedWorkouts && isWorkoutCompleted && (
               <Tooltip>
@@ -886,29 +888,29 @@ function ExerciseRow({
     >
       <div
         className={cn(
-          'flex items-start gap-2 p-2 transition-colors',
-          !isPreview && 'hover:bg-muted/30 cursor-pointer'
+          'flex items-start gap-2 p-2.5 sm:p-2 transition-colors touch-manipulation',
+          !isPreview && 'active:bg-muted/30 hover:bg-muted/30 cursor-pointer'
         )}
         onClick={isPreview ? undefined : onToggle}
       >
-        {/* Checkbox - hidden in preview mode */}
+        {/* Checkbox - hidden in preview mode, larger touch target on mobile */}
         {!isPreview && (
           <div className="mt-0.5 shrink-0">
             <Checkbox
               checked={isCompleted}
               onCheckedChange={() => onToggle()}
               onClick={e => e.stopPropagation()}
-              className="size-4"
+              className="size-5 sm:size-4"
             />
           </div>
         )}
 
         {/* Exercise Info */}
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
             <span
               className={cn(
-                'text-[13px] font-medium',
+                'text-[13px] sm:text-[13px] font-medium',
                 isCompleted && 'text-muted-foreground line-through'
               )}
             >
@@ -949,44 +951,51 @@ function ExerciseRow({
           </div>
 
           {/* Metrics */}
-          <div className="text-muted-foreground mt-0.5 text-[11px]">
+          <div className="text-muted-foreground mt-0.5 text-[11px] sm:text-[11px]">
             {getMetrics()}
           </div>
 
-          {/* Form cue */}
+          {/* Form cue - show full on mobile, tooltip on desktop */}
           {display.form && (
-            <TooltipProvider delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <p className="text-foreground/70 mt-1 line-clamp-1 cursor-help text-[11px]">
-                    {display.form}
-                  </p>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[300px]">
-                  <p className="text-xs">{display.form}</p>
-                  {exercise.notes && (
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {exercise.notes}
+            <>
+              {/* Mobile: show truncated text without tooltip */}
+              <p className="text-foreground/70 mt-1 line-clamp-2 sm:hidden text-[11px]">
+                {display.form}
+              </p>
+              {/* Desktop: show with tooltip */}
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-foreground/70 mt-1 line-clamp-1 cursor-help text-[11px] hidden sm:block">
+                      {display.form}
                     </p>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[300px]">
+                    <p className="text-xs">{display.form}</p>
+                    {exercise.notes && (
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {exercise.notes}
+                      </p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
 
-        {/* Video button */}
+        {/* Video button - larger on mobile */}
         {videoId && (
           <Button
             variant={isVideoOpen ? 'secondary' : 'ghost'}
             size="sm"
-            className="h-6 shrink-0 gap-1 px-2 text-[10px]"
+            className="h-8 sm:h-6 shrink-0 gap-1 px-2.5 sm:px-2 text-[11px] sm:text-[10px] touch-manipulation"
             onClick={e => {
               e.stopPropagation()
               onVideoToggle()
             }}
           >
-            <Play className="size-3" />
+            <Play className="size-3.5 sm:size-3" />
             Demo
           </Button>
         )}
