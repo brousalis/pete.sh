@@ -188,7 +188,10 @@ export default function MePage() {
           <div className="flex-1 text-center sm:text-left">
             <h2 className="font-semibold">Pete Brousalis</h2>
             <p className="text-muted-foreground text-sm">
-              i build this site for an iPad mini mounted in my kitchen to help control some of our smart home. <br/>then took it too far
+              i built this site for personal use on an iPad mini mounted in my kitchen
+            </p>
+            <p className="text-muted-foreground text-sm">
+              then took it too far
             </p>
           </div>
 

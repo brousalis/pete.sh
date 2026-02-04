@@ -46,6 +46,7 @@ lerna-debug.log*
 
 # Vercel
 .vercel
+.vercel-deploy-toast-state.json
 
 # TypeScript
 *.tsbuildinfo

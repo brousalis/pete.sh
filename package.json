@@ -30,6 +30,8 @@
     "sync": "cd apps/web && yarn sync",
     "sync:watch": "cd apps/web && yarn sync:watch",
     "sync:tj": "cd apps/web && yarn sync:tj",
+    "vercel-toast": "cd apps/web && yarn vercel-toast",
+    "vercel-toast:watch": "cd apps/web && yarn vercel-toast:watch",
     "lint": "cd apps/web && yarn lint",
     "lint:fix": "cd apps/web && yarn lint:fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
@@ -40,5 +42,8 @@
     "desktop:build": "cd apps/desktop && yarn build",
     "desktop:install": "cd apps/desktop && yarn install"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "devDependencies": {
+    "node-notifier": "^10.0.1"
+  }
 }
