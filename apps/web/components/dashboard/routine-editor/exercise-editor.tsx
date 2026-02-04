@@ -1,31 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import {
-  GripVertical,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  Youtube,
-  Clock,
-  RefreshCw,
-  Hash,
-  Shield,
-  Copy
-} from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import type { Exercise } from '@/lib/types/fitness.types'
+import {
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    Copy,
+    GripVertical,
+    Hash,
+    RefreshCw,
+    Shield,
+    Trash2,
+    Video
+} from 'lucide-react'
+import { useState } from 'react'
+import { ExerciseVideoManager } from './exercise-video-manager'
 
 interface ExerciseEditorProps {
   exercise: Exercise
@@ -102,7 +103,7 @@ export function ExerciseEditor({
                 </Badge>
               )}
               {exercise.youtubeVideoId && (
-                <Youtube className="h-3 w-3 text-red-500" />
+                <Video className="h-3 w-3 text-blue-500" />
               )}
             </div>
 
@@ -209,30 +210,23 @@ export function ExerciseEditor({
               </div>
             </div>
 
-            {/* YouTube & Elbow Safe */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1 space-y-2">
-                <Label className="text-xs flex items-center gap-1">
-                  <Youtube className="h-3 w-3 text-red-500" />
-                  YouTube Video ID
-                </Label>
-                <Input
-                  value={exercise.youtubeVideoId ?? ''}
-                  onChange={(e) => handleFieldChange('youtubeVideoId', e.target.value)}
-                  placeholder="e.g., dQw4w9WgXcQ"
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div className="flex items-center gap-2 pt-5">
-                <Switch
-                  checked={exercise.isElbowSafe ?? false}
-                  onCheckedChange={(checked) => handleFieldChange('isElbowSafe', checked)}
-                />
-                <Label className="text-xs flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  Elbow Safe
-                </Label>
-              </div>
+            {/* Demo Videos */}
+            <ExerciseVideoManager
+              exerciseName={exercise.name}
+              currentYoutubeVideoId={exercise.youtubeVideoId}
+              onYoutubeVideoIdChange={(videoId) => handleFieldChange('youtubeVideoId', videoId)}
+            />
+
+            {/* Elbow Safe */}
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={exercise.isElbowSafe ?? false}
+                onCheckedChange={(checked) => handleFieldChange('isElbowSafe', checked)}
+              />
+              <Label className="text-xs flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Elbow Safe
+              </Label>
             </div>
 
             {/* Alternative Exercise */}

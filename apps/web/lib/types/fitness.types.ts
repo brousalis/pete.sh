@@ -244,3 +244,44 @@ export interface LinkedHealthKitWorkouts {
 export interface WorkoutWithLinkedHealthKit extends Workout {
   linkedHealthKitWorkouts?: LinkedHealthKitWorkouts
 }
+
+// ============================================
+// Exercise Demo Video Types
+// ============================================
+
+export type VideoType = 'youtube' | 'vimeo' | 'mp4' | 'external'
+
+export interface ExerciseDemoVideo {
+  id: string
+  exerciseName: string
+  videoUrl: string
+  videoType: VideoType
+  title?: string
+  description?: string
+  thumbnailUrl?: string
+  isPrimary: boolean
+  displayOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ExerciseDemoVideoInput {
+  exerciseName: string
+  videoUrl: string
+  videoType: VideoType
+  title?: string
+  description?: string
+  thumbnailUrl?: string
+  isPrimary?: boolean
+  displayOrder?: number
+}
+
+export interface ExerciseDemoVideoUpdate {
+  videoUrl?: string
+  videoType?: VideoType
+  title?: string
+  description?: string
+  thumbnailUrl?: string
+  isPrimary?: boolean
+  displayOrder?: number
+}

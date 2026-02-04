@@ -18,6 +18,9 @@ import type {
 import type {
     ConsistencyStats,
     DayOfWeek,
+    ExerciseDemoVideo,
+    ExerciseDemoVideoInput,
+    ExerciseDemoVideoUpdate,
     FitnessProgress,
     WeeklyRoutine,
     Workout,
@@ -1175,6 +1178,293 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     definitions[day] = workout
     await this.updateWorkoutDefinitions(routineId, definitions)
     return workout
+  }
+
+  // ==========================================
+  // Exercise Demo Video Methods
+  // ==========================================
+
+  /**
+   * Get all exercise demo videos
+   */
+  async getAllExerciseVideos(): Promise<ExerciseDemoVideo[]> {
+    if (!this.isSupabaseAvailable()) {
+      return []
+    }
+
+    const client = this.getReadClient()
+    if (!client) return []
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .select('*')
+        .order('exercise_name', { ascending: true })
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+
+      return (data ?? []).map(this.rowToExerciseVideo)
+    } catch (error) {
+      this.logError('Error fetching exercise videos', error)
+      return []
+    }
+  }
+
+  /**
+   * Get exercise demo videos by exercise name
+   */
+  async getExerciseVideosByName(exerciseName: string): Promise<ExerciseDemoVideo[]> {
+    if (!this.isSupabaseAvailable()) {
+      return []
+    }
+
+    const client = this.getReadClient()
+    if (!client) return []
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      // Normalize the exercise name for matching (lowercase, trim)
+      const normalizedName = exerciseName.toLowerCase().trim()
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .select('*')
+        .ilike('exercise_name', normalizedName)
+        .order('is_primary', { ascending: false })
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+
+      return (data ?? []).map(this.rowToExerciseVideo)
+    } catch (error) {
+      this.logError('Error fetching exercise videos by name', error)
+      return []
+    }
+  }
+
+  /**
+   * Get a specific exercise demo video by ID
+   */
+  async getExerciseVideo(id: string): Promise<ExerciseDemoVideo | null> {
+    if (!this.isSupabaseAvailable()) {
+      return null
+    }
+
+    const client = this.getReadClient()
+    if (!client) return null
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error || !data) return null
+
+      return this.rowToExerciseVideo(data)
+    } catch (error) {
+      this.logError('Error fetching exercise video', error)
+      return null
+    }
+  }
+
+  /**
+   * Create a new exercise demo video
+   */
+  async createExerciseVideo(input: ExerciseDemoVideoInput): Promise<ExerciseDemoVideo | null> {
+    if (!this.isSupabaseAvailable()) {
+      return null
+    }
+
+    const client = this.getWriteClient()
+    if (!client) return null
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      // Normalize exercise name
+      const normalizedName = input.exerciseName.toLowerCase().trim()
+
+      // If this is being set as primary, unset any existing primary for this exercise
+      if (input.isPrimary) {
+        await clientAny
+          .from('exercise_demo_videos')
+          .update({ is_primary: false })
+          .ilike('exercise_name', normalizedName)
+      }
+
+      const insertData = {
+        exercise_name: normalizedName,
+        video_url: input.videoUrl,
+        video_type: input.videoType ?? 'youtube',
+        title: input.title ?? null,
+        description: input.description ?? null,
+        thumbnail_url: input.thumbnailUrl ?? null,
+        is_primary: input.isPrimary ?? false,
+        display_order: input.displayOrder ?? 0,
+      }
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .insert(insertData)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return this.rowToExerciseVideo(data)
+    } catch (error) {
+      this.logError('Error creating exercise video', error)
+      return null
+    }
+  }
+
+  /**
+   * Update an exercise demo video
+   */
+  async updateExerciseVideo(id: string, updates: ExerciseDemoVideoUpdate): Promise<ExerciseDemoVideo | null> {
+    if (!this.isSupabaseAvailable()) {
+      return null
+    }
+
+    const client = this.getWriteClient()
+    if (!client) return null
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      // Get current video to check exercise name
+      const current = await this.getExerciseVideo(id)
+      if (!current) return null
+
+      // If setting as primary, unset other primaries for this exercise
+      if (updates.isPrimary) {
+        await clientAny
+          .from('exercise_demo_videos')
+          .update({ is_primary: false })
+          .ilike('exercise_name', current.exerciseName)
+          .neq('id', id)
+      }
+
+      const updateData: Record<string, unknown> = {
+        updated_at: getCurrentTimestamp(),
+      }
+
+      if (updates.videoUrl !== undefined) updateData.video_url = updates.videoUrl
+      if (updates.videoType !== undefined) updateData.video_type = updates.videoType
+      if (updates.title !== undefined) updateData.title = updates.title
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.thumbnailUrl !== undefined) updateData.thumbnail_url = updates.thumbnailUrl
+      if (updates.isPrimary !== undefined) updateData.is_primary = updates.isPrimary
+      if (updates.displayOrder !== undefined) updateData.display_order = updates.displayOrder
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return this.rowToExerciseVideo(data)
+    } catch (error) {
+      this.logError('Error updating exercise video', error)
+      return null
+    }
+  }
+
+  /**
+   * Delete an exercise demo video
+   */
+  async deleteExerciseVideo(id: string): Promise<boolean> {
+    if (!this.isSupabaseAvailable()) {
+      return false
+    }
+
+    const client = this.getWriteClient()
+    if (!client) return false
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { error } = await clientAny
+        .from('exercise_demo_videos')
+        .delete()
+        .eq('id', id)
+
+      return !error
+    } catch (error) {
+      this.logError('Error deleting exercise video', error)
+      return false
+    }
+  }
+
+  /**
+   * Get unique exercise names that have videos
+   */
+  async getExerciseNamesWithVideos(): Promise<string[]> {
+    if (!this.isSupabaseAvailable()) {
+      return []
+    }
+
+    const client = this.getReadClient()
+    if (!client) return []
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { data, error } = await clientAny
+        .from('exercise_demo_videos')
+        .select('exercise_name')
+        .order('exercise_name', { ascending: true })
+
+      if (error) throw error
+
+      // Get unique names
+      const names = new Set<string>()
+      for (const row of data ?? []) {
+        names.add(row.exercise_name)
+      }
+      return Array.from(names)
+    } catch (error) {
+      this.logError('Error fetching exercise names with videos', error)
+      return []
+    }
+  }
+
+  /**
+   * Convert database row to ExerciseDemoVideo
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private rowToExerciseVideo(row: any): ExerciseDemoVideo {
+    return {
+      id: row.id,
+      exerciseName: row.exercise_name,
+      videoUrl: row.video_url,
+      videoType: row.video_type,
+      title: row.title ?? undefined,
+      description: row.description ?? undefined,
+      thumbnailUrl: row.thumbnail_url ?? undefined,
+      isPrimary: row.is_primary,
+      displayOrder: row.display_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }
   }
 
   // ==========================================
