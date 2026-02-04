@@ -36,8 +36,6 @@ const envSchema = z.object({
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
 
-  // Desktop (local Windows features)
-  DESKTOP_ENABLED: z.string().optional(),
 })
 
 // Parse and validate environment variables
@@ -109,9 +107,6 @@ export const config = {
       'user-read-email',
       'user-read-private',
     ],
-  },
-  desktop: {
-    enabled: env.DESKTOP_ENABLED === 'true',
   },
 } as const
 

@@ -12,15 +12,16 @@ import {
   Coffee,
   Command,
   Dumbbell,
-  FileText,
   Grid3x3,
-  Home,
   Lightbulb,
   Loader2,
   Menu,
+  Monitor,
   Music,
   RefreshCw,
   Settings,
+  Tv,
+  User,
   Wifi,
   WifiOff,
   X,
@@ -39,39 +40,84 @@ type NavItem = {
 
 // Main navigation items (excludes Deck which has its own icon)
 const navItems: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home, shortcut: '1' },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
-  { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
+  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
+  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '5' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
-  { href: '/posts', label: 'Posts', icon: FileText, shortcut: '9' },
 ]
 
 // All items including Deck for keyboard shortcuts
 const allNavItems: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home, shortcut: '1' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '2' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '3' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
-  { href: '/transit', label: 'Transit', icon: Bus, shortcut: '5' },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '6' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
+  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
+  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '5' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
-  { href: '/posts', label: 'Blog', icon: FileText, shortcut: '9' },
-  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '0' },
+  { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
 ]
 
 export function TopNavigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [displaySwitching, setDisplaySwitching] = useState<'hdmi' | 'displayport' | null>(null)
+  const [currentInput, setCurrentInput] = useState<'hdmi' | 'displayport' | 'unknown' | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isLocalAvailable, isInitialized } = useConnectivity()
   const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
+
+  // Fetch current display input when local is available
+  useEffect(() => {
+    if (!isLocalAvailable) {
+      setCurrentInput(null)
+      return
+    }
+
+    const fetchCurrentInput = async () => {
+      try {
+        const response = await fetch('/api/desktop/kvm')
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentInput(data.data?.currentInput ?? 'unknown')
+        }
+      } catch (error) {
+        console.error('Failed to fetch display input:', error)
+      }
+    }
+
+    fetchCurrentInput()
+  }, [isLocalAvailable])
+
+  // Display input switch handler
+  const handleDisplaySwitch = async (target: 'hdmi' | 'displayport') => {
+    if (displaySwitching) return
+    setDisplaySwitching(target)
+    try {
+      const response = await fetch('/api/desktop/kvm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target }),
+      })
+      if (response.ok) {
+        setCurrentInput(target)
+      } else {
+        const data = await response.json()
+        console.error('Display switch failed:', data.error)
+      }
+    } catch (error) {
+      console.error('Display switch error:', error)
+    } finally {
+      setDisplaySwitching(null)
+    }
+  }
 
   // Prevent hydration mismatch by only showing dynamic content after mount
   useEffect(() => {
@@ -135,16 +181,136 @@ export function TopNavigation() {
       className="bg-card border-border/50 sticky top-0 z-50 border-b"
     >
       <div className="mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:px-4 md:gap-4 md:px-5 lg:px-6">
-        {/* Logo */}
+        {/* Logo - acts as home button with animated states */}
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/"
-            className="group relative flex items-center"
+            className="group relative flex items-center focus:outline-none"
             aria-label="Go to dashboard"
+            aria-current={isActive('/') ? 'page' : undefined}
           >
-            <span className="text-brand text-lg font-bold sm:text-xl">
-              petehome
-            </span>
+            <motion.div
+              className="relative flex items-center rounded-lg px-2.5 py-1.5"
+              initial={false}
+              animate={isActive('/') ? 'active' : 'idle'}
+              whileHover="hover"
+              whileTap="tap"
+              variants={{
+                idle: {
+                  scale: 1,
+                  y: 0,
+                },
+                hover: {
+                  scale: 1.03,
+                  y: -1,
+                },
+                tap: {
+                  scale: 0.98,
+                },
+                active: {
+                  scale: 1,
+                  y: 0,
+                },
+              }}
+              transition={transitions.spring}
+              style={{
+                // Glow effect on hover/active via CSS custom property
+              }}
+            >
+              {/* Glow background layer */}
+              <motion.div
+                className="absolute inset-0 rounded-lg"
+                variants={{
+                  idle: {
+                    opacity: 0,
+                    boxShadow: '0 0 0px 0px hsl(var(--brand) / 0)',
+                  },
+                  hover: {
+                    opacity: 1,
+                    boxShadow: '0 0 20px 2px hsl(var(--brand) / 0.15)',
+                  },
+                  tap: {
+                    opacity: 0.8,
+                    boxShadow: '0 0 12px 1px hsl(var(--brand) / 0.2)',
+                  },
+                  active: {
+                    opacity: 1,
+                    boxShadow: '0 0 24px 4px hsl(var(--brand) / 0.2)',
+                  },
+                }}
+                transition={{ duration: 0.25 }}
+              />
+
+              {/* Background fill for active state */}
+              <motion.div
+                className="bg-brand/10 absolute inset-0 rounded-lg"
+                variants={{
+                  idle: { opacity: 0 },
+                  hover: { opacity: 0.5 },
+                  tap: { opacity: 0.7 },
+                  active: { opacity: 1 },
+                }}
+                transition={{ duration: 0.2 }}
+              />
+
+              {/* Logo text with split styling */}
+              <motion.span className="relative flex items-baseline text-lg font-bold sm:text-xl transition-all">
+                <motion.span
+                  variants={{
+                    idle: {
+                      color: 'color-mix(in oklab, var(--foreground) 70%, transparent)',
+                    },
+                    tap: {
+                      color: 'var(--foreground)',
+                    },
+                    active: {
+                      color: 'var(--brand)',
+                    },
+                  }}
+                  transition={{ duration: 0.25 }}
+                >
+                  pete
+                </motion.span>
+                <motion.span
+                  variants={{
+                    idle: {
+                      color: 'color-mix(in oklab, var(--foreground) 70%, transparent)',
+                    },
+                    hover: {
+                      color: 'var(--foreground)',
+                    },
+                    tap: {
+                      color: 'var(--foreground)',
+                    },
+                    active: {
+                      color: 'var(--foreground)',
+                    },
+                  }}
+                  transition={{ duration: 0.25 }}
+                >
+                  home
+                </motion.span>
+              </motion.span>
+
+
+              {/* Subtle pulse animation for active state */}
+              {isActive('/') && (
+                <motion.div
+                  className="bg-brand/20 pointer-events-none absolute inset-0 rounded-lg"
+                  initial={{ opacity: 0, scale: 1 }}
+                  animate={{
+                    opacity: [0.3, 0, 0.3],
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              )}
+            </motion.div>
+
             {/* Keyboard shortcut indicator */}
             <span className="border-border/60 bg-muted/50 text-muted-foreground ml-2 hidden items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] xl:flex">
               <Command className="size-2.5" />K
@@ -188,7 +354,7 @@ export function TopNavigation() {
           className="hidden flex-1 items-center justify-center md:flex"
           aria-label="Primary navigation"
         >
-          <div className="bg-muted/40 flex items-center gap-0.5 rounded-xl p-1 lg:gap-1">
+          <div className="bg-muted/40 flex items-center gap-0.5 rounded-xl p-1 xl:gap-1">
             {navItems.map(({ href, label, icon: Icon, shortcut }) => {
               const active = isActive(href)
               return (
@@ -198,8 +364,8 @@ export function TopNavigation() {
                   aria-current={active ? 'page' : undefined}
                   title={`${label} (⌘${shortcut})`}
                   className={cn(
-                    'group relative flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors lg:gap-2 lg:px-3',
-                    'min-h-[40px] min-w-[40px] justify-center lg:min-w-0 lg:justify-start', // Touch-friendly minimum
+                    'group relative flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors xl:gap-2 xl:px-3',
+                    'min-h-[40px] min-w-[40px] justify-center xl:min-w-0 xl:justify-start', // Touch-friendly minimum
                     'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
                     active
                       ? 'text-brand'
@@ -222,8 +388,8 @@ export function TopNavigation() {
                         : 'text-muted-foreground group-hover:text-foreground'
                     )}
                   />
-                  {/* Labels visible at 1024px+ (iPad Mini landscape and up) */}
-                  <span className="relative hidden lg:inline">{label}</span>
+                  {/* Labels visible at 1280px+ */}
+                  <span className="relative hidden xl:inline">{label}</span>
                 </Link>
               )
             })}
@@ -272,6 +438,50 @@ export function TopNavigation() {
                 <RefreshCw className="size-5" aria-hidden />
               )}
             </button>
+          )}
+
+          {/* Display Input Switch Buttons - only visible when connected locally */}
+          {mounted && isLocalAvailable && (
+            <>
+              <button
+                onClick={() => handleDisplaySwitch('hdmi')}
+                disabled={displaySwitching !== null || currentInput === 'hdmi'}
+                className={cn(
+                  'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                  currentInput === 'hdmi'
+                    ? 'bg-brand/10 text-brand'
+                    : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                  displaySwitching === 'hdmi' && 'cursor-not-allowed opacity-50'
+                )}
+                title={currentInput === 'hdmi' ? 'HDMI (active)' : 'Switch to HDMI'}
+                aria-label="Switch display to HDMI"
+              >
+                {displaySwitching === 'hdmi' ? (
+                  <Loader2 className="size-5 animate-spin" aria-hidden />
+                ) : (
+                  <Tv className="size-5" aria-hidden />
+                )}
+              </button>
+              <button
+                onClick={() => handleDisplaySwitch('displayport')}
+                disabled={displaySwitching !== null || currentInput === 'displayport'}
+                className={cn(
+                  'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                  currentInput === 'displayport'
+                    ? 'bg-brand/10 text-brand'
+                    : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                  displaySwitching === 'displayport' && 'cursor-not-allowed opacity-50'
+                )}
+                title={currentInput === 'displayport' ? 'DisplayPort (active)' : 'Switch to DisplayPort'}
+                aria-label="Switch display to DisplayPort"
+              >
+                {displaySwitching === 'displayport' ? (
+                  <Loader2 className="size-5 animate-spin" aria-hidden />
+                ) : (
+                  <Monitor className="size-5" aria-hidden />
+                )}
+              </button>
+            </>
           )}
 
           {/* Settings Link */}

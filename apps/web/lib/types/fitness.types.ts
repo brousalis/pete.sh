@@ -149,12 +149,18 @@ export interface WorkoutCompletion {
   completedAt?: string
   exercisesCompleted?: string[] // exercise IDs
   notes?: string
+  skipped?: boolean
+  skippedAt?: string
+  skippedReason?: string
 }
 
 export interface RoutineCompletion {
   routineId: string
   completed: boolean
   completedAt?: string
+  skipped?: boolean
+  skippedAt?: string
+  skippedReason?: string
 }
 
 export interface FitnessProgress {
@@ -162,6 +168,7 @@ export interface FitnessProgress {
   year: number
   completedWorkouts: number
   totalWorkouts: number
+  skippedWorkouts: number
   completedMorningRoutines: number
   totalMorningRoutines: number
   completedNightRoutines: number
@@ -171,14 +178,23 @@ export interface FitnessProgress {
       workout?: {
         completed: boolean
         completedAt?: string
+        skipped?: boolean
+        skippedAt?: string
+        skippedReason?: string
       }
       morningRoutine?: {
         completed: boolean
         completedAt?: string
+        skipped?: boolean
+        skippedAt?: string
+        skippedReason?: string
       }
       nightRoutine?: {
         completed: boolean
         completedAt?: string
+        skipped?: boolean
+        skippedAt?: string
+        skippedReason?: string
       }
     }
   }

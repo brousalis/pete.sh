@@ -325,6 +325,25 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   }
 
   /**
+   * Mark a workout as uncomplete (undo completion)
+   */
+  async markWorkoutUncomplete(
+    day: DayOfWeek,
+    weekNumber: number
+  ): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.markWorkoutUncomplete(day, weekNumber)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
    * Add exercises to the completed list without necessarily marking the workout complete
    * Used by workout autocomplete to incrementally complete exercises
    */
@@ -377,6 +396,103 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   ): Promise<void> {
     // Update via the service (which updates JSON)
     await this.fitnessService.markRoutineIncomplete(routineType, day, weekNumber)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
+   * Skip a workout with a reason
+   */
+  async skipWorkout(
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.skipWorkout(day, weekNumber, reason)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
+   * Unskip a workout (remove skip status)
+   */
+  async unskipWorkout(day: DayOfWeek, weekNumber: number): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.unskipWorkout(day, weekNumber)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
+   * Skip a daily routine (morning/night) with a reason
+   */
+  async skipRoutine(
+    routineType: 'morning' | 'night',
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.skipRoutine(routineType, day, weekNumber, reason)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
+   * Unskip a daily routine (remove skip status)
+   */
+  async unskipRoutine(
+    routineType: 'morning' | 'night',
+    day: DayOfWeek,
+    weekNumber: number
+  ): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.unskipRoutine(routineType, day, weekNumber)
+
+    // Also update Supabase if available
+    if (this.isSupabaseAvailable()) {
+      const routine = await this.fitnessService.getRoutine()
+      if (routine) {
+        await this.saveRoutineToSupabase(routine)
+      }
+    }
+  }
+
+  /**
+   * Skip all activities (workout + morning + night routines) for a day
+   */
+  async skipDay(
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    // Update via the service (which updates JSON)
+    await this.fitnessService.skipDay(day, weekNumber, reason)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {

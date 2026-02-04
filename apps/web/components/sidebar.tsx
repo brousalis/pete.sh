@@ -31,7 +31,7 @@ const items: Item[] = [
   { href: '/lights', label: 'Lights', icon: Lightbulb },
   { href: '/music', label: 'Music', icon: Music },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/transit', label: 'Transit', icon: Bus },
+  { href: '/transit', label: 'CTA', icon: Bus },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]

@@ -4,26 +4,26 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { ExerciseTimer } from "@/components/ui/exercise-timer"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from "@/components/ui/tooltip"
 import type { DailyRoutine, RoutineCompletion } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
-import { Check, ChevronDown, ChevronUp, Clock, ExternalLink, Info, Moon, Play, Sun } from "lucide-react"
+import { Ban, Check, ChevronDown, ChevronUp, Clock, ExternalLink, Info, Moon, Play, Sun, Undo2 } from "lucide-react"
 import { useState } from "react"
 
 interface StretchPanelProps {
@@ -43,6 +43,12 @@ interface StretchPanelProps {
   isPreview?: boolean
   /** Custom class name */
   className?: string
+  /** Callback when routine skip is undone */
+  onUnskip?: () => void
+  /** Whether the day's workout is skipped (inherits skipped state) */
+  daySkipped?: boolean
+  /** The reason the day was skipped */
+  daySkippedReason?: string
 }
 
 interface StretchExercise {
@@ -72,6 +78,9 @@ export function StretchPanel({
   isCompleting = false,
   isPreview = false,
   className,
+  onUnskip,
+  daySkipped = false,
+  daySkippedReason,
 }: StretchPanelProps) {
   const [activeTimerIdx, setActiveTimerIdx] = useState<number | null>(null)
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set())
@@ -79,6 +88,10 @@ export function StretchPanel({
   const [videoModal, setVideoModal] = useState<{ videoId: string; title: string } | null>(null)
 
   const isCompleted = completion?.completed || false
+  // Show as skipped if explicitly skipped OR if day workout is skipped and routine not completed
+  const isExplicitlySkipped = completion?.skipped || false
+  const isSkipped = isExplicitlySkipped || (daySkipped && !isCompleted)
+  const skippedReason = completion?.skippedReason || daySkippedReason
   const Icon = type === "morning" ? Sun : Moon
 
   const themeColors = type === "morning"
@@ -116,65 +129,182 @@ export function StretchPanel({
     setVideoModal(null)
   }
 
-  // Completed view - still shows exercises but in a completed state
-  if (isCompleted) {
+  // Skipped view - shows skipped state with reason
+  if (isSkipped && !isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col h-full min-h-0 overflow-hidden py-0 ring-1 ring-green-500/50",
+        "flex flex-col h-full min-h-0 overflow-hidden py-0 opacity-60",
         className
       )}>
         <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
           {/* Header */}
-          <div className={cn(
-            "flex items-center gap-2 p-3 border-b",
-            themeColors.accentBg,
-            themeColors.borderColor
-          )}>
-            <div className={cn("rounded-md p-1.5", themeColors.iconBg)}>
-              <Icon className={cn("size-4", themeColors.iconColor)} />
+          <div className="flex items-center gap-2 p-3 border-b border-border/30 bg-muted/10">
+            <div className="rounded-md p-1.5 bg-muted/30">
+              <Icon className="size-4 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate">{routine.name}</div>
-              <div className="text-[11px] text-muted-foreground">{routine.duration}m</div>
+              <div className="font-medium text-sm truncate text-muted-foreground">{routine.name}</div>
+              <div className="text-[11px] text-muted-foreground/60">{routine.duration}m</div>
             </div>
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] h-5 shrink-0">
-              Done
+            <Badge className="bg-muted/50 text-muted-foreground border-0 text-[10px] h-5 shrink-0 gap-0.5 font-medium">
+              <Ban className="size-2.5" />
+              Skipped
             </Badge>
           </div>
 
-          {/* Completed Exercise List - Read only */}
+          {/* Skipped Banner */}
+          {skippedReason && (
+            <div className="border-b border-border/20 bg-muted/10 px-3 py-2">
+              <p className="text-[11px] text-muted-foreground/70 italic">
+                "{skippedReason}"
+              </p>
+            </div>
+          )}
+
+          {/* Skipped Exercise List */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-2 space-y-1">
+            <div className="p-2 space-y-0.5">
               {routine.exercises.map((exercise, idx) => {
                 const videoId = getVideoId(exercise.name)
 
                 return (
                   <div
                     key={idx}
-                    className="rounded-md bg-muted/30 border border-transparent p-2"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded"
                   >
-                    <div className="flex items-start gap-2">
-                      <Check className="size-3.5 text-green-500 mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs text-foreground/80">
-                          {exercise.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="text-[10px] text-muted-foreground">
-                          {exercise.duration}s
-                        </span>
-                        {videoId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0"
-                            onClick={() => openVideoModal(videoId, exercise.name)}
-                          >
-                            <Play className="size-3 text-muted-foreground" />
-                          </Button>
-                        )}
-                      </div>
+                    <div className="size-3 rounded-full border border-muted-foreground/20 shrink-0" />
+                    <span className="text-xs text-muted-foreground/50 flex-1 min-w-0 truncate line-through">
+                      {exercise.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/40">
+                      {exercise.duration}s
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Footer with Undo Skip or Mark Done */}
+          <div className="p-2 border-t border-border/20">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground/50">Skipped</span>
+              {isExplicitlySkipped && onUnskip ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
+                  onClick={onUnskip}
+                  disabled={isCompleting}
+                >
+                  <Undo2 className="size-2.5" />
+                  {isCompleting ? "..." : "Undo"}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
+                  onClick={onComplete}
+                  disabled={isCompleting}
+                >
+                  <Check className="size-2.5" />
+                  {isCompleting ? "..." : "Done"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+
+        {/* Video Modal */}
+        <Dialog open={!!videoModal} onOpenChange={(open) => !open && closeVideoModal()}>
+          <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+            <DialogHeader className="p-4 pb-2">
+              <DialogTitle className="text-base">{videoModal?.title}</DialogTitle>
+            </DialogHeader>
+            {videoModal && (
+              <div className="px-4 pb-4">
+                <div className="relative overflow-hidden rounded-lg border border-border/50 bg-black shadow-lg">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      className="absolute inset-0 size-full"
+                      src={`https://www.youtube.com/embed/${videoModal.videoId}?rel=0&modestbranding=1&autoplay=1`}
+                      title={videoModal.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-end">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${videoModal.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <span>Open on YouTube</span>
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </Card>
+    )
+  }
+
+  // Completed view - still shows exercises but in a completed state
+  if (isCompleted) {
+    return (
+      <Card className={cn(
+        "flex flex-col h-full min-h-0 overflow-hidden py-0",
+        className
+      )}>
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+          {/* Header - subtle completed styling */}
+          <div className="flex items-center gap-2 p-3 border-b border-border/30 bg-muted/20">
+            <div className={cn("rounded-md p-1.5", themeColors.iconBg)}>
+              <Icon className={cn("size-4", themeColors.iconColor)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm truncate text-foreground/80">{routine.name}</div>
+              <div className="text-[11px] text-muted-foreground">{routine.duration}m</div>
+            </div>
+            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[10px] h-5 shrink-0 font-medium">
+              Done
+            </Badge>
+          </div>
+
+          {/* Completed Exercise List - Read only, muted */}
+          <div className="flex-1 overflow-y-auto min-h-0 bg-muted/5">
+            <div className="p-2 space-y-0.5">
+              {routine.exercises.map((exercise, idx) => {
+                const videoId = getVideoId(exercise.name)
+
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded"
+                  >
+                    <Check className="size-3 text-emerald-500/70 shrink-0" />
+                    <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
+                      {exercise.name}
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-[10px] text-muted-foreground/60">
+                        {exercise.duration}s
+                      </span>
+                      {videoId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-50 hover:opacity-100"
+                          onClick={() => openVideoModal(videoId, exercise.name)}
+                        >
+                          <Play className="size-2.5 text-muted-foreground" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )
@@ -182,23 +312,21 @@ export function StretchPanel({
             </div>
           </div>
 
-          {/* Footer with Undo - only show when not in preview mode */}
-          <div className={cn("p-2 border-t", themeColors.borderColor)}>
-            {isPreview ? (
-              <div className="text-center text-[11px] text-muted-foreground">
-                Completed
-              </div>
-            ) : (
+          {/* Footer with Undo - subtle */}
+          <div className="p-2 border-t border-border/30">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground/60">Completed</span>
               <Button
                 size="sm"
                 variant="ghost"
-                className="w-full h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
                 onClick={onUncomplete}
                 disabled={isCompleting}
               >
+                <Undo2 className="size-2.5" />
                 {isCompleting ? "..." : "Undo"}
               </Button>
-            )}
+            </div>
           </div>
         </CardContent>
 
@@ -428,8 +556,18 @@ export function StretchPanel({
         {/* Footer */}
         <div className={cn("p-2 border-t", themeColors.borderColor)}>
           {isPreview ? (
-            <div className="text-center text-[11px] text-muted-foreground py-1">
-              Not completed
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">Not completed</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+                onClick={onComplete}
+                disabled={isCompleting}
+              >
+                <Check className="size-3" />
+                {isCompleting ? "..." : "Mark Done"}
+              </Button>
             </div>
           ) : (
             <Button

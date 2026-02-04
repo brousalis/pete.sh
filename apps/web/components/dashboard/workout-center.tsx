@@ -7,37 +7,50 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { YouTubePlayer } from '@/components/ui/youtube-player'
 import type {
-  DayOfWeek,
-  Exercise,
-  Workout,
-  WorkoutCompletion,
+    DayOfWeek,
+    Exercise,
+    Workout,
+    WorkoutCompletion,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Dumbbell,
-  Footprints,
-  PersonStanding,
-  Play,
-  RotateCcw,
-  StretchVertical,
-  Watch,
-  Zap,
+    AlertTriangle,
+    Ban,
+    ChevronDown,
+    ChevronRight,
+    Dumbbell,
+    Footprints,
+    PersonStanding,
+    Play,
+    RotateCcw,
+    StretchVertical,
+    Undo2,
+    Watch,
+    Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -56,6 +69,8 @@ interface WorkoutCenterProps {
   hasInjuryProtocol?: boolean
   /** Callback when workout is completed */
   onComplete: (exercisesCompleted: string[]) => void
+  /** Callback when workout completion is undone */
+  onUncomplete?: () => void
   /** Whether completion is in progress */
   isCompleting?: boolean
   /** Currently open video ID */
@@ -68,6 +83,12 @@ interface WorkoutCenterProps {
   appleWorkouts?: AppleWorkout[]
   /** Custom class name */
   className?: string
+  /** Callback when workout is skipped */
+  onSkip?: (reason: string) => void
+  /** Callback when skip is undone */
+  onUnskip?: () => void
+  /** Whether skip operation is in progress */
+  isSkipping?: boolean
 }
 
 // Exercise-to-workout type mapping
@@ -155,12 +176,16 @@ export function WorkoutCenter({
   completion,
   hasInjuryProtocol = false,
   onComplete,
+  onUncomplete,
   isCompleting = false,
   openVideoId,
   onVideoToggle,
   isPreview = false,
   appleWorkouts = [],
   className,
+  onSkip,
+  onUnskip,
+  isSkipping = false,
 }: WorkoutCenterProps) {
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
     new Set(completion?.exercisesCompleted || [])
@@ -168,8 +193,11 @@ export function WorkoutCenter({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['exercises']) // Main exercises open by default
   )
+  const [skipDialogOpen, setSkipDialogOpen] = useState(false)
+  const [skipReason, setSkipReason] = useState('')
 
   const isWorkoutCompleted = completion?.completed || false
+  const isWorkoutSkipped = completion?.skipped || false
 
   // Sync completedExercises when completion prop changes (e.g., viewing different dates)
   useEffect(() => {
@@ -273,6 +301,22 @@ export function WorkoutCenter({
     onComplete(getAllExerciseIds())
   }
 
+  // Handle skip submission
+  const handleSkipSubmit = () => {
+    if (skipReason.trim() && onSkip) {
+      onSkip(skipReason.trim())
+      setSkipDialogOpen(false)
+      setSkipReason('')
+    }
+  }
+
+  // Handle unskip
+  const handleUnskip = () => {
+    if (onUnskip) {
+      onUnskip()
+    }
+  }
+
   // Rest day view
   if (!workout) {
     return (
@@ -372,8 +416,8 @@ export function WorkoutCenter({
     <Card
       className={cn(
         'flex h-full min-h-0 flex-col overflow-hidden py-0',
-        isWorkoutCompleted && 'ring-1 ring-green-500/50',
-        isPreview && !isWorkoutCompleted && 'border-dashed border-blue-500/30',
+        isWorkoutSkipped && 'opacity-60',
+        isPreview && !isWorkoutCompleted && !isWorkoutSkipped && 'border-dashed border-muted-foreground/20',
         className
       )}
     >
@@ -382,44 +426,52 @@ export function WorkoutCenter({
         <div
           className={cn(
             'flex items-center gap-3 border-b p-3',
-            isPreview ? 'bg-blue-500/5' : 'bg-muted/30'
+            isWorkoutCompleted ? 'bg-muted/20 border-border/30' : isWorkoutSkipped ? 'bg-muted/10 border-border/20' : 'bg-muted/30'
           )}
         >
           <div
             className={cn(
               'rounded-md p-2',
-              isPreview
-                ? 'bg-blue-500/20 text-blue-500'
-                : 'bg-blue-500/10 text-blue-500'
+              isWorkoutCompleted ? 'bg-muted/30 text-foreground/60' : isWorkoutSkipped ? 'bg-muted/20 text-muted-foreground' : 'bg-blue-500/10 text-blue-500'
             )}
           >
             <Dumbbell className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-base font-semibold">
+              <h2 className={cn(
+                "truncate text-base font-semibold",
+                isWorkoutCompleted && "text-foreground/80",
+                isWorkoutSkipped && "text-muted-foreground"
+              )}>
                 {workout.name}
               </h2>
               {hasInjuryProtocol && (
                 <Badge
-                  variant="destructive"
-                  className="h-5 shrink-0 gap-0.5 text-[10px]"
+                  className="h-5 shrink-0 gap-0.5 text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-500 border-0"
                 >
-                  <AlertTriangle className="size-3" />
+                  <AlertTriangle className="size-2.5" />
                   Injury
                 </Badge>
               )}
               {isWorkoutCompleted && (
                 <Badge
-                  variant="outline"
-                  className="h-5 shrink-0 border-green-500/30 bg-green-500/10 text-[10px] text-green-600"
+                  className="h-5 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[10px] font-medium"
                 >
                   Done
                 </Badge>
               )}
+              {isWorkoutSkipped && (
+                <Badge
+                  className="h-5 shrink-0 gap-0.5 bg-muted/50 text-muted-foreground border-0 text-[10px] font-medium"
+                >
+                  <Ban className="size-2.5" />
+                  Skipped
+                </Badge>
+              )}
             </div>
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <span className="text-foreground/80 font-medium">{dayName}</span>
+              <span className={cn("font-medium", isWorkoutCompleted || isWorkoutSkipped ? "text-muted-foreground" : "text-foreground/80")}>{dayName}</span>
               <span>·</span>
               <span>{focus}</span>
               {workout.goal && (
@@ -431,6 +483,15 @@ export function WorkoutCenter({
             </div>
           </div>
         </div>
+
+        {/* Skipped Banner */}
+        {isWorkoutSkipped && completion?.skippedReason && (
+          <div className="border-b border-border/20 bg-muted/10 px-3 py-2">
+            <p className="text-[11px] text-muted-foreground/70 italic">
+              "{completion.skippedReason}"
+            </p>
+          </div>
+        )}
 
         {/* Sections - Scrollable */}
         <ScrollArea className="min-h-0 flex-1">
@@ -475,46 +536,130 @@ export function WorkoutCenter({
         <div
           className={cn(
             'border-t p-3',
-            'bg-muted/20'
+            isWorkoutCompleted ? 'bg-muted/10 border-border/30' : isWorkoutSkipped ? 'bg-muted/5 border-border/20' : 'bg-muted/20'
           )}
         >
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <div className="text-muted-foreground text-xs">
-                {isWorkoutCompleted
-                  ? `${completion?.exercisesCompleted?.length || totalExercises}/${totalExercises} exercises completed`
-                  : isPreview
-                    ? `${totalExercises} exercises`
+              <div className={cn(
+                "text-xs",
+                isWorkoutCompleted || isWorkoutSkipped ? "text-muted-foreground/60" : "text-muted-foreground"
+              )}>
+                {isWorkoutSkipped
+                  ? `${totalExercises} exercises`
+                  : isWorkoutCompleted
+                    ? `${completion?.exercisesCompleted?.length || totalExercises}/${totalExercises} completed`
                     : `${completedExercises.size}/${totalExercises} exercises`}
               </div>
             </div>
-            {isPreview ? (
-              isWorkoutCompleted ? (
-                <Badge
-                  variant="outline"
-                  className="border-green-500/30 bg-green-500/10 text-xs text-green-600"
-                >
-                  Completed
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-xs">
-                  Preview
-                </Badge>
-              )
-            ) : (
-              <Button
-                size="sm"
-                className="h-8"
-                onClick={handleComplete}
-                disabled={isCompleting || isWorkoutCompleted}
-              >
-                {isCompleting
-                  ? 'Completing...'
-                  : isWorkoutCompleted
-                    ? 'Completed'
-                    : 'Complete Workout'}
-              </Button>
-            )}
+            {/* Actions: Complete and Skip */}
+            <div className="flex items-center gap-2">
+                {isWorkoutSkipped ? (
+                  <>
+                    <span className="text-[10px] text-muted-foreground/60 font-medium">
+                      Skipped
+                    </span>
+                    {onUnskip && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 gap-1 text-[10px] text-muted-foreground/60 hover:text-foreground"
+                        onClick={handleUnskip}
+                        disabled={isSkipping}
+                      >
+                        <Undo2 className="size-2.5" />
+                        Undo
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {onSkip && !isWorkoutCompleted && (
+                      <Dialog open={skipDialogOpen} onOpenChange={setSkipDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 gap-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <Ban className="size-3.5" />
+                            Skip
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                          <DialogTitle>Skip Workout</DialogTitle>
+                          <DialogDescription>
+                            Why was this workout skipped? This helps track patterns and plan recovery.
+                          </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="skip-reason-today">Reason</Label>
+                              <Input
+                                id="skip-reason-today"
+                                placeholder="e.g., Sick, Travel, Injury recovery..."
+                                value={skipReason}
+                                onChange={(e) => setSkipReason(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && skipReason.trim()) {
+                                    handleSkipSubmit()
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSkipDialogOpen(false)
+                                setSkipReason('')
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={handleSkipSubmit}
+                              disabled={!skipReason.trim() || isSkipping}
+                            >
+                              {isSkipping ? 'Skipping...' : 'Skip Workout'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {isWorkoutCompleted ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                          Completed
+                        </span>
+                        {onUncomplete && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 gap-1 text-[10px] text-muted-foreground/60 hover:text-foreground"
+                            onClick={onUncomplete}
+                            disabled={isCompleting}
+                          >
+                            <Undo2 className="size-2.5" />
+                            Undo
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="h-8"
+                        onClick={handleComplete}
+                        disabled={isCompleting}
+                      >
+                        {isCompleting ? 'Completing...' : 'Complete Workout'}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
           </div>
         </div>
       </CardContent>

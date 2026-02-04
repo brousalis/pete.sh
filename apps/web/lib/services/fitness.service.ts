@@ -251,6 +251,37 @@ export class FitnessService {
   }
 
   /**
+   * Uncomplete a workout - reverts it to incomplete state
+   */
+  async markWorkoutUncomplete(
+    day: DayOfWeek,
+    weekNumber: number
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = routine.weeks.find(w => w.weekNumber === weekNumber)
+    if (!week || !week.days[day]?.workout) {
+      return // Nothing to uncomplete
+    }
+
+    // Reset the workout completion state
+    week.days[day]!.workout = {
+      ...week.days[day]!.workout!,
+      completed: false,
+      completedAt: undefined,
+      exercisesCompleted: [],
+      // Also clear skipped state if any
+      skipped: false,
+      skippedReason: undefined,
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
    * Add exercises to the completed list without necessarily marking the workout as complete.
    * If all exercises are completed, marks the workout as complete.
    * Used by workout autocomplete to add exercises incrementally.
@@ -357,6 +388,173 @@ export class FitnessService {
   }
 
   /**
+   * Skip a workout with a reason
+   */
+  async skipWorkout(
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      week.days[day] = {}
+    }
+
+    const workoutDef = await this.getWorkoutForDay(day, weekNumber)
+    if (!workoutDef) {
+      throw new Error(`No workout definition found for ${day}`)
+    }
+
+    week.days[day]!.workout = {
+      workoutId: workoutDef.id,
+      completed: false,
+      skipped: true,
+      skippedAt: new Date().toISOString(),
+      skippedReason: reason,
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
+   * Unskip a workout (remove skip status)
+   */
+  async unskipWorkout(day: DayOfWeek, weekNumber: number): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      return // Nothing to unskip
+    }
+
+    // Remove workout entry entirely to reset state
+    if (week.days[day]?.workout) {
+      delete week.days[day]!.workout
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
+   * Skip a daily routine (morning/night) with a reason
+   */
+  async skipRoutine(
+    routineType: 'morning' | 'night',
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      week.days[day] = {}
+    }
+
+    const routineId = routine.dailyRoutines[routineType].id
+    week.days[day]![`${routineType}Routine`] = {
+      routineId,
+      completed: false,
+      skipped: true,
+      skippedAt: new Date().toISOString(),
+      skippedReason: reason,
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
+   * Unskip a daily routine (remove skip status)
+   */
+  async unskipRoutine(
+    routineType: 'morning' | 'night',
+    day: DayOfWeek,
+    weekNumber: number
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      return // Nothing to unskip
+    }
+
+    // Remove routine entry entirely to reset state
+    const key = `${routineType}Routine` as 'morningRoutine' | 'nightRoutine'
+    if (week.days[day]?.[key]) {
+      delete week.days[day]![key]
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
+   * Skip all activities (workout + morning + night routines) for a day
+   */
+  async skipDay(
+    day: DayOfWeek,
+    weekNumber: number,
+    reason: string
+  ): Promise<void> {
+    const routine = await this.getRoutine()
+    if (!routine) {
+      throw new Error('No routine found')
+    }
+
+    const week = await this.getOrCreateWeek(routine, weekNumber)
+    if (!week.days[day]) {
+      week.days[day] = {}
+    }
+
+    const now = new Date().toISOString()
+
+    // Skip workout if there's one scheduled for this day
+    const workoutDef = await this.getWorkoutForDay(day, weekNumber)
+    if (workoutDef) {
+      week.days[day]!.workout = {
+        workoutId: workoutDef.id,
+        completed: false,
+        skipped: true,
+        skippedAt: now,
+        skippedReason: reason,
+      }
+    }
+
+    // Skip morning routine
+    week.days[day]!.morningRoutine = {
+      routineId: routine.dailyRoutines.morning.id,
+      completed: false,
+      skipped: true,
+      skippedAt: now,
+      skippedReason: reason,
+    }
+
+    // Skip night routine
+    week.days[day]!.nightRoutine = {
+      routineId: routine.dailyRoutines.night.id,
+      completed: false,
+      skipped: true,
+      skippedAt: now,
+      skippedReason: reason,
+    }
+
+    await this.updateRoutine(routine)
+  }
+
+  /**
    * Get weekly progress
    */
   async getWeeklyProgress(weekNumber?: number): Promise<FitnessProgress> {
@@ -371,6 +569,7 @@ export class FitnessService {
 
     let completedWorkouts = 0
     let totalWorkouts = 0
+    let skippedWorkouts = 0
     let completedMorningRoutines = 0
     let totalMorningRoutines = 0
     let completedNightRoutines = 0
@@ -396,6 +595,9 @@ export class FitnessService {
         if (dayData?.workout?.completed) {
           completedWorkouts++
         }
+        if (dayData?.workout?.skipped) {
+          skippedWorkouts++
+        }
       }
 
       // Morning routine exists every day
@@ -415,18 +617,27 @@ export class FitnessService {
           ? {
               completed: dayData.workout.completed || false,
               completedAt: dayData.workout.completedAt,
+              skipped: dayData.workout.skipped,
+              skippedAt: dayData.workout.skippedAt,
+              skippedReason: dayData.workout.skippedReason,
             }
           : undefined,
         morningRoutine: dayData?.morningRoutine
           ? {
               completed: dayData.morningRoutine.completed || false,
               completedAt: dayData.morningRoutine.completedAt,
+              skipped: dayData.morningRoutine.skipped,
+              skippedAt: dayData.morningRoutine.skippedAt,
+              skippedReason: dayData.morningRoutine.skippedReason,
             }
           : undefined,
         nightRoutine: dayData?.nightRoutine
           ? {
               completed: dayData.nightRoutine.completed || false,
               completedAt: dayData.nightRoutine.completedAt,
+              skipped: dayData.nightRoutine.skipped,
+              skippedAt: dayData.nightRoutine.skippedAt,
+              skippedReason: dayData.nightRoutine.skippedReason,
             }
           : undefined,
       }
@@ -438,6 +649,7 @@ export class FitnessService {
       year: now.getFullYear(),
       completedWorkouts,
       totalWorkouts,
+      skippedWorkouts,
       completedMorningRoutines,
       totalMorningRoutines,
       completedNightRoutines,

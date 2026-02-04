@@ -4,28 +4,29 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type {
-  ConsistencyStats,
-  DayOfWeek,
-  WeeklyRoutine,
+    ConsistencyStats,
+    DayOfWeek,
+    WeeklyRoutine,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import {
-  Calendar,
-  Check,
-  ChevronRight,
-  Dumbbell,
-  Flame,
-  Moon,
-  Sun,
-  Target,
-  Zap,
+    Ban,
+    Calendar,
+    Check,
+    ChevronRight,
+    Dumbbell,
+    Flame,
+    Moon,
+    Sun,
+    Target,
+    Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -217,6 +218,8 @@ export function CalendarFitnessSidebar({
               label="Workout"
               completed={dayData?.workout?.completed}
               completedAt={dayData?.workout?.completedAt}
+              skipped={dayData?.workout?.skipped}
+              skippedReason={dayData?.workout?.skippedReason}
               iconColor={focusConfig.color}
             />
           )}
@@ -227,6 +230,8 @@ export function CalendarFitnessSidebar({
             label="Morning Stretch"
             completed={dayData?.morningRoutine?.completed}
             completedAt={dayData?.morningRoutine?.completedAt}
+            skipped={dayData?.morningRoutine?.skipped}
+            skippedReason={dayData?.morningRoutine?.skippedReason}
             iconColor="text-amber-500"
           />
 
@@ -236,6 +241,8 @@ export function CalendarFitnessSidebar({
             label="Night Stretch"
             completed={dayData?.nightRoutine?.completed}
             completedAt={dayData?.nightRoutine?.completedAt}
+            skipped={dayData?.nightRoutine?.skipped}
+            skippedReason={dayData?.nightRoutine?.skippedReason}
             iconColor="text-indigo-400"
           />
         </div>
@@ -272,8 +279,11 @@ export function CalendarFitnessSidebar({
               // Determine completion status
               const hasWorkout = !isRest
               const workoutDone = dayWeekData?.workout?.completed
+              const workoutSkipped = dayWeekData?.workout?.skipped
               const morningDone = dayWeekData?.morningRoutine?.completed
+              const morningSkipped = dayWeekData?.morningRoutine?.skipped
               const nightDone = dayWeekData?.nightRoutine?.completed
+              const nightSkipped = dayWeekData?.nightRoutine?.skipped
 
               // Calculate completion level
               let completionLevel = 0
@@ -290,6 +300,12 @@ export function CalendarFitnessSidebar({
               const isFullyComplete = completionLevel === maxLevel
               const isPartialComplete =
                 completionLevel > 0 && completionLevel < maxLevel
+
+              // Check if day is fully skipped (all activities skipped)
+              const allSkipped = hasWorkout
+                ? (workoutSkipped || workoutDone) && (morningSkipped || morningDone) && (nightSkipped || nightDone) && !isFullyComplete
+                : (morningSkipped || morningDone) && (nightSkipped || nightDone) && !isFullyComplete
+              const isSkipped = (workoutSkipped && !workoutDone && hasWorkout) || allSkipped
 
               return (
                 <Tooltip key={day}>
@@ -316,15 +332,18 @@ export function CalendarFitnessSidebar({
                           'flex size-4 items-center justify-center rounded-full transition-all',
                           isRest && 'bg-slate-200 dark:bg-slate-700',
                           !isRest && isFullyComplete && 'bg-green-500',
-                          !isRest && isPartialComplete && 'bg-amber-400',
+                          !isRest && isPartialComplete && !isSkipped && 'bg-amber-400',
+                          !isRest && isSkipped && 'bg-slate-500',
                           !isRest &&
                             !isPartialComplete &&
                             !isFullyComplete &&
+                            !isSkipped &&
                             isPast &&
                             'bg-red-400/60',
                           !isRest &&
                             !isPartialComplete &&
                             !isFullyComplete &&
+                            !isSkipped &&
                             !isPast &&
                             'bg-muted'
                         )}
@@ -332,45 +351,48 @@ export function CalendarFitnessSidebar({
                         {isFullyComplete && (
                           <Check className="size-2.5 text-white" />
                         )}
+                        {isSkipped && (
+                          <Ban className="size-2.5 text-white" />
+                        )}
                         {isRest && (
                           <span className="text-[8px] text-slate-500">R</span>
                         )}
                       </div>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    <div className="font-medium">
-                      {format(dayDate, 'EEEE')} - {dayScheduleData?.focus}
-                    </div>
-                    {!isRest && (
-                      <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
-                        <div className="flex items-center gap-1">
-                          <Dumbbell className="size-2.5" />
-                          Workout: {workoutDone ? 'Done' : 'Not done'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Sun className="size-2.5" />
-                          AM: {morningDone ? 'Done' : 'Not done'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Moon className="size-2.5" />
-                          PM: {nightDone ? 'Done' : 'Not done'}
-                        </div>
+                    <TooltipContent side="bottom" className="text-xs">
+                      <div className="font-medium">
+                        {format(dayDate, 'EEEE')} - {dayScheduleData?.focus}
                       </div>
-                    )}
-                    {isRest && (
-                      <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
-                        <div className="flex items-center gap-1">
-                          <Sun className="size-2.5" />
-                          AM: {morningDone ? 'Done' : 'Not done'}
+                      {!isRest && (
+                        <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
+                          <div className="flex items-center gap-1">
+                            <Dumbbell className="size-2.5" />
+                            Workout: {workoutDone ? 'Done' : workoutSkipped ? 'Skipped' : 'Not done'}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Sun className="size-2.5" />
+                            AM: {morningDone ? 'Done' : morningSkipped ? 'Skipped' : 'Not done'}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Moon className="size-2.5" />
+                            PM: {nightDone ? 'Done' : nightSkipped ? 'Skipped' : 'Not done'}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Moon className="size-2.5" />
-                          PM: {nightDone ? 'Done' : 'Not done'}
+                      )}
+                      {isRest && (
+                        <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
+                          <div className="flex items-center gap-1">
+                            <Sun className="size-2.5" />
+                            AM: {morningDone ? 'Done' : morningSkipped ? 'Skipped' : 'Not done'}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Moon className="size-2.5" />
+                            PM: {nightDone ? 'Done' : nightSkipped ? 'Skipped' : 'Not done'}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </TooltipContent>
+                      )}
+                    </TooltipContent>
                 </Tooltip>
               )
             })}
@@ -419,28 +441,41 @@ function CompletionItem({
   label,
   completed,
   completedAt,
+  skipped,
+  skippedReason,
   iconColor,
 }: {
   icon: typeof Dumbbell
   label: string
   completed?: boolean
   completedAt?: string
+  skipped?: boolean
+  skippedReason?: string
   iconColor: string
 }) {
+  const isSkipped = skipped && !completed
+
   return (
     <div
       className={cn(
         'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
-        completed ? 'bg-green-500/10' : 'bg-muted/30'
+        completed ? 'bg-green-500/10' : isSkipped ? 'bg-slate-500/10' : 'bg-muted/30'
       )}
     >
       <Icon
-        className={cn('size-3.5', completed ? 'text-green-500' : iconColor)}
+        className={cn(
+          'size-3.5',
+          completed ? 'text-green-500' : isSkipped ? 'text-slate-500' : iconColor
+        )}
       />
       <span
         className={cn(
           'flex-1 text-[11px] font-medium',
-          completed ? 'text-green-700 dark:text-green-400' : 'text-foreground'
+          completed
+            ? 'text-green-700 dark:text-green-400'
+            : isSkipped
+              ? 'text-slate-600 dark:text-slate-400'
+              : 'text-foreground'
         )}
       >
         {label}
@@ -454,6 +489,20 @@ function CompletionItem({
             </span>
           )}
         </div>
+      ) : isSkipped ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              <Ban className="size-3 text-slate-500" />
+              <span className="text-slate-500 text-[9px]">Skipped</span>
+            </div>
+          </TooltipTrigger>
+          {skippedReason && (
+            <TooltipContent>
+              <p className="text-xs italic">"{skippedReason}"</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
       ) : (
         <Badge variant="outline" className="h-4 px-1.5 text-[9px]">
           Pending

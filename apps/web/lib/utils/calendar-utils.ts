@@ -4,38 +4,38 @@
  */
 
 import type {
-  DayCell,
-  EventPosition,
-  TimeSlot,
-  WeekDay,
+    DayCell,
+    EventPosition,
+    TimeSlot,
+    WeekDay,
 } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import {
-  addDays,
-  addMonths,
-  addWeeks,
-  differenceInMinutes,
-  eachDayOfInterval,
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  format,
-  getHours,
-  isAfter,
-  isBefore,
-  isSameDay,
-  isSameMonth,
-  isToday,
-  isWeekend,
-  isWithinInterval,
-  parseISO,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-  subMonths,
-  subWeeks,
+    addDays,
+    addMonths,
+    addWeeks,
+    differenceInMinutes,
+    eachDayOfInterval,
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    format,
+    getHours,
+    isAfter,
+    isBefore,
+    isSameDay,
+    isSameMonth,
+    isToday,
+    isWeekend,
+    isWithinInterval,
+    parseISO,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    subDays,
+    subMonths,
+    subWeeks,
 } from 'date-fns'
 
 /**
@@ -455,6 +455,7 @@ export function generateFitnessEvents(
     const week = routine.weeks.find(w => w.weekNumber === weekNumber)
     const dayData = week?.days[dayOfWeek]
     const isCompleted = dayData?.workout?.completed || false
+    const isSkipped = dayData?.workout?.skipped || false
 
     // Create the workout event
     const startDateTime = new Date(day)
@@ -472,9 +473,20 @@ export function generateFitnessEvents(
             : 75
     endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
 
+    // Determine status indicator and color
+    let statusSuffix = ''
+    let colorId = 'fitness'
+    if (isCompleted) {
+      statusSuffix = ' ✓'
+      colorId = 'fitness-complete'
+    } else if (isSkipped) {
+      statusSuffix = ' ⊘'
+      colorId = 'fitness-skipped'
+    }
+
     events.push({
       id: `fitness-${format(day, 'yyyy-MM-dd')}`,
-      summary: `${schedule.focus}${isCompleted ? ' ✓' : ''}`,
+      summary: `${schedule.focus}${statusSuffix}`,
       description: schedule.goal,
       start: {
         dateTime: startDateTime.toISOString(),
@@ -484,7 +496,7 @@ export function generateFitnessEvents(
         dateTime: endDateTime.toISOString(),
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
-      colorId: isCompleted ? 'fitness-complete' : 'fitness',
+      colorId,
       status: 'confirmed',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
@@ -512,6 +524,7 @@ export function isFitnessEvent(event: CalendarEvent): boolean {
   return (
     event.id.startsWith('fitness-') ||
     event.colorId === 'fitness' ||
-    event.colorId === 'fitness-complete'
+    event.colorId === 'fitness-complete' ||
+    event.colorId === 'fitness-skipped'
   )
 }

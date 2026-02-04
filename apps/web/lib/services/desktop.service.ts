@@ -1,18 +1,32 @@
 /**
  * Desktop Service
- * Handles local desktop features (volume, performance, display switching)
+ * Handles local desktop features (volume, performance, display switching, KVM)
  */
 
+import type { PerformanceMetrics, VolumeState } from "@/lib/types/desktop.types"
 import { exec } from "child_process"
 import { promisify } from "util"
-import { config } from "@/lib/config"
-import type { VolumeState, PerformanceMetrics, DisplayState } from "@/lib/types/desktop.types"
 
 const execAsync = promisify(exec)
 
+// Display input switch script paths
+const SWITCH_TO_HDMI_SCRIPT = "D:\\applications\\switch-hdmi.ps1"
+const SWITCH_TO_DISPLAYPORT_SCRIPT = "D:\\applications\\switch-displayport.ps1"
+const GET_DISPLAY_INPUT_SCRIPT = "D:\\applications\\get-display-input.ps1"
+
+// VCP code 60 input values (adjust if your monitor uses different values)
+const INPUT_VALUES = {
+  hdmi: "17",
+  displayport: "15",
+} as const
+
 export class DesktopService {
+  /**
+   * Check if desktop features are available (running on Windows)
+   * Local mode detection is handled by the health check / connectivity provider
+   */
   isAvailable(): boolean {
-    return config.desktop.enabled && typeof process !== "undefined" && process.platform === "win32"
+    return typeof process !== "undefined" && process.platform === "win32"
   }
 
   /**
@@ -128,6 +142,58 @@ export class DesktopService {
       await execAsync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`)
     } catch (error) {
       throw new Error(`Failed to switch display: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  /**
+   * Get current display input (HDMI, DisplayPort, or unknown)
+   * Reads directly from the monitor using ControlMyMonitor
+   */
+  async getDisplayInput(): Promise<'hdmi' | 'displayport' | 'unknown'> {
+    if (!this.isAvailable()) {
+      throw new Error("Desktop features not available")
+    }
+
+    try {
+      const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -File "${GET_DISPLAY_INPUT_SCRIPT}"`)
+      const value = stdout.trim()
+
+      if (value === INPUT_VALUES.hdmi) return 'hdmi'
+      if (value === INPUT_VALUES.displayport) return 'displayport'
+      return 'unknown'
+    } catch (error) {
+      console.error('Failed to get display input:', error)
+      return 'unknown'
+    }
+  }
+
+  /**
+   * Switch display input to HDMI
+   */
+  async switchToHdmi(): Promise<void> {
+    if (!this.isAvailable()) {
+      throw new Error("Desktop features not available")
+    }
+
+    try {
+      await execAsync(`powershell -ExecutionPolicy Bypass -File "${SWITCH_TO_HDMI_SCRIPT}"`)
+    } catch (error) {
+      throw new Error(`Failed to switch to HDMI: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  /**
+   * Switch display input to DisplayPort
+   */
+  async switchToDisplayPort(): Promise<void> {
+    if (!this.isAvailable()) {
+      throw new Error("Desktop features not available")
+    }
+
+    try {
+      await execAsync(`powershell -ExecutionPolicy Bypass -File "${SWITCH_TO_DISPLAYPORT_SCRIPT}"`)
+    } catch (error) {
+      throw new Error(`Failed to switch to DisplayPort: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 }

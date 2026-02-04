@@ -1,65 +1,74 @@
 'use client'
 
 import type {
-  AppleWorkout,
-  DailyMetrics,
+    AppleWorkout,
+    DailyMetrics,
 } from '@/components/dashboard/fitness-dashboard'
 import { StretchPanel } from '@/components/dashboard/stretch-panel'
 import { WorkoutCenter } from '@/components/dashboard/workout-center'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Progress } from '@/components/ui/progress'
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import type {
-  ConsistencyStats,
-  DayOfWeek,
-  WeeklyRoutine,
-  Workout,
+    ConsistencyStats,
+    DayOfWeek,
+    WeeklyRoutine,
+    Workout,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  addDays,
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isToday as isDateToday,
-  isSameDay,
-  isSameMonth,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-  subMonths,
+    addDays,
+    addMonths,
+    eachDayOfInterval,
+    endOfMonth,
+    endOfWeek,
+    format,
+    isToday as isDateToday,
+    isSameDay,
+    isSameMonth,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    subDays,
+    subMonths,
 } from 'date-fns'
 import {
-  AlertTriangle,
-  ArrowLeft,
-  Calendar,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Dumbbell,
-  Flame,
-  Moon,
-  Settings,
-  Sun,
-  Target,
-  Watch,
-  Zap
+    ArrowLeft,
+    Ban,
+    Calendar,
+    Check,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Dumbbell,
+    Flame,
+    Moon,
+    Settings,
+    Sun,
+    Target,
+    Watch,
+    Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -143,13 +152,25 @@ const FOCUS_CONFIG: Record<
   },
 }
 
-type FitnessStatus = 'complete' | 'partial' | 'missed' | 'rest' | 'future'
+type FitnessStatus = 'complete' | 'partial' | 'missed' | 'rest' | 'future' | 'skipped'
+
+interface FitnessStatusDetails {
+  workout: boolean
+  workoutSkipped: boolean
+  morning: boolean
+  morningSkipped: boolean
+  night: boolean
+  nightSkipped: boolean
+  isRest: boolean
+  skipped: boolean
+  skippedReason?: string
+}
 
 function getFitnessStatusForDay(
   date: Date,
   routine: WeeklyRoutine | null | undefined
-): { status: FitnessStatus; details: { workout: boolean; morning: boolean; night: boolean; isRest: boolean } } {
-  const defaultDetails = { workout: false, morning: false, night: false, isRest: false }
+): { status: FitnessStatus; details: FitnessStatusDetails } {
+  const defaultDetails: FitnessStatusDetails = { workout: false, workoutSkipped: false, morning: false, morningSkipped: false, night: false, nightSkipped: false, isRest: false, skipped: false }
   if (!routine) return { status: 'future', details: defaultDetails }
 
   const dayOfWeek = date
@@ -166,24 +187,51 @@ function getFitnessStatusForDay(
   const isFutureDate = date > new Date()
 
   const workoutDone = dayData?.workout?.completed ?? false
+  const workoutSkipped = dayData?.workout?.skipped ?? false
   const morningDone = dayData?.morningRoutine?.completed ?? false
+  const morningExplicitlySkipped = dayData?.morningRoutine?.skipped ?? false
   const nightDone = dayData?.nightRoutine?.completed ?? false
+  const nightExplicitlySkipped = dayData?.nightRoutine?.skipped ?? false
 
-  const details = {
+  // Routines inherit skipped state from workout if not completed
+  const morningSkipped = morningExplicitlySkipped || (workoutSkipped && !morningDone)
+  const nightSkipped = nightExplicitlySkipped || (workoutSkipped && !nightDone)
+
+  const details: FitnessStatusDetails = {
     workout: workoutDone,
+    workoutSkipped: workoutSkipped,
     morning: morningDone,
+    morningSkipped: morningSkipped,
     night: nightDone,
+    nightSkipped: nightSkipped,
     isRest: isRestDay,
+    skipped: workoutSkipped || morningExplicitlySkipped || nightExplicitlySkipped,
+    skippedReason: dayData?.workout?.skippedReason || dayData?.morningRoutine?.skippedReason || dayData?.nightRoutine?.skippedReason,
   }
 
   if (isFutureDate && !isToday) {
     return { status: 'future', details }
   }
 
+  // Check if entire day is skipped (all activities skipped)
+  const allSkipped = isRestDay
+    ? (morningSkipped && nightSkipped) && !morningDone && !nightDone
+    : (workoutSkipped || !schedule?.workout) && morningSkipped && nightSkipped && !workoutDone && !morningDone && !nightDone
+
+  if (allSkipped) {
+    return { status: 'skipped', details }
+  }
+
+  // Check for skipped workout first (before checking completion)
+  if (workoutSkipped && !isRestDay && !workoutDone) {
+    return { status: 'skipped', details }
+  }
+
   if (isRestDay) {
-    // For rest days, check if routines are done
+    // For rest days, check if routines are done or skipped
     if (morningDone && nightDone) return { status: 'complete', details }
     if (morningDone || nightDone) return { status: 'partial', details }
+    if (morningSkipped && nightSkipped) return { status: 'skipped', details }
     if (!isToday && !isFutureDate) return { status: 'missed', details }
     return { status: 'rest', details }
   }
@@ -245,8 +293,9 @@ function FitnessDatePicker({
   }
 
   const handleSelectDay = (date: Date) => {
-    // Don't allow selecting future dates
-    if (date > new Date() && !isSameDay(date, new Date())) return
+    // Allow selecting future dates within current week for preview
+    const weekEnd = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6)
+    if (date > weekEnd) return // Don't allow dates past this week
     onSelectDate(date)
     onClose()
   }
@@ -313,20 +362,26 @@ function FitnessDatePicker({
               const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
               const { status, details } = getFitnessStatusForDay(day, routine)
 
+              // Check if this date is within current week (allow preview)
+              const weekEnd = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6)
+              const isFuturePastWeek = day > weekEnd
+              const isFutureThisWeek = isFutureDate && day <= weekEnd
+
               return (
                 <Tooltip key={day.toISOString()}>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
                       onClick={() => handleSelectDay(day)}
-                      disabled={isFutureDate}
+                      disabled={isFuturePastWeek}
                       className={cn(
                         'group relative flex aspect-square flex-col items-center justify-center rounded-lg p-0.5 transition-all',
                         'hover:ring-2 hover:ring-inset',
                         isCurrentMonth
                           ? 'text-foreground'
                           : 'text-muted-foreground/40',
-                        isFutureDate && 'cursor-not-allowed opacity-40',
+                        isFuturePastWeek && 'cursor-not-allowed opacity-40',
+                        isFutureThisWeek && 'opacity-70',
                         !isSelected && !isToday && focusConfig.ring.replace('ring-', 'hover:ring-'),
                         // Today styling
                         isToday &&
@@ -350,7 +405,12 @@ function FitnessDatePicker({
                           !isToday &&
                           isCurrentMonth &&
                           status === 'missed' &&
-                          'bg-red-500/10'
+                          'bg-red-500/10',
+                        !isSelected &&
+                          !isToday &&
+                          isCurrentMonth &&
+                          status === 'skipped' &&
+                          'bg-slate-500/15'
                       )}
                     >
                       {/* Day number */}
@@ -386,6 +446,11 @@ function FitnessDatePicker({
                           )}
                           {status === 'missed' && (
                             <div className="size-1.5 rounded-full bg-red-400/60" />
+                          )}
+                          {status === 'skipped' && (
+                            <div className="flex size-3 items-center justify-center rounded-full bg-slate-500">
+                              <Ban className="size-2 text-white" />
+                            </div>
                           )}
                           {(status === 'rest' || status === 'future') &&
                             isRestDay && (
@@ -443,18 +508,27 @@ function FitnessDatePicker({
                                   'size-2.5',
                                   details.workout
                                     ? 'text-green-500'
-                                    : 'text-muted-foreground'
+                                    : details.workoutSkipped
+                                      ? 'text-slate-500'
+                                      : 'text-muted-foreground'
                                 )}
                               />
                               <span
                                 className={
                                   details.workout
                                     ? 'text-green-600 dark:text-green-400'
-                                    : ''
+                                    : details.workoutSkipped
+                                      ? 'text-slate-600 dark:text-slate-400'
+                                      : ''
                                 }
                               >
-                                Workout: {details.workout ? 'Done' : 'Not done'}
+                                Workout: {details.workout ? 'Done' : details.workoutSkipped ? 'Skipped' : 'Not done'}
                               </span>
+                            </div>
+                          )}
+                          {details.skipped && details.skippedReason && (
+                            <div className="text-[10px] text-slate-500 italic pl-4">
+                              "{details.skippedReason}"
                             </div>
                           )}
                           <div className="flex items-center gap-1.5 text-[10px]">
@@ -463,17 +537,21 @@ function FitnessDatePicker({
                                 'size-2.5',
                                 details.morning
                                   ? 'text-green-500'
-                                  : 'text-muted-foreground'
+                                  : details.morningSkipped
+                                    ? 'text-slate-500'
+                                    : 'text-muted-foreground'
                               )}
                             />
                             <span
                               className={
                                 details.morning
                                   ? 'text-green-600 dark:text-green-400'
-                                  : ''
+                                  : details.morningSkipped
+                                    ? 'text-slate-600 dark:text-slate-400'
+                                    : ''
                               }
                             >
-                              Morning: {details.morning ? 'Done' : 'Not done'}
+                              Morning: {details.morning ? 'Done' : details.morningSkipped ? 'Skipped' : 'Not done'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px]">
@@ -482,23 +560,32 @@ function FitnessDatePicker({
                                 'size-2.5',
                                 details.night
                                   ? 'text-green-500'
-                                  : 'text-muted-foreground'
+                                  : details.nightSkipped
+                                    ? 'text-slate-500'
+                                    : 'text-muted-foreground'
                               )}
                             />
                             <span
                               className={
                                 details.night
                                   ? 'text-green-600 dark:text-green-400'
-                                  : ''
+                                  : details.nightSkipped
+                                    ? 'text-slate-600 dark:text-slate-400'
+                                    : ''
                               }
                             >
-                              Night: {details.night ? 'Done' : 'Not done'}
+                              Night: {details.night ? 'Done' : details.nightSkipped ? 'Skipped' : 'Not done'}
                             </span>
                           </div>
                         </div>
                       )}
 
-                      {isFutureDate && (
+                      {isFutureThisWeek && (
+                        <div className="text-muted-foreground text-[10px] italic">
+                          Click to preview
+                        </div>
+                      )}
+                      {isFuturePastWeek && (
                         <div className="text-muted-foreground text-[10px] italic">
                           Future date
                         </div>
@@ -527,6 +614,12 @@ function FitnessDatePicker({
         <div className="flex items-center gap-1">
           <div className="size-2 rounded-full bg-red-400/60" />
           <span className="text-muted-foreground text-[10px]">Missed</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="flex size-3 items-center justify-center rounded-full bg-slate-500">
+            <Ban className="size-2 text-white" />
+          </div>
+          <span className="text-muted-foreground text-[10px]">Skipped</span>
         </div>
       </div>
 
@@ -586,7 +679,10 @@ export function FitnessSingleView({
   const [completingMorning, setCompletingMorning] = useState(false)
   const [completingNight, setCompletingNight] = useState(false)
   const [completingWorkout, setCompletingWorkout] = useState(false)
+  const [skippingWorkout, setSkippingWorkout] = useState(false)
   const [openVideoId, setOpenVideoId] = useState<string | null>(null)
+  const [skipDayDialogOpen, setSkipDayDialogOpen] = useState(false)
+  const [skipDayReason, setSkipDayReason] = useState('')
 
   // Derive initial day from initial date
   const getInitialDay = (): DayOfWeek | null => {
@@ -616,7 +712,8 @@ export function FitnessSingleView({
   }
 
   const today = getCurrentDay()
-  const isViewingToday = selectedDay === null || selectedDay === today
+  // Fix: Compare actual dates, not just day names (e.g., both Jan 27 and Feb 3 could be "tuesday")
+  const isViewingToday = viewingDate ? isSameDay(viewingDate, new Date()) : (selectedDay === null || selectedDay === today)
   const viewingDay = selectedDay || today
 
   // Get the week number for the date being viewed
@@ -755,18 +852,14 @@ export function FitnessSingleView({
     navigateToDate(prevDate)
   }, [viewingDate, navigateToDate])
 
-  // Navigate to next day
+  // Navigate to next day (allow future dates within current week for preview)
   const handleNextDay = useCallback(() => {
     const currentDate = viewingDate || new Date()
     const nextDate = addDays(startOfDay(currentDate), 1)
-    // Don't navigate to future dates
-    if (nextDate > startOfDay(new Date())) {
-      // If trying to go to today or future, just go to today view
-      setSelectedDay(null)
-      setSelectedDayWorkout(null)
-      setSelectedDayAppleWorkouts([])
-      setViewingDate(null)
-      window.history.replaceState(null, '', '/fitness')
+    // Allow navigating to future dates within the week for preview
+    const weekEnd = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6)
+    if (nextDate > weekEnd) {
+      // Don't go past the current week
       return
     }
     navigateToDate(nextDate)
@@ -791,8 +884,8 @@ export function FitnessSingleView({
 
   // Handle morning routine completion
   const handleMorningComplete = async () => {
-    const day = getCurrentDay()
-    const weekNumber = getCurrentWeekNumber()
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
     setCompletingMorning(true)
 
     try {
@@ -811,8 +904,8 @@ export function FitnessSingleView({
 
   // Handle night routine completion
   const handleNightComplete = async () => {
-    const day = getCurrentDay()
-    const weekNumber = getCurrentWeekNumber()
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
     setCompletingNight(true)
 
     try {
@@ -831,8 +924,8 @@ export function FitnessSingleView({
 
   // Handle morning routine uncomplete
   const handleMorningUncomplete = async () => {
-    const day = getCurrentDay()
-    const weekNumber = getCurrentWeekNumber()
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
     setCompletingMorning(true)
 
     try {
@@ -851,8 +944,8 @@ export function FitnessSingleView({
 
   // Handle night routine uncomplete
   const handleNightUncomplete = async () => {
-    const day = getCurrentDay()
-    const weekNumber = getCurrentWeekNumber()
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
     setCompletingNight(true)
 
     try {
@@ -871,20 +964,157 @@ export function FitnessSingleView({
 
   // Handle workout completion
   const handleWorkoutComplete = async (exercisesCompleted: string[]) => {
-    const day = getCurrentDay()
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
     setCompletingWorkout(true)
 
     try {
-      const response = await apiPost(`/api/fitness/workout/${day}/complete`, {
+      const response = await apiPost(`/api/fitness/workout/${day}/complete?week=${weekNumber}`, {
         exercisesCompleted,
       })
       if (!response.success) throw new Error('Failed')
       await fetchData()
+      // Refetch selected day workout if viewing a different day
+      if (!isViewingToday && viewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      }
       toast.success('Workout completed!')
     } catch {
       toast.error('Failed to complete workout')
     } finally {
       setCompletingWorkout(false)
+    }
+  }
+
+  // Handle workout uncomplete (undo completion)
+  const handleWorkoutUncomplete = async () => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setCompletingWorkout(true)
+
+    try {
+      const response = await apiDelete(`/api/fitness/workout/${day}/complete?week=${weekNumber}`)
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      // Refetch selected day workout if viewing a different day
+      if (!isViewingToday && viewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      }
+      toast.success('Workout unmarked')
+    } catch {
+      toast.error('Failed to undo completion')
+    } finally {
+      setCompletingWorkout(false)
+    }
+  }
+
+  // Handle workout skip
+  const handleWorkoutSkip = async (reason: string) => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setSkippingWorkout(true)
+
+    try {
+      const response = await apiPost(`/api/fitness/workout/${day}/skip?week=${weekNumber}`, {
+        reason,
+      })
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      // Refetch selected day workout if viewing a different day
+      if (!isViewingToday && viewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      }
+      toast.success('Workout skipped')
+    } catch {
+      toast.error('Failed to skip workout')
+    } finally {
+      setSkippingWorkout(false)
+    }
+  }
+
+  // Handle workout unskip
+  const handleWorkoutUnskip = async () => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setSkippingWorkout(true)
+
+    try {
+      const response = await apiDelete(`/api/fitness/workout/${day}/skip?week=${weekNumber}`)
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      // Refetch selected day workout if viewing a different day
+      if (!isViewingToday && viewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      }
+      toast.success('Skip undone')
+    } catch {
+      toast.error('Failed to undo skip')
+    } finally {
+      setSkippingWorkout(false)
+    }
+  }
+
+  // Handle morning routine unskip
+  const handleMorningUnskip = async () => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setCompletingMorning(true)
+
+    try {
+      const response = await apiDelete(
+        `/api/fitness/routine/morning/skip?day=${day}&week=${weekNumber}`
+      )
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      toast.success('Morning routine unskipped')
+    } catch {
+      toast.error('Failed to unskip routine')
+    } finally {
+      setCompletingMorning(false)
+    }
+  }
+
+  // Handle night routine unskip
+  const handleNightUnskip = async () => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setCompletingNight(true)
+
+    try {
+      const response = await apiDelete(
+        `/api/fitness/routine/night/skip?day=${day}&week=${weekNumber}`
+      )
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      toast.success('Night routine unskipped')
+    } catch {
+      toast.error('Failed to unskip routine')
+    } finally {
+      setCompletingNight(false)
+    }
+  }
+
+  // Handle skip entire day (all 3 activities)
+  const handleSkipDay = async (reason: string) => {
+    const day = isViewingToday ? getCurrentDay() : viewingDay
+    const weekNumber = isViewingToday ? getCurrentWeekNumber() : viewingWeekNumber
+    setSkippingWorkout(true)
+
+    try {
+      const response = await apiPost(`/api/fitness/day/${day}/skip?week=${weekNumber}`, {
+        reason,
+      })
+      if (!response.success) throw new Error('Failed')
+      await fetchData()
+      // Refetch selected day workout if viewing a different day
+      if (!isViewingToday && viewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      }
+      toast.success('Day skipped')
+    } catch {
+      toast.error('Failed to skip day')
+    } finally {
+      setSkippingWorkout(false)
     }
   }
 
@@ -943,300 +1173,273 @@ export function FitnessSingleView({
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-full min-h-0 flex-col">
-        {/* Unified Header - Two-tier design */}
-        <header className="mb-3 shrink-0 space-y-2">
-          {/* Primary Navigation Row */}
-          <div className="bg-card/50 flex items-center gap-2 rounded-xl border p-2">
-            {/* Date Picker - Compact & Clear */}
-            <Popover open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
-              <PopoverTrigger asChild>
+        {/* Unified Header - Single cohesive section */}
+        <header className="mb-3 shrink-0">
+          <div className="bg-card/40 rounded-xl border border-border/50 overflow-hidden">
+            {/* Top Row: Date, Week Strip, Actions */}
+            <div className="flex items-center gap-3 px-3 py-2">
+              {/* Date Picker */}
+              <Popover open={dayPickerOpen} onOpenChange={(open) => {
+                if (open) {
+                  // Refresh data when opening the date picker to ensure calendar shows current state
+                  fetchData()
+                }
+                setDayPickerOpen(open)
+              }}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      'h-auto py-1 px-2 hover:bg-muted/50 rounded-lg',
+                      !isViewingToday && 'bg-amber-500/10 hover:bg-amber-500/15'
+                    )}
+                  >
+                    <div className="flex flex-col items-center leading-none">
+                      <span className={cn(
+                        'text-xl font-bold tabular-nums',
+                        !isViewingToday && 'text-amber-500'
+                      )}>
+                        {format(viewingDate || new Date(), 'd')}
+                      </span>
+                      <span className={cn(
+                        'text-[9px] font-semibold uppercase tracking-wide -mt-0.5',
+                        !isViewingToday ? 'text-amber-500/80' : 'text-foreground'
+                      )}>
+                        {format(viewingDate || new Date(), 'EEE')}
+                      </span>
+                      <span className="text-[8px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {format(viewingDate || new Date(), 'MMM')}
+                      </span>
+                    </div>
+                    <ChevronDown className="size-2.5 text-muted-foreground ml-0.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <FitnessDatePicker
+                    currentDate={new Date()}
+                    selectedDate={viewingDate}
+                    routine={routine}
+                    onSelectDate={navigateToDate}
+                    onClose={() => setDayPickerOpen(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Navigation */}
+              <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'h-11 gap-2 px-3',
-                    !isViewingToday &&
-                      'border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20'
-                  )}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handlePrevDay}
                 >
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className={cn(
-                      'text-lg font-bold tabular-nums',
-                      !isViewingToday && 'text-amber-500'
-                    )}>
-                      {format(viewingDate || new Date(), 'd')}
-                    </span>
-                    <span className={cn(
-                      'text-[10px] font-medium uppercase tracking-wide',
-                      isViewingToday ? 'text-muted-foreground' : 'text-amber-500/80'
-                    )}>
-                      {format(viewingDate || new Date(), 'MMM')}
-                    </span>
-                  </div>
-                  <ChevronDown className="text-muted-foreground size-3" />
+                  <ChevronLeft className="size-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="start">
-                <FitnessDatePicker
-                  currentDate={new Date()}
-                  selectedDate={viewingDate}
-                  routine={routine}
-                  onSelectDate={navigateToDate}
-                  onClose={() => setDayPickerOpen(false)}
-                />
-              </PopoverContent>
-            </Popover>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleNextDay}
+                  disabled={isViewingToday}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
 
-            {/* Navigation Arrows - Always visible for better UX */}
-            <div className="flex items-center">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={handlePrevDay}
-                  >
-                    <ChevronLeft className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Previous day</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={handleNextDay}
-                    disabled={isViewingToday}
-                  >
-                    <ChevronRight className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isViewingToday ? 'Today' : 'Next day'}</TooltipContent>
-              </Tooltip>
-            </div>
+              {/* Week Strip - Minimal, elegant */}
+              <div className="hidden flex-1 md:flex items-center justify-center">
+                <div className="flex items-center gap-0.5 rounded-lg bg-muted/30 p-1">
+                  {DAYS_OF_WEEK.map((day, index) => {
+                    const daySchedule = routine.schedule[day]
+                    const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
+                    const dayDate = addDays(weekStart, index)
+                    const isTodayDay = isDateToday(dayDate)
+                    const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
+                    const isFutureDate = dayDate > new Date() && !isTodayDay
+                    const focus = daySchedule?.focus || 'Rest'
+                    const focusConfig = FOCUS_CONFIG[focus] || {
+                      icon: Calendar,
+                      color: 'text-muted-foreground',
+                      bg: 'bg-muted',
+                    }
+                    const FocusIcon = focusConfig.icon
+                    const { status, details } = getFitnessStatusForDay(dayDate, routine)
 
-            {/* Divider */}
-            <div className="bg-border h-8 w-px" />
-
-            {/* Week Strip - Visual Timeline */}
-            <div className="hidden flex-1 items-center justify-center gap-1 md:flex">
-              {DAYS_OF_WEEK.map((day, index) => {
-                const daySchedule = routine.schedule[day]
-                const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
-                const dayDate = addDays(weekStart, index)
-                const isTodayDay = isDateToday(dayDate)
-                const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
-                const isFutureDate = dayDate > new Date() && !isTodayDay
-                const focus = daySchedule?.focus || 'Rest'
-                const focusConfig = FOCUS_CONFIG[focus] || {
-                  icon: Calendar,
-                  color: 'text-slate-400',
-                  bg: 'bg-slate-500/10',
-                  ring: 'ring-slate-500/30',
-                }
-                const FocusIcon = focusConfig.icon
-                const { status, details } = getFitnessStatusForDay(dayDate, routine)
-
-                return (
-                  <Tooltip key={day}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => !isFutureDate && navigateToDate(dayDate)}
-                        disabled={isFutureDate}
-                        className={cn(
-                          'group relative flex min-w-[48px] flex-col items-center rounded-lg px-2 py-1.5 transition-all',
-                          isSelected
-                            ? cn('text-white', focusConfig.bg.replace('/10', '/90'))
-                            : 'hover:bg-muted/80',
-                          isTodayDay && !isSelected && 'ring-2 ring-inset ring-primary/40',
-                          isFutureDate && 'cursor-not-allowed opacity-30'
-                        )}
-                      >
-                        {/* Day Label */}
-                        <span className={cn(
-                          'text-[11px] font-semibold',
-                          isSelected ? 'text-white' : ''
-                        )}>
-                          {DAY_LABELS[day]}
-                        </span>
-
-                        {/* Focus Icon */}
-                        <div className={cn(
-                          'my-0.5 flex size-5 items-center justify-center rounded-md transition-colors',
-                          isSelected
-                            ? 'bg-white/20'
-                            : focusConfig.bg
-                        )}>
-                          <FocusIcon className={cn(
-                            'size-3',
-                            isSelected ? 'text-white' : focusConfig.color
-                          )} />
-                        </div>
-
-                        {/* Status Indicator */}
-                        <div className="flex h-2 items-center justify-center">
-                          {status === 'complete' && (
-                            <div className={cn(
-                              'flex size-2.5 items-center justify-center rounded-full',
-                              isSelected ? 'bg-white/90' : 'bg-green-500'
+                    return (
+                      <Tooltip key={day}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => navigateToDate(dayDate)}
+                            className={cn(
+                              'relative flex flex-col items-center w-11 py-1.5 rounded-md transition-all',
+                              isSelected
+                                ? 'bg-foreground/10 shadow-sm'
+                                : 'hover:bg-muted/60',
+                              isTodayDay && !isSelected && 'ring-1 ring-inset ring-foreground/20',
+                              isFutureDate && !isSelected && 'opacity-50'
+                            )}
+                          >
+                            <span className={cn(
+                              'text-[10px] font-medium',
+                              isSelected ? 'text-foreground' : 'text-muted-foreground'
                             )}>
-                              <Check className={cn(
-                                'size-1.5',
-                                isSelected ? 'text-green-600' : 'text-white'
+                              {DAY_LABELS[day]}
+                            </span>
+                            <div className="relative my-0.5">
+                              <FocusIcon className={cn(
+                                'size-4',
+                                isSelected ? focusConfig.color : 'text-muted-foreground/60'
                               )} />
                             </div>
-                          )}
-                          {status === 'partial' && (
-                            <div className="flex gap-0.5">
-                              {details.morning && (
-                                <div className={cn(
-                                  'size-1.5 rounded-full',
-                                  isSelected ? 'bg-white/80' : 'bg-amber-400'
-                                )} />
+                            {/* Status dots - subtle */}
+                            <div className="h-1.5 flex items-center gap-0.5">
+                              {status === 'complete' && (
+                                <div className="size-1.5 rounded-full bg-emerald-500" />
                               )}
-                              {details.workout && !details.isRest && (
-                                <div className={cn(
-                                  'size-1.5 rounded-full',
-                                  isSelected ? 'bg-white/80' : 'bg-orange-400'
-                                )} />
+                              {status === 'partial' && (
+                                <>
+                                  {details.morning && <div className="size-1 rounded-full bg-foreground/40" />}
+                                  {details.workout && !details.isRest && <div className="size-1 rounded-full bg-foreground/40" />}
+                                  {details.night && <div className="size-1 rounded-full bg-foreground/40" />}
+                                </>
                               )}
-                              {details.night && (
-                                <div className={cn(
-                                  'size-1.5 rounded-full',
-                                  isSelected ? 'bg-white/80' : 'bg-indigo-400'
-                                )} />
+                              {status === 'missed' && (
+                                <div className="size-1.5 rounded-full bg-red-400/50" />
+                              )}
+                              {status === 'skipped' && (
+                                <Ban className="size-2 text-muted-foreground" />
                               )}
                             </div>
-                          )}
-                          {status === 'missed' && (
-                            <div className={cn(
-                              'size-1.5 rounded-full',
-                              isSelected ? 'bg-white/60' : 'bg-red-400/60'
-                            )} />
-                          )}
-                        </div>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      <div className="font-medium">
-                        {format(dayDate, 'EEEE, MMM d')}
-                      </div>
-                      <div className="text-muted-foreground">{focus}</div>
-                    </TooltipContent>
-                  </Tooltip>
-                )
-              })}
-            </div>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          <div className="font-medium">{format(dayDate, 'EEEE, MMM d')}</div>
+                          <div className="text-muted-foreground">{focus}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })}
+                </div>
+              </div>
 
-            {/* Mobile: Compact day indicator */}
-            <div className="flex flex-1 items-center gap-2 md:hidden">
-              <Badge
-                variant="outline"
-                className={cn(
-                  'h-7 gap-1.5 px-2.5 text-xs font-semibold',
-                  isViewingRestDay
-                    ? 'border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400'
-                    : (() => {
-                        const focus = viewingDaySchedule?.focus || 'Rest'
-                        const config = FOCUS_CONFIG[focus] || {
-                          color: 'text-orange-500',
-                          bg: 'bg-orange-500/10',
-                          ring: 'ring-orange-500/30',
-                        }
-                        return `${config.bg} ${config.color} ${config.ring.replace('ring-', 'border-')}`
-                      })()
+              {/* Mobile day indicator */}
+              <div className="flex flex-1 md:hidden">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {viewingDayName} · <span className="text-foreground">{viewingDaySchedule?.focus || 'Rest'}</span>
+                </span>
+              </div>
+
+              {/* Actions - Grouped cleanly */}
+              <div className="flex items-center gap-1">
+                {!isViewingToday && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setSelectedDay(null)
+                      setSelectedDayWorkout(null)
+                      setViewingDate(null)
+                      window.history.replaceState(null, '', '/fitness')
+                    }}
+                  >
+                    <ArrowLeft className="size-3" />
+                    Today
+                  </Button>
                 )}
-              >
-                {viewingDayName} · {viewingDaySchedule?.focus || 'Rest'}
-              </Badge>
-            </div>
 
-            {/* Divider */}
-            <div className="bg-border h-8 w-px" />
-
-            {/* Right Actions Group */}
-            <div className="flex items-center gap-1">
-              {/* Back to Today - Only when viewing past */}
-              {!isViewingToday && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs"
-                      onClick={() => {
-                        setSelectedDay(null)
-                        setSelectedDayWorkout(null)
-                        setViewingDate(null)
-                        window.history.replaceState(null, '', '/fitness')
-                      }}
-                    >
-                      <ArrowLeft className="size-3" />
-                      Today
+                <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                      <Ban className="size-4" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Back to today</TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Injury Protocol Badge */}
-              {hasInjuryProtocol && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex h-8 items-center gap-1.5 rounded-md border border-amber-600/40 bg-amber-950/30 px-2 text-amber-500">
-                      <AlertTriangle className="size-3.5" />
-                      <span className="hidden text-xs font-medium sm:inline">Injury</span>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Skip Day</DialogTitle>
+                      <DialogDescription>
+                        Skip all fitness activities for {isViewingToday ? 'today' : format(viewingDate || new Date(), 'EEEE, MMM d')}.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="skip-day-reason">Reason</Label>
+                        <Input
+                          id="skip-day-reason"
+                          placeholder="e.g., Sick, Travel, Rest day..."
+                          value={skipDayReason}
+                          onChange={(e) => setSkipDayReason(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && skipDayReason.trim()) {
+                              handleSkipDay(skipDayReason.trim())
+                              setSkipDayDialogOpen(false)
+                              setSkipDayReason('')
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent>Injury Protocol Active</TooltipContent>
-                </Tooltip>
-              )}
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => { setSkipDayDialogOpen(false); setSkipDayReason('') }}>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (skipDayReason.trim()) {
+                            handleSkipDay(skipDayReason.trim())
+                            setSkipDayDialogOpen(false)
+                            setSkipDayReason('')
+                          }
+                        }}
+                        disabled={!skipDayReason.trim() || skippingWorkout}
+                      >
+                        {skippingWorkout ? 'Skipping...' : 'Skip Day'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href="/fitness/watch">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Watch className="size-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>Apple Watch Data</TooltipContent>
-              </Tooltip>
-
-              {onSwitchToEdit && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={onSwitchToEdit}
-                    >
-                      <Settings className="size-4" />
-                    </Button>
+                    <Link href="/fitness/watch">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                        <Watch className="size-4" />
+                      </Button>
+                    </Link>
                   </TooltipTrigger>
-                  <TooltipContent>Edit Routine</TooltipContent>
+                  <TooltipContent>Apple Watch Data</TooltipContent>
                 </Tooltip>
-              )}
-            </div>
-          </div>
 
-          {/* Secondary Row: Activity Summary + Streaks */}
-          {((isViewingToday && (appleWorkouts.length > 0 || dailyMetrics)) ||
-            (!isViewingToday && selectedDayAppleWorkouts.length > 0) ||
-            consistencyStats) && (
-            <UnifiedActivitySummary
-              workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
-              metrics={isViewingToday ? dailyMetrics : null}
-              consistencyStats={consistencyStats}
-              viewingDate={viewingDate}
-              onWorkoutClick={id => router.push(`/fitness/watch?workout=${id}`)}
-              onViewAll={() => router.push('/fitness/watch')}
-            />
-          )}
+                {onSwitchToEdit && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={onSwitchToEdit}>
+                        <Settings className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit Routine</TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Row: Activity Summary - Seamlessly integrated */}
+            {((isViewingToday && (appleWorkouts.length > 0 || dailyMetrics)) ||
+              (!isViewingToday && selectedDayAppleWorkouts.length > 0) ||
+              consistencyStats) && (
+              <div className="border-t border-border/30">
+                <UnifiedActivitySummary
+                  workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
+                  metrics={isViewingToday ? dailyMetrics : null}
+                  consistencyStats={consistencyStats}
+                  viewingDate={viewingDate}
+                  onWorkoutClick={id => router.push(`/fitness/watch?workout=${id}`)}
+                  onViewAll={() => router.push('/fitness/watch')}
+                />
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Main 3-Panel Layout */}
@@ -1254,6 +1457,17 @@ export function FitnessSingleView({
             onUncomplete={handleMorningUncomplete}
             isCompleting={completingMorning}
             isPreview={!isViewingToday}
+            onUnskip={handleMorningUnskip}
+            daySkipped={
+              isViewingToday
+                ? todayData?.workout?.skipped
+                : viewingDayData?.workout?.skipped
+            }
+            daySkippedReason={
+              isViewingToday
+                ? todayData?.workout?.skippedReason
+                : viewingDayData?.workout?.skippedReason
+            }
           />
 
           {/* Workout Center - Shows selected day's workout */}
@@ -1265,11 +1479,15 @@ export function FitnessSingleView({
             completion={displayCompletion}
             hasInjuryProtocol={hasInjuryProtocol}
             onComplete={handleWorkoutComplete}
+            onUncomplete={handleWorkoutUncomplete}
             isCompleting={completingWorkout}
             openVideoId={openVideoId}
             onVideoToggle={handleVideoToggle}
             isPreview={!isViewingToday}
             appleWorkouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
+            onSkip={handleWorkoutSkip}
+            onUnskip={handleWorkoutUnskip}
+            isSkipping={skippingWorkout}
           />
 
           {/* Night Panel - Shows viewed day's data */}
@@ -1285,6 +1503,17 @@ export function FitnessSingleView({
             onUncomplete={handleNightUncomplete}
             isCompleting={completingNight}
             isPreview={!isViewingToday}
+            onUnskip={handleNightUnskip}
+            daySkipped={
+              isViewingToday
+                ? todayData?.workout?.skipped
+                : viewingDayData?.workout?.skipped
+            }
+            daySkippedReason={
+              isViewingToday
+                ? todayData?.workout?.skippedReason
+                : viewingDayData?.workout?.skippedReason
+            }
           />
         </div>
 
@@ -1387,99 +1616,94 @@ function UnifiedActivitySummary({
   if (!hasActivity && !hasStats) return null
 
   return (
-    <div className="bg-card/30 flex items-center gap-3 rounded-xl border p-2">
-      {/* Streaks Section - Always visible if we have stats */}
-      {hasStats && (
-        <div className="flex items-center gap-3 pr-3 border-r border-border/50">
-          {/* Current Streak */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-default">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/15">
-                  <Flame className="size-4 text-orange-500" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold leading-none tabular-nums">
-                    {consistencyStats.currentStreak}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">streak</span>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Current Streak</TooltipContent>
-          </Tooltip>
-
-          {/* Best Streak */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-default">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/15">
-                  <Target className="size-4 text-blue-500" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold leading-none tabular-nums">
-                    {consistencyStats.longestStreak}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">best</span>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Longest Streak</TooltipContent>
-          </Tooltip>
-        </div>
-      )}
-
-      {/* Activity Rings - Compact */}
+    <div className="flex items-center gap-3 px-3 py-2">
+      {/* Activity Rings - Prominent placement */}
       {metrics && (
-        <div className="flex items-center gap-2 pr-3 border-r border-border/50">
-          <MiniActivityRings
-            move={moveProgress}
-            exercise={exerciseProgress}
-            stand={standProgress}
-            size={36}
-          />
-          <div className="hidden flex-col gap-0.5 text-[9px] sm:flex">
-            <div className="flex items-center gap-1">
-              <div className="size-1.5 rounded-full bg-[#FF2D55]" />
-              <span className="text-muted-foreground tabular-nums">
-                {metrics.active_calories}/{metrics.move_goal || 500}
-              </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 cursor-default">
+              <ActivityRings
+                move={moveProgress}
+                exercise={exerciseProgress}
+                stand={standProgress}
+                size={32}
+                metrics={metrics}
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <div className="size-1.5 rounded-full bg-[#92E82A]" />
-              <span className="text-muted-foreground tabular-nums">
-                {metrics.exercise_minutes}/{metrics.exercise_goal || 30}m
-              </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="p-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="size-2.5 rounded-full bg-[#FF2D55]" />
+                  <span className="text-xs">Move</span>
+                </div>
+                <span className="text-xs font-medium tabular-nums">
+                  {metrics.active_calories}/{metrics.move_goal || 500} cal
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="size-2.5 rounded-full bg-[#92E82A]" />
+                  <span className="text-xs">Exercise</span>
+                </div>
+                <span className="text-xs font-medium tabular-nums">
+                  {metrics.exercise_minutes}/{metrics.exercise_goal || 30} min
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="size-2.5 rounded-full bg-[#00D4FF]" />
+                  <span className="text-xs">Stand</span>
+                </div>
+                <span className="text-xs font-medium tabular-nums">
+                  {metrics.stand_hours}/{metrics.stand_goal || 12} hrs
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="size-1.5 rounded-full bg-[#00D4FF]" />
-              <span className="text-muted-foreground tabular-nums">
-                {metrics.stand_hours}/{metrics.stand_goal || 12}h
-              </span>
-            </div>
-          </div>
-        </div>
+          </TooltipContent>
+        </Tooltip>
       )}
 
-      {/* Date's Workouts */}
-      {dateWorkouts.length > 0 ? (
-        <>
-          {/* Workout Count */}
-          <div className="flex items-center gap-2 pr-3 border-r border-border/50">
-            <div className="text-center">
-              <div className="text-lg font-bold leading-none tabular-nums">
-                {dateWorkouts.length}
-              </div>
-              <div className="text-[9px] text-muted-foreground">
-                {dateWorkouts.length === 1 ? 'Workout' : 'Workouts'}
-              </div>
+      {/* Streak indicator */}
+      {hasStats && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-default">
+              <Flame className="size-4 text-orange-500/80" />
+              <span className="text-sm font-semibold tabular-nums">{consistencyStats.currentStreak}</span>
+              <span className="text-[10px] text-muted-foreground">streak</span>
             </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs">
+              <div>Current streak: {consistencyStats.currentStreak} days</div>
+              <div className="text-muted-foreground">Best: {consistencyStats.longestStreak} days</div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Separator */}
+      {(hasStats || metrics) && dateWorkouts.length > 0 && (
+        <div className="h-6 w-px bg-border/40" />
+      )}
+
+      {/* Center: Workout Count + Pills */}
+      {dateWorkouts.length > 0 ? (
+        <div className="flex flex-1 items-center gap-3 min-w-0">
+          {/* Workout count */}
+          <div className="shrink-0 text-center">
+            <span className="text-lg font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
+            <span className="text-[10px] text-muted-foreground ml-1">
+              {dateWorkouts.length === 1 ? 'workout' : 'workouts'}
+            </span>
           </div>
 
-          {/* Workout Pills - Scrollable */}
-          <div className="flex flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
-            {dateWorkouts.slice(0, 5).map(workout => {
-              const defaultStyle = { icon: Dumbbell, color: 'text-slate-500', bg: 'bg-slate-500/15' }
+          {/* Workout pills - cleaner, less colorful */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0">
+            {dateWorkouts.slice(0, 4).map(workout => {
+              const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
               const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
               const Icon = typeStyle.icon
               const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
@@ -1490,14 +1714,12 @@ function UnifiedActivitySummary({
                     <button
                       onClick={() => onWorkoutClick?.(workout.id)}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all whitespace-nowrap',
-                        typeStyle.bg,
-                        'hover:scale-[1.02] hover:shadow-sm',
+                        'flex items-center gap-1.5 rounded-md bg-muted/40 hover:bg-muted/60 px-2 py-1 text-xs transition-colors whitespace-nowrap',
                         onWorkoutClick && 'cursor-pointer'
                       )}
                     >
-                      <Icon className={cn('size-3.5', typeStyle.color)} />
-                      <span>{label}</span>
+                      <Icon className="size-3 text-foreground/50" />
+                      <span className="font-medium">{label}</span>
                       <span className="text-muted-foreground text-[10px] tabular-nums">
                         {formatWorkoutDuration(workout.duration)}
                       </span>
@@ -1515,20 +1737,29 @@ function UnifiedActivitySummary({
                 </Tooltip>
               )
             })}
-            {dateWorkouts.length > 5 && (
-              <Badge variant="secondary" className="text-[10px] shrink-0">
-                +{dateWorkouts.length - 5}
-              </Badge>
+            {dateWorkouts.length > 4 && (
+              <span className="text-[10px] text-muted-foreground shrink-0">
+                +{dateWorkouts.length - 4} more
+              </span>
             )}
           </div>
+        </div>
+      ) : hasActivity ? (
+        <div className="flex-1 text-xs text-muted-foreground">
+          No workouts recorded
+        </div>
+      ) : null}
 
-          {/* Totals - Right side */}
-          <div className="hidden items-center gap-3 pl-3 border-l border-border/50 md:flex">
+      {/* Right: Totals */}
+      {dateWorkouts.length > 0 && (
+        <>
+          <div className="h-6 w-px bg-border/50 hidden md:block" />
+          <div className="hidden md:flex items-center gap-3 text-xs shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default">
-                  <Calendar className="size-3.5 text-muted-foreground" />
-                  <span className="text-xs font-semibold tabular-nums">
+                <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                  <Calendar className="size-3" />
+                  <span className="font-medium tabular-nums text-foreground">
                     {formatWorkoutDuration(totalDuration)}
                   </span>
                 </div>
@@ -1538,9 +1769,9 @@ function UnifiedActivitySummary({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default">
-                  <Flame className="size-3.5 text-orange-500" />
-                  <span className="text-xs font-semibold tabular-nums">
+                <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                  <Flame className="size-3" />
+                  <span className="font-medium tabular-nums text-foreground">
                     {Math.round(totalCalories)}
                   </span>
                 </div>
@@ -1551,9 +1782,9 @@ function UnifiedActivitySummary({
             {totalDistance > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default">
-                    <Target className="size-3.5 text-green-500" />
-                    <span className="text-xs font-semibold tabular-nums">
+                  <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                    <Target className="size-3" />
+                    <span className="font-medium tabular-nums text-foreground">
                       {totalDistance.toFixed(1)} mi
                     </span>
                   </div>
@@ -1566,7 +1797,7 @@ function UnifiedActivitySummary({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
                 onClick={onViewAll}
               >
                 Details
@@ -1575,139 +1806,83 @@ function UnifiedActivitySummary({
             )}
           </div>
         </>
-      ) : hasActivity ? (
-        // No workouts today but has metrics
-        <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-          No workouts recorded today
-        </div>
-      ) : null}
-
-      {/* Weekly/Monthly Progress - Compact */}
-      {hasStats && (
-        <div className="hidden items-center gap-3 pl-3 border-l border-border/50 lg:flex">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 cursor-default">
-                <div className="w-16">
-                  <div className="flex items-center justify-between text-[9px] mb-0.5">
-                    <span className="text-muted-foreground">Week</span>
-                    <span className="font-medium tabular-nums">{consistencyStats.weeklyCompletion}%</span>
-                  </div>
-                  <Progress value={consistencyStats.weeklyCompletion} className="h-1" />
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Weekly Completion</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 cursor-default">
-                <div className="w-16">
-                  <div className="flex items-center justify-between text-[9px] mb-0.5">
-                    <span className="text-muted-foreground">Month</span>
-                    <span className="font-medium tabular-nums">{consistencyStats.monthlyCompletion}%</span>
-                  </div>
-                  <Progress value={consistencyStats.monthlyCompletion} className="h-1" />
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Monthly Completion</TooltipContent>
-          </Tooltip>
-        </div>
-      )}
-
-      {/* Routine Stats - Very compact */}
-      {hasStats && (
-        <div className="hidden items-center gap-2 pl-3 border-l border-border/50 xl:flex">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="text-center cursor-default px-1">
-                <div className="text-xs font-semibold tabular-nums">{consistencyStats.streaks.workouts}</div>
-                <div className="text-[8px] text-muted-foreground">WO</div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Workouts Completed</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="text-center cursor-default px-1">
-                <div className="text-xs font-semibold tabular-nums">{consistencyStats.streaks.morningRoutines}</div>
-                <div className="text-[8px] text-muted-foreground">AM</div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Morning Routines</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="text-center cursor-default px-1">
-                <div className="text-xs font-semibold tabular-nums">{consistencyStats.streaks.nightRoutines}</div>
-                <div className="text-[8px] text-muted-foreground">PM</div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Night Routines</TooltipContent>
-          </Tooltip>
-        </div>
       )}
     </div>
   )
 }
 
-// Mini Activity Rings Component
-interface MiniActivityRingsProps {
+// Activity Rings Component - Apple Watch style
+interface ActivityRingsProps {
   move: number
   exercise: number
   stand: number
   size?: number
+  metrics?: DailyMetrics | null
 }
 
-function MiniActivityRings({ move, exercise, stand, size = 40 }: MiniActivityRingsProps) {
-  const strokeWidth = size * 0.12
-  const radius = (size - strokeWidth) / 2
-  const center = size / 2
-  const circumference = 2 * Math.PI * radius
+function ActivityRings({ move, exercise, stand, size = 44, metrics }: ActivityRingsProps) {
+  const strokeWidth = size * 0.14
+  const gap = 1.5
+  const outerRadius = (size - strokeWidth) / 2
+  const middleRadius = outerRadius - strokeWidth - gap
+  const innerRadius = middleRadius - strokeWidth - gap
 
   const rings = [
-    { progress: move, color: '#FF2D55', offset: 0 },
-    { progress: exercise, color: '#92E82A', offset: strokeWidth + 1 },
-    { progress: stand, color: '#00D4FF', offset: (strokeWidth + 1) * 2 },
+    { progress: move, color: '#FF2D55', radius: outerRadius, label: 'Move' },
+    { progress: exercise, color: '#92E82A', radius: middleRadius, label: 'Exercise' },
+    { progress: stand, color: '#00D4FF', radius: innerRadius, label: 'Stand' },
   ]
 
-  return (
-    <svg width={size} height={size} className="transform -rotate-90">
-      {rings.map((ring, index) => {
-        const ringRadius = radius - ring.offset
-        const ringCircumference = 2 * Math.PI * ringRadius
-        const strokeDashoffset = ringCircumference * (1 - ring.progress / 100)
+  const center = size / 2
 
-        return (
-          <g key={index}>
-            {/* Background ring */}
-            <circle
-              cx={center}
-              cy={center}
-              r={ringRadius}
-              fill="none"
-              stroke={ring.color}
-              strokeWidth={strokeWidth}
-              opacity={0.2}
-            />
-            {/* Progress ring */}
-            <circle
-              cx={center}
-              cy={center}
-              r={ringRadius}
-              fill="none"
-              stroke={ring.color}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={ringCircumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-500"
-            />
-          </g>
-        )
-      })}
-    </svg>
+  return (
+    <div className="relative">
+      <svg width={size} height={size} className="transform -rotate-90">
+        {rings.map((ring, index) => {
+          const circumference = 2 * Math.PI * ring.radius
+          const strokeDashoffset = circumference * (1 - Math.min(ring.progress, 100) / 100)
+          // For overflow (>100%), we'd show a second lap, but keep it simple for now
+
+          return (
+            <g key={index}>
+              {/* Background ring */}
+              <circle
+                cx={center}
+                cy={center}
+                r={ring.radius}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                opacity={0.15}
+              />
+              {/* Progress ring */}
+              <circle
+                cx={center}
+                cy={center}
+                r={ring.radius}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                className="transition-all duration-700 ease-out"
+                style={{
+                  filter: `drop-shadow(0 0 ${size * 0.05}px ${ring.color}40)`,
+                }}
+              />
+            </g>
+          )
+        })}
+      </svg>
+      {/* Optional: Show a small indicator in the center */}
+      {metrics && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[8px] font-bold text-muted-foreground/60 tabular-nums">
+            {Math.round((move + exercise + stand) / 3)}%
+          </span>
+        </div>
+      )}
+    </div>
   )
 }

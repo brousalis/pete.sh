@@ -140,7 +140,8 @@
         "friday": {
           "workout": {
             "workoutId": "friday-shin-saver-circuit",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:02:13.203Z",
             "exercisesCompleted": [
               "fri-warmup-1",
               "fri-warmup-2",
@@ -149,6 +150,7 @@
               "friday-circuit-b",
               "friday-circuit-c",
               "friday-circuit-d",
+              "fri-flush",
               "fri-mobility-1"
             ]
           },
@@ -166,13 +168,18 @@
         "thursday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
-            "completed": true,
-            "completedAt": "2026-02-03T04:41:59.984Z"
+            "completed": false
           },
           "nightRoutine": {
             "routineId": "release-the-brakes",
-            "completed": true,
-            "completedAt": "2026-02-03T04:42:00.817Z"
+            "completed": false
+          },
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T03:13:01.996Z",
+            "skippedReason": "asd"
           }
         },
         "saturday": {
@@ -185,6 +192,13 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:03.833Z"
+          },
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:02:42.975Z",
+            "skippedReason": "bad skip, lazy saturday"
           }
         }
       }
@@ -250,9 +264,18 @@
         "friday": {
           "workout": {
             "workoutId": "friday-shin-saver-circuit",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:03:25.230Z",
             "exercisesCompleted": [
-              "friday-circuit-d"
+              "fri-warmup-1",
+              "fri-warmup-2",
+              "fri-warmup-3",
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "fri-flush",
+              "fri-mobility-1"
             ]
           },
           "morningRoutine": {
@@ -311,6 +334,22 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:08.861Z"
+          },
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": true,
+            "completedAt": "2026-02-04T04:03:01.065Z",
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-flush",
+              "tue-mobility-1"
+            ]
           }
         },
         "thursday": {
@@ -323,6 +362,13 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:11.767Z"
+          },
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:03:21.469Z",
+            "skippedReason": "rest day"
           }
         }
       }
@@ -334,9 +380,22 @@
         "monday": {
           "workout": {
             "workoutId": "monday-density-strength",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:03:34.833Z",
             "exercisesCompleted": [
-              "monday-flush"
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-flush",
+              "monday-mobility-1",
+              "monday-mobility-2"
             ]
           },
           "morningRoutine": {
@@ -353,7 +412,8 @@
         "tuesday": {
           "workout": {
             "workoutId": "tuesday-core-posture",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:03:40.716Z",
             "exercisesCompleted": [
               "tue-warmup-1",
               "tue-warmup-2",
@@ -362,6 +422,7 @@
               "tuesday-b",
               "tuesday-c",
               "tuesday-d",
+              "tue-flush",
               "tue-mobility-1"
             ]
           },
@@ -401,7 +462,8 @@
         "friday": {
           "workout": {
             "workoutId": "friday-shin-saver-circuit",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:04:05.264Z",
             "exercisesCompleted": [
               "fri-warmup-1",
               "fri-warmup-2",
@@ -410,6 +472,7 @@
               "friday-circuit-b",
               "friday-circuit-c",
               "friday-circuit-d",
+              "fri-flush",
               "fri-mobility-1"
             ]
           },
@@ -446,6 +509,13 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:22.125Z"
+          },
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:03:54.869Z",
+            "skippedReason": "rest day"
           }
         },
         "saturday": {
@@ -458,6 +528,13 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:25.034Z"
+          },
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:04:15.103Z",
+            "skippedReason": "rest day playing wow"
           }
         }
       }
@@ -476,12 +553,20 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:28.064Z"
+          },
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:04:31.586Z",
+            "skippedReason": "had to go into work"
           }
         },
         "tuesday": {
           "workout": {
             "workoutId": "tuesday-core-posture",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:04:36.427Z",
             "exercisesCompleted": [
               "tue-warmup-1",
               "tue-warmup-2",
@@ -490,6 +575,7 @@
               "tuesday-b",
               "tuesday-c",
               "tuesday-d",
+              "tue-flush",
               "tue-mobility-1"
             ]
           },
@@ -514,14 +600,23 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:30.830Z"
+          },
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:04:48.467Z",
+            "skippedReason": "more going to work"
           }
         },
         "thursday": {
           "workout": {
             "workoutId": "thursday-endurance",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:04:57.892Z",
             "exercisesCompleted": [
-              "thu-run"
+              "thu-run",
+              "thu-flush"
             ]
           },
           "morningRoutine": {
@@ -545,6 +640,13 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:33.489Z"
+          },
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-04T04:05:09.812Z",
+            "skippedReason": "concert"
           }
         },
         "saturday": {
@@ -604,15 +706,22 @@
           },
           "workout": {
             "workoutId": "monday-density-strength",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T04:05:16.937Z",
             "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "warmup-4",
               "monday-a1",
               "monday-a2",
               "monday-b1",
               "monday-b2",
               "monday-c",
               "monday-d",
-              "monday-flush"
+              "monday-flush",
+              "monday-mobility-1",
+              "monday-mobility-2"
             ]
           },
           "nightRoutine": {
@@ -631,14 +740,33 @@
             "routineId": "release-the-brakes",
             "completed": true,
             "completedAt": "2026-02-03T04:42:39.158Z"
+          },
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": true,
+            "completedAt": "2026-02-04T04:05:30.804Z",
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-flush",
+              "tue-mobility-1"
+            ]
           }
         },
         "wednesday": {
           "workout": {
             "workoutId": "wednesday-fat-incinerator",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T03:45:07.350Z",
             "exercisesCompleted": [
-              "wed-phase1"
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
             ]
           },
           "morningRoutine": {
@@ -676,12 +804,18 @@
         "friday": {
           "workout": {
             "workoutId": "friday-shin-saver-circuit",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T03:44:57.736Z",
             "exercisesCompleted": [
+              "fri-warmup-1",
+              "fri-warmup-2",
+              "fri-warmup-3",
               "friday-circuit-a",
               "friday-circuit-b",
               "friday-circuit-c",
-              "friday-circuit-d"
+              "friday-circuit-d",
+              "fri-flush",
+              "fri-mobility-1"
             ]
           },
           "morningRoutine": {
@@ -698,10 +832,13 @@
         "saturday": {
           "workout": {
             "workoutId": "saturday-hiit-sprints",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-04T03:44:19.735Z",
             "exercisesCompleted": [
+              "sat-warmup-1",
               "sat-intervals",
-              "sat-warmup-1"
+              "sat-cooldown",
+              "sat-finisher"
             ]
           },
           "morningRoutine": {
@@ -765,7 +902,34 @@
             ]
           }
         },
-        "tuesday": {},
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-04T03:59:40.460Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-04T03:59:41.353Z"
+          },
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": true,
+            "completedAt": "2026-02-04T03:59:38.154Z",
+            "exercisesCompleted": [
+              "tue-warmup-1",
+              "tue-warmup-2",
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-flush",
+              "tue-mobility-1"
+            ]
+          }
+        },
         "wednesday": {},
         "thursday": {},
         "friday": {},
@@ -1063,5 +1227,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-03T04:48:24.228Z"
+  "updatedAt": "2026-02-04T04:05:30.812Z"
 }

@@ -184,64 +184,8 @@ private struct StatusRow: View {
     }
 }
 
-// MARK: - Floating Sync Button
-
-struct SyncFloatingButton: View {
-    var syncManager: HealthKitSyncManager
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                Circle()
-                    .fill(syncManager.isSyncing ? Color.orange : Color.blue)
-                    .frame(width: 56, height: 56)
-                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-
-                if syncManager.isSyncing {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
-
-                // Badge for pending count
-                if syncManager.pendingCount > 0 && !syncManager.isSyncing {
-                    Text("\(syncManager.pendingCount)")
-                        .font(.caption2.bold())
-                        .foregroundStyle(.white)
-                        .padding(4)
-                        .background(Circle().fill(.red))
-                        .offset(x: 18, y: -18)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Preview
 
 #Preview("Sync Sheet") {
     SyncSheetView(syncManager: HealthKitSyncManager.shared)
-}
-
-#Preview("Floating Button") {
-    ZStack {
-        Color.black.ignoresSafeArea()
-
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                SyncFloatingButton(
-                    syncManager: HealthKitSyncManager.shared,
-                    onTap: { print("Tapped") }
-                )
-                .padding()
-            }
-        }
-    }
 }
