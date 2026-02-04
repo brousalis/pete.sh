@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { successResponse, handleApiError } from "@/lib/api/utils"
 import { getCalendarAdapter } from "@/lib/adapters"
-import { isProductionMode, isLocalMode } from "@/lib/utils/mode"
+import { handleApiError, successResponse } from "@/lib/api/utils"
 import { config } from "@/lib/config"
+import { isLocalMode, isProductionMode } from "@/lib/utils/mode"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,13 @@ export async function GET(request: NextRequest) {
     const maxResults = maxResultsParam ? parseInt(maxResultsParam) : 10
 
     // In production mode (no local services), always read from cache
+    // Still need to initialize tokens first because adapter.getUpcomingEvents()
+    // does its own isLocal() check which may differ from global isProductionMode()
     if (isProductionMode()) {
+      // Initialize tokens in case adapter decides to fetch live data
+      if (adapter.isConfigured()) {
+        await adapter.initializeWithTokens()
+      }
       const events = await adapter.getUpcomingEvents(undefined, maxResults)
       return successResponse({
         events,
@@ -81,7 +87,7 @@ export async function GET(request: NextRequest) {
     // Authenticated - get live data
     const calendarId = searchParams.get("calendarId") || config.google.calendarId
     const events = await adapter.getUpcomingEvents(calendarId, maxResults)
-    
+
     return successResponse({
       events,
       source: 'live',
