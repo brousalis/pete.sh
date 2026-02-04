@@ -219,28 +219,6 @@ export default function MePage() {
         </div>
       </div>
 
-      {/* Stats */}
-      {/* <div className="grid grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border p-4">
-          <p className="text-muted-foreground text-sm">Total Posts</p>
-          <p className="text-2xl font-bold">{totalPosts}</p>
-        </div>
-        <div className="bg-card rounded-xl border p-4">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-green-500" />
-            <p className="text-muted-foreground text-sm">Published</p>
-          </div>
-          <p className="text-2xl font-bold">{publishedPosts}</p>
-        </div>
-        <div className="bg-card rounded-xl border p-4">
-          <div className="flex items-center gap-2">
-            <FileText className="text-muted-foreground h-4 w-4" />
-            <p className="text-muted-foreground text-sm">Drafts</p>
-          </div>
-          <p className="text-2xl font-bold">{draftPosts}</p>
-        </div>
-      </div> */}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

@@ -17,8 +17,9 @@
  *   VERCEL_TOKEN   – Vercel API token (create at vercel.com/account/tokens)
  *
  * Env (optional):
- *   VERCEL_PROJECT_ID – Vercel project ID or name (default: all projects)
- *   VERCEL_TEAM_ID    – Team ID if using a team
+ *   VERCEL_PROJECT_ID     – Vercel project ID or name (default: all projects)
+ *   VERCEL_TEAM_ID        – Team ID if using a team
+ *   VERCEL_TOAST_APP_ID   – SnoreToast app name shown on the notification (default: petehome)
  *
  * To run on a schedule (e.g. every 2 min) without --watch:
  *   Task Scheduler → Create Task → Trigger: Every 2 minutes
@@ -29,6 +30,7 @@
 const https = require('https')
 const path = require('path')
 const fs = require('fs')
+const { spawn } = require('child_process')
 
 // Load .env from apps/web when run via yarn vercel-toast
 try {
@@ -111,13 +113,38 @@ function fetchDeployments() {
 }
 
 const APP_ICON_PATH = path.join(__dirname, '..', 'app', 'favicon.ico')
+const TOAST_APP_ID = process.env.VERCEL_TOAST_APP_ID || 'petehome'
+const USE_POWERSHELL = process.platform === 'win32'
+
+// PowerShell + WinRT: no node-notifier loaded, keeps PM2 process memory low (~25MB vs ~55MB)
+const PS_TOAST_SCRIPT = `
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+$t = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$xml = [xml]$t.GetXml()
+($xml.toast.visual.binding.text|?{$_.id -eq '1'}).AppendChild($xml.CreateTextNode($env:TOAST_TITLE)) | Out-Null
+($xml.toast.visual.binding.text|?{$_.id -eq '2'}).AppendChild($xml.CreateTextNode($env:TOAST_MSG)) | Out-Null
+$doc = New-Object Windows.Data.Xml.Dom.XmlDocument; $doc.LoadXml($xml.OuterXml)
+$toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
+$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($env:TOAST_APP_ID)
+$notifier.Show($toast)
+`
 
 function showToast(title, message, url) {
+  if (USE_POWERSHELL) {
+    const ps = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', PS_TOAST_SCRIPT], {
+      env: { ...process.env, TOAST_TITLE: title, TOAST_MSG: message, TOAST_APP_ID: TOAST_APP_ID },
+      windowsHide: true,
+      stdio: 'ignore',
+    })
+    ps.on('error', () => {})
+    return
+  }
   try {
     const notifier = require('node-notifier')
     const opts = {
       title,
       message,
+      appID: TOAST_APP_ID,
       ...(url && { open: url }),
       sound: true,
     }
