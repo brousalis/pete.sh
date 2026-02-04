@@ -23,6 +23,10 @@ struct DayView: View {
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @AppStorage("devDayOverride") private var devDayOverride = 1
 
+    // Day mismatch alert
+    @State private var showDayMismatchAlert = false
+    @State private var expectedDayNumber = 0
+
     struct PRCelebrationData: Identifiable {
         let id = UUID()
         let exerciseName: String
@@ -86,7 +90,7 @@ struct DayView: View {
                 ExerciseHistoryView(exercise: exercise)
             }
             .onAppear {
-                viewModel.refreshDay()
+                checkForDayMismatch()
                 focusedPage = currentPage
             }
             .onChange(of: devModeEnabled) { _, _ in
@@ -121,6 +125,28 @@ struct DayView: View {
                     .transition(.opacity)
                 }
             }
+            .alert("Switch to Today?", isPresented: $showDayMismatchAlert) {
+                Button("Stay on Day \(viewModel.currentDay.id)") {
+                    // Do nothing, keep current day
+                }
+                Button("Switch to Day \(expectedDayNumber)") {
+                    viewModel.refreshDay()
+                }
+            } message: {
+                Text("You were on Day \(viewModel.currentDay.id), but today is Day \(expectedDayNumber).")
+            }
+        }
+    }
+
+    // MARK: - Day Mismatch Check
+
+    private func checkForDayMismatch() {
+        let todayDayNumber = CycleManager.currentDayNumber()
+        let currentDayNumber = viewModel.currentDay.id
+
+        if todayDayNumber != currentDayNumber {
+            expectedDayNumber = todayDayNumber
+            showDayMismatchAlert = true
         }
     }
 
@@ -192,8 +218,6 @@ struct WorkoutPage: View {
     let onResetAll: () -> Void
 
     @Environment(\.modelContext) private var modelContext
-    @State private var bodyWeightManager = BodyWeightManager.shared
-    @State private var showWeightInput = false
 
     private var day: Day {
         viewModel.currentDay
@@ -226,13 +250,6 @@ struct WorkoutPage: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
 
-            // Body weight reminder
-            if !bodyWeightManager.hasLoggedToday {
-                bodyWeightReminderSection
-                    .listRowBackground(Color.white.opacity(0.06))
-                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
-            }
-
             // Exercise sections
             ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
                 SectionHeaderRow(
@@ -263,17 +280,6 @@ struct WorkoutPage: View {
                 .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 40, trailing: 0))
         }
         .listStyle(.plain)
-        .sheet(isPresented: $showWeightInput) {
-            BodyWeightInputSheet(manager: bodyWeightManager)
-        }
-        .onAppear {
-            bodyWeightManager.configure(with: modelContext)
-        }
-        .onChange(of: showWeightInput) { _, isShowing in
-            if !isShowing {
-                bodyWeightManager.loadEntries()
-            }
-        }
     }
 
     // MARK: - Day Header Section
@@ -330,41 +336,6 @@ struct WorkoutPage: View {
     private var progress: Double {
         guard totalEffective > 0 else { return 0 }
         return Double(totalCompleted) / Double(totalEffective)
-    }
-
-    // MARK: - Body Weight Reminder
-
-    @ViewBuilder
-    private var bodyWeightReminderSection: some View {
-        Button {
-            showWeightInput = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "scalemass.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.cyan)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Log Body Weight")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    if let days = bodyWeightManager.daysSinceLastEntry, days > 0 {
-                        Text("\(days) days since last entry")
-                            .font(.system(size: 9, design: .rounded))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Footer Buttons

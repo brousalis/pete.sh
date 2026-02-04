@@ -9,9 +9,7 @@ struct SettingsView: View {
     @AppStorage("skipRestInGuidedMode") private var skipRestInGuidedMode = true
     @AppStorage("trackSetsInGuidedMode") private var trackSetsInGuidedMode = true
     @State private var healthKit = HealthKitManager.shared
-    @State private var cycleManager = TrainingCycleManager.shared
     @State private var locationManager = LocationManager.shared
-    @State private var bodyWeightManager = BodyWeightManager.shared
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
     @State private var showManualLog = false
@@ -63,64 +61,6 @@ struct SettingsView: View {
                 Text("Schedule")
             } footer: {
                 Text("Monday = Day 1, Sunday = Day 7")
-                    .font(.system(.caption2, design: .rounded))
-            }
-            
-            // Training Cycle Section
-            SwiftUI.Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(cycleManager.currentCycle?.weekLabel ?? "Week 1")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(cycleManager.isDeloadWeek ? .green : .white)
-                        
-                        if !cycleManager.isDeloadWeek {
-                            Text("\(cycleManager.weeksUntilDeload) weeks until deload")
-                                .font(.system(.caption2, design: .rounded))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Cycle progress indicator
-                    CycleProgressRing(
-                        progress: cycleManager.currentCycle?.cycleProgress ?? 0.2,
-                        isDeload: cycleManager.isDeloadWeek
-                    )
-                }
-                
-                if !cycleManager.isDeloadWeek {
-                    Button {
-                        cycleManager.markAsDeload()
-                        WKInterfaceDevice.current().play(.click)
-                    } label: {
-                        HStack {
-                            Image(systemName: "leaf.fill")
-                                .foregroundStyle(.green)
-                            Text("Mark as Deload Week")
-                                .font(.system(.caption, design: .rounded))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    Button {
-                        cycleManager.resetCycle()
-                        WKInterfaceDevice.current().play(.click)
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.counterclockwise")
-                                .foregroundStyle(.orange)
-                            Text("Start New Cycle")
-                                .font(.system(.caption, design: .rounded))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            } header: {
-                Text("Training Cycle")
-            } footer: {
-                Text("Deload every 5th week for recovery")
                     .font(.system(.caption2, design: .rounded))
             }
             
@@ -191,27 +131,6 @@ struct SettingsView: View {
                     Text("\(Int(healthKit.moveGoal)) CAL")
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.secondary)
-                }
-                
-                NavigationLink {
-                    BodyWeightView()
-                } label: {
-                    HStack {
-                        Image(systemName: "scalemass.fill")
-                            .foregroundStyle(.cyan)
-                            .font(.caption)
-                        Text("Body Weight")
-                            .font(.system(.caption, design: .rounded))
-                        Spacer()
-                        if let weight = bodyWeightManager.currentWeight {
-                            Text("\(Int(weight)) lbs")
-                                .font(.system(.caption, design: .rounded))
-                                .foregroundStyle(.cyan)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 
                 // Manual workout log
@@ -385,166 +304,109 @@ struct SettingsView: View {
             
             // Location Setup Section (only show when location is enabled)
             if locationManager.isEnabled {
+                // Gym Location Row
                 SwiftUI.Section {
-                    // Gym Location
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Image(systemName: "dumbbell.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                            Text("Gym")
-                                .font(.system(.caption, design: .rounded))
-                            Spacer()
-                            if locationManager.hasGymLocationSet {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            } else {
-                                Text("Not set")
-                                    .font(.system(.caption2, design: .rounded))
-                                    .foregroundStyle(.orange)
+                    HStack {
+                        Image(systemName: "dumbbell.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text("Gym")
+                                    .font(.system(.caption, design: .rounded))
+                                if locationManager.isUsingDefaultGymLocation {
+                                    Text("(default)")
+                                        .font(.system(.caption2, design: .rounded))
+                                        .foregroundStyle(.secondary)
+                                }
                             }
-                        }
-                        
-                        if locationManager.hasGymLocationSet {
-                            Text(locationManager.gymLocationDescription)
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            
                             if let distance = locationManager.distanceToGym {
                                 Text("\(locationManager.formattedDistanceToGym) away")
                                     .font(.system(.caption2, design: .rounded))
                                     .foregroundStyle(distance <= LocationManager.gymRadius ? .green : .secondary)
                             }
                         }
-                        
-                        HStack(spacing: 8) {
-                            Button {
-                                locationManager.setCurrentAsGym()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "location.fill")
-                                        .font(.system(size: 10))
-                                    Text(locationManager.hasGymLocationSet ? "Update" : "Set Here")
-                                        .font(.system(.caption2, design: .rounded))
-                                }
-                                .foregroundStyle(.green)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(locationManager.currentLocation == nil)
-                            
-                            if locationManager.hasGymLocationSet {
-                                Button {
-                                    locationManager.clearGymLocation()
-                                } label: {
-                                    Text("Clear")
-                                        .font(.system(.caption2, design: .rounded))
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        
-                        if locationManager.showGymSaved {
-                            Text("✓ Gym location saved!")
-                                .font(.system(.caption2, design: .rounded))
+                        Spacer()
+                        Button {
+                            locationManager.setCurrentAsGym()
+                        } label: {
+                            Image(systemName: "location.fill")
+                                .font(.caption2)
                                 .foregroundStyle(.green)
                         }
-                        if locationManager.showGymCleared {
-                            Text("Gym location cleared")
-                                .font(.system(.caption2, design: .rounded))
-                                .foregroundStyle(.secondary)
-                        }
+                        .buttonStyle(.plain)
+                        .disabled(locationManager.currentLocation == nil)
                     }
-                    .padding(.vertical, 4)
-                    
-                    // Home Location
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Image(systemName: "house.fill")
-                                .foregroundStyle(.cyan)
-                                .font(.caption)
-                            Text("Home")
-                                .font(.system(.caption, design: .rounded))
-                            Spacer()
-                            if locationManager.hasHomeLocationSet {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            } else {
-                                Text("Not set")
-                                    .font(.system(.caption2, design: .rounded))
-                                    .foregroundStyle(.orange)
+
+                    if locationManager.showGymSaved {
+                        Text("✓ Gym location saved!")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.green)
+                    }
+                } header: {
+                    Text("Gym Location")
+                }
+
+                // Home Location Row
+                SwiftUI.Section {
+                    HStack {
+                        Image(systemName: "house.fill")
+                            .foregroundStyle(.cyan)
+                            .font(.caption)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text("Home")
+                                    .font(.system(.caption, design: .rounded))
+                                if locationManager.isUsingDefaultHomeLocation {
+                                    Text("(default)")
+                                        .font(.system(.caption2, design: .rounded))
+                                        .foregroundStyle(.secondary)
+                                }
                             }
-                        }
-                        
-                        if locationManager.hasHomeLocationSet {
-                            Text(locationManager.homeLocationDescription)
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            
                             if let distance = locationManager.distanceToHome {
                                 Text("\(locationManager.formattedDistanceToHome) away")
                                     .font(.system(.caption2, design: .rounded))
                                     .foregroundStyle(distance <= LocationManager.homeRadius ? .cyan : .secondary)
                             }
                         }
-                        
-                        HStack(spacing: 8) {
-                            Button {
-                                locationManager.setCurrentAsHome()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "location.fill")
-                                        .font(.system(size: 10))
-                                    Text(locationManager.hasHomeLocationSet ? "Update" : "Set Here")
-                                        .font(.system(.caption2, design: .rounded))
-                                }
-                                .foregroundStyle(.cyan)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(locationManager.currentLocation == nil)
-                            
-                            if locationManager.hasHomeLocationSet {
-                                Button {
-                                    locationManager.clearHomeLocation()
-                                } label: {
-                                    Text("Clear")
-                                        .font(.system(.caption2, design: .rounded))
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        
-                        if locationManager.showHomeSaved {
-                            Text("✓ Home location saved!")
-                                .font(.system(.caption2, design: .rounded))
+                        Spacer()
+                        Button {
+                            locationManager.setCurrentAsHome()
+                        } label: {
+                            Image(systemName: "location.fill")
+                                .font(.caption2)
                                 .foregroundStyle(.cyan)
                         }
-                        if locationManager.showHomeCleared {
-                            Text("Home location cleared")
-                                .font(.system(.caption2, design: .rounded))
-                                .foregroundStyle(.secondary)
-                        }
+                        .buttonStyle(.plain)
+                        .disabled(locationManager.currentLocation == nil)
                     }
-                    .padding(.vertical, 4)
-                } header: {
-                    HStack {
-                        Text("Saved Locations")
-                        if locationManager.needsLocationSetup {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                                .font(.system(size: 10))
-                        }
-                    }
-                } footer: {
-                    if locationManager.needsLocationSetup {
-                        Text("⚠️ Set both locations for auto-workout to work")
+
+                    if locationManager.showHomeSaved {
+                        Text("✓ Home location saved!")
                             .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.cyan)
+                    }
+                } header: {
+                    Text("Home Location")
+                }
+
+                // Reset to Defaults
+                if !locationManager.isUsingDefaultGymLocation || !locationManager.isUsingDefaultHomeLocation {
+                    SwiftUI.Section {
+                        Button {
+                            locationManager.resetToDefaultLocations()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.caption)
+                                Text("Reset to Defaults")
+                                    .font(.system(.caption, design: .rounded))
+                            }
                             .foregroundStyle(.orange)
-                    } else {
-                        Text("Gym: \(Int(LocationManager.gymRadius))m radius • Home: \(Int(LocationManager.homeRadius))m radius")
+                        }
+                        .buttonStyle(.plain)
+                    } footer: {
+                        Text("Gym: \(Int(LocationManager.gymRadius))m • Home: \(Int(LocationManager.homeRadius))m radius")
                             .font(.system(.caption2, design: .rounded))
                     }
                 }
@@ -832,8 +694,6 @@ struct SettingsView: View {
             )
         }
         .onAppear {
-            cycleManager.configure(with: modelContext)
-            bodyWeightManager.configure(with: modelContext)
             Task {
                 await healthKit.fetchWeeklyStats()
                 await healthKit.fetchAllTodayData()
@@ -886,27 +746,6 @@ struct SettingsStatItem: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-struct CycleProgressRing: View {
-    let progress: Double
-    let isDeload: Bool
-    
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.1), lineWidth: 4)
-            
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(isDeload ? Color.green : Color.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            
-            Text(isDeload ? "🌿" : "\(Int(progress * 5))")
-                .font(.system(size: 12, design: .rounded))
-        }
-        .frame(width: 36, height: 36)
     }
 }
 
@@ -1153,5 +992,5 @@ struct HistoricalSyncSheet: View {
     NavigationStack {
         SettingsView()
     }
-    .modelContainer(for: [WorkoutRecord.self, TrainingCycle.self], inMemory: true)
+    .modelContainer(for: WorkoutRecord.self, inMemory: true)
 }

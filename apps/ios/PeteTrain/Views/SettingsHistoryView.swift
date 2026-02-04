@@ -6,13 +6,9 @@ import WatchKit
 /// Contains all settings in one place - no duplicates
 struct SettingsHistoryView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var healthKit = HealthKitManager.shared
-    @State private var cycleManager = TrainingCycleManager.shared
     @State private var locationManager = LocationManager.shared
-    @State private var bodyWeightManager = BodyWeightManager.shared
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
-    @State private var historyViewModel = HistoryViewModel()
 
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @AppStorage("devDayOverride") private var devDayOverride = 1
@@ -26,12 +22,6 @@ struct SettingsHistoryView: View {
             // MARK: - Sync & Data Section (at top)
             syncDataSection
 
-            // MARK: - Progress Section
-            progressSection
-
-            // MARK: - Health Section
-            healthSection
-
             // MARK: - Automation Section
             automationSection
 
@@ -42,89 +32,6 @@ struct SettingsHistoryView: View {
         .sheet(isPresented: $showHistoricalSync) {
             HistoricalSyncSheet(syncManager: syncManager, result: $historicalSyncResult)
         }
-        .onAppear {
-            cycleManager.configure(with: modelContext)
-            bodyWeightManager.configure(with: modelContext)
-            historyViewModel.configure(with: modelContext)
-            Task {
-                await healthKit.fetchWeeklyStats()
-            }
-        }
-    }
-
-    // MARK: - Progress Section
-
-    @ViewBuilder
-    private var progressSection: some View {
-        // Quick stats row
-        HStack(spacing: 0) {
-            MiniStatItem(value: "\(historyViewModel.currentStreak)", label: "Streak", icon: "flame.fill", color: historyViewModel.currentStreak > 0 ? .orange : .secondary)
-            MiniStatItem(value: "\(historyViewModel.totalWorkouts)", label: "Total", icon: "checkmark.seal.fill", color: .green)
-            MiniStatItem(value: formatCalories(healthKit.weeklyActiveCalories), label: "Week", icon: "flame", color: .red)
-        }
-        .padding(.vertical, 8)
-        .listRowBackground(Color.white.opacity(0.06))
-        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
-
-        // Week calendar
-        WeekCalendarRow(viewModel: historyViewModel)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
-
-        // Training cycle
-        TrainingCycleRow(cycleManager: cycleManager)
-            .listRowBackground(Color.white.opacity(0.06))
-            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
-    }
-
-    // MARK: - Health Section
-
-    @ViewBuilder
-    private var healthSection: some View {
-        // Section header
-        Text("HEALTH")
-            .font(.system(size: 10, weight: .semibold, design: .rounded))
-            .foregroundStyle(.secondary)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 4, trailing: 8))
-
-        // Body weight
-        NavigationLink {
-            BodyWeightView()
-        } label: {
-            HStack {
-                Image(systemName: "scalemass.fill")
-                    .font(.caption)
-                    .foregroundStyle(.cyan)
-                    .frame(width: 24)
-                Text("Body Weight")
-                    .font(.system(size: 13, design: .rounded))
-                Spacer()
-                if let weight = bodyWeightManager.currentWeight {
-                    Text("\(Int(weight)) lbs")
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(.cyan)
-                }
-            }
-        }
-        .listRowBackground(Color.white.opacity(0.06))
-        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
-
-        // Volume trends
-        NavigationLink {
-            WeeklyVolumeView()
-        } label: {
-            HStack {
-                Image(systemName: "chart.bar.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                    .frame(width: 24)
-                Text("Volume Trends")
-                    .font(.system(size: 13, design: .rounded))
-            }
-        }
-        .listRowBackground(Color.white.opacity(0.06))
-        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
     }
 
     // MARK: - Automation Section
@@ -166,10 +73,23 @@ struct SettingsHistoryView: View {
         .listRowBackground(Color.white.opacity(0.06))
         .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
 
-        // Location automation (combined with sync)
-        LocationAutomationRow(locationManager: locationManager, syncManager: syncManager)
+        // Smart sync toggle
+        SmartSyncRow(locationManager: locationManager)
             .listRowBackground(Color.white.opacity(0.06))
             .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+
+        // Saved locations section (only when smart sync is enabled)
+        if locationManager.isEnabled {
+            Text("SAVED LOCATIONS")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 4, trailing: 8))
+
+            SavedLocationsRow(locationManager: locationManager)
+                .listRowBackground(Color.white.opacity(0.06))
+                .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+        }
     }
 
     // MARK: - Developer Section
@@ -204,172 +124,16 @@ struct SettingsHistoryView: View {
             .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 8, trailing: 8))
         }
     }
-
-    private func formatCalories(_ calories: Double) -> String {
-        if calories >= 1000 {
-            return String(format: "%.1fk", calories / 1000)
-        }
-        return "\(Int(calories))"
-    }
 }
 
-// MARK: - Mini Stat Item
+// MARK: - Smart Sync Toggle Row
 
-private struct MiniStatItem: View {
-    let value: String
-    let label: String
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Image(systemName: icon)
-                .font(.system(size: 10))
-                .foregroundStyle(color)
-            Text(value)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-            Text(label)
-                .font(.system(size: 8, design: .rounded))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Week Calendar Row
-
-private struct WeekCalendarRow: View {
-    var viewModel: HistoryViewModel
-    private var calendar: Calendar { Calendar.current }
-
-    private var thisWeekDates: [Date] {
-        let today = Date()
-        guard let monday = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) else { return [] }
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: monday) }
-    }
-
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text("This Week")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                NavigationLink {
-                    HistoryView()
-                } label: {
-                    Text("History")
-                        .font(.system(size: 10, design: .rounded))
-                        .foregroundStyle(.orange)
-                }
-                .buttonStyle(.plain)
-            }
-
-            HStack(spacing: 3) {
-                ForEach(Array(thisWeekDates.enumerated()), id: \.offset) { index, date in
-                    let letters = ["M", "T", "W", "T", "F", "S", "S"]
-                    let record = viewModel.record(for: date)
-                    let isToday = calendar.isDateInToday(date)
-                    let isFuture = date > Date()
-
-                    VStack(spacing: 2) {
-                        Text(letters[index])
-                            .font(.system(size: 7, design: .rounded))
-                            .foregroundStyle(.secondary)
-
-                        Circle()
-                            .fill(isToday ? Color.orange.opacity(0.25) : Color.clear)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(
-                                        isFuture ? Color.clear :
-                                            (record == nil ? Color.red.opacity(0.3) :
-                                                (record!.isComplete ? Color.green : Color.orange)),
-                                        lineWidth: 2
-                                    )
-                            )
-                            .overlay {
-                                if let record = record, record.isComplete {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 7, weight: .bold))
-                                        .foregroundStyle(.green)
-                                }
-                            }
-                            .frame(width: 18, height: 18)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-    }
-}
-
-// MARK: - Training Cycle Row
-
-private struct TrainingCycleRow: View {
-    @Bindable var cycleManager: TrainingCycleManager
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(cycleManager.currentCycle?.weekLabel ?? "Week 1")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundStyle(cycleManager.isDeloadWeek ? .green : .white)
-
-                if cycleManager.isDeloadWeek {
-                    Text("Deload week - lighter intensity")
-                        .font(.system(size: 9, design: .rounded))
-                        .foregroundStyle(.green.opacity(0.8))
-                } else {
-                    Text("\(cycleManager.weeksUntilDeload) weeks until deload")
-                        .font(.system(size: 9, design: .rounded))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            // Progress ring
-            CycleProgressRing(
-                progress: cycleManager.currentCycle?.cycleProgress ?? 0.2,
-                isDeload: cycleManager.isDeloadWeek
-            )
-            .frame(width: 32, height: 32)
-
-            // Action button
-            Button {
-                if cycleManager.isDeloadWeek {
-                    cycleManager.resetCycle()
-                } else {
-                    cycleManager.markAsDeload()
-                }
-                WKInterfaceDevice.current().play(.click)
-            } label: {
-                Image(systemName: cycleManager.isDeloadWeek ? "arrow.counterclockwise" : "leaf.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(cycleManager.isDeloadWeek ? .orange : .green)
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill((cycleManager.isDeloadWeek ? Color.orange : Color.green).opacity(0.15)))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, 6)
-    }
-}
-
-// MARK: - Location Automation Row (combined location + auto-sync)
-
-private struct LocationAutomationRow: View {
+private struct SmartSyncRow: View {
     @Bindable var locationManager: LocationManager
-    @Bindable var syncManager: SyncManager
 
     var body: some View {
         VStack(spacing: 8) {
-            // Main toggle - enables location-based features
+            // Main toggle
             Toggle(isOn: Binding(
                 get: { locationManager.isEnabled },
                 set: { newValue in
@@ -392,9 +156,8 @@ private struct LocationAutomationRow: View {
             }
             .tint(.blue)
 
-            // Expanded options when enabled
+            // Status when enabled
             if locationManager.isEnabled {
-                // Show authorization warning if not authorized
                 if !locationManager.isAuthorized {
                     VStack(spacing: 4) {
                         Text(locationManager.authorizationDenied ? "Location permission denied" : "Requesting location access...")
@@ -408,62 +171,33 @@ private struct LocationAutomationRow: View {
                         }
                     }
                     .padding(.leading, 28)
-                }
-
-                VStack(spacing: 6) {
-                    // What this does
-                    Text("Notifies at gym, auto-syncs at home")
-                        .font(.system(size: 9, design: .rounded))
-                        .foregroundStyle(.secondary)
-
-                    // Status
-                    HStack {
-                        Circle()
-                            .fill(locationManager.isMonitoring ? Color.green : Color.gray)
-                            .frame(width: 6, height: 6)
-                        Text(locationManager.statusDescription)
+                } else {
+                    VStack(spacing: 4) {
+                        Text("Notifies at gym, auto-syncs at home")
                             .font(.system(size: 9, design: .rounded))
                             .foregroundStyle(.secondary)
-                        Spacer()
-                        if locationManager.isAtGym {
-                            Text("At Gym")
-                                .font(.system(size: 8, weight: .medium, design: .rounded))
-                                .foregroundStyle(.green)
-                        } else if locationManager.isAtHome {
-                            Text("At Home")
-                                .font(.system(size: 8, weight: .medium, design: .rounded))
-                                .foregroundStyle(.cyan)
+
+                        HStack {
+                            Circle()
+                                .fill(locationManager.isMonitoring ? Color.green : Color.gray)
+                                .frame(width: 6, height: 6)
+                            Text(locationManager.statusDescription)
+                                .font(.system(size: 9, design: .rounded))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            if locationManager.isAtGym {
+                                Text("At Gym")
+                                    .font(.system(size: 8, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.green)
+                            } else if locationManager.isAtHome {
+                                Text("At Home")
+                                    .font(.system(size: 8, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.cyan)
+                            }
                         }
                     }
-
-                    // Location buttons
-                    HStack(spacing: 8) {
-                        LocationSetButton(
-                            label: "Gym",
-                            icon: "dumbbell.fill",
-                            color: .green,
-                            isSet: locationManager.hasGymLocationSet,
-                            onSet: { locationManager.setCurrentAsGym() },
-                            onClear: { locationManager.clearGymLocation() }
-                        )
-
-                        LocationSetButton(
-                            label: "Home",
-                            icon: "house.fill",
-                            color: .cyan,
-                            isSet: locationManager.hasHomeLocationSet,
-                            onSet: { locationManager.setCurrentAsHome() },
-                            onClear: { locationManager.clearHomeLocation() }
-                        )
-                    }
-
-                    if locationManager.needsLocationSetup {
-                        Text("Set both locations to enable")
-                            .font(.system(size: 8, design: .rounded))
-                            .foregroundStyle(.orange)
-                    }
+                    .padding(.leading, 28)
                 }
-                .padding(.leading, 28)
             }
         }
         .padding(.vertical, 4)
@@ -473,42 +207,96 @@ private struct LocationAutomationRow: View {
     }
 }
 
-private struct LocationSetButton: View {
-    let label: String
-    let icon: String
-    let color: Color
-    let isSet: Bool
-    let onSet: () -> Void
-    let onClear: () -> Void
+// MARK: - Saved Locations Row
+
+private struct SavedLocationsRow: View {
+    @Bindable var locationManager: LocationManager
 
     var body: some View {
-        Button {
-            if isSet {
-                onClear()
-            } else {
-                onSet()
-            }
-            WKInterfaceDevice.current().play(.click)
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 9))
-                Text(isSet ? label : "Set \(label)")
-                    .font(.system(size: 9, design: .rounded))
-                if isSet {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 8))
+        VStack(alignment: .leading, spacing: 8) {
+            // Gym row
+            HStack(spacing: 6) {
+                Image(systemName: "dumbbell.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.green)
+                    .frame(width: 20)
+                Text("Gym")
+                    .font(.system(size: 11, design: .rounded))
+                if locationManager.isUsingDefaultGymLocation {
+                    Text("(default)")
+                        .font(.system(size: 9, design: .rounded))
+                        .foregroundStyle(.secondary)
                 }
+                Spacer()
+                if let distance = locationManager.distanceToGym {
+                    Text(locationManager.formattedDistanceToGym)
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(distance <= LocationManager.gymRadius ? .green : .secondary)
+                }
+                Button {
+                    locationManager.setCurrentAsGym()
+                    WKInterfaceDevice.current().play(.click)
+                } label: {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.green)
+                        .padding(6)
+                        .background(Circle().fill(Color.green.opacity(0.15)))
+                }
+                .buttonStyle(.plain)
             }
-            .foregroundStyle(isSet ? color : .secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSet ? color.opacity(0.15) : Color.white.opacity(0.05))
-            )
+
+            // Home row
+            HStack(spacing: 6) {
+                Image(systemName: "house.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.cyan)
+                    .frame(width: 20)
+                Text("Home")
+                    .font(.system(size: 11, design: .rounded))
+                if locationManager.isUsingDefaultHomeLocation {
+                    Text("(default)")
+                        .font(.system(size: 9, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if let distance = locationManager.distanceToHome {
+                    Text(locationManager.formattedDistanceToHome)
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(distance <= LocationManager.homeRadius ? .cyan : .secondary)
+                }
+                Button {
+                    locationManager.setCurrentAsHome()
+                    WKInterfaceDevice.current().play(.click)
+                } label: {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.cyan)
+                        .padding(6)
+                        .background(Circle().fill(Color.cyan.opacity(0.15)))
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Reset to defaults button
+            if !locationManager.isUsingDefaultGymLocation || !locationManager.isUsingDefaultHomeLocation {
+                Button {
+                    locationManager.resetToDefaultLocations()
+                    WKInterfaceDevice.current().play(.click)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 9))
+                        Text("Reset to Defaults")
+                            .font(.system(size: 10, design: .rounded))
+                    }
+                    .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 4)
     }
 }
 
@@ -709,5 +497,5 @@ private struct PetehomeSyncRow: View {
     NavigationStack {
         SettingsHistoryView()
     }
-    .modelContainer(for: [WorkoutRecord.self, TrainingCycle.self], inMemory: true)
+    .modelContainer(for: WorkoutRecord.self, inMemory: true)
 }

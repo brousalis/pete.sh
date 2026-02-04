@@ -8,8 +8,6 @@ struct PeteTrainApp: App {
             WorkoutRecord.self,
             ExerciseLog.self,
             PersonalRecord.self,
-            TrainingCycle.self,
-            BodyWeight.self,
         ])
         
         // CloudKit disabled - standalone watchOS app

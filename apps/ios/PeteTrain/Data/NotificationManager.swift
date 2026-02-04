@@ -513,7 +513,8 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
 
             default:
                 break
-            }            completionHandler()
+            }
+            completionHandler()
         }
     }
 }

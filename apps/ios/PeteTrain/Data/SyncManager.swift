@@ -470,12 +470,10 @@ final class SyncManager {
                 continuation.resume(returning: workouts)
             }
             
-            Task { @MainActor in
-                HealthKitManager.shared.healthStore.execute(query)
-            }
+            HealthKitManager.shared.healthStore.execute(query)
         }
     }
-    
+
     /// Try to match a HealthKit workout to a Pete Train day based on workout type and day of week
     private func matchWorkoutToDay(_ workout: HKWorkout) -> Day? {
         let calendar = Calendar.current
@@ -626,12 +624,10 @@ final class SyncManager {
                 continuation.resume(returning: workout)
             }
             
-            Task { @MainActor in
-                HealthKitManager.shared.healthStore.execute(query)
-            }
+            HealthKitManager.shared.healthStore.execute(query)
         }
     }
-    
+
     // MARK: - Formatted Output
     
     var lastSyncDescription: String {

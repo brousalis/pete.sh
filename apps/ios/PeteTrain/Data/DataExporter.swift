@@ -12,7 +12,6 @@ struct DataExporter {
         let workoutRecords: [WorkoutRecordExport]
         let exerciseLogs: [ExerciseLogExport]
         let personalRecords: [PersonalRecordExport]
-        let trainingCycles: [TrainingCycleExport]
     }
     
     struct WorkoutRecordExport: Codable {
@@ -47,13 +46,6 @@ struct DataExporter {
         let date: Date
     }
     
-    struct TrainingCycleExport: Codable {
-        let id: String
-        let startDate: Date
-        let weekNumber: Int
-        let isDeloadWeek: Bool
-    }
-    
     // MARK: - Export
     
     static func exportAllData(modelContext: ModelContext) -> ExportData? {
@@ -75,13 +67,7 @@ struct DataExporter {
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
             let prs = try modelContext.fetch(prDescriptor)
-            
-            // Fetch all training cycles
-            let cycleDescriptor = FetchDescriptor<TrainingCycle>(
-                sortBy: [SortDescriptor(\.startDate, order: .reverse)]
-            )
-            let cycles = try modelContext.fetch(cycleDescriptor)
-            
+
             // Convert to export format
             let exportedWorkouts = workoutRecords.map { record in
                 WorkoutRecordExport(
@@ -120,25 +106,15 @@ struct DataExporter {
                     date: pr.date
                 )
             }
-            
-            let exportedCycles = cycles.map { cycle in
-                TrainingCycleExport(
-                    id: cycle.id.uuidString,
-                    startDate: cycle.startDate,
-                    weekNumber: cycle.weekNumber,
-                    isDeloadWeek: cycle.isDeloadWeek
-                )
-            }
-            
+
             let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-            
+
             return ExportData(
                 exportDate: Date(),
                 appVersion: appVersion,
                 workoutRecords: exportedWorkouts,
                 exerciseLogs: exportedLogs,
-                personalRecords: exportedPRs,
-                trainingCycles: exportedCycles
+                personalRecords: exportedPRs
             )
             
         } catch {

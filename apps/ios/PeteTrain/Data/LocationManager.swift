@@ -56,15 +56,22 @@ final class LocationManager: NSObject {
         set { UserDefaults.standard.set(newValue, forKey: "autoStopAtHome") }
     }
     
+    // MARK: - Default Locations (hardcoded)
+
+    private static let defaultGymLatitude = 41.933616314980085
+    private static let defaultGymLongitude = -87.64638745553795
+    private static let defaultHomeLatitude = 41.93310114631346
+    private static let defaultHomeLongitude = -87.64689042932159
+
     // MARK: - User-Configurable Locations (persisted)
-    
+
     var gymLocation: CLLocation? {
         get {
             let lat = UserDefaults.standard.double(forKey: "gymLatitude")
             let lon = UserDefaults.standard.double(forKey: "gymLongitude")
-            // Return nil if not set (0,0 means not configured)
+            // Use defaults if not set (0,0 means not configured)
             if lat == 0 && lon == 0 {
-                return nil
+                return CLLocation(latitude: Self.defaultGymLatitude, longitude: Self.defaultGymLongitude)
             }
             return CLLocation(latitude: lat, longitude: lon)
         }
@@ -83,9 +90,9 @@ final class LocationManager: NSObject {
         get {
             let lat = UserDefaults.standard.double(forKey: "homeLatitude")
             let lon = UserDefaults.standard.double(forKey: "homeLongitude")
-            // Return nil if not set (0,0 means not configured)
+            // Use defaults if not set (0,0 means not configured)
             if lat == 0 && lon == 0 {
-                return nil
+                return CLLocation(latitude: Self.defaultHomeLatitude, longitude: Self.defaultHomeLongitude)
             }
             return CLLocation(latitude: lat, longitude: lon)
         }
@@ -107,7 +114,30 @@ final class LocationManager: NSObject {
     var hasHomeLocationSet: Bool {
         homeLocation != nil
     }
-    
+
+    /// Returns true if gym location is using the hardcoded default (not a custom location)
+    var isUsingDefaultGymLocation: Bool {
+        let lat = UserDefaults.standard.double(forKey: "gymLatitude")
+        let lon = UserDefaults.standard.double(forKey: "gymLongitude")
+        return lat == 0 && lon == 0
+    }
+
+    /// Returns true if home location is using the hardcoded default (not a custom location)
+    var isUsingDefaultHomeLocation: Bool {
+        let lat = UserDefaults.standard.double(forKey: "homeLatitude")
+        let lon = UserDefaults.standard.double(forKey: "homeLongitude")
+        return lat == 0 && lon == 0
+    }
+
+    /// Resets both locations to hardcoded defaults by clearing UserDefaults
+    func resetToDefaultLocations() {
+        UserDefaults.standard.removeObject(forKey: "gymLatitude")
+        UserDefaults.standard.removeObject(forKey: "gymLongitude")
+        UserDefaults.standard.removeObject(forKey: "homeLatitude")
+        UserDefaults.standard.removeObject(forKey: "homeLongitude")
+        print("📍 Reset to default locations")
+    }
+
     // Thresholds in meters
     static let gymRadius: Double = 100
     static let homeRadius: Double = 50

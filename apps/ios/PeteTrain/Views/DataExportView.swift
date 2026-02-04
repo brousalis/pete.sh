@@ -154,7 +154,7 @@ struct DataExportView: View {
     NavigationStack {
         DataExportView()
     }
-    .modelContainer(for: [WorkoutRecord.self, ExerciseLog.self, PersonalRecord.self, TrainingCycle.self], inMemory: true)
+    .modelContainer(for: [WorkoutRecord.self, ExerciseLog.self, PersonalRecord.self], inMemory: true)
 }
 
 

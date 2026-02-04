@@ -265,32 +265,6 @@ struct StatsCard: View {
                 )
             }
             
-            // Volume tracking link
-            NavigationLink {
-                WeeklyVolumeView()
-            } label: {
-                HStack {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                    
-                    Text("View Volume Trends")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.white)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.green.opacity(0.1))
-                )
-            }
-            .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 8)

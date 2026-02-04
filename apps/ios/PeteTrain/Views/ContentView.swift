@@ -6,7 +6,6 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = WorkoutViewModel()
     @State private var healthKit = HealthKitManager.shared
-    @State private var cycleManager = TrainingCycleManager.shared
     @State private var prManager = PRManager.shared
     @State private var locationManager = LocationManager.shared
     @State private var notificationManager = NotificationManager.shared
@@ -24,7 +23,6 @@ struct ContentView: View {
 
     private func configureManagers() {
         viewModel.configure(with: modelContext)
-        cycleManager.configure(with: modelContext)
         prManager.configure(with: modelContext)
     }
 
@@ -122,5 +120,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [WorkoutRecord.self, ExerciseLog.self, PersonalRecord.self, TrainingCycle.self], inMemory: true)
+        .modelContainer(for: [WorkoutRecord.self, ExerciseLog.self, PersonalRecord.self], inMemory: true)
 }
