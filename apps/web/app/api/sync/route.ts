@@ -13,7 +13,7 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
 import { syncAll, syncUnauthenticated, syncHue, syncCTA, syncFitness } from "@/lib/sync/background-sync"
-import { isLocalMode } from "@/lib/utils/mode"
+import { isLocalMode, ensureLocalAvailabilityChecked } from "@/lib/utils/mode"
 import { isSupabaseConfigured } from "@/lib/supabase/client"
 
 /**
@@ -21,6 +21,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/client"
  */
 export async function GET() {
   try {
+    await ensureLocalAvailabilityChecked()
     return successResponse({
       mode: isLocalMode() ? 'local' : 'production',
       supabaseConfigured: isSupabaseConfigured(),
@@ -41,7 +42,8 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Only allow in local mode
+    // Warm availability cache so first request to this process doesn't 403 (cold cache)
+    await ensureLocalAvailabilityChecked()
     if (!isLocalMode()) {
       return errorResponse("Sync only available in local mode", 403)
     }

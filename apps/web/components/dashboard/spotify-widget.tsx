@@ -4,18 +4,18 @@ import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-heade
 import { Button } from '@/components/ui/button'
 import { apiGet, apiPost, getApiBaseUrl } from '@/lib/api/client'
 import type {
-  SpotifyListeningHistoryEntry,
-  SpotifyPlaybackState,
-  SpotifyUser,
+    SpotifyListeningHistoryEntry,
+    SpotifyPlaybackState,
+    SpotifyUser,
 } from '@/lib/types/spotify.types'
 import {
-  Clock,
-  Database,
-  Music,
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
+    Clock,
+    Database,
+    Music,
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -48,6 +48,11 @@ interface SpotifyPlaybackResponse {
 
 // How long to pause polling after a user action (ms)
 const ACTION_DEBOUNCE_MS = 2000
+
+/** Poll interval when playback is active (ms) */
+const PLAYBACK_POLL_MS = 5000
+/** Poll interval when nothing is playing (ms) */
+const IDLE_POLL_MS = 30_000
 
 /**
  * SpotifyWidget - A compact dashboard widget showing current playback.
@@ -192,16 +197,18 @@ export function SpotifyWidget() {
     init()
   }, [fetchUser, fetchPlayback, fetchRecentHistory])
 
-  // Poll playback state
+  // Poll playback state: more often when playing, less when idle
+  const isPlaying = cachedPlayback?.isPlaying ?? false
   useEffect(() => {
     if (!user) return
 
-    const interval = setInterval(() => {
+    const pollMs = isPlaying ? PLAYBACK_POLL_MS : IDLE_POLL_MS
+    const intervalId = setInterval(() => {
       fetchPlayback()
-    }, 5000) // Slower polling for widget
+    }, pollMs)
 
-    return () => clearInterval(interval)
-  }, [user, fetchPlayback])
+    return () => clearInterval(intervalId)
+  }, [user, fetchPlayback, isPlaying])
 
   // Update progress bar smoothly
   useEffect(() => {
@@ -287,7 +294,6 @@ export function SpotifyWidget() {
 
   // Get display track info from cached playback
   const displayTrack = cachedPlayback?.track
-  const isPlaying = cachedPlayback?.isPlaying ?? false
 
   // Not connected and no cached data state
   if (!user && !displayTrack) {

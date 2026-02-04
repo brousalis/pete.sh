@@ -4,23 +4,23 @@
  */
 
 import { config } from "@/lib/config"
-import { getSpotifyTokens, setSpotifyTokens, clearSpotifyTokens } from "./token-storage"
 import type {
-  SpotifyTokens,
-  SpotifyUser,
-  SpotifyPlaybackState,
-  SpotifyDevice,
-  SpotifyPlaylist,
-  SpotifyRecentTrack,
-  SpotifySearchResults,
-  SpotifyTrack,
-  SpotifyQueue,
-  SpotifyRepeatMode,
   SpotifyAudioFeatures,
-  SpotifySavedTrack,
+  SpotifyDevice,
+  SpotifyPlaybackState,
+  SpotifyPlaylist,
+  SpotifyQueue,
+  SpotifyRecentTrack,
   SpotifyRecommendationsParams,
   SpotifyRecommendationsResponse,
+  SpotifyRepeatMode,
+  SpotifySavedTrack,
+  SpotifySearchResults,
+  SpotifyTokens,
+  SpotifyTrack,
+  SpotifyUser,
 } from "@/lib/types/spotify.types"
+import { getSpotifyTokens } from "./token-storage"
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -625,22 +625,16 @@ export async function loadSpotifyTokensFromCookies(
 ): Promise<{ accessToken: string | null; refreshToken: string | null; needsRefresh: boolean }> {
   // First try file-based storage (works for cross-origin requests)
   const fileTokens = getSpotifyTokens()
-  
+
   // Fall back to cookies if file storage is empty
   const cookieAccessToken = cookieStore.get("spotify_access_token")?.value || null
   const cookieRefreshToken = cookieStore.get("spotify_refresh_token")?.value || null
   const cookieExpiresAt = cookieStore.get("spotify_expires_at")?.value
-  
+
   // Use file tokens if available, otherwise use cookies
   const accessToken = fileTokens.accessToken || cookieAccessToken
   const refreshToken = fileTokens.refreshToken || cookieRefreshToken
   const expiresAt = fileTokens.expiryDate || (cookieExpiresAt ? parseInt(cookieExpiresAt, 10) : null)
-
-  console.log("[SpotifyService] Loading tokens:", {
-    fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
-    fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
-    using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
-  })
 
   // Check if token is expired or about to expire (within 5 minutes)
   const needsRefresh = expiresAt

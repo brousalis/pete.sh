@@ -6,7 +6,10 @@
  * - Local mode: Local services (like Hue bridge) are reachable
  * - Production mode: Local services are not reachable, read from cache
  *
- * DEPLOYMENT_MODE env var is no longer required - mode is auto-detected.
+ * The availability cache is warmed by GET /api/health (Hue check). For routes
+ * that gate on local mode (e.g. POST /api/sync, POST /api/spotify/player/play),
+ * call ensureLocalAvailabilityChecked() first so the first request to that
+ * process doesn't get a false 403 when the cache is still cold.
  */
 
 import { isAnyLocalServiceAvailable, getServiceAvailabilityStatus } from '@/lib/adapters/base.adapter'
@@ -15,13 +18,9 @@ export type DeploymentMode = 'local' | 'production'
 
 /**
  * Get the current deployment mode based on service availability
- *
- * This is now auto-detected:
- * - If any local service is reachable: 'local'
- * - If no local services are reachable: 'production'
+ * Uses cached results from service availability checks (see ensureLocalAvailabilityChecked).
  */
 export function getDeploymentMode(): DeploymentMode {
-  // Check if any local service is available based on cached checks
   if (isAnyLocalServiceAvailable()) {
     return 'local'
   }
@@ -30,7 +29,7 @@ export function getDeploymentMode(): DeploymentMode {
 
 /**
  * Check if any local service is available
- * This uses cached results from service availability checks
+ * Uses cached results from service availability checks
  */
 export function isLocalMode(): boolean {
   return isAnyLocalServiceAvailable()
@@ -41,6 +40,22 @@ export function isLocalMode(): boolean {
  */
 export function isProductionMode(): boolean {
   return !isAnyLocalServiceAvailable()
+}
+
+/**
+ * Warm the local availability cache before checking mode.
+ * Call this in API routes that gate on local mode (sync, play, etc.) so the
+ * first request to that process doesn't 403 due to a cold cache.
+ * Same logic as GET /api/health: runs Hue adapter availability check.
+ */
+export async function ensureLocalAvailabilityChecked(): Promise<void> {
+  try {
+    const { getHueAdapter } = await import('@/lib/adapters/hue.adapter')
+    const hueAdapter = getHueAdapter()
+    await hueAdapter['isLocalServiceAvailable']()
+  } catch {
+    // Ignore errors - just means not available; cache will reflect that
+  }
 }
 
 /**

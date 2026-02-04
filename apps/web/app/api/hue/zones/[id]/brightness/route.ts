@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
 import { getHueAdapter } from "@/lib/adapters"
-import { localModeGuard } from "@/lib/utils/mode"
+import { localModeGuard, ensureLocalAvailabilityChecked } from "@/lib/utils/mode"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Guard: Only allow in local mode
+    await ensureLocalAvailabilityChecked()
     const guard = localModeGuard()
     if (!guard.allowed) {
       return errorResponse(guard.error ?? "Controls disabled in production mode", 403)
