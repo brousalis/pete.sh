@@ -133,12 +133,12 @@ export function StretchPanel({
   if (isSkipped && !isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col h-full min-h-0 overflow-hidden py-0 opacity-60",
+        "flex flex-col py-0 opacity-60 md:h-full md:min-h-0 md:overflow-hidden",
         className
       )}>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+        <CardContent className="flex flex-col p-0 md:min-h-0 md:flex-1 md:overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-2 p-3 border-b border-border/30 bg-muted/10">
+          <div className="flex items-center gap-2 p-2.5 sm:p-3 border-b border-border/30 bg-muted/10">
             <div className="rounded-md p-1.5 bg-muted/30">
               <Icon className="size-4 text-muted-foreground" />
             </div>
@@ -154,7 +154,7 @@ export function StretchPanel({
 
           {/* Skipped Banner */}
           {skippedReason && (
-            <div className="border-b border-border/20 bg-muted/10 px-3 py-2">
+            <div className="border-b border-border/20 bg-muted/10 px-2.5 sm:px-3 py-2">
               <p className="text-[11px] text-muted-foreground/70 italic">
                 "{skippedReason}"
               </p>
@@ -162,17 +162,17 @@ export function StretchPanel({
           )}
 
           {/* Skipped Exercise List */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-2 space-y-0.5">
+          <div className="md:flex-1 md:overflow-y-auto md:min-h-0">
+            <div className="p-1.5 sm:p-2 space-y-0.5">
               {routine.exercises.map((exercise, idx) => {
                 const videoId = getVideoId(exercise.name)
 
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded"
+                    className="flex items-center gap-2 px-2 py-2 sm:py-1.5 rounded"
                   >
-                    <div className="size-3 rounded-full border border-muted-foreground/20 shrink-0" />
+                    <div className="size-4 sm:size-3 rounded-full border border-muted-foreground/20 shrink-0" />
                     <span className="text-xs text-muted-foreground/50 flex-1 min-w-0 truncate line-through">
                       {exercise.name}
                     </span>
@@ -193,22 +193,22 @@ export function StretchPanel({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
+                  className="h-8 sm:h-5 px-2.5 sm:px-1.5 text-[11px] sm:text-[10px] text-muted-foreground/60 hover:text-foreground gap-1 touch-manipulation"
                   onClick={onUnskip}
                   disabled={isCompleting}
                 >
-                  <Undo2 className="size-2.5" />
+                  <Undo2 className="size-3 sm:size-2.5" />
                   {isCompleting ? "..." : "Undo"}
                 </Button>
               ) : (
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
+                  className="h-8 sm:h-5 px-2.5 sm:px-1.5 text-[11px] sm:text-[10px] text-muted-foreground/60 hover:text-foreground gap-1 touch-manipulation"
                   onClick={onComplete}
                   disabled={isCompleting}
                 >
-                  <Check className="size-2.5" />
+                  <Check className="size-3 sm:size-2.5" />
                   {isCompleting ? "..." : "Done"}
                 </Button>
               )}
@@ -258,12 +258,12 @@ export function StretchPanel({
   if (isCompleted) {
     return (
       <Card className={cn(
-        "flex flex-col h-full min-h-0 overflow-hidden py-0",
+        "flex flex-col py-0 md:h-full md:min-h-0 md:overflow-hidden",
         className
       )}>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+        <CardContent className="flex flex-col p-0 md:min-h-0 md:flex-1 md:overflow-hidden">
           {/* Header - subtle completed styling */}
-          <div className="flex items-center gap-2 p-3 border-b border-border/30 bg-muted/20">
+          <div className="flex items-center gap-2 p-2.5 sm:p-3 border-b border-border/30 bg-muted/20">
             <div className={cn("rounded-md p-1.5", themeColors.iconBg)}>
               <Icon className={cn("size-4", themeColors.iconColor)} />
             </div>
@@ -277,17 +277,17 @@ export function StretchPanel({
           </div>
 
           {/* Completed Exercise List - Read only, muted */}
-          <div className="flex-1 overflow-y-auto min-h-0 bg-muted/5">
-            <div className="p-2 space-y-0.5">
+          <div className="md:flex-1 md:overflow-y-auto md:min-h-0 bg-muted/5">
+            <div className="p-1.5 sm:p-2 space-y-0.5">
               {routine.exercises.map((exercise, idx) => {
                 const videoId = getVideoId(exercise.name)
 
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded"
+                    className="flex items-center gap-2 px-2 py-2 sm:py-1.5 rounded"
                   >
-                    <Check className="size-3 text-emerald-500/70 shrink-0" />
+                    <Check className="size-4 sm:size-3 text-emerald-500/70 shrink-0" />
                     <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
                       {exercise.name}
                     </span>
@@ -299,10 +299,10 @@ export function StretchPanel({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-5 w-5 p-0 opacity-50 hover:opacity-100"
+                          className="h-7 w-7 sm:h-5 sm:w-5 p-0 opacity-50 hover:opacity-100 touch-manipulation"
                           onClick={() => openVideoModal(videoId, exercise.name)}
                         >
-                          <Play className="size-2.5 text-muted-foreground" />
+                          <Play className="size-3.5 sm:size-2.5 text-muted-foreground" />
                         </Button>
                       )}
                     </div>
@@ -319,11 +319,11 @@ export function StretchPanel({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-5 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground gap-1"
+                className="h-8 sm:h-5 px-2.5 sm:px-1.5 text-[11px] sm:text-[10px] text-muted-foreground/60 hover:text-foreground gap-1 touch-manipulation"
                 onClick={onUncomplete}
                 disabled={isCompleting}
               >
-                <Undo2 className="size-2.5" />
+                <Undo2 className="size-3 sm:size-2.5" />
                 {isCompleting ? "..." : "Undo"}
               </Button>
             </div>
@@ -393,13 +393,13 @@ export function StretchPanel({
 
   return (
     <Card className={cn(
-      "flex flex-col h-full min-h-0 overflow-hidden py-0",
+      "flex flex-col py-0 md:h-full md:min-h-0 md:overflow-hidden",
       className
     )}>
-      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+      <CardContent className="flex flex-col p-0 md:min-h-0 md:flex-1 md:overflow-hidden">
         {/* Header */}
         <div className={cn(
-          "flex items-center gap-2 p-3 border-b",
+          "flex items-center gap-2 p-2.5 sm:p-3 border-b",
           themeColors.accentBg,
           themeColors.borderColor
         )}>
@@ -412,9 +412,9 @@ export function StretchPanel({
           </div>
         </div>
 
-        {/* Exercise List - Scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-2 space-y-1">
+        {/* Exercise List - Scrollable on desktop only */}
+        <div className="md:flex-1 md:overflow-y-auto md:min-h-0">
+          <div className="p-1.5 sm:p-2 space-y-1">
             {routine.exercises.map((exercise, idx) => {
               const isExerciseCompleted = completedExercises.has(idx)
               const isTimerActive = activeTimerIdx === idx
@@ -432,11 +432,11 @@ export function StretchPanel({
                     isTimerActive && "ring-1 ring-blue-500/50"
                   )}
                 >
-                  {/* Exercise Row */}
-                  <div className="flex items-start gap-2 p-2">
-                    {/* Completion indicator - clickable */}
+                  {/* Exercise Row - larger touch target */}
+                  <div className="flex items-start gap-2 p-2 sm:p-2">
+                    {/* Completion indicator - larger touch target for mobile */}
                     <button
-                      className="mt-0.5 shrink-0 p-0.5 -m-0.5 rounded hover:bg-muted/50 transition-colors"
+                      className="mt-0.5 shrink-0 p-1.5 -m-1 rounded-md active:bg-muted/50 transition-colors touch-manipulation"
                       onClick={() => {
                         setCompletedExercises((prev) => {
                           const newSet = new Set(prev)
@@ -451,9 +451,9 @@ export function StretchPanel({
                       aria-label={isExerciseCompleted ? "Mark as incomplete" : "Mark as complete"}
                     >
                       {isExerciseCompleted ? (
-                        <Check className="size-3.5 text-green-500" />
+                        <Check className="size-4 text-green-500" />
                       ) : (
-                        <div className="size-3.5 rounded-full border border-muted-foreground/30 hover:border-green-500/50" />
+                        <div className="size-4 rounded-full border-2 border-muted-foreground/30" />
                       )}
                     </button>
 
@@ -461,18 +461,18 @@ export function StretchPanel({
                     <div className="flex-1 min-w-0">
                       <Collapsible open={isExpanded} onOpenChange={() => toggleExerciseExpand(idx)}>
                         <CollapsibleTrigger asChild>
-                          <button className="w-full text-left">
+                          <button className="w-full text-left py-0.5 touch-manipulation">
                             <div className="flex items-center gap-1">
                               <span className={cn(
-                                "text-xs font-medium truncate",
+                                "text-xs sm:text-[13px] font-medium truncate",
                                 isExerciseCompleted && "text-muted-foreground line-through"
                               )}>
                                 {exercise.name}
                               </span>
                               {isExpanded ? (
-                                <ChevronUp className="size-3 text-muted-foreground shrink-0" />
+                                <ChevronUp className="size-3.5 text-muted-foreground shrink-0" />
                               ) : (
-                                <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+                                <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
                               )}
                             </div>
                           </button>
@@ -481,11 +481,11 @@ export function StretchPanel({
                         <CollapsibleContent>
                           <div className="mt-2 space-y-2">
                             {/* Why */}
-                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
                               {exercise.why}
                             </p>
                             {/* How */}
-                            <p className="text-[11px] text-foreground/80 leading-relaxed">
+                            <p className="text-[11px] sm:text-xs text-foreground/80 leading-relaxed">
                               {exercise.action}
                             </p>
                           </div>
@@ -493,12 +493,12 @@ export function StretchPanel({
                       </Collapsible>
                     </div>
 
-                    {/* Info tooltip for collapsed state */}
+                    {/* Info tooltip for collapsed state - hidden on mobile, tap to expand instead */}
                     {!isExpanded && (
                       <TooltipProvider delayDuration={300}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <button className="shrink-0 p-0.5">
+                            <button className="shrink-0 p-1 hidden sm:block">
                               <Info className="size-3 text-muted-foreground/50 hover:text-muted-foreground" />
                             </button>
                           </TooltipTrigger>
@@ -511,7 +511,7 @@ export function StretchPanel({
                     )}
                   </div>
 
-                  {/* Timer and Controls Row */}
+                  {/* Timer and Controls Row - larger buttons for touch */}
                   <div className="flex items-center gap-1.5 px-2 pb-2">
                     {isTimerActive ? (
                       <ExerciseTimer
@@ -525,11 +525,11 @@ export function StretchPanel({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-2 text-[10px] gap-1"
+                        className="h-7 sm:h-6 px-2.5 sm:px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation"
                         onClick={() => handleStartTimer(idx)}
                         disabled={isExerciseCompleted}
                       >
-                        <Clock className="size-3" />
+                        <Clock className="size-3.5 sm:size-3" />
                         {exercise.duration}s
                       </Button>
                     )}
@@ -539,10 +539,10 @@ export function StretchPanel({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-2 text-[10px] gap-1"
+                        className="h-7 sm:h-6 px-2.5 sm:px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation"
                         onClick={() => openVideoModal(videoId, exercise.name)}
                       >
-                        <Play className="size-3" />
+                        <Play className="size-3.5 sm:size-3" />
                         Demo
                       </Button>
                     )}
@@ -553,7 +553,7 @@ export function StretchPanel({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - larger button for touch */}
         <div className={cn("p-2 border-t", themeColors.borderColor)}>
           {isPreview ? (
             <div className="flex items-center justify-between">
@@ -561,11 +561,11 @@ export function StretchPanel({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+                className="h-8 sm:h-6 px-3 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground hover:text-foreground gap-1 touch-manipulation"
                 onClick={onComplete}
                 disabled={isCompleting}
               >
-                <Check className="size-3" />
+                <Check className="size-3.5 sm:size-3" />
                 {isCompleting ? "..." : "Mark Done"}
               </Button>
             </div>
@@ -573,7 +573,7 @@ export function StretchPanel({
             <Button
               size="sm"
               variant="outline"
-              className="w-full h-8 text-xs"
+              className="w-full h-10 sm:h-8 text-sm sm:text-xs touch-manipulation"
               onClick={onComplete}
               disabled={isCompleting}
             >

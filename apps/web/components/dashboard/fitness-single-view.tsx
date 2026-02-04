@@ -1174,10 +1174,10 @@ export function FitnessSingleView({
     <TooltipProvider delayDuration={200}>
       <div className="flex h-full min-h-0 flex-col">
         {/* Unified Header - Single cohesive section */}
-        <header className="mb-3 shrink-0">
-          <div className="bg-card/40 rounded-xl border border-border/50 overflow-hidden">
+        <header className="mb-2 sm:mb-3 shrink-0 px-1 sm:px-0">
+          <div className="bg-card/40 rounded-lg sm:rounded-xl border border-border/50 overflow-hidden">
             {/* Top Row: Date, Week Strip, Actions */}
-            <div className="flex items-center gap-3 px-3 py-2">
+            <div className="flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3">
               {/* Date Picker */}
               <Popover open={dayPickerOpen} onOpenChange={(open) => {
                 if (open) {
@@ -1191,24 +1191,24 @@ export function FitnessSingleView({
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      'h-auto py-1 px-2 hover:bg-muted/50 rounded-lg',
+                      'h-auto py-1 px-1.5 sm:px-2 hover:bg-muted/50 rounded-lg shrink-0',
                       !isViewingToday && 'bg-amber-500/10 hover:bg-amber-500/15'
                     )}
                   >
                     <div className="flex flex-col items-center leading-none">
                       <span className={cn(
-                        'text-xl font-bold tabular-nums',
+                        'text-lg sm:text-xl font-bold tabular-nums',
                         !isViewingToday && 'text-amber-500'
                       )}>
                         {format(viewingDate || new Date(), 'd')}
                       </span>
                       <span className={cn(
-                        'text-[9px] font-semibold uppercase tracking-wide -mt-0.5',
+                        'text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide -mt-0.5',
                         !isViewingToday ? 'text-amber-500/80' : 'text-foreground'
                       )}>
                         {format(viewingDate || new Date(), 'EEE')}
                       </span>
-                      <span className="text-[8px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[7px] sm:text-[8px] font-medium uppercase tracking-wide text-muted-foreground">
                         {format(viewingDate || new Date(), 'MMM')}
                       </span>
                     </div>
@@ -1227,11 +1227,11 @@ export function FitnessSingleView({
               </Popover>
 
               {/* Navigation */}
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
                   onClick={handlePrevDay}
                 >
                   <ChevronLeft className="size-4" />
@@ -1239,7 +1239,7 @@ export function FitnessSingleView({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
                   onClick={handleNextDay}
                   disabled={isViewingToday}
                 >
@@ -1247,7 +1247,7 @@ export function FitnessSingleView({
                 </Button>
               </div>
 
-              {/* Week Strip - Minimal, elegant */}
+              {/* Week Strip - Desktop: centered, Mobile: horizontal scroll */}
               <div className="hidden flex-1 md:flex items-center justify-center">
                 <div className="flex items-center gap-0.5 rounded-lg bg-muted/30 p-1">
                   {DAYS_OF_WEEK.map((day, index) => {
@@ -1323,20 +1323,76 @@ export function FitnessSingleView({
                 </div>
               </div>
 
-              {/* Mobile day indicator */}
-              <div className="flex flex-1 md:hidden">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {viewingDayName} · <span className="text-foreground">{viewingDaySchedule?.focus || 'Rest'}</span>
-                </span>
+              {/* Mobile Week Strip - Horizontal scroll */}
+              <div className="flex flex-1 md:hidden overflow-x-auto scrollbar-none -mx-1">
+                <div className="flex items-center gap-1 px-1">
+                  {DAYS_OF_WEEK.map((day, index) => {
+                    const daySchedule = routine.schedule[day]
+                    const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
+                    const dayDate = addDays(weekStart, index)
+                    const isTodayDay = isDateToday(dayDate)
+                    const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
+                    const isFutureDate = dayDate > new Date() && !isTodayDay
+                    const focus = daySchedule?.focus || 'Rest'
+                    const focusConfig = FOCUS_CONFIG[focus] || {
+                      icon: Calendar,
+                      color: 'text-muted-foreground',
+                      bg: 'bg-muted',
+                    }
+                    const FocusIcon = focusConfig.icon
+                    const { status, details } = getFitnessStatusForDay(dayDate, routine)
+
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => navigateToDate(dayDate)}
+                        className={cn(
+                          'relative flex flex-col items-center min-w-[40px] py-1.5 px-1 rounded-lg transition-all touch-manipulation',
+                          isSelected
+                            ? 'bg-foreground/10 shadow-sm'
+                            : 'active:bg-muted/60',
+                          isTodayDay && !isSelected && 'ring-1 ring-inset ring-foreground/20',
+                          isFutureDate && !isSelected && 'opacity-50'
+                        )}
+                      >
+                        <span className={cn(
+                          'text-[10px] font-medium',
+                          isSelected ? 'text-foreground' : 'text-muted-foreground'
+                        )}>
+                          {DAY_LABELS[day]}
+                        </span>
+                        <FocusIcon className={cn(
+                          'size-3.5 my-0.5',
+                          isSelected ? focusConfig.color : 'text-muted-foreground/60'
+                        )} />
+                        {/* Status indicator */}
+                        <div className="h-1.5 flex items-center gap-0.5">
+                          {status === 'complete' && (
+                            <div className="size-1.5 rounded-full bg-emerald-500" />
+                          )}
+                          {status === 'partial' && (
+                            <div className="size-1.5 rounded-full bg-amber-400" />
+                          )}
+                          {status === 'missed' && (
+                            <div className="size-1.5 rounded-full bg-red-400/50" />
+                          )}
+                          {status === 'skipped' && (
+                            <Ban className="size-2 text-muted-foreground" />
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Actions - Grouped cleanly */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 {!isViewingToday && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-7 gap-1 sm:gap-1.5 px-2 sm:px-2.5 text-[11px] sm:text-xs text-muted-foreground hover:text-foreground touch-manipulation"
                     onClick={() => {
                       setSelectedDay(null)
                       setSelectedDayWorkout(null)
@@ -1345,13 +1401,13 @@ export function FitnessSingleView({
                     }}
                   >
                     <ArrowLeft className="size-3" />
-                    Today
+                    <span className="hidden sm:inline">Today</span>
                   </Button>
                 )}
 
                 <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground touch-manipulation">
                       <Ban className="size-4" />
                     </Button>
                   </DialogTrigger>
@@ -1403,7 +1459,7 @@ export function FitnessSingleView({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/fitness/watch">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground touch-manipulation">
                         <Watch className="size-4" />
                       </Button>
                     </Link>
@@ -1414,7 +1470,7 @@ export function FitnessSingleView({
                 {onSwitchToEdit && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={onSwitchToEdit}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
                         <Settings className="size-4" />
                       </Button>
                     </TooltipTrigger>
@@ -1442,9 +1498,9 @@ export function FitnessSingleView({
           </div>
         </header>
 
-        {/* Main 3-Panel Layout */}
-        <div className="grid min-h-0 flex-1 grid-cols-[200px_1fr_200px] gap-3 xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px]">
-          {/* Morning Panel - Shows viewed day's data */}
+        {/* Main 3-Panel Layout - Stacks vertically on mobile, workout first */}
+        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[200px_1fr_200px] xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px] md:overflow-hidden">
+          {/* Morning Panel - Shows viewed day's data (order-2 on mobile to show after workout) */}
           <StretchPanel
             routine={routine.dailyRoutines.morning}
             type="morning"
@@ -1468,9 +1524,10 @@ export function FitnessSingleView({
                 ? todayData?.workout?.skippedReason
                 : viewingDayData?.workout?.skippedReason
             }
+            className="order-2 md:order-none"
           />
 
-          {/* Workout Center - Shows selected day's workout */}
+          {/* Workout Center - Shows selected day's workout (order-1 on mobile to show first) */}
           <WorkoutCenter
             workout={isViewingRestDay ? null : displayWorkout}
             day={viewingDay}
@@ -1488,9 +1545,10 @@ export function FitnessSingleView({
             onSkip={handleWorkoutSkip}
             onUnskip={handleWorkoutUnskip}
             isSkipping={skippingWorkout}
+            className="order-1 md:order-none"
           />
 
-          {/* Night Panel - Shows viewed day's data */}
+          {/* Night Panel - Shows viewed day's data (order-3 on mobile to show last) */}
           <StretchPanel
             routine={routine.dailyRoutines.night}
             type="night"
@@ -1514,6 +1572,7 @@ export function FitnessSingleView({
                 ? todayData?.workout?.skippedReason
                 : viewingDayData?.workout?.skippedReason
             }
+            className="order-3 md:order-none"
           />
         </div>
 
@@ -1616,17 +1675,17 @@ function UnifiedActivitySummary({
   if (!hasActivity && !hasStats) return null
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2">
+    <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 overflow-x-auto scrollbar-none">
       {/* Activity Rings - Prominent placement */}
       {metrics && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 cursor-default">
+            <div className="flex items-center gap-2 cursor-default shrink-0">
               <ActivityRings
                 move={moveProgress}
                 exercise={exerciseProgress}
                 stand={standProgress}
-                size={32}
+                size={28}
                 metrics={metrics}
               />
             </div>
@@ -1669,10 +1728,10 @@ function UnifiedActivitySummary({
       {hasStats && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 cursor-default">
-              <Flame className="size-4 text-orange-500/80" />
-              <span className="text-sm font-semibold tabular-nums">{consistencyStats.currentStreak}</span>
-              <span className="text-[10px] text-muted-foreground">streak</span>
+            <div className="flex items-center gap-1 cursor-default shrink-0">
+              <Flame className="size-3.5 sm:size-4 text-orange-500/80" />
+              <span className="text-xs sm:text-sm font-semibold tabular-nums">{consistencyStats.currentStreak}</span>
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:inline">streak</span>
             </div>
           </TooltipTrigger>
           <TooltipContent>
@@ -1686,23 +1745,23 @@ function UnifiedActivitySummary({
 
       {/* Separator */}
       {(hasStats || metrics) && dateWorkouts.length > 0 && (
-        <div className="h-6 w-px bg-border/40" />
+        <div className="h-5 w-px bg-border/40 shrink-0" />
       )}
 
-      {/* Center: Workout Count + Pills */}
+      {/* Workout count and pills */}
       {dateWorkouts.length > 0 ? (
-        <div className="flex flex-1 items-center gap-3 min-w-0">
-          {/* Workout count */}
-          <div className="shrink-0 text-center">
-            <span className="text-lg font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
-            <span className="text-[10px] text-muted-foreground ml-1">
+        <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
+          {/* Workout count - more compact on mobile */}
+          <div className="shrink-0">
+            <span className="text-sm sm:text-lg font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground ml-0.5 sm:ml-1 hidden sm:inline">
               {dateWorkouts.length === 1 ? 'workout' : 'workouts'}
             </span>
           </div>
 
-          {/* Workout pills - cleaner, less colorful */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0">
-            {dateWorkouts.slice(0, 4).map(workout => {
+          {/* Workout pills - show fewer on mobile */}
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none min-w-0">
+            {dateWorkouts.slice(0, 3).map(workout => {
               const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
               const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
               const Icon = typeStyle.icon
@@ -1714,13 +1773,13 @@ function UnifiedActivitySummary({
                     <button
                       onClick={() => onWorkoutClick?.(workout.id)}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md bg-muted/40 hover:bg-muted/60 px-2 py-1 text-xs transition-colors whitespace-nowrap',
+                        'flex items-center gap-1 sm:gap-1.5 rounded-md bg-muted/40 active:bg-muted/60 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs transition-colors whitespace-nowrap touch-manipulation',
                         onWorkoutClick && 'cursor-pointer'
                       )}
                     >
-                      <Icon className="size-3 text-foreground/50" />
+                      <Icon className="size-2.5 sm:size-3 text-foreground/50" />
                       <span className="font-medium">{label}</span>
-                      <span className="text-muted-foreground text-[10px] tabular-nums">
+                      <span className="text-muted-foreground text-[9px] sm:text-[10px] tabular-nums hidden sm:inline">
                         {formatWorkoutDuration(workout.duration)}
                       </span>
                     </button>
@@ -1729,7 +1788,7 @@ function UnifiedActivitySummary({
                     <div className="text-xs">
                       <div className="font-medium">{label}</div>
                       <div className="text-muted-foreground">
-                        {Math.round(workout.active_calories)} cal
+                        {formatWorkoutDuration(workout.duration)} · {Math.round(workout.active_calories)} cal
                         {workout.distance_miles && ` · ${workout.distance_miles.toFixed(2)} mi`}
                       </div>
                     </div>
@@ -1737,23 +1796,23 @@ function UnifiedActivitySummary({
                 </Tooltip>
               )
             })}
-            {dateWorkouts.length > 4 && (
-              <span className="text-[10px] text-muted-foreground shrink-0">
-                +{dateWorkouts.length - 4} more
+            {dateWorkouts.length > 3 && (
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
+                +{dateWorkouts.length - 3}
               </span>
             )}
           </div>
         </div>
       ) : hasActivity ? (
-        <div className="flex-1 text-xs text-muted-foreground">
-          No workouts recorded
+        <div className="flex-1 text-[10px] sm:text-xs text-muted-foreground">
+          No workouts
         </div>
       ) : null}
 
-      {/* Right: Totals */}
+      {/* Right: Totals - Desktop only */}
       {dateWorkouts.length > 0 && (
         <>
-          <div className="h-6 w-px bg-border/50 hidden md:block" />
+          <div className="h-5 w-px bg-border/50 hidden md:block shrink-0" />
           <div className="hidden md:flex items-center gap-3 text-xs shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
