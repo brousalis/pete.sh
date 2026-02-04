@@ -74,10 +74,6 @@ final class HealthKitManager {
     var todayStandHours: Int = 0
     var todayDistance: Double = 0 // in meters
 
-    // MARK: - Body Weight from HealthKit
-    var healthKitBodyWeight: Double? = nil
-    var healthKitBodyWeightDate: Date? = nil
-
     // MARK: - Activity Ring Goals
     var moveGoal: Double = 500 // calories
     var exerciseGoal: Double = 30 // minutes
@@ -176,7 +172,6 @@ final class HealthKitManager {
             group.addTask { await self.fetchTodayDistance() }
             group.addTask { await self.fetchRestingHeartRate() }
             group.addTask { await self.fetchCurrentHeartRate() }
-            group.addTask { await self.fetchBodyWeight() }
             group.addTask { await self.fetchUserAgeAndUpdateMaxHR() }
         }
     }
@@ -398,100 +393,6 @@ final class HealthKitManager {
         }
 
         healthStore.execute(query)
-    }
-
-    // MARK: - Body Weight
-
-    func fetchBodyWeight() async {
-        guard isHealthKitAvailable else { return }
-
-        let weightType = HKQuantityType(.bodyMass)
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-
-        let query = HKSampleQuery(sampleType: weightType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
-            guard let self = self else { return }
-
-            if let error = error {
-                print("❌ Failed to fetch body weight: \(error.localizedDescription)")
-                return
-            }
-
-            guard let sample = samples?.first as? HKQuantitySample else {
-                print("ℹ️ No body weight data in HealthKit")
-                return
-            }
-
-            let weight = sample.quantity.doubleValue(for: .pound())
-            let date = sample.endDate
-
-            Task { @MainActor in
-                self.healthKitBodyWeight = weight
-                self.healthKitBodyWeightDate = date
-                print("✅ Fetched body weight from HealthKit: \(weight) lbs on \(date)")
-            }
-        }
-
-        healthStore.execute(query)
-    }
-
-    func saveBodyWeight(_ weightInPounds: Double, date: Date = Date()) async throws {
-        guard isHealthKitAvailable else {
-            throw HealthKitError.notAvailable
-        }
-
-        let weightType = HKQuantityType(.bodyMass)
-        let weightQuantity = HKQuantity(unit: .pound(), doubleValue: weightInPounds)
-        let weightSample = HKQuantitySample(
-            type: weightType,
-            quantity: weightQuantity,
-            start: date,
-            end: date,
-            metadata: [
-                HKMetadataKeyWasUserEntered: true
-            ]
-        )
-
-        do {
-            try await healthStore.save(weightSample)
-
-            self.healthKitBodyWeight = weightInPounds
-            self.healthKitBodyWeightDate = date
-
-            print("✅ Saved body weight to HealthKit: \(weightInPounds) lbs")
-        } catch {
-            print("❌ Failed to save body weight: \(error.localizedDescription)")
-            throw error
-        }
-    }
-
-    func fetchBodyWeightHistory(limit: Int = 30) async -> [(weight: Double, date: Date)] {
-        guard isHealthKitAvailable else { return [] }
-
-        return await withCheckedContinuation { continuation in
-            let weightType = HKQuantityType(.bodyMass)
-            let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-
-            let query = HKSampleQuery(sampleType: weightType, predicate: nil, limit: limit, sortDescriptors: [sortDescriptor]) { _, samples, error in
-                if let error = error {
-                    print("❌ Failed to fetch body weight history: \(error.localizedDescription)")
-                    continuation.resume(returning: [])
-                    return
-                }
-
-                let weights = (samples as? [HKQuantitySample])?.map { sample in
-                    (weight: sample.quantity.doubleValue(for: .pound()), date: sample.endDate)
-                } ?? []
-
-                continuation.resume(returning: weights)
-            }
-
-            healthStore.execute(query)
-        }
-    }
-
-    enum HealthKitError: Error {
-        case notAvailable
-        case saveFailed
     }
 
     // MARK: - Weekly Stats

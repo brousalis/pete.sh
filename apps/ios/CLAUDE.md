@@ -30,11 +30,11 @@ No external dependencies (CocoaPods, SPM). Pure SwiftUI + SwiftData + HealthKit.
 - `HistoryViewModel` - History and analytics
 
 **Key Manager Classes** (all `@MainActor` isolated singletons):
-- `HealthKitManager` - Live workout sessions, step counting, body weight sync
+- `HealthKitManager` - Live workout sessions, step counting, activity rings
 - `PRManager` - Personal record detection
 - `CycleManager` - Day-of-week to workout mapping (Monday=Day 1)
 
-**SwiftData Models**: `WorkoutRecord`, `ExerciseLog`, `PersonalRecord`, `TrainingCycle`, `BodyWeight`
+**SwiftData Models**: `WorkoutRecord`, `ExerciseLog`, `PersonalRecord`
 
 **Non-Persistent Models**: `Day`, `WorkoutSection`, `Exercise` (defined in `WorkoutData.swift`)
 
