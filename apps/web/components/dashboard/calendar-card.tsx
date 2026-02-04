@@ -1,5 +1,6 @@
 'use client'
 
+import { useConnectivity } from '@/components/connectivity-provider'
 import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -7,20 +8,20 @@ import { apiGet } from '@/lib/api/client'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import {
-  differenceInMinutes,
-  format,
-  isToday,
-  isTomorrow,
-  parseISO,
+    differenceInMinutes,
+    format,
+    isToday,
+    isTomorrow,
+    parseISO,
 } from 'date-fns'
 import {
-  AlertCircle,
-  Calendar,
-  CalendarDays,
-  Clock,
-  Database,
-  MapPin,
-  RefreshCw,
+    AlertCircle,
+    Calendar,
+    CalendarDays,
+    Clock,
+    Database,
+    MapPin,
+    RefreshCw,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -40,6 +41,7 @@ export function CalendarCard() {
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [authAvailable, setAuthAvailable] = useState(false)
   const [authUrl, setAuthUrl] = useState<string | null>(null)
+  const { isInitialized: isConnectivityInitialized } = useConnectivity()
 
   const fetchEvents = async () => {
     try {
@@ -73,10 +75,16 @@ export function CalendarCard() {
   }
 
   useEffect(() => {
+    // Wait for connectivity check to complete before fetching
+    // This ensures we use the correct API base URL (local vs prod)
+    if (!isConnectivityInitialized) {
+      return
+    }
+
     fetchEvents()
     const interval = setInterval(fetchEvents, 300000) // 5 min
     return () => clearInterval(interval)
-  }, [])
+  }, [isConnectivityInitialized])
 
   const isAllDayEvent = (event: CalendarEvent) => {
     // All-day events have a date but no dateTime
