@@ -73,17 +73,17 @@ const allNavItems: NavItem[] = [
 
 // Mobile bottom nav - curated primary items for quick thumb access
 const mobileBottomItems: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/lights', label: 'Lights', icon: Lightbulb },
-  { href: '/music', label: 'Music', icon: Music },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/transit', label: 'CTA', icon: Bus },
 ]
 
 // Overflow items accessible via "More" in bottom nav
 const mobileOverflowItems: NavItem[] = [
+  { href: '/', label: 'Home', icon: Home },
   { href: '/me', label: 'Me', icon: User },
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/transit', label: 'CTA', icon: Bus },
+  { href: '/lights', label: 'Lights', icon: Lightbulb },
+  { href: '/music', label: 'Music', icon: Music },
   { href: '/coffee', label: 'Coffee', icon: Coffee },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
   { href: '/settings', label: 'Settings', icon: Settings },
