@@ -43,13 +43,18 @@ export function CalendarDayView({
     HOUR_HEIGHT
   )
 
-  // Scroll to 8 AM on mount
+  // Scroll to 8 AM on mount and date change so the working day (8am-8pm) is visible
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollTarget = 8 * HOUR_HEIGHT - 20
-      scrollRef.current.scrollTop = scrollTarget
-    }
-  }, [])
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        const viewport = scrollRef.current.querySelector('[data-slot="scroll-area-viewport"]')
+        if (viewport) {
+          viewport.scrollTop = 8 * HOUR_HEIGHT
+        }
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [currentDate])
 
   const slideVariants = {
     enter: (dir: 'left' | 'right') => ({

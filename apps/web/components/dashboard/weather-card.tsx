@@ -116,30 +116,30 @@ export function WeatherCard() {
 
       {/* Current Conditions */}
       {current && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
-            <Droplets className="size-4 text-blue-500" />
-            <div>
-              <p className="text-muted-foreground text-xs">Humidity</p>
-              <p className="font-semibold">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
+            <Droplets className="size-4 shrink-0 text-blue-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-[10px] sm:text-xs">Humidity</p>
+              <p className="text-sm font-semibold sm:text-base">
                 {humidity ? `${Math.round(humidity)}%` : '--'}
               </p>
             </div>
           </div>
-          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
-            <Wind className="size-4 text-slate-500" />
-            <div>
-              <p className="text-muted-foreground text-xs">Wind</p>
-              <p className="font-semibold">
+          <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
+            <Wind className="size-4 shrink-0 text-slate-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-[10px] sm:text-xs">Wind</p>
+              <p className="text-sm font-semibold sm:text-base">
                 {windMph ? `${windMph} mph` : '--'}
               </p>
             </div>
           </div>
-          <div className="bg-muted/50 flex items-center gap-2 rounded-xl p-3">
-            <Eye className="size-4 text-cyan-500" />
-            <div>
-              <p className="text-muted-foreground text-xs">Visibility</p>
-              <p className="font-semibold">
+          <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
+            <Eye className="size-4 shrink-0 text-cyan-500" />
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-[10px] sm:text-xs">Visibility</p>
+              <p className="text-sm font-semibold sm:text-base">
                 {visMiles ? `${visMiles} mi` : '--'}
               </p>
             </div>

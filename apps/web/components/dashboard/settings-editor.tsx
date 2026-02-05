@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { apiGet, apiPost } from '@/lib/api/client'
-import { Activity, Layout, Loader2, Palette, Settings, Sunrise, Watch } from 'lucide-react'
+import { Activity, GitBranch, Layout, Loader2, Palette, Settings, Sunrise, Watch } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -35,11 +35,23 @@ interface RoutineBackfillSummary {
   dateRange: { start: string; end: string }
 }
 
+interface VersionBackfillSummary {
+  weeksProcessed: number
+  completionsUpdated?: number
+  completionsSkipped?: number
+  wouldUpdate?: number
+  alreadyStamped?: number
+  dryRun?: boolean
+  preview?: boolean
+}
+
 export function SettingsEditor() {
   const { settings, isLoading, error, updateSettings } = useSettings()
   const [backfillLoading, setBackfillLoading] = useState(false)
   const [backfillPreview, setBackfillPreview] = useState<BackfillSummary | null>(null)
   const [routineBackfillLoading, setRoutineBackfillLoading] = useState(false)
+  const [versionBackfillLoading, setVersionBackfillLoading] = useState(false)
+  const [versionBackfillPreview, setVersionBackfillPreview] = useState<VersionBackfillSummary | null>(null)
 
   // Preview backfill
   const handlePreviewBackfill = async () => {
@@ -103,6 +115,47 @@ export function SettingsEditor() {
       toast.error('Failed to execute routine backfill')
     } finally {
       setRoutineBackfillLoading(false)
+    }
+  }
+
+  // Preview version ID backfill
+  const handlePreviewVersionBackfill = async () => {
+    setVersionBackfillLoading(true)
+    try {
+      const response = await apiGet<{ summary: VersionBackfillSummary }>('/api/fitness/backfill-version-ids')
+      if (response.success && response.data) {
+        setVersionBackfillPreview(response.data.summary)
+      } else {
+        toast.error('Failed to preview version backfill')
+      }
+    } catch {
+      toast.error('Failed to preview version backfill')
+    } finally {
+      setVersionBackfillLoading(false)
+    }
+  }
+
+  // Execute version ID backfill
+  const handleExecuteVersionBackfill = async () => {
+    setVersionBackfillLoading(true)
+    try {
+      const response = await apiPost<{ summary: VersionBackfillSummary }>('/api/fitness/backfill-version-ids', {
+        dryRun: false,
+      })
+      if (response.success && response.data) {
+        const summary = response.data.summary
+        toast.success(
+          `Version backfill complete! Updated ${summary.completionsUpdated} completions ` +
+          `across ${summary.weeksProcessed} weeks`
+        )
+        setVersionBackfillPreview(null)
+      } else {
+        toast.error('Failed to execute version backfill')
+      }
+    } catch {
+      toast.error('Failed to execute version backfill')
+    } finally {
+      setVersionBackfillLoading(false)
     }
   }
 
@@ -303,6 +356,71 @@ export function SettingsEditor() {
               )}
               Complete January Routines
             </Button>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t" />
+
+          {/* Version ID Backfill */}
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                Routine Version Backfill
+              </label>
+              <p className="text-muted-foreground text-xs">
+                Stamp historical workout and routine completions with the routine version
+                that was active when they were recorded. This preserves accuracy when
+                migrating to new routine versions.
+              </p>
+            </div>
+
+            {versionBackfillPreview && (
+              <div className="bg-muted/50 rounded-lg border p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2">
+                  <GitBranch className="size-4 text-blue-500" />
+                  <span className="font-medium">Preview Results</span>
+                </div>
+                <div className="text-muted-foreground space-y-1 text-xs">
+                  <p>Weeks scanned: <span className="text-foreground font-medium">{versionBackfillPreview.weeksProcessed}</span></p>
+                  <p>Would update: <span className="text-foreground font-medium">{versionBackfillPreview.wouldUpdate ?? versionBackfillPreview.completionsUpdated ?? 0}</span> completions</p>
+                  <p>Already stamped: <span className="text-foreground font-medium">{versionBackfillPreview.alreadyStamped ?? versionBackfillPreview.completionsSkipped ?? 0}</span></p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewVersionBackfill}
+                disabled={versionBackfillLoading}
+              >
+                {versionBackfillLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <GitBranch className="mr-2 size-3" />
+                )}
+                Preview
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleExecuteVersionBackfill}
+                disabled={versionBackfillLoading || (!versionBackfillPreview)}
+              >
+                {versionBackfillLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <Activity className="mr-2 size-3" />
+                )}
+                Run Backfill
+              </Button>
+            </div>
+            {!versionBackfillPreview && (
+              <p className="text-muted-foreground text-xs">
+                Click Preview first to see how many completions need version stamping.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

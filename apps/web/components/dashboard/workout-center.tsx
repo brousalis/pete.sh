@@ -811,14 +811,12 @@ function WorkoutSection({
                   />
                   {/* Show linked HealthKit workout data for cardio exercises */}
                   {showInlineWorkout && (isCompleted || isWorkoutCompleted) && (
-                    <div className="ml-6">
-                      <HealthKitExerciseData
-                        workoutId={linkedWorkout.id}
-                        workoutType={linkedWorkout.workout_type}
-                        variant="detailed"
-                        expandable={true}
-                      />
-                    </div>
+                    <HealthKitExerciseData
+                      workoutId={linkedWorkout.id}
+                      workoutType={linkedWorkout.workout_type}
+                      variant="detailed"
+                      expandable={true}
+                    />
                   )}
                 </div>
               )

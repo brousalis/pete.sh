@@ -1674,197 +1674,205 @@ function UnifiedActivitySummary({
 
   if (!hasActivity && !hasStats) return null
 
+  const hasMultipleWorkouts = dateWorkouts.length > 1
+
   return (
-    <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 overflow-x-auto scrollbar-none">
-      {/* Activity Rings - Prominent placement */}
-      {metrics && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 cursor-default shrink-0">
-              <ActivityRings
-                move={moveProgress}
-                exercise={exerciseProgress}
-                stand={standProgress}
-                size={28}
-                metrics={metrics}
-              />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="p-3">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-[#FF2D55]" />
-                  <span className="text-xs">Move</span>
-                </div>
-                <span className="text-xs font-medium tabular-nums">
-                  {metrics.active_calories}/{metrics.move_goal || 500} cal
-                </span>
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 px-2 sm:px-3 py-2">
+      {/* Row 1 (mobile) / Left (desktop): Rings + workout pills */}
+      <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none min-w-0 flex-1">
+        {/* Activity Rings */}
+        {metrics && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 cursor-default shrink-0">
+                <ActivityRings
+                  move={moveProgress}
+                  exercise={exerciseProgress}
+                  stand={standProgress}
+                  size={28}
+                  metrics={metrics}
+                />
               </div>
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-[#92E82A]" />
-                  <span className="text-xs">Exercise</span>
-                </div>
-                <span className="text-xs font-medium tabular-nums">
-                  {metrics.exercise_minutes}/{metrics.exercise_goal || 30} min
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-[#00D4FF]" />
-                  <span className="text-xs">Stand</span>
-                </div>
-                <span className="text-xs font-medium tabular-nums">
-                  {metrics.stand_hours}/{metrics.stand_goal || 12} hrs
-                </span>
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      )}
-
-      {/* Streak indicator */}
-      {hasStats && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-1 cursor-default shrink-0">
-              <Flame className="size-3.5 sm:size-4 text-orange-500/80" />
-              <span className="text-xs sm:text-sm font-semibold tabular-nums">{consistencyStats.currentStreak}</span>
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground hidden sm:inline">streak</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="text-xs">
-              <div>Current streak: {consistencyStats.currentStreak} days</div>
-              <div className="text-muted-foreground">Best: {consistencyStats.longestStreak} days</div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      )}
-
-      {/* Separator */}
-      {(hasStats || metrics) && dateWorkouts.length > 0 && (
-        <div className="h-5 w-px bg-border/40 shrink-0" />
-      )}
-
-      {/* Workout count and pills */}
-      {dateWorkouts.length > 0 ? (
-        <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
-          {/* Workout count - more compact on mobile */}
-          <div className="shrink-0">
-            <span className="text-sm sm:text-lg font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground ml-0.5 sm:ml-1 hidden sm:inline">
-              {dateWorkouts.length === 1 ? 'workout' : 'workouts'}
-            </span>
-          </div>
-
-          {/* Workout pills - show fewer on mobile */}
-          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none min-w-0">
-            {dateWorkouts.slice(0, 3).map(workout => {
-              const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
-              const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
-              const Icon = typeStyle.icon
-              const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
-
-              return (
-                <Tooltip key={workout.id}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => onWorkoutClick?.(workout.id)}
-                      className={cn(
-                        'flex items-center gap-1 sm:gap-1.5 rounded-md bg-muted/40 active:bg-muted/60 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs transition-colors whitespace-nowrap touch-manipulation',
-                        onWorkoutClick && 'cursor-pointer'
-                      )}
-                    >
-                      <Icon className="size-2.5 sm:size-3 text-foreground/50" />
-                      <span className="font-medium">{label}</span>
-                      <span className="text-muted-foreground text-[9px] sm:text-[10px] tabular-nums hidden sm:inline">
-                        {formatWorkoutDuration(workout.duration)}
-                      </span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs">
-                      <div className="font-medium">{label}</div>
-                      <div className="text-muted-foreground">
-                        {formatWorkoutDuration(workout.duration)} · {Math.round(workout.active_calories)} cal
-                        {workout.distance_miles && ` · ${workout.distance_miles.toFixed(2)} mi`}
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )
-            })}
-            {dateWorkouts.length > 3 && (
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
-                +{dateWorkouts.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      ) : hasActivity ? (
-        <div className="flex-1 text-[10px] sm:text-xs text-muted-foreground">
-          No workouts
-        </div>
-      ) : null}
-
-      {/* Right: Totals - Desktop only */}
-      {dateWorkouts.length > 0 && (
-        <>
-          <div className="h-5 w-px bg-border/50 hidden md:block shrink-0" />
-          <div className="hidden md:flex items-center gap-3 text-xs shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default text-muted-foreground">
-                  <Calendar className="size-3" />
-                  <span className="font-medium tabular-nums text-foreground">
-                    {formatWorkoutDuration(totalDuration)}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Total Duration</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default text-muted-foreground">
-                  <Flame className="size-3" />
-                  <span className="font-medium tabular-nums text-foreground">
-                    {Math.round(totalCalories)}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Active Calories</TooltipContent>
-            </Tooltip>
-
-            {totalDistance > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default text-muted-foreground">
-                    <Target className="size-3" />
-                    <span className="font-medium tabular-nums text-foreground">
-                      {totalDistance.toFixed(1)} mi
-                    </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="p-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="size-2.5 rounded-full bg-[#FF2D55]" />
+                    <span className="text-xs">Move</span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent>Total Distance</TooltipContent>
-              </Tooltip>
-            )}
+                  <span className="text-xs font-medium tabular-nums">
+                    {metrics.active_calories}/{metrics.move_goal || 500} cal
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="size-2.5 rounded-full bg-[#92E82A]" />
+                    <span className="text-xs">Exercise</span>
+                  </div>
+                  <span className="text-xs font-medium tabular-nums">
+                    {metrics.exercise_minutes}/{metrics.exercise_goal || 30} min
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="size-2.5 rounded-full bg-[#00D4FF]" />
+                    <span className="text-xs">Stand</span>
+                  </div>
+                  <span className="text-xs font-medium tabular-nums">
+                    {metrics.stand_hours}/{metrics.stand_goal || 12} hrs
+                  </span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-            {onViewAll && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
-                onClick={onViewAll}
-              >
-                Details
-                <ChevronRight className="size-3 ml-0.5" />
-              </Button>
-            )}
+        {/* Streak indicator - desktop only */}
+        {hasStats && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="hidden sm:flex items-center gap-1 cursor-default shrink-0">
+                <Flame className="size-3.5 sm:size-4 text-orange-500/80" />
+                <span className="text-xs sm:text-sm font-semibold tabular-nums">{consistencyStats.currentStreak}</span>
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground">streak</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs">
+                <div>Current streak: {consistencyStats.currentStreak} days</div>
+                <div className="text-muted-foreground">Best: {consistencyStats.longestStreak} days</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Separator - desktop only */}
+        {(hasStats || metrics) && dateWorkouts.length > 0 && (
+          <div className="hidden sm:block h-5 w-px bg-border/40 shrink-0" />
+        )}
+
+        {/* Workout count and pills */}
+        {dateWorkouts.length > 0 ? (
+          <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
+            {/* Workout count - desktop only */}
+            <div className="hidden sm:block shrink-0">
+              <span className="text-sm sm:text-lg font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground ml-0.5 sm:ml-1">
+                {dateWorkouts.length === 1 ? 'workout' : 'workouts'}
+              </span>
+            </div>
+
+            {/* Workout pills */}
+            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none min-w-0">
+              {dateWorkouts.slice(0, 3).map(workout => {
+                const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
+                const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
+                const Icon = typeStyle.icon
+                const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+
+                return (
+                  <Tooltip key={workout.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => onWorkoutClick?.(workout.id)}
+                        className={cn(
+                          'flex items-center gap-1 sm:gap-1.5 rounded-md bg-muted/40 active:bg-muted/60 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs transition-colors whitespace-nowrap touch-manipulation',
+                          onWorkoutClick && 'cursor-pointer'
+                        )}
+                      >
+                        <Icon className="size-2.5 sm:size-3 text-foreground/50" />
+                        <span className="font-medium">{label}</span>
+                        {/* Hide per-pill duration on mobile when multiple workouts — totals row covers it */}
+                        <span className={cn(
+                          'text-muted-foreground text-[9px] sm:text-[10px] tabular-nums',
+                          hasMultipleWorkouts && 'hidden sm:inline'
+                        )}>
+                          {formatWorkoutDuration(workout.duration)}
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        <div className="font-medium">{label}</div>
+                        <div className="text-muted-foreground">
+                          {formatWorkoutDuration(workout.duration)} · {Math.round(workout.active_calories)} cal
+                          {workout.distance_miles && ` · ${workout.distance_miles.toFixed(2)} mi`}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              })}
+              {dateWorkouts.length > 3 && (
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
+                  +{dateWorkouts.length - 3}
+                </span>
+              )}
+            </div>
           </div>
-        </>
+        ) : hasActivity ? (
+          <div className="flex-1 text-[10px] sm:text-xs text-muted-foreground">
+            No workouts
+          </div>
+        ) : null}
+      </div>
+
+      {/* Row 2 (mobile) / Right (desktop): Aggregate totals */}
+      {dateWorkouts.length > 0 && (
+        <div className="flex items-center gap-2 sm:gap-3 text-xs shrink-0">
+          <div className="hidden sm:block h-5 w-px bg-border/50 shrink-0" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                <Calendar className="size-3" />
+                <span className="font-medium tabular-nums text-foreground">
+                  {formatWorkoutDuration(totalDuration)}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Total Duration</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                <Flame className="size-3" />
+                <span className="font-medium tabular-nums text-foreground">
+                  {Math.round(totalCalories)}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Active Calories</TooltipContent>
+          </Tooltip>
+
+          {totalDistance > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-default text-muted-foreground">
+                  <Target className="size-3" />
+                  <span className="font-medium tabular-nums text-foreground">
+                    {totalDistance.toFixed(1)} mi
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Total Distance</TooltipContent>
+            </Tooltip>
+          )}
+
+          {onViewAll && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden md:inline-flex h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+              onClick={onViewAll}
+            >
+              Details
+              <ChevronRight className="size-3 ml-0.5" />
+            </Button>
+          )}
+        </div>
       )}
     </div>
   )

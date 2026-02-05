@@ -152,6 +152,8 @@ export interface WorkoutCompletion {
   skipped?: boolean
   skippedAt?: string
   skippedReason?: string
+  /** The routine version ID that was active when this completion was recorded */
+  routineVersionId?: string
 }
 
 export interface RoutineCompletion {
@@ -161,6 +163,8 @@ export interface RoutineCompletion {
   skipped?: boolean
   skippedAt?: string
   skippedReason?: string
+  /** The routine version ID that was active when this completion was recorded */
+  routineVersionId?: string
 }
 
 export interface FitnessProgress {

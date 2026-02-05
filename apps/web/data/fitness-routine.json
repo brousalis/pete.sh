@@ -935,9 +935,39 @@
             "routineId": "oil-the-hinge",
             "completed": true,
             "completedAt": "2026-02-04T21:40:56.035Z"
+          },
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-05T21:56:09.930Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ]
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-05T21:56:18.429Z"
           }
         },
-        "thursday": {},
+        "thursday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-05T17:38:47.516Z"
+          },
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": true,
+            "completedAt": "2026-02-05T21:56:44.480Z",
+            "exercisesCompleted": [
+              "thu-run",
+              "thu-flush"
+            ]
+          }
+        },
         "friday": {},
         "saturday": {},
         "sunday": {
@@ -1233,5 +1263,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-05T16:56:51.746Z"
+  "updatedAt": "2026-02-05T23:31:53.882Z"
 }

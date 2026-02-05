@@ -1,7 +1,7 @@
 'use client'
 
 import { useRoundedLayout } from '@/components/settings-provider'
-import { TopNavigation } from '@/components/top-navigation'
+import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
 import { cn } from '@/lib/utils'
 import type React from 'react'
 
@@ -38,12 +38,8 @@ export default function DashboardLayout({
             <div className="h-full">{children}</div>
           </main>
 
-          {/* Footer - constrains layout, visible on tablet and below */}
-          <footer className="bg-muted border-border/20 flex h-6 shrink-0 items-center justify-center border-t md:hidden">
-            <span className="text-muted-foreground/40 text-[9px]">
-              petehome
-            </span>
-          </footer>
+          {/* Mobile bottom navigation - icon-based tab bar */}
+          <MobileBottomNavigation />
         </div>
       </div>
     </div>

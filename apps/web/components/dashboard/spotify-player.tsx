@@ -1,51 +1,51 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import Image from "next/image"
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  Shuffle,
-  Repeat,
-  Repeat1,
-  Music,
-  Smartphone,
-  Speaker,
-  Laptop,
-  LogOut,
-  RefreshCw,
-  ExternalLink,
-  Search,
-  ListMusic,
-  ChevronDown,
-  AlertCircle,
-  Database,
-} from "lucide-react"
+import { useConnectivity } from "@/components/connectivity-provider"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type {
-  SpotifyUser,
-  SpotifyPlaybackState,
-  SpotifyDevice,
-  SpotifyPlaylist,
-  SpotifyTrack,
-  SpotifyRepeatMode,
-} from "@/lib/types/spotify.types"
-import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
-import { useConnectivity } from "@/components/connectivity-provider"
+import { Input } from "@/components/ui/input"
+import { Slider } from "@/components/ui/slider"
 import { useSmoothProgress } from "@/hooks/use-smooth-progress"
+import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
+import type {
+  SpotifyDevice,
+  SpotifyPlaybackState,
+  SpotifyPlaylist,
+  SpotifyRepeatMode,
+  SpotifyTrack,
+  SpotifyUser,
+} from "@/lib/types/spotify.types"
+import {
+  AlertCircle,
+  ChevronDown,
+  Database,
+  ExternalLink,
+  Laptop,
+  ListMusic,
+  LogOut,
+  Music,
+  Pause,
+  Play,
+  RefreshCw,
+  Repeat,
+  Repeat1,
+  Search,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Smartphone,
+  Speaker,
+  Volume2,
+  VolumeX,
+} from "lucide-react"
+import Image from "next/image"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 interface SpotifyPlayerProps {
   onAuthRequired?: () => void
@@ -102,7 +102,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
   const [authAvailable, setAuthAvailable] = useState(false)
   const [authUrl, setAuthUrl] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  
+
   // Track last action time to debounce polling
   const lastActionTime = useRef<number>(0)
 
@@ -146,7 +146,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
       return
     }
-    
+
     try {
       const response = await apiGet<SpotifyPlaybackResponse>("/api/spotify/player")
       if (response.success && response.data) {
@@ -154,16 +154,16 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
         if (!force && Date.now() - lastActionTime.current < ACTION_DEBOUNCE_MS) {
           return
         }
-        
+
         // Update source and auth info
         setSource(response.data.source)
         setAuthAvailable(response.data.authAvailable)
         setAuthUrl(response.data.authUrl || null)
         setIsAuthenticated(response.data.authenticated)
-        
+
         // Store cached playback for display
         setCachedPlayback(response.data.playback)
-        
+
         // If live data, update full playback state (for controls)
         if (response.data.source === 'live' && response.data.authenticated) {
           setPlaybackState(null) // Simplified format; controls use cachedPlayback
@@ -402,7 +402,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
 
   // Check if we should show controls (only when authenticated and live)
   const showControls = isAuthenticated && source === 'live'
-  
+
   // Get display track info from either cached playback or full state
   const displayTrack = cachedPlayback?.track || (playbackState?.item ? {
     name: playbackState.item.name,
@@ -410,8 +410,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
     album: playbackState.item.album.name,
     imageUrl: playbackState.item.album.images[0]?.url || '',
   } : null)
-  
-  const isPlaying = cachedPlayback?.isPlaying ?? playbackState?.is_playing ?? false
+
+  // const isPlaying = cachedPlayback?.isPlaying ?? playbackState?.is_playing ?? false
 
   // Not connected and no cached data state
   if (!loading && !user && !cachedPlayback?.track) {
@@ -595,14 +595,14 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
 
       {/* Now Playing */}
       {displayTrack ? (
-        <div 
+        <div
           className={`relative flex gap-3 overflow-hidden rounded-xl bg-background/50 p-3 transition-all duration-300 ${
             isSkipping ? "scale-[0.98]" : ""
           }`}
         >
           {/* Skip animation overlay */}
           {isSkipping && showControls && (
-            <div 
+            <div
               className={`absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] ${
                 isSkipping === "next" ? "animate-slide-left" : "animate-slide-right"
               }`}
@@ -616,7 +616,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
               </div>
             </div>
           )}
-          
+
           {/* Album art with animation */}
           <div className={`transition-all duration-300 ${isSkipping && showControls ? "opacity-50 blur-[1px]" : ""}`}>
             {displayTrack.imageUrl ? (
@@ -635,9 +635,9 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
               </div>
             )}
           </div>
-          
+
           {/* Track info with animation */}
-          <div 
+          <div
             className={`min-w-0 flex-1 space-y-1 transition-all duration-300 ${
               isSkipping && showControls ? "opacity-50" : ""
             } ${
@@ -647,7 +647,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
             <div className="truncate text-sm font-semibold text-foreground">{displayTrack.name}</div>
             <div className="truncate text-xs text-muted-foreground">{displayTrack.artist}</div>
             <div className="truncate text-xs text-muted-foreground/70">{displayTrack.album}</div>
-            
+
             {/* Progress bar */}
             <div className="flex items-center gap-2 pt-1">
               <span className="text-xs tabular-nums text-muted-foreground">
@@ -737,7 +737,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
           />
           <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">{volume}%</span>
         </div>
-        
+
         {/* Device selector */}
         {devices.length > 0 && (
           <DropdownMenu>

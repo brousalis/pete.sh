@@ -14,10 +14,8 @@ SCRIPTS_PATH = WEB_APP_PATH / "scripts"
 
 # PM2 process names
 PM2_PROCESSES = {
-    "prod": "petehome",
-    "dev": "petehome-dev",
-    "https": "petehome-https",
-    "toast": "petehome-vercel-toast",
+    "main": "petehome",
+    "notifications": "petehome-notifications",
 }
 
 # Vercel configuration

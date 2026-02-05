@@ -20,6 +20,9 @@ final class WorkoutRecord {
     var averageHeartRate: Double?
     var healthKitWorkoutId: UUID?  // Links to HKWorkout for reference
     
+    // Routine version tracking (links to fitness_routine_versions.id on the web app)
+    var routineVersionId: String?
+    
     init(
         id: UUID = UUID(),
         date: Date = Date(),

@@ -7,6 +7,7 @@ import {
     CalendarFitnessSidebar,
     CalendarHeader,
     CalendarMini,
+    CalendarMobileInfo,
     CalendarMonthGrid,
     CalendarWeekView,
 } from '@/components/calendar'
@@ -53,6 +54,7 @@ export default function CalendarPage() {
     'right'
   )
   const [showMiniCalendar, setShowMiniCalendar] = useState(true)
+  const [mobileInfoActive, setMobileInfoActive] = useState(false)
   const [source, setSource] = useState<'live' | 'cache' | 'none'>('none')
   const [authAvailable, setAuthAvailable] = useState(false)
   const [authUrl, setAuthUrl] = useState<string | null>(null)
@@ -252,6 +254,16 @@ export default function CalendarPage() {
     setSelectedEvent(null)
   }
 
+  const handleToggleMobileInfo = () => {
+    setMobileInfoActive(prev => !prev)
+  }
+
+  const handleViewModeChange = (mode: CalendarViewMode) => {
+    setViewMode(mode)
+    // When switching to a calendar view mode, dismiss mobile info panel
+    setMobileInfoActive(false)
+  }
+
   const handleNavigateToDateFromDetail = (date: Date) => {
     setCurrentDate(date)
     setSelectedDate(date)
@@ -279,6 +291,23 @@ export default function CalendarPage() {
 
   // Filter events based on search
   const filteredEvents = filterEvents(allEvents, searchQuery)
+
+  // Events for the selected date (used in sidebar + mobile info)
+  const selectedDateEvents = useMemo(() => {
+    const dateToCheck = selectedDate || new Date()
+    return filterEvents(
+      events.filter(e => {
+        const eventStart = e.start.dateTime
+          ? new Date(e.start.dateTime)
+          : e.start.date
+            ? new Date(e.start.date)
+            : null
+        if (!eventStart) return false
+        return isSameDay(eventStart, dateToCheck)
+      }),
+      searchQuery
+    ).slice(0, 8)
+  }, [events, selectedDate, searchQuery])
 
   // Swipe handlers for touch navigation
   const swipeHandlers = useSwipe({
@@ -332,10 +361,12 @@ export default function CalendarPage() {
           viewMode={viewMode}
           searchQuery={searchQuery}
           isLoading={loading}
+          mobileInfoActive={mobileInfoActive}
           onDateChange={handleDateChange}
-          onViewModeChange={setViewMode}
+          onViewModeChange={handleViewModeChange}
           onSearchChange={setSearchQuery}
           onRefresh={fetchEvents}
+          onToggleMobileInfo={handleToggleMobileInfo}
         />
         {/* Source indicator and auth button */}
         <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-2">
@@ -403,19 +434,7 @@ export default function CalendarPage() {
             </div>
             <ScrollArea className="flex-1 p-2">
               <UpcomingEventsList
-                events={filterEvents(
-                  events.filter(e => {
-                    if (!selectedDate) return true
-                    const eventStart = e.start.dateTime
-                      ? new Date(e.start.dateTime)
-                      : e.start.date
-                        ? new Date(e.start.date)
-                        : null
-                    if (!eventStart) return false
-                    return isSameDay(eventStart, selectedDate)
-                  }),
-                  searchQuery
-                ).slice(0, 5)}
+                events={selectedDateEvents.slice(0, 5)}
                 onSelectEvent={handleSelectEvent}
               />
             </ScrollArea>
@@ -424,11 +443,26 @@ export default function CalendarPage() {
 
         {/* Main calendar view */}
         <main className="flex flex-1 overflow-hidden">
+          {/* Mobile Info Panel - shown when info tab is active on mobile */}
+          {mobileInfoActive && (
+            <div className="flex-1 overflow-hidden md:hidden">
+              <CalendarMobileInfo
+                routine={fitnessRoutine}
+                consistencyStats={consistencyStats}
+                selectedDate={selectedDate}
+                loading={fitnessLoading}
+                todayEvents={selectedDateEvents}
+                onSelectEvent={handleSelectEvent}
+              />
+            </div>
+          )}
+
           {/* Calendar grid/view - with swipe gestures for touch navigation */}
           <div
             className={cn(
               'bg-background flex-1 touch-pan-y overflow-hidden',
-              selectedEvent && 'lg:flex-[2]'
+              selectedEvent && 'lg:flex-[2]',
+              mobileInfoActive && 'hidden md:flex md:flex-1'
             )}
             {...swipeHandlers}
           >
@@ -540,7 +574,7 @@ export default function CalendarPage() {
             )}
           </div>
 
-          {/* Event detail panel (slides in from right) */}
+          {/* Event detail panel - desktop: slides in from right */}
           <AnimatePresence>
             {selectedEvent && (
               <motion.aside
@@ -548,7 +582,7 @@ export default function CalendarPage() {
                 animate={{ width: 'auto', opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="border-border/50 shrink-0 overflow-hidden border-l"
+                className="border-border/50 hidden shrink-0 overflow-hidden border-l md:block"
               >
                 <CalendarEventDetail
                   event={selectedEvent}
@@ -560,6 +594,25 @@ export default function CalendarPage() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Event detail panel - mobile: fullscreen overlay */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <motion.div
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-background fixed inset-0 z-50 md:hidden"
+          >
+            <CalendarEventDetail
+              event={selectedEvent}
+              onClose={handleCloseEventDetail}
+              onNavigateToDate={handleNavigateToDateFromDetail}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

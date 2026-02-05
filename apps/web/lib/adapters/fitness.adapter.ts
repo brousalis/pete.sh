@@ -225,6 +225,38 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   // ==========================================
 
   /**
+   * Get the active routine version ID for the current routine.
+   * Used to stamp workout/routine completions with the version that was active.
+   * Returns undefined if no version is found (e.g. JSON-only mode).
+   */
+  async getActiveVersionId(): Promise<string | undefined> {
+    if (!this.isSupabaseAvailable()) return undefined
+
+    const client = this.getReadClient()
+    if (!client) return undefined
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { data, error } = await clientAny
+        .from('fitness_routine_versions')
+        .select('id')
+        .eq('routine_id', this.currentRoutineId)
+        .eq('is_active', true)
+        .single()
+
+      if (!error && data?.id) {
+        return data.id as string
+      }
+    } catch {
+      // Fall through - version tracking is best-effort
+    }
+
+    return undefined
+  }
+
+  /**
    * Get the current weekly routine
    * Tries Supabase first, falls back to JSON file, then seeds Supabase
    */
@@ -315,8 +347,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     weekNumber: number,
     exercisesCompleted?: string[]
   ): Promise<void> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    await this.fitnessService.markWorkoutComplete(day, weekNumber, exercisesCompleted)
+    await this.fitnessService.markWorkoutComplete(day, weekNumber, exercisesCompleted, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -355,8 +390,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     weekNumber: number,
     exerciseIds: string[]
   ): Promise<{ allComplete: boolean; exercisesCompleted: string[] }> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    const result = await this.fitnessService.addCompletedExercises(day, weekNumber, exerciseIds)
+    const result = await this.fitnessService.addCompletedExercises(day, weekNumber, exerciseIds, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -377,8 +415,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     day: DayOfWeek,
     weekNumber: number
   ): Promise<void> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    await this.fitnessService.markRoutineComplete(routineType, day, weekNumber)
+    await this.fitnessService.markRoutineComplete(routineType, day, weekNumber, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -417,8 +458,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     weekNumber: number,
     reason: string
   ): Promise<void> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    await this.fitnessService.skipWorkout(day, weekNumber, reason)
+    await this.fitnessService.skipWorkout(day, weekNumber, reason, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -454,8 +498,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     weekNumber: number,
     reason: string
   ): Promise<void> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    await this.fitnessService.skipRoutine(routineType, day, weekNumber, reason)
+    await this.fitnessService.skipRoutine(routineType, day, weekNumber, reason, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -494,8 +541,11 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
     weekNumber: number,
     reason: string
   ): Promise<void> {
+    // Resolve the active version ID for historical tracking
+    const versionId = await this.getActiveVersionId()
+
     // Update via the service (which updates JSON)
-    await this.fitnessService.skipDay(day, weekNumber, reason)
+    await this.fitnessService.skipDay(day, weekNumber, reason, versionId)
 
     // Also update Supabase if available
     if (this.isSupabaseAvailable()) {
@@ -555,6 +605,211 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   getCurrentDayOfWeek(): DayOfWeek {
     const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     return days[new Date().getDay()] ?? 'monday'
+  }
+
+  // ==========================================
+  // Version Backfill Methods
+  // ==========================================
+
+  /**
+   * Backfill routine version IDs on historical workout/routine completions.
+   *
+   * Strategy: Build a timeline of version activations, then for each completion
+   * record, find which version was active at that timestamp and stamp it.
+   * Records that already have a routineVersionId are skipped.
+   *
+   * If dryRun is true, returns what would be changed without writing.
+   */
+  async backfillVersionIds(options: {
+    dryRun?: boolean
+  } = {}): Promise<{
+    success: boolean
+    weeksProcessed: number
+    completionsUpdated: number
+    completionsSkipped: number
+    errors: string[]
+  }> {
+    const { dryRun = false } = options
+    const result = {
+      success: true,
+      weeksProcessed: 0,
+      completionsUpdated: 0,
+      completionsSkipped: 0,
+      errors: [] as string[],
+    }
+
+    try {
+      // Step 1: Build version activation timeline from Supabase
+      const versionTimeline = await this.buildVersionTimeline()
+
+      if (versionTimeline.length === 0) {
+        // No versions in Supabase - try to use the current active version as fallback
+        const activeId = await this.getActiveVersionId()
+        if (!activeId) {
+          result.errors.push('No routine versions found. Create and activate a version first.')
+          result.success = false
+          return result
+        }
+        // Use the single active version for all records
+        versionTimeline.push({
+          versionId: activeId,
+          activatedAt: new Date(0).toISOString(), // Epoch - covers all time
+        })
+      }
+
+      // Step 2: Get all weeks from the routine (JSON source of truth for completions)
+      const routine = await this.getRoutine()
+      if (!routine) {
+        result.errors.push('No routine found')
+        result.success = false
+        return result
+      }
+
+      // Step 3: Walk each week and stamp version IDs
+      const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      let modified = false
+
+      for (const week of routine.weeks) {
+        result.weeksProcessed++
+
+        for (const day of days) {
+          const dayData = week.days[day]
+          if (!dayData) continue
+
+          // Stamp workout completion
+          if (dayData.workout) {
+            if (dayData.workout.routineVersionId) {
+              result.completionsSkipped++
+            } else {
+              const timestamp = dayData.workout.completedAt ?? dayData.workout.skippedAt
+              const versionId = this.resolveVersionForTimestamp(versionTimeline, timestamp)
+              if (versionId && !dryRun) {
+                dayData.workout.routineVersionId = versionId
+                modified = true
+              }
+              if (versionId) {
+                result.completionsUpdated++
+              }
+            }
+          }
+
+          // Stamp morning routine
+          if (dayData.morningRoutine) {
+            if (dayData.morningRoutine.routineVersionId) {
+              result.completionsSkipped++
+            } else {
+              const timestamp = dayData.morningRoutine.completedAt ?? dayData.morningRoutine.skippedAt
+              const versionId = this.resolveVersionForTimestamp(versionTimeline, timestamp)
+              if (versionId && !dryRun) {
+                dayData.morningRoutine.routineVersionId = versionId
+                modified = true
+              }
+              if (versionId) {
+                result.completionsUpdated++
+              }
+            }
+          }
+
+          // Stamp night routine
+          if (dayData.nightRoutine) {
+            if (dayData.nightRoutine.routineVersionId) {
+              result.completionsSkipped++
+            } else {
+              const timestamp = dayData.nightRoutine.completedAt ?? dayData.nightRoutine.skippedAt
+              const versionId = this.resolveVersionForTimestamp(versionTimeline, timestamp)
+              if (versionId && !dryRun) {
+                dayData.nightRoutine.routineVersionId = versionId
+                modified = true
+              }
+              if (versionId) {
+                result.completionsUpdated++
+              }
+            }
+          }
+        }
+      }
+
+      // Step 4: Save if we actually modified anything
+      if (modified && !dryRun) {
+        await this.fitnessService.updateRoutine(routine)
+
+        // Also sync to Supabase
+        if (this.isSupabaseAvailable()) {
+          await this.saveRoutineToSupabase(routine)
+        }
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error'
+      result.errors.push(msg)
+      result.success = false
+    }
+
+    return result
+  }
+
+  /**
+   * Build a timeline of version activations, sorted by activated_at ascending.
+   * Each entry represents when a version became active.
+   */
+  private async buildVersionTimeline(): Promise<Array<{
+    versionId: string
+    activatedAt: string
+  }>> {
+    if (!this.isSupabaseAvailable()) return []
+
+    const client = this.getReadClient()
+    if (!client) return []
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
+      const { data, error } = await clientAny
+        .from('fitness_routine_versions')
+        .select('id, activated_at, created_at, is_active')
+        .eq('routine_id', this.currentRoutineId)
+        .not('activated_at', 'is', null)
+        .order('activated_at', { ascending: true })
+
+      if (error || !data) return []
+
+      return data.map((row: { id: string; activated_at: string | null; created_at: string }) => ({
+        versionId: row.id,
+        activatedAt: row.activated_at ?? row.created_at,
+      }))
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * Given a timeline of version activations and a completion timestamp,
+   * find which version was active at that time.
+   * Uses the latest version that was activated before the given timestamp.
+   */
+  private resolveVersionForTimestamp(
+    timeline: Array<{ versionId: string; activatedAt: string }>,
+    timestamp?: string
+  ): string | undefined {
+    if (timeline.length === 0) return undefined
+
+    // If no timestamp, use the latest (current) version
+    if (!timestamp) {
+      return timeline[timeline.length - 1]?.versionId
+    }
+
+    // Find the last version activated before (or at) this timestamp
+    let resolved: string | undefined
+    for (const entry of timeline) {
+      if (entry.activatedAt <= timestamp) {
+        resolved = entry.versionId
+      } else {
+        break
+      }
+    }
+
+    // If timestamp is before any activation, use the earliest version
+    return resolved ?? timeline[0]?.versionId
   }
 
   // ==========================================

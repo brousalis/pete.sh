@@ -22,12 +22,11 @@ yarn build                  # Build web app for production
 yarn desktop                # Start desktop (Electron) app
 
 # PM2 Management (from root)
-yarn p:start                # Start dev mode via PM2
-yarn p:start:prod           # Start production via PM2
-yarn p:restart              # Restart dev PM2 process
-yarn p:restart:prod         # Restart prod PM2 process
-yarn p:logs                 # View dev PM2 logs
-yarn p:logs:prod            # View prod PM2 logs
+yarn p:start                # Start main server via PM2
+yarn p:start:notifications  # Start Vercel deploy notifications via PM2
+yarn p:restart              # Restart main PM2 process
+yarn p:logs                 # View PM2 logs
+yarn p:status               # View PM2 process status
 
 # Code Quality
 yarn lint                   # Run ESLint

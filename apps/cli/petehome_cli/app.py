@@ -43,10 +43,10 @@ COMMANDS = [
     # PM2
     "status", "start", "stop", "restart", "logs", "s",
     "start all", "stop all", "restart all",
-    "start dev", "start prod", "start https", "start toast",
-    "stop dev", "stop prod", "stop https", "stop toast",
-    "restart dev", "restart prod", "restart https", "restart toast",
-    "logs dev", "logs prod", "logs https", "logs all",
+    "start main", "start notifications",
+    "stop main", "stop notifications",
+    "restart main", "restart notifications",
+    "logs main", "logs notifications", "logs all",
     # Git - full commands
     "git status", "git add", "git commit", "git push", "git pull",
     "git log", "git pr", "git pr create", "git diff",
@@ -208,7 +208,7 @@ def cmd_help():
         border_style="dim",
         padding=(1, 2),
     ))
-    console.print("  [dim]Services: dev · prod · https · toast · all[/]")
+    console.print("  [dim]Services: main · notifications · all[/]")
     console.print("  [dim]Also: git <cmd> · clear · help · exit[/]")
     console.print()
 
@@ -275,7 +275,7 @@ def resolve_service_name(name: str) -> str | None:
 def cmd_start(args: list[str]):
     """Start a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]start <dev|prod|https|toast|all>[/]")
+        console.print("  [yellow]![/] Usage: [cyan]start <main|notifications|all>[/]")
         return
 
     target = args[0].lower()
@@ -295,7 +295,7 @@ def cmd_start(args: list[str]):
     name = resolve_service_name(target)
     if not name:
         console.print(f"  [red]✗[/] Unknown service: {target}")
-        console.print("  [dim]Options: dev, prod, https, toast, all[/]")
+        console.print("  [dim]Options: main, notifications, all[/]")
         return
 
     with console.status(f"[dim]Starting {name}...[/]", spinner="dots"):
@@ -314,7 +314,7 @@ def cmd_start(args: list[str]):
 def cmd_stop(args: list[str]):
     """Stop a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]stop <dev|prod|https|toast|all>[/]")
+        console.print("  [yellow]![/] Usage: [cyan]stop <main|notifications|all>[/]")
         return
 
     target = args[0].lower()
@@ -357,7 +357,7 @@ def cmd_stop(args: list[str]):
 def cmd_restart(args: list[str]):
     """Restart a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]restart <dev|prod|https|toast|all>[/]")
+        console.print("  [yellow]![/] Usage: [cyan]restart <main|notifications|all>[/]")
         return
 
     target = args[0].lower()

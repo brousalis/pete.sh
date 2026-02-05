@@ -2,9 +2,9 @@
 
 import { useConnectivity } from '@/components/connectivity-provider'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useIOSSync } from '@/hooks/use-ios-sync'
 import { staggerItemVariants, transitions } from '@/lib/animations'
@@ -12,25 +12,27 @@ import { apiGet, apiPost } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    Bus,
-    Calendar,
-    ChefHat,
-    Coffee,
-    Command,
-    Dumbbell,
-    Grid3x3,
-    Lightbulb,
-    Loader2,
-    Menu,
-    Monitor,
-    Music,
-    RefreshCw,
-    Settings,
-    Tv,
-    User,
-    Wifi,
-    WifiOff,
-    X,
+  Bus,
+  Calendar,
+  ChefHat,
+  Coffee,
+  Command,
+  Dumbbell,
+  Grid3x3,
+  Home,
+  Lightbulb,
+  Loader2,
+  Menu,
+  Monitor,
+  MoreHorizontal,
+  Music,
+  RefreshCw,
+  Settings,
+  Tv,
+  User,
+  Wifi,
+  WifiOff,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -67,6 +69,24 @@ const allNavItems: NavItem[] = [
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
   { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
+]
+
+// Mobile bottom nav - curated primary items for quick thumb access
+const mobileBottomItems: NavItem[] = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/lights', label: 'Lights', icon: Lightbulb },
+  { href: '/music', label: 'Music', icon: Music },
+  { href: '/fitness', label: 'Fitness', icon: Dumbbell },
+]
+
+// Overflow items accessible via "More" in bottom nav
+const mobileOverflowItems: NavItem[] = [
+  { href: '/me', label: 'Me', icon: User },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/transit', label: 'CTA', icon: Bus },
+  { href: '/coffee', label: 'Coffee', icon: Coffee },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function TopNavigation() {
@@ -447,7 +467,7 @@ export function TopNavigation() {
 
           {/* Display Input Switch Buttons - only visible when connected locally */}
           {mounted && isLocalAvailable && (
-            <>
+            <div className="hidden lg:flex">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -500,7 +520,7 @@ export function TopNavigation() {
                     : 'Switch to DisplayPort'}
                 </TooltipContent>
               </Tooltip>
-            </>
+            </div>
           )}
 
           {/* Settings Link */}
@@ -522,7 +542,7 @@ export function TopNavigation() {
           <Link
             href="/deck"
             className={cn(
-              'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+              'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none hidden md:flex',
               isActive('/deck')
                 ? 'bg-brand/10 text-brand'
                 : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
@@ -617,77 +637,204 @@ export function TopNavigation() {
 
 /**
  * Mobile Bottom Navigation - Optimized for iPhone 13 (390x844) and similar devices
- * Provides a native app-like persistent footer navigation on small screens
+ * Provides a native app-like persistent bottom tab bar on small screens.
+ * Sits inside the dashboard card layout (not fixed-position).
  *
- * Design considerations:
- * - 44px minimum touch targets (Apple HIG)
- * - Safe area padding for notched devices
- * - Visual feedback on touch
- * - Clear active state indication
+ * Design:
+ * - 4 primary items + "More" overflow (5 total — ideal for thumb reach)
+ * - 44px+ touch targets (Apple HIG compliant)
+ * - Animated indicator bar slides between active items
+ * - "More" reveals a compact overlay grid for remaining pages
  */
 export function MobileBottomNavigation() {
   const pathname = usePathname()
+  const [moreOpen, setMoreOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname?.startsWith(href))
 
-  // Primary mobile nav items - 7 items for iPhone width
-  // Deck is accessed via the icon in the top bar
+  // Highlight "More" when current page is an overflow item
+  const isOverflowActive = mobileOverflowItems.some((item) => isActive(item.href))
+
+  // Close More overlay on route change
+  useEffect(() => {
+    setMoreOpen(false)
+  }, [pathname])
+
+  // Dismiss overlay on outside click
+  useEffect(() => {
+    if (!moreOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [moreOpen])
+
   return (
-    <nav
-      className="bg-card/98 border-border/50 fixed right-0 bottom-0 left-0 z-50 border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-xl md:hidden"
-      aria-label="Mobile navigation"
-    >
-      <ul className="flex h-[60px] items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href)
-          return (
-            <li key={href} className="flex min-w-0 flex-1">
-              <Link
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative flex w-full flex-col items-center justify-center gap-0.5 transition-colors',
-                  'touch-manipulation active:opacity-70', // Native feel on press
-                  active ? 'text-brand' : 'text-muted-foreground'
-                )}
-              >
-                {/* Animated active indicator bar */}
-                {active && (
-                  <motion.span
-                    layoutId="mobile-nav-indicator"
-                    className="bg-brand absolute top-0 left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-full"
-                    transition={transitions.springGentle}
-                  />
-                )}
-                {/* Icon with animated scale */}
-                <motion.span
-                  animate={{ scale: active ? 1.05 : 1 }}
-                  transition={transitions.spring}
-                >
-                  <Icon
-                    className={cn(
-                      'size-[22px] shrink-0',
-                      active && 'text-brand'
-                    )}
-                  />
-                </motion.span>
-                {/* Label */}
-                <span
+    <div ref={containerRef} className="relative shrink-0 md:hidden">
+      {/* ── More Overlay ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            {/* Scrim behind overlay to darken content */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute inset-x-0 bottom-full z-10 h-screen bg-black/20"
+              onClick={() => setMoreOpen(false)}
+              aria-hidden
+            />
+
+            {/* Overlay panel */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={transitions.snappy}
+              className="border-border/40 bg-card absolute inset-x-0 bottom-full z-20 rounded-t-2xl border-t p-3 shadow-lg"
+            >
+              <div className="grid grid-cols-3 gap-1.5">
+                {mobileOverflowItems.map(({ href, label, icon: Icon }) => {
+                  const active = isActive(href)
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 transition-colors',
+                        'touch-manipulation active:scale-95',
+                        active
+                          ? 'bg-brand/10 text-brand'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <Icon className={cn('size-5 shrink-0', active && 'text-brand')} />
+                      <span
+                        className={cn(
+                          'text-[11px] leading-tight font-medium',
+                          active && 'font-semibold'
+                        )}
+                      >
+                        {label}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Bottom Tab Bar ────────────────────────────────────────── */}
+      <nav
+        className="border-border/30 bg-muted border-t"
+        aria-label="Mobile navigation"
+      >
+        <ul className="flex h-14 items-stretch justify-around px-1">
+          {/* Primary nav items */}
+          {mobileBottomItems.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href)
+            return (
+              <li key={href} className="flex min-w-0 flex-1">
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'w-full truncate text-center text-[10px] leading-tight font-medium',
-                    active
-                      ? 'text-brand font-semibold'
-                      : 'text-muted-foreground'
+                    'relative flex w-full flex-col items-center justify-center gap-0.5 transition-colors',
+                    'touch-manipulation active:opacity-70',
+                    active ? 'text-brand' : 'text-muted-foreground'
                   )}
                 >
-                  {label}
-                </span>
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+                  {/* Sliding indicator bar */}
+                  {active && (
+                    <motion.span
+                      layoutId="mobile-bottom-indicator"
+                      className="bg-brand absolute top-0 left-1/2 h-[2px] w-7 -translate-x-1/2 rounded-full"
+                      transition={transitions.springGentle}
+                    />
+                  )}
+                  <motion.span
+                    animate={{ scale: active ? 1.1 : 1 }}
+                    transition={transitions.spring}
+                  >
+                    <Icon
+                      className={cn('size-[21px] shrink-0', active && 'text-brand')}
+                    />
+                  </motion.span>
+                  <span
+                    className={cn(
+                      'w-full truncate text-center text-[10px] leading-tight font-medium',
+                      active ? 'text-brand font-semibold' : 'text-muted-foreground'
+                    )}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
+
+          {/* More button */}
+          <li className="flex min-w-0 flex-1">
+            <button
+              onClick={() => setMoreOpen((prev) => !prev)}
+              className={cn(
+                'relative flex w-full flex-col items-center justify-center gap-0.5 transition-colors',
+                'touch-manipulation active:opacity-70',
+                moreOpen || isOverflowActive
+                  ? 'text-brand'
+                  : 'text-muted-foreground'
+              )}
+              aria-label={moreOpen ? 'Close menu' : 'More navigation options'}
+              aria-expanded={moreOpen}
+            >
+              {/* Indicator when overflow page is active */}
+              {isOverflowActive && !moreOpen && (
+                <motion.span
+                  layoutId="mobile-bottom-indicator"
+                  className="bg-brand absolute top-0 left-1/2 h-[2px] w-7 -translate-x-1/2 rounded-full"
+                  transition={transitions.springGentle}
+                />
+              )}
+              <motion.span
+                animate={{
+                  scale: moreOpen || isOverflowActive ? 1.1 : 1,
+                  rotate: moreOpen ? 90 : 0,
+                }}
+                transition={transitions.spring}
+              >
+                {moreOpen ? (
+                  <X className="size-[21px] shrink-0" />
+                ) : (
+                  <MoreHorizontal
+                    className={cn(
+                      'size-[21px] shrink-0',
+                      isOverflowActive && 'text-brand'
+                    )}
+                  />
+                )}
+              </motion.span>
+              <span
+                className={cn(
+                  'w-full truncate text-center text-[10px] leading-tight font-medium',
+                  moreOpen || isOverflowActive
+                    ? 'text-brand font-semibold'
+                    : 'text-muted-foreground'
+                )}
+              >
+                More
+              </span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
   )
 }

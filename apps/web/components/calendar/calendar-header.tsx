@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Dumbbell,
   List,
   RefreshCw,
   Search,
@@ -36,10 +37,12 @@ interface CalendarHeaderProps {
   viewMode: CalendarViewMode
   searchQuery: string
   isLoading: boolean
+  mobileInfoActive?: boolean
   onDateChange: (date: Date, direction?: "left" | "right") => void
   onViewModeChange: (mode: CalendarViewMode) => void
   onSearchChange: (query: string) => void
   onRefresh: () => void
+  onToggleMobileInfo?: () => void
 }
 
 const VIEW_MODES: { value: CalendarViewMode; label: string; icon: React.ReactNode }[] = [
@@ -59,10 +62,12 @@ export function CalendarHeader({
   viewMode,
   searchQuery,
   isLoading,
+  mobileInfoActive = false,
   onDateChange,
   onViewModeChange,
   onSearchChange,
   onRefresh,
+  onToggleMobileInfo,
 }: CalendarHeaderProps) {
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const title = getViewTitle(currentDate, viewMode)
@@ -195,10 +200,10 @@ export function CalendarHeader({
           </Popover>
         </div>
 
-        {/* Right side - View toggle and actions */}
-        <div className="flex items-center gap-1.5">
-          {/* Search */}
-          <div className="relative">
+        {/* Right side - Search and actions */}
+        <div className="flex items-center gap-1">
+          {/* Search - collapsible on mobile */}
+          <div className="relative hidden sm:block">
             <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -208,6 +213,31 @@ export function CalendarHeader({
               className="h-8 w-[140px] pl-7 text-xs lg:w-[180px]"
             />
           </div>
+          {/* Mobile search icon that expands */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 sm:hidden"
+              >
+                <Search className="size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" align="end">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="h-8 pl-7 text-xs"
+                  autoFocus
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Refresh */}
           <Button
@@ -229,10 +259,12 @@ export function CalendarHeader({
           {VIEW_MODES.map((mode) => (
             <button
               key={mode.value}
-              onClick={() => onViewModeChange(mode.value)}
+              onClick={() => {
+                onViewModeChange(mode.value)
+              }}
               className={cn(
                 "flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-all",
-                viewMode === mode.value
+                viewMode === mode.value && !mobileInfoActive
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
@@ -241,6 +273,21 @@ export function CalendarHeader({
               <span className="hidden sm:inline">{mode.label}</span>
             </button>
           ))}
+          {/* Mobile-only Info tab */}
+          {onToggleMobileInfo && (
+            <button
+              onClick={onToggleMobileInfo}
+              className={cn(
+                "flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-all md:hidden",
+                mobileInfoActive
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Dumbbell className="size-3.5" />
+              <span className="hidden sm:inline">Info</span>
+            </button>
+          )}
         </div>
 
         {/* Quick date shortcuts */}

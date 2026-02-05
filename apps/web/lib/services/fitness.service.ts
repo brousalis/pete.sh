@@ -218,7 +218,8 @@ export class FitnessService {
   async markWorkoutComplete(
     day: DayOfWeek,
     weekNumber: number,
-    exercisesCompleted?: string[]
+    exercisesCompleted?: string[],
+    routineVersionId?: string
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -245,6 +246,7 @@ export class FitnessService {
       completed: true,
       completedAt: new Date().toISOString(),
       exercisesCompleted: resolved,
+      routineVersionId,
     }
 
     await this.updateRoutine(routine)
@@ -289,7 +291,8 @@ export class FitnessService {
   async addCompletedExercises(
     day: DayOfWeek,
     weekNumber: number,
-    exerciseIds: string[]
+    exerciseIds: string[],
+    routineVersionId?: string
   ): Promise<{ allComplete: boolean; exercisesCompleted: string[] }> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -318,12 +321,16 @@ export class FitnessService {
     // Check if all exercises are now complete
     const allComplete = allIds.every(id => updatedCompleted.includes(id))
 
+    // Preserve existing version ID if already set, otherwise use the new one
+    const versionId = week.days[day]?.workout?.routineVersionId ?? routineVersionId
+
     // Update the workout completion state
     week.days[day]!.workout = {
       workoutId: workoutDef.id,
       completed: allComplete,
       completedAt: allComplete ? new Date().toISOString() : undefined,
       exercisesCompleted: updatedCompleted,
+      routineVersionId: versionId,
     }
 
     await this.updateRoutine(routine)
@@ -337,7 +344,8 @@ export class FitnessService {
   async markRoutineComplete(
     routineType: 'morning' | 'night',
     day: DayOfWeek,
-    weekNumber: number
+    weekNumber: number,
+    routineVersionId?: string
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -354,6 +362,7 @@ export class FitnessService {
       routineId,
       completed: true,
       completedAt: new Date().toISOString(),
+      routineVersionId,
     }
 
     await this.updateRoutine(routine)
@@ -377,11 +386,15 @@ export class FitnessService {
       week.days[day] = {}
     }
 
+    const key = `${routineType}Routine` as 'morningRoutine' | 'nightRoutine'
+    const existing = week.days[day]?.[key]
     const routineId = routine.dailyRoutines[routineType].id
-    week.days[day]![`${routineType}Routine`] = {
+    week.days[day]![key] = {
       routineId,
       completed: false,
       completedAt: undefined,
+      // Preserve the version ID for historical accuracy
+      routineVersionId: existing?.routineVersionId,
     }
 
     await this.updateRoutine(routine)
@@ -393,7 +406,8 @@ export class FitnessService {
   async skipWorkout(
     day: DayOfWeek,
     weekNumber: number,
-    reason: string
+    reason: string,
+    routineVersionId?: string
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -416,6 +430,7 @@ export class FitnessService {
       skipped: true,
       skippedAt: new Date().toISOString(),
       skippedReason: reason,
+      routineVersionId,
     }
 
     await this.updateRoutine(routine)
@@ -450,7 +465,8 @@ export class FitnessService {
     routineType: 'morning' | 'night',
     day: DayOfWeek,
     weekNumber: number,
-    reason: string
+    reason: string,
+    routineVersionId?: string
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -469,6 +485,7 @@ export class FitnessService {
       skipped: true,
       skippedAt: new Date().toISOString(),
       skippedReason: reason,
+      routineVersionId,
     }
 
     await this.updateRoutine(routine)
@@ -507,7 +524,8 @@ export class FitnessService {
   async skipDay(
     day: DayOfWeek,
     weekNumber: number,
-    reason: string
+    reason: string,
+    routineVersionId?: string
   ): Promise<void> {
     const routine = await this.getRoutine()
     if (!routine) {
@@ -530,6 +548,7 @@ export class FitnessService {
         skipped: true,
         skippedAt: now,
         skippedReason: reason,
+        routineVersionId,
       }
     }
 
@@ -540,6 +559,7 @@ export class FitnessService {
       skipped: true,
       skippedAt: now,
       skippedReason: reason,
+      routineVersionId,
     }
 
     // Skip night routine
@@ -549,6 +569,7 @@ export class FitnessService {
       skipped: true,
       skippedAt: now,
       skippedReason: reason,
+      routineVersionId,
     }
 
     await this.updateRoutine(routine)

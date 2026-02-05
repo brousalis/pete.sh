@@ -149,6 +149,7 @@ export interface FitnessProgressRow {
   night_routine_completed: boolean
   night_routine_completed_at: string | null
   notes: string | null
+  routine_version_id: string | null
   created_at: string
   updated_at: string
 }
@@ -338,6 +339,7 @@ export interface FitnessProgressInsert {
   night_routine_completed: boolean
   night_routine_completed_at?: string | null
   notes?: string | null
+  routine_version_id?: string | null
   created_at?: string
   updated_at?: string
 }
