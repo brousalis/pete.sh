@@ -73,6 +73,7 @@ const allNavItems: NavItem[] = [
 
 // Mobile bottom nav - curated primary items for quick thumb access
 const mobileBottomItems: NavItem[] = [
+  { href: '/', label: 'Home', icon: Home },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/transit', label: 'CTA', icon: Bus },
@@ -348,7 +349,7 @@ export function TopNavigation() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               className={cn(
-                'hidden items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:flex',
+                'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
                 isLocalAvailable
                   ? 'bg-green-500/15 text-green-600 dark:text-green-400'
                   : 'bg-muted text-muted-foreground'

@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
 
     if (!authenticated) {
       // Not authenticated in local mode - return cached data with auth prompt
+      // Use relative auth URL so the browser navigates through the page's origin (pete.sh)
+      // rather than embedding a redirect URI that may point to localhost
+      const authUrl = '/api/calendar/auth'
       try {
         const cachedEvents = await adapter.getUpcomingEvents(undefined, maxResults)
         return NextResponse.json({
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
             source: 'cache',
             authenticated: false,
             authAvailable: isLocalMode(), // Auth only available in local mode
-            authUrl: adapter.getAuthUrl(),
+            authUrl,
             message: 'Using cached data. Authenticate to get real-time updates.',
           },
         })
@@ -77,7 +80,7 @@ export async function GET(request: NextRequest) {
             source: 'none',
             authenticated: false,
             authAvailable: isLocalMode(),
-            authUrl: adapter.getAuthUrl(),
+            authUrl,
             message: 'Please authenticate to access Google Calendar.',
           },
         })

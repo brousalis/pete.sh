@@ -170,17 +170,21 @@ export class CalendarService {
   private oauth2Client: any
   private calendar: any
 
-  constructor() {
+  /**
+   * @param redirectUri - Optional override for the OAuth redirect URI.
+   *   When provided (e.g. derived from request.url), this takes priority.
+   *   Falls back to GOOGLE_REDIRECT_URI env var, then localhost.
+   */
+  constructor(redirectUri?: string) {
     if (config.google.isConfigured) {
-      // Use GOOGLE_REDIRECT_URI env var, or fallback to localhost
-      // IMPORTANT: Private IPs (192.168.x.x, 10.x.x.x) don't work with Google OAuth
-      // You must use localhost for development
-      const redirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/calendar/callback"
+      const finalRedirectUri = redirectUri
+        || process.env.GOOGLE_REDIRECT_URI
+        || "http://localhost:3000/api/calendar/callback"
 
       this.oauth2Client = new google.auth.OAuth2(
         config.google.clientId,
         config.google.clientSecret,
-        redirectUri
+        finalRedirectUri
       )
       this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client })
     }

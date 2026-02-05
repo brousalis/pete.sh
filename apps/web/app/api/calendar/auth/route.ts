@@ -6,11 +6,27 @@ import { CalendarService } from "@/lib/services/calendar.service"
  * Initiate Google Calendar OAuth flow
  * Redirects user to Google's authorization page
  *
+ * Dynamically determines the redirect URI from the request origin so that:
+ * - From pete.sh → redirect goes back to pete.sh/api/calendar/callback
+ * - From localhost → redirect goes back to localhost:3000/api/calendar/callback
+ *
  * Also handles OAuth callback if code is present (fallback for misconfigured redirect URIs)
  */
 export async function GET(request: NextRequest) {
   try {
-    const calendarService = new CalendarService()
+    // Derive the redirect URI from the incoming request URL
+    // This ensures the OAuth callback returns to the same origin the user initiated from
+    const requestUrl = new URL(request.url)
+    const origin = requestUrl.origin
+    const redirectUri = `${origin}/api/calendar/callback`
+
+    console.log("[Calendar Auth] Derived redirect URI from request:", {
+      requestUrl: request.url,
+      origin,
+      redirectUri,
+    })
+
+    const calendarService = new CalendarService(redirectUri)
 
     if (!calendarService.isConfigured()) {
       return NextResponse.json({ error: "Google Calendar not configured" }, { status: 400 })
@@ -47,6 +63,7 @@ export async function GET(request: NextRequest) {
       hasRefreshToken,
       forceParam,
       forceConsent,
+      redirectUri,
       note: "Always forcing consent to ensure refresh token is obtained"
     })
 

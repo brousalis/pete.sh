@@ -13,8 +13,10 @@ import { NextRequest, NextResponse } from 'next/server'
  * 2. httpOnly cookies (for same-origin requests as backup)
  */
 export async function GET(request: NextRequest) {
-  // Get the app base URL for redirects (use NEXT_PUBLIC_APP_URL or fallback to localhost)
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL
+  // Derive the app base URL from the request origin (since Google redirected the browser here)
+  // This ensures we redirect back to the same origin the user started from
+  const requestUrl = new URL(request.url)
+  const appBaseUrl = requestUrl.origin
 
   try {
     if (!config.google.isConfigured) {
@@ -49,14 +51,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Create OAuth2 client with dynamic redirect URI
-    // IMPORTANT: Must match the redirect URI used in CalendarService.getAuthUrl() EXACTLY
-    // Always use GOOGLE_REDIRECT_URI env var for consistency, or fallback to localhost
-    const redirectUri =
-      process.env.GOOGLE_REDIRECT_URI ||
-      'http://localhost:3000/api/calendar/callback'
+    // Derive redirect URI from the request URL itself
+    // Since Google redirected the browser here, the request origin matches what was
+    // used in the auth route's getAuthUrl() call
+    const requestUrl = new URL(request.url)
+    const redirectUri = `${requestUrl.origin}/api/calendar/callback`
 
-    console.log('[Calendar Callback] Using redirect URI:', redirectUri)
+    console.log('[Calendar Callback] Using redirect URI derived from request:', redirectUri)
 
     const oauth2Client = new google.auth.OAuth2(
       config.google.clientId,
