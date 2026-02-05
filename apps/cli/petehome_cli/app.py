@@ -40,17 +40,24 @@ custom_style = Style([
 
 # All available commands for autocomplete
 COMMANDS = [
-    "status", "start", "stop", "restart", "logs",
+    # PM2
+    "status", "start", "stop", "restart", "logs", "s",
     "start all", "stop all", "restart all",
     "start dev", "start prod", "start https", "start toast",
     "stop dev", "stop prod", "stop https", "stop toast",
     "restart dev", "restart prod", "restart https", "restart toast",
     "logs dev", "logs prod", "logs https", "logs all",
+    # Git - full commands
     "git status", "git add", "git commit", "git push", "git pull",
-    "git log", "git log", "git pr", "git pr create",
+    "git log", "git pr", "git pr create", "git diff",
+    # Git - shortcuts
+    "gs", "ga", "gc", "gp", "gpo", "gpl", "gl", "gd", "gpr",
+    # Dev
     "lint", "lint fix", "format", "build", "clean", "typecheck", "sync",
-    "deploy", "deploy status", "deploy history", "deploy open",
-    "help", "exit", "quit", "clear", "?",
+    # Deploy
+    "deploy", "deploy status", "deploy history", "deploy open", "d",
+    # Other
+    "help", "exit", "quit", "clear", "?", "c", "h", "q",
 ]
 
 
@@ -92,10 +99,35 @@ def get_git_branch() -> str:
         return ""
 
 
+def gradient_text(text: str, start_color: tuple[int, int, int], end_color: tuple[int, int, int], bold: bool = True) -> Text:
+    """Create smooth gradient colored text by interpolating RGB values."""
+    result = Text()
+    n = len(text)
+    
+    for i, char in enumerate(text):
+        # Linear interpolation between start and end colors
+        t = i / max(n - 1, 1)
+        r = int(start_color[0] + (end_color[0] - start_color[0]) * t)
+        g = int(start_color[1] + (end_color[1] - start_color[1]) * t)
+        b = int(start_color[2] + (end_color[2] - start_color[2]) * t)
+        
+        color = f"#{r:02x}{g:02x}{b:02x}"
+        style = f"bold {color}" if bold else color
+        result.append(char, style=style)
+    
+    return result
+
+
 def print_welcome():
     """Print welcome header."""
+    # Gradient from indigo (#6366f1) to cyan (#22d3ee)
+    start = (99, 102, 241)   # indigo
+    end = (34, 211, 238)     # cyan
+    
+    logo = gradient_text("petehome", start, end)
+    
     console.print()
-    console.print("  [bold #6366f1]petehome[/]  [dim]cli[/]")
+    console.print(Text("  ◆ ", style="bold #6366f1") + logo + Text("  cli", style="dim"))
     console.print()
 
 
@@ -125,24 +157,25 @@ def cmd_help():
     services = Table.grid(padding=(0, 2))
     services.add_column(style="cyan")
     services.add_column(style="dim")
-    services.add_row("status", "show processes")
-    services.add_row("start <name>", "start service")
-    services.add_row("stop <name>", "stop service")
-    services.add_row("restart <name>", "restart service")
-    services.add_row("logs [name]", "stream logs")
+    services.add_row("status, s", "processes")
+    services.add_row("start <name>", "start")
+    services.add_row("stop <name>", "stop")
+    services.add_row("restart <name>", "restart")
+    services.add_row("logs [name]", "logs")
     
     # Git column
     git = Table.grid(padding=(0, 2))
     git.add_column(style="cyan")
     git.add_column(style="dim")
-    git.add_row("git status", "show changes")
-    git.add_row("git add", "stage all")
-    git.add_row("git commit", "commit")
-    git.add_row("git push", "push")
-    git.add_row("git pull", "pull")
-    git.add_row("git log", "history")
-    git.add_row("git pr", "list PRs")
-    git.add_row("git pr create", "new PR")
+    git.add_row("gs", "status")
+    git.add_row("ga", "add all")
+    git.add_row("gc", "commit")
+    git.add_row("gp", "push")
+    git.add_row("gpo", "push origin")
+    git.add_row("gpl", "pull")
+    git.add_row("gl", "log")
+    git.add_row("gd", "diff")
+    git.add_row("gpr", "create PR")
     
     # Dev column
     dev = Table.grid(padding=(0, 2))
@@ -159,10 +192,10 @@ def cmd_help():
     deploy = Table.grid(padding=(0, 2))
     deploy.add_column(style="cyan")
     deploy.add_column(style="dim")
-    deploy.add_row("deploy", "production")
-    deploy.add_row("deploy status", "latest")
-    deploy.add_row("deploy history", "history")
-    deploy.add_row("deploy open", "browser")
+    deploy.add_row("deploy, d", "production")
+    deploy.add_row("d status", "latest")
+    deploy.add_row("d history", "history")
+    deploy.add_row("d open", "browser")
     
     console.print()
     console.print(Panel(
@@ -176,7 +209,7 @@ def cmd_help():
         padding=(1, 2),
     ))
     console.print("  [dim]Services: dev · prod · https · toast · all[/]")
-    console.print("  [dim]Other: clear · help · exit[/]")
+    console.print("  [dim]Also: git <cmd> · clear · help · exit[/]")
     console.print()
 
 
@@ -477,10 +510,34 @@ def cmd_git(args: list[str]):
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
     
     elif subcmd == "push":
+        # Check for "origin" flag to push with upstream
+        set_upstream = "origin" in subargs or "-u" in subargs
         with console.status("[dim]Pushing...[/]", spinner="dots"):
-            ok, output = run_async(github.push())
+            ok, output = run_async(github.push(set_upstream=set_upstream))
         if ok:
             console.print("  [green]✓[/] Pushed")
+        else:
+            console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
+    
+    elif subcmd == "diff":
+        with console.status("[dim]Loading...[/]", spinner="dots"):
+            ok, output = run_async(github.diff())
+        if ok and output.strip():
+            console.print()
+            console.print(Rule(style="dim"))
+            for line in output.split('\n')[:50]:
+                if line.startswith('+') and not line.startswith('+++'):
+                    console.print(f"  [green]{escape(line)}[/]")
+                elif line.startswith('-') and not line.startswith('---'):
+                    console.print(f"  [red]{escape(line)}[/]")
+                elif line.startswith('@@'):
+                    console.print(f"  [cyan]{escape(line)}[/]")
+                else:
+                    console.print(f"  [dim]{escape(line)}[/]")
+            console.print(Rule(style="dim"))
+            console.print()
+        elif ok:
+            console.print("  [dim]No changes[/]")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
     
@@ -813,20 +870,24 @@ def parse_and_execute(cmd: str):
     command = parts[0].lower()
     args = parts[1:]
     
+    # Exit
     if command in ("exit", "quit", "q"):
         return False
     
-    if command in ("clear", "cls", "c"):
+    # Clear
+    if command in ("clear", "cls"):
         console.clear()
         print_welcome()
         print_context()
         return True
     
+    # Help
     if command in ("help", "?", "h"):
         cmd_help()
         return True
     
-    if command == "status":
+    # PM2 commands
+    if command in ("status", "s"):
         cmd_status()
     elif command == "start":
         cmd_start(args)
@@ -836,8 +897,37 @@ def parse_and_execute(cmd: str):
         cmd_restart(args)
     elif command == "logs":
         cmd_logs(args)
+    
+    # Git - full command
     elif command == "git":
         cmd_git(args)
+    
+    # Git shortcuts
+    elif command == "gs":
+        cmd_git(["status"])
+    elif command == "ga":
+        cmd_git(["add"])
+    elif command == "gc":
+        # Convenient commit: prompt for message
+        cmd_git(["commit"] + args)
+    elif command == "gp":
+        cmd_git(["push"] + args)
+    elif command == "gpo":
+        # Push to origin with current branch
+        cmd_git(["push", "origin"])
+    elif command == "gpl":
+        cmd_git(["pull"])
+    elif command == "gl":
+        cmd_git(["log"])
+    elif command == "gd":
+        cmd_git(["diff"])
+    elif command == "gpr":
+        if args:
+            cmd_git(["pr"] + args)
+        else:
+            cmd_git(["pr", "create"])
+    
+    # Dev commands
     elif command == "lint":
         cmd_lint(args)
     elif command == "format":
@@ -850,8 +940,11 @@ def parse_and_execute(cmd: str):
         cmd_typecheck()
     elif command == "sync":
         cmd_sync()
-    elif command == "deploy":
+    
+    # Deploy
+    elif command in ("deploy", "d"):
         cmd_deploy(args)
+    
     else:
         console.print(f"  [red]✗[/] Unknown: {command}")
         console.print("  [dim]Type 'help' for commands[/]")

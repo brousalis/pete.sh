@@ -334,3 +334,22 @@ class GitHubService:
         success = returncode == 0
         output = stdout if success else stderr
         return success, output
+
+    async def diff(self, staged: bool = False) -> tuple[bool, str]:
+        """Show git diff.
+
+        Args:
+            staged: If True, show staged changes only.
+
+        Returns:
+            Tuple of (success, output).
+        """
+        if staged:
+            args = ("git", "diff", "--staged")
+        else:
+            args = ("git", "diff")
+
+        returncode, stdout, stderr = await run_command(*args, cwd=self.repo_root)
+        success = returncode == 0
+        output = stdout if success else stderr
+        return success, output
