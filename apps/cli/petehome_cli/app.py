@@ -1,29 +1,29 @@
 """Interactive CLI for petehome - command-based interface."""
 
 import asyncio
+import shlex
 import sys
 import webbrowser
-import shlex
 
 import questionary
 from questionary import Style
-from rich.console import Console, Group
-from rich.panel import Panel
-from rich.table import Table
-from rich.tree import Tree
 from rich.columns import Columns
-from rich.text import Text
-from rich.status import Status
-from rich.rule import Rule
+from rich.console import Console, Group
 from rich.live import Live
-from rich.spinner import Spinner
 from rich.markup import escape
+from rich.panel import Panel
+from rich.rule import Rule
+from rich.spinner import Spinner
+from rich.status import Status
+from rich.table import Table
+from rich.text import Text
+from rich.tree import Tree
 
+from petehome_cli.config import PM2_PROCESSES
+from petehome_cli.services.dev_server import DevServerService
+from petehome_cli.services.github import GitHubService
 from petehome_cli.services.pm2 import PM2Service
 from petehome_cli.services.vercel import VercelService
-from petehome_cli.services.github import GitHubService
-from petehome_cli.services.dev_server import DevServerService
-from petehome_cli.config import PM2_PROCESSES
 
 console = Console()
 
@@ -103,18 +103,18 @@ def gradient_text(text: str, start_color: tuple[int, int, int], end_color: tuple
     """Create smooth gradient colored text by interpolating RGB values."""
     result = Text()
     n = len(text)
-    
+
     for i, char in enumerate(text):
         # Linear interpolation between start and end colors
         t = i / max(n - 1, 1)
         r = int(start_color[0] + (end_color[0] - start_color[0]) * t)
         g = int(start_color[1] + (end_color[1] - start_color[1]) * t)
         b = int(start_color[2] + (end_color[2] - start_color[2]) * t)
-        
+
         color = f"#{r:02x}{g:02x}{b:02x}"
         style = f"bold {color}" if bold else color
         result.append(char, style=style)
-    
+
     return result
 
 
@@ -123,9 +123,9 @@ def print_welcome():
     # Gradient from indigo (#6366f1) to cyan (#22d3ee)
     start = (99, 102, 241)   # indigo
     end = (34, 211, 238)     # cyan
-    
+
     logo = gradient_text("petehome", start, end)
-    
+
     console.print()
     console.print(Text("  ◆ ", style="bold #6366f1") + logo + Text("  cli", style="dim"))
     console.print()
@@ -135,13 +135,13 @@ def print_context():
     """Print context line."""
     branch = get_git_branch()
     status = get_status_summary()
-    
+
     parts = []
     if branch:
         parts.append(f"[cyan]{branch}[/]")
     if status:
         parts.append(status)
-    
+
     if parts:
         console.print(f"  {' · '.join(parts)}")
         console.print()
@@ -162,7 +162,7 @@ def cmd_help():
     services.add_row("stop <name>", "stop")
     services.add_row("restart <name>", "restart")
     services.add_row("logs [name]", "logs")
-    
+
     # Git column
     git = Table.grid(padding=(0, 2))
     git.add_column(style="cyan")
@@ -176,7 +176,7 @@ def cmd_help():
     git.add_row("gl", "log")
     git.add_row("gd", "diff")
     git.add_row("gpr", "create PR")
-    
+
     # Dev column
     dev = Table.grid(padding=(0, 2))
     dev.add_column(style="cyan")
@@ -187,7 +187,7 @@ def cmd_help():
     dev.add_row("typecheck", "tsc")
     dev.add_row("clean", "clean")
     dev.add_row("sync", "sync data")
-    
+
     # Deploy column
     deploy = Table.grid(padding=(0, 2))
     deploy.add_column(style="cyan")
@@ -196,7 +196,7 @@ def cmd_help():
     deploy.add_row("d status", "latest")
     deploy.add_row("d history", "history")
     deploy.add_row("d open", "browser")
-    
+
     console.print()
     console.print(Panel(
         Columns([
@@ -217,13 +217,13 @@ def cmd_status():
     """Show PM2 status."""
     with console.status("[dim]Loading...[/]", spinner="dots"):
         processes = run_async(PM2Service.get_status())
-    
+
     if not processes:
         console.print()
         console.print("  [yellow]![/] No PM2 processes running")
         console.print()
         return
-    
+
     table = Table(
         show_header=True,
         header_style="bold dim",
@@ -238,7 +238,7 @@ def cmd_status():
     table.add_column("CPU", justify="right")
     table.add_column("Memory", justify="right")
     table.add_column("Restarts", justify="right")
-    
+
     for p in processes:
         status_display = {
             "online": "[green]● online[/]",
@@ -246,7 +246,7 @@ def cmd_status():
             "errored": "[red]✗ errored[/]",
             "launching": "[yellow]◐ launching[/]",
         }.get(p.status, f"[yellow]◐ {p.status}[/]")
-        
+
         table.add_row(
             f"[bold]{p.name}[/]",
             status_display,
@@ -255,7 +255,7 @@ def cmd_status():
             f"[dim]{p.memory_mb:.0f}MB[/]" if p.memory_mb > 0 else "[dim]-[/]",
             f"[dim]{p.restarts}[/]" if p.restarts > 0 else "[dim]-[/]",
         )
-    
+
     console.print()
     console.print(Panel(table, border_style="dim", padding=(1, 2)))
     console.print()
@@ -277,9 +277,9 @@ def cmd_start(args: list[str]):
     if not args:
         console.print("  [yellow]![/] Usage: [cyan]start <dev|prod|https|toast|all>[/]")
         return
-    
+
     target = args[0].lower()
-    
+
     if target == "all":
         console.print()
         for short, name in PM2_PROCESSES.items():
@@ -291,16 +291,16 @@ def cmd_start(args: list[str]):
                 console.print(f"  [red]✗[/] {name}")
         console.print()
         return
-    
+
     name = resolve_service_name(target)
     if not name:
         console.print(f"  [red]✗[/] Unknown service: {target}")
         console.print("  [dim]Options: dev, prod, https, toast, all[/]")
         return
-    
+
     with console.status(f"[dim]Starting {name}...[/]", spinner="dots"):
         ok, output = run_async(PM2Service.start(name))
-    
+
     console.print()
     if ok:
         console.print(f"  [green]✓[/] Started {name}")
@@ -316,9 +316,9 @@ def cmd_stop(args: list[str]):
     if not args:
         console.print("  [yellow]![/] Usage: [cyan]stop <dev|prod|https|toast|all>[/]")
         return
-    
+
     target = args[0].lower()
-    
+
     if target == "all":
         console.print()
         with console.status("[dim]Getting processes...[/]", spinner="dots"):
@@ -337,15 +337,15 @@ def cmd_stop(args: list[str]):
                 console.print(f"  [red]✗[/] {p.name}")
         console.print()
         return
-    
+
     name = resolve_service_name(target)
     if not name:
         console.print(f"  [red]✗[/] Unknown service: {target}")
         return
-    
+
     with console.status(f"[dim]Stopping {name}...[/]", spinner="dots"):
         ok, _ = run_async(PM2Service.stop(name))
-    
+
     console.print()
     if ok:
         console.print(f"  [green]✓[/] Stopped {name}")
@@ -359,9 +359,9 @@ def cmd_restart(args: list[str]):
     if not args:
         console.print("  [yellow]![/] Usage: [cyan]restart <dev|prod|https|toast|all>[/]")
         return
-    
+
     target = args[0].lower()
-    
+
     if target == "all":
         console.print()
         with console.status("[dim]Getting processes...[/]", spinner="dots"):
@@ -375,15 +375,15 @@ def cmd_restart(args: list[str]):
                 console.print(f"  [red]✗[/] {p.name}")
         console.print()
         return
-    
+
     name = resolve_service_name(target)
     if not name:
         console.print(f"  [red]✗[/] Unknown service: {target}")
         return
-    
+
     with console.status(f"[dim]Restarting {name}...[/]", spinner="dots"):
         ok, _ = run_async(PM2Service.restart(name))
-    
+
     console.print()
     if ok:
         console.print(f"  [green]✓[/] Restarted {name}")
@@ -395,7 +395,7 @@ def cmd_restart(args: list[str]):
 def cmd_logs(args: list[str]):
     """Stream logs."""
     target = args[0].lower() if args else "all"
-    
+
     if target == "all":
         process_name = None
     else:
@@ -403,11 +403,11 @@ def cmd_logs(args: list[str]):
         if not process_name:
             console.print(f"  [red]✗[/] Unknown service: {target}")
             return
-    
+
     console.print()
     console.print(f"  [dim]Streaming{f' {process_name}' if process_name else ''} logs · Ctrl+C to stop[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         try:
             async for line in PM2Service.stream_logs(process_name, lines=30):
@@ -424,12 +424,12 @@ def cmd_logs(args: list[str]):
                     console.print(f"  {escape(line)}")
         except KeyboardInterrupt:
             pass
-    
+
     try:
         run_async(stream())
     except KeyboardInterrupt:
         pass
-    
+
     console.print(Rule(style="dim"))
     console.print()
 
@@ -438,49 +438,49 @@ def cmd_git(args: list[str]):
     """Handle git commands."""
     if not args:
         args = ["status"]
-    
+
     github = GitHubService()
     subcmd = args[0].lower()
     subargs = args[1:]
-    
+
     if subcmd == "status":
         with console.status("[dim]Loading...[/]", spinner="dots"):
             status = run_async(github.get_status())
-        
+
         if not status:
             console.print("  [red]✗[/] Not a git repository")
             return
-        
+
         # Build a tree for git status
         tree = Tree(f"[bold]{status.branch}[/]" + (f"  [dim]↑{status.ahead} ↓{status.behind}[/]" if status.ahead or status.behind else ""))
-        
+
         if status.staged:
             staged_branch = tree.add(f"[green]Staged ({len(status.staged)})[/]")
             for f in status.staged[:10]:
                 staged_branch.add(f"[green]+[/] [dim]{f}[/]")
             if len(status.staged) > 10:
                 staged_branch.add(f"[dim]...+{len(status.staged) - 10} more[/]")
-        
+
         if status.unstaged:
             unstaged_branch = tree.add(f"[yellow]Modified ({len(status.unstaged)})[/]")
             for f in status.unstaged[:10]:
                 unstaged_branch.add(f"[yellow]~[/] [dim]{f}[/]")
             if len(status.unstaged) > 10:
                 unstaged_branch.add(f"[dim]...+{len(status.unstaged) - 10} more[/]")
-        
+
         if status.untracked:
             untracked_branch = tree.add(f"[red]Untracked ({len(status.untracked)})[/]")
             for f in status.untracked[:10]:
                 untracked_branch.add(f"[red]?[/] [dim]{f}[/]")
             if len(status.untracked) > 10:
                 untracked_branch.add(f"[dim]...+{len(status.untracked) - 10} more[/]")
-        
+
         console.print()
         console.print(Panel(tree, border_style="dim", padding=(1, 2)))
         if status.is_clean:
             console.print("  [green]✓[/] Working directory clean")
         console.print()
-    
+
     elif subcmd == "add":
         with console.status("[dim]Staging...[/]", spinner="dots"):
             ok, _ = run_async(github.add_files())
@@ -488,7 +488,7 @@ def cmd_git(args: list[str]):
             console.print("  [green]✓[/] Staged all changes")
         else:
             console.print("  [red]✗[/] Failed to stage")
-    
+
     elif subcmd == "commit":
         if not subargs:
             message = questionary.text(
@@ -501,14 +501,14 @@ def cmd_git(args: list[str]):
                 return
         else:
             message = " ".join(subargs)
-        
+
         with console.status("[dim]Committing...[/]", spinner="dots"):
             ok, output = run_async(github.commit(message))
         if ok:
             console.print("  [green]✓[/] Committed")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
-    
+
     elif subcmd == "push":
         # Check for "origin" flag to push with upstream
         set_upstream = "origin" in subargs or "-u" in subargs
@@ -518,7 +518,7 @@ def cmd_git(args: list[str]):
             console.print("  [green]✓[/] Pushed")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
-    
+
     elif subcmd == "diff":
         with console.status("[dim]Loading...[/]", spinner="dots"):
             ok, output = run_async(github.diff())
@@ -540,7 +540,7 @@ def cmd_git(args: list[str]):
             console.print("  [dim]No changes[/]")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
-    
+
     elif subcmd == "pull":
         with console.status("[dim]Pulling...[/]", spinner="dots"):
             ok, output = run_async(github.pull())
@@ -548,36 +548,36 @@ def cmd_git(args: list[str]):
             console.print("  [green]✓[/] Pulled")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
-    
+
     elif subcmd == "log":
         with console.status("[dim]Loading...[/]", spinner="dots"):
             commits = run_async(github.get_log(10))
-        
+
         if not commits:
             console.print("  [dim]No commits[/]")
             return
-        
+
         table = Table(show_header=False, box=None, padding=(0, 1))
         table.add_column(style="yellow")
         table.add_column()
         table.add_column(style="dim")
-        
+
         for c in commits:
             table.add_row(c['hash'], c['message'][:50], c['time'])
-        
+
         console.print()
         console.print(Panel(table, border_style="dim", padding=(1, 2), title="[bold]Recent Commits[/]", title_align="left"))
         console.print()
-    
+
     elif subcmd == "pr":
         if subargs and subargs[0] == "create":
             with console.status("[dim]Checking...[/]", spinner="dots"):
                 status = run_async(github.get_status())
-            
+
             if status and status.branch in ("main", "master"):
                 console.print("  [red]✗[/] Can't create PR from main branch")
                 return
-            
+
             title = questionary.text(
                 "title:",
                 qmark="",
@@ -586,7 +586,7 @@ def cmd_git(args: list[str]):
             if not title:
                 console.print("  [dim]Cancelled[/]")
                 return
-            
+
             with console.status("[dim]Creating PR...[/]", spinner="dots"):
                 ok, output = run_async(github.create_pr(title, ""))
             if ok:
@@ -596,23 +596,23 @@ def cmd_git(args: list[str]):
         else:
             with console.status("[dim]Loading...[/]", spinner="dots"):
                 prs = run_async(github.list_prs())
-            
+
             if not prs:
                 console.print("  [dim]No open pull requests[/]")
                 return
-            
+
             table = Table(show_header=False, box=None, padding=(0, 1))
             table.add_column(style="yellow")
             table.add_column()
             table.add_column(style="dim")
-            
+
             for pr in prs:
                 table.add_row(f"#{pr.number}", pr.title[:45], pr.head_branch)
-            
+
             console.print()
             console.print(Panel(table, border_style="dim", padding=(1, 2), title="[bold]Open PRs[/]", title_align="left"))
             console.print()
-    
+
     else:
         console.print(f"  [red]✗[/] Unknown: git {subcmd}")
 
@@ -621,16 +621,16 @@ def cmd_lint(args: list[str]):
     """Run lint."""
     fix = "fix" in args
     dev = DevServerService()
-    
+
     console.print()
     console.print(f"  [dim]Running lint{'--fix' if fix else ''}...[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         async for line in dev.lint(fix=fix):
             if line.strip():
                 console.print(f"  {escape(line)}")
-    
+
     try:
         run_async(stream())
         console.print(Rule(style="dim"))
@@ -644,16 +644,16 @@ def cmd_lint(args: list[str]):
 def cmd_format():
     """Run format."""
     dev = DevServerService()
-    
+
     console.print()
     console.print("  [dim]Running prettier...[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         async for line in dev.format_code():
             if line.strip():
                 console.print(f"  {escape(line)}")
-    
+
     try:
         run_async(stream())
         console.print(Rule(style="dim"))
@@ -667,11 +667,11 @@ def cmd_format():
 def cmd_build():
     """Run build."""
     dev = DevServerService()
-    
+
     console.print()
     console.print("  [dim]Building...[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         async for line in dev.build():
             if line.strip():
@@ -684,7 +684,7 @@ def cmd_build():
                     console.print(f"  [green]{escape(line)}[/]")
                 else:
                     console.print(f"  {escape(line)}")
-    
+
     try:
         run_async(stream())
         console.print(Rule(style="dim"))
@@ -698,10 +698,10 @@ def cmd_build():
 def cmd_clean():
     """Run clean."""
     dev = DevServerService()
-    
+
     with console.status("[dim]Cleaning...[/]", spinner="dots"):
         ok, _ = run_async(dev.clean())
-    
+
     if ok:
         console.print("  [green]✓[/] Cleaned")
     else:
@@ -711,11 +711,11 @@ def cmd_clean():
 def cmd_typecheck():
     """Run type check."""
     dev = DevServerService()
-    
+
     console.print()
     console.print("  [dim]Type checking...[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         async for line in dev.type_check():
             if line.strip():
@@ -723,7 +723,7 @@ def cmd_typecheck():
                     console.print(f"  [red]{escape(line)}[/]")
                 else:
                     console.print(f"  {escape(line)}")
-    
+
     try:
         run_async(stream())
         console.print(Rule(style="dim"))
@@ -737,16 +737,16 @@ def cmd_typecheck():
 def cmd_sync():
     """Run sync."""
     dev = DevServerService()
-    
+
     console.print()
     console.print("  [dim]Syncing data...[/]")
     console.print(Rule(style="dim"))
-    
+
     async def stream():
         async for line in dev.sync_once():
             if line.strip():
                 console.print(f"  {escape(line)}")
-    
+
     try:
         run_async(stream())
         console.print(Rule(style="dim"))
@@ -760,22 +760,22 @@ def cmd_sync():
 def cmd_deploy(args: list[str]):
     """Handle deploy commands."""
     vercel = VercelService()
-    
+
     if not vercel.is_configured:
         console.print("  [red]✗[/] Vercel not configured")
         console.print("  [dim]Set VERCEL_TOKEN environment variable[/]")
         return
-    
+
     subcmd = args[0].lower() if args else "trigger"
-    
+
     if subcmd in ("status", "latest"):
         with console.status("[dim]Loading...[/]", spinner="dots"):
             deployment = run_async(vercel.get_latest_deployment())
-        
+
         if not deployment:
             console.print("  [dim]No deployments found[/]")
             return
-        
+
         status_display = {
             "READY": "[green]● Ready[/]",
             "ERROR": "[red]● Error[/]",
@@ -783,49 +783,49 @@ def cmd_deploy(args: list[str]):
             "BUILDING": "[yellow]◐ Building[/]",
             "QUEUED": "[yellow]◐ Queued[/]",
         }.get(deployment.state, f"[yellow]◐ {deployment.state}[/]")
-        
+
         info_table = Table.grid(padding=(0, 2))
         info_table.add_column(style="dim")
         info_table.add_column()
         info_table.add_row("Status", status_display)
         info_table.add_row("URL", f"[link={deployment.deployment_url}]{deployment.deployment_url}[/link]")
         info_table.add_row("Created", deployment.created_str)
-        
+
         console.print()
         console.print(Panel(info_table, border_style="dim", padding=(1, 2), title="[bold]Latest Deployment[/]", title_align="left"))
         console.print()
-    
+
     elif subcmd == "history":
         with console.status("[dim]Loading...[/]", spinner="dots"):
             deployments = run_async(vercel.get_deployments(limit=10))
-        
+
         if not deployments:
             console.print("  [dim]No deployments found[/]")
             return
-        
+
         table = Table(show_header=True, header_style="bold dim", box=None, padding=(0, 2))
         table.add_column("Status")
         table.add_column("State")
         table.add_column("Created")
-        
+
         for d in deployments:
             status_icon = {"READY": "[green]●[/]", "ERROR": "[red]●[/]", "CANCELED": "[red]○[/]"}.get(d.state, "[yellow]◐[/]")
             table.add_row(status_icon, d.state, d.created_str)
-        
+
         console.print()
         console.print(Panel(table, border_style="dim", padding=(1, 2), title="[bold]Deployment History[/]", title_align="left"))
         console.print()
-    
+
     elif subcmd == "open":
         with console.status("[dim]Loading...[/]", spinner="dots"):
             deployment = run_async(vercel.get_latest_deployment())
-        
+
         if deployment:
             console.print(f"  [green]✓[/] Opening {deployment.deployment_url}")
             webbrowser.open(deployment.deployment_url)
         else:
             console.print("  [dim]No deployment found[/]")
-    
+
     elif subcmd in ("trigger", "prod", "production"):
         if not questionary.confirm(
             "Deploy to production?",
@@ -834,17 +834,17 @@ def cmd_deploy(args: list[str]):
         ).ask():
             console.print("  [dim]Cancelled[/]")
             return
-        
+
         console.print()
         with console.status("[dim]Deploying...[/]", spinner="dots"):
             ok, output = run_async(vercel.trigger_deployment())
-        
+
         if ok:
             console.print("  [green]✓[/] Deployment triggered")
         else:
             console.print(f"  [red]✗[/] {escape(output.split(chr(10))[0]) if output else 'Failed'}")
         console.print()
-    
+
     else:
         console.print(f"  [red]✗[/] Unknown: deploy {subcmd}")
 
@@ -858,34 +858,34 @@ def parse_and_execute(cmd: str):
     cmd = cmd.strip()
     if not cmd:
         return True
-    
+
     try:
         parts = shlex.split(cmd)
     except ValueError:
         parts = cmd.split()
-    
+
     if not parts:
         return True
-    
+
     command = parts[0].lower()
     args = parts[1:]
-    
+
     # Exit
     if command in ("exit", "quit", "q"):
         return False
-    
+
     # Clear
     if command in ("clear", "cls"):
         console.clear()
         print_welcome()
         print_context()
         return True
-    
+
     # Help
     if command in ("help", "?", "h"):
         cmd_help()
         return True
-    
+
     # PM2 commands
     if command in ("status", "s"):
         cmd_status()
@@ -897,11 +897,11 @@ def parse_and_execute(cmd: str):
         cmd_restart(args)
     elif command == "logs":
         cmd_logs(args)
-    
+
     # Git - full command
     elif command == "git":
         cmd_git(args)
-    
+
     # Git shortcuts
     elif command == "gs":
         cmd_git(["status"])
@@ -926,7 +926,7 @@ def parse_and_execute(cmd: str):
             cmd_git(["pr"] + args)
         else:
             cmd_git(["pr", "create"])
-    
+
     # Dev commands
     elif command == "lint":
         cmd_lint(args)
@@ -940,15 +940,15 @@ def parse_and_execute(cmd: str):
         cmd_typecheck()
     elif command == "sync":
         cmd_sync()
-    
+
     # Deploy
     elif command in ("deploy", "d"):
         cmd_deploy(args)
-    
+
     else:
         console.print(f"  [red]✗[/] Unknown: {command}")
         console.print("  [dim]Type 'help' for commands[/]")
-    
+
     return True
 
 
@@ -957,7 +957,7 @@ def run():
     console.clear()
     print_welcome()
     print_context()
-    
+
     while True:
         try:
             cmd = questionary.autocomplete(
@@ -967,19 +967,19 @@ def run():
                 qmark=">",
                 validate=lambda x: True,
             ).ask()
-            
+
             if cmd is None:
                 break
-            
+
             if not parse_and_execute(cmd):
                 break
-                
+
         except KeyboardInterrupt:
             console.print()
             continue
         except EOFError:
             break
-    
+
     console.print()
     console.print("  [dim]Goodbye[/]")
     console.print()
