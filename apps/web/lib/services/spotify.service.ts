@@ -29,8 +29,16 @@ const SPOTIFY_API_URL = "https://api.spotify.com/v1"
 export class SpotifyService {
   private accessToken: string | null = null
   private refreshToken: string | null = null
+  private redirectUri: string
 
-  constructor() {}
+  /**
+   * @param redirectUri - Optional override for the OAuth redirect URI.
+   *   When provided (e.g. derived from request.url), this takes priority.
+   *   Falls back to http://localhost:3000/spotify/callback.
+   */
+  constructor(redirectUri?: string) {
+    this.redirectUri = redirectUri || "http://localhost:3000/spotify/callback"
+  }
 
   isConfigured(): boolean {
     return config.spotify.isConfigured
@@ -47,7 +55,7 @@ export class SpotifyService {
     const params = new URLSearchParams({
       client_id: config.spotify.clientId!,
       response_type: "code",
-      redirect_uri: config.spotify.redirectUri,
+      redirect_uri: this.redirectUri,
       scope: config.spotify.scopes.join(" "),
       show_dialog: "false",
     })
@@ -70,7 +78,7 @@ export class SpotifyService {
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: config.spotify.redirectUri,
+      redirect_uri: this.redirectUri,
     })
 
     const response = await fetch(SPOTIFY_TOKEN_URL, {

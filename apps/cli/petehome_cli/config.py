@@ -4,11 +4,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Project paths
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
+
+# Load environment variables from web app .env file
+load_dotenv(REPO_ROOT / "apps" / "web" / ".env")
 WEB_APP_PATH = REPO_ROOT / "apps" / "web"
 SCRIPTS_PATH = WEB_APP_PATH / "scripts"
 

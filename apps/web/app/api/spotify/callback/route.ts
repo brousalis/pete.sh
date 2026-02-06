@@ -3,11 +3,11 @@ import { cookies } from "next/headers"
 import { SpotifyService } from "@/lib/services/spotify.service"
 import { setSpotifyTokens } from "@/lib/services/token-storage"
 
-const spotifyService = new SpotifyService()
-
 /**
  * OAuth callback handler for Spotify
  * Exchanges the authorization code for access and refresh tokens
+ * 
+ * Derives redirect URI from request origin to match what was used during auth initiation.
  * 
  * Stores tokens in:
  * 1. File-based storage (for cross-origin requests from pete.sh to localhost)
@@ -15,6 +15,14 @@ const spotifyService = new SpotifyService()
  */
 export async function GET(request: NextRequest) {
   try {
+    // Derive redirect URI from request origin (must match what was used in /api/spotify/auth)
+    const requestUrl = new URL(request.url)
+    const redirectUri = `${requestUrl.origin}/spotify/callback`
+
+    console.log("[Spotify Callback] Using redirect URI derived from request:", redirectUri)
+
+    const spotifyService = new SpotifyService(redirectUri)
+
     if (!spotifyService.isConfigured()) {
       return NextResponse.json(
         { error: "Spotify not configured" },

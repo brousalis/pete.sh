@@ -3,17 +3,33 @@ import { cookies } from "next/headers"
 import { SpotifyService } from "@/lib/services/spotify.service"
 import { getSpotifyTokens } from "@/lib/services/token-storage"
 
-const spotifyService = new SpotifyService()
-
 /**
  * Initiate Spotify OAuth flow
  * Redirects user to Spotify's authorization page
+ * 
+ * Dynamically determines the redirect URI from the request origin so that:
+ * - From pete.sh → redirect goes back to pete.sh/spotify/callback
+ * - From localhost → redirect goes back to localhost:3000/spotify/callback
  * 
  * Supports a `returnTo` query param to redirect back after OAuth
  * (useful when initiating from pete.sh via localhost)
  */
 export async function GET(request: NextRequest) {
   try {
+    // Derive the redirect URI from the incoming request URL
+    // This ensures the OAuth callback returns to the same origin the user initiated from
+    const requestUrl = new URL(request.url)
+    const origin = requestUrl.origin
+    const redirectUri = `${origin}/spotify/callback`
+
+    console.log("[Spotify Auth] Derived redirect URI from request:", {
+      requestUrl: request.url,
+      origin,
+      redirectUri,
+    })
+
+    const spotifyService = new SpotifyService(redirectUri)
+
     if (!spotifyService.isConfigured()) {
       return NextResponse.json(
         { error: "Spotify not configured. Check NEXT_SPOTIFY_CLIENT_ID and NEXT_SPOTIFY_CLIENT_SECRET" },
@@ -37,7 +53,7 @@ export async function GET(request: NextRequest) {
       if (returnTo) {
         return NextResponse.redirect(new URL("/music?spotify=connected", returnTo))
       }
-      return NextResponse.redirect(new URL("/music?spotify=connected", "http://127.0.0.1:3000"))
+      return NextResponse.redirect(new URL("/music?spotify=connected", origin))
     }
 
     // Store returnTo URL if provided (for redirecting back after OAuth)
@@ -45,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (returnTo && returnTo.includes("pete.sh")) {
       cookieStore.set("spotify_return_to", returnTo, {
         httpOnly: true,
-        secure: false, // Need to be accessible from localhost
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 10, // 10 minutes
         path: "/",

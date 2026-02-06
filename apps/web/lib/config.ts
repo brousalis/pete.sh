@@ -91,7 +91,6 @@ export const config = {
   spotify: {
     clientId: env.NEXT_SPOTIFY_CLIENT_ID,
     clientSecret: env.NEXT_SPOTIFY_CLIENT_SECRET,
-    redirectUri: 'http://127.0.0.1:3000/spotify/callback',
     isConfigured: Boolean(
       env.NEXT_SPOTIFY_CLIENT_ID && env.NEXT_SPOTIFY_CLIENT_SECRET
     ),
