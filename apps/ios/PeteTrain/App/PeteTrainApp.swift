@@ -23,17 +23,14 @@ struct PeteTrainApp: App {
         }
     }()
 
-    init() {
-        // Load workout definitions on app launch
-        // This loads from cache immediately, then refreshes from API in background
-        Task { @MainActor in
-            await WorkoutDataManager.shared.loadWorkouts()
-        }
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    // Load workout definitions on app launch
+                    // This loads from cache immediately, then refreshes from API in background
+                    await WorkoutDataManager.shared.loadWorkouts()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

@@ -16,7 +16,6 @@
 		AAA00007 /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007 /* Day.swift */; };
 		AAA00009 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00009 /* Exercise.swift */; };
 		AAA00010 /* WorkoutRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00010 /* WorkoutRecord.swift */; };
-		AAA00011 /* WorkoutData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011 /* WorkoutData.swift */; };
 		AAA00012 /* CycleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012 /* CycleManager.swift */; };
 		AAA00013 /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013 /* WorkoutViewModel.swift */; };
 		AAA00014 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014 /* HistoryViewModel.swift */; };
@@ -95,7 +94,6 @@
 		BBB00007 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Day.swift; sourceTree = "<group>"; };
 		BBB00009 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		BBB00010 /* WorkoutRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRecord.swift; sourceTree = "<group>"; };
-		BBB00011 /* WorkoutData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutData.swift; sourceTree = "<group>"; };
 		BBB00012 /* CycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleManager.swift; sourceTree = "<group>"; };
 		BBB00013 /* WorkoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
 		BBB00014 /* HistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModel.swift; sourceTree = "<group>"; };
@@ -314,7 +312,6 @@
 		EEE00008 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				BBB00011 /* WorkoutData.swift */,
 				BBB00012 /* CycleManager.swift */,
 				BBB00020 /* HealthKitManager.swift */,
 				BBB00027 /* PRManager.swift */,
@@ -502,7 +499,6 @@
 				AAA00009 /* Exercise.swift in Sources */,
 				CBEB93D52EEB33AC008E365D /* WorkoutSection.swift in Sources */,
 				AAA00010 /* WorkoutRecord.swift in Sources */,
-				AAA00011 /* WorkoutData.swift in Sources */,
 				AAA00012 /* CycleManager.swift in Sources */,
 				AAA00013 /* WorkoutViewModel.swift in Sources */,
 				AAA00014 /* HistoryViewModel.swift in Sources */,

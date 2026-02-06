@@ -134,7 +134,9 @@ struct MonthDayCell: View {
         guard let record = record else {
             return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending ? .future : .missed
         }
-        if record.isComplete {
+        // Look up the day from WorkoutDataManager to check completion
+        if let day = WorkoutDataManager.shared.day(for: record.dayNumber),
+           record.isComplete(for: day) {
             return .complete
         }
         return .partial

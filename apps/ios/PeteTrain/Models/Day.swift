@@ -64,6 +64,21 @@ struct Day: Identifiable, Hashable {
     static func == (lhs: Day, rhs: Day) -> Bool {
         lhs.id == rhs.id
     }
+
+    // MARK: - Placeholder
+
+    /// Creates a placeholder Day when API data isn't available yet
+    static func placeholder(for dayNumber: Int) -> Day {
+        let weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        let name = dayNumber >= 1 && dayNumber <= 7 ? weekdayNames[dayNumber - 1] : "Day \(dayNumber)"
+        return Day(
+            id: dayNumber,
+            name: "Loading...",
+            shortName: name,
+            goal: "Fetching workout data...",
+            sections: []
+        )
+    }
 }
 
 

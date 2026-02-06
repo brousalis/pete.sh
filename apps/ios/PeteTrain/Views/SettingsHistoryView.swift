@@ -136,7 +136,7 @@ struct SettingsHistoryView: View {
         if devModeEnabled {
             Picker("Day Override", selection: $devDayOverride) {
                 ForEach(Array(1...7), id: \.self) { dayNum in
-                    let day = WorkoutData.days.first { $0.id == dayNum }
+                    let day = workoutDataManager.day(for: dayNum)
                     Text("Day \(dayNum): \(day?.shortName ?? "")").tag(dayNum)
                 }
             }

@@ -168,7 +168,7 @@ final class PRManager {
     
     func exerciseName(for exerciseId: String) -> String {
         // Search through all workout days for the exercise
-        for day in WorkoutData.days {
+        for day in WorkoutDataManager.shared.days {
             for section in day.sections {
                 if let exercise = section.exercises.first(where: { $0.id == exerciseId }) {
                     return exercise.name

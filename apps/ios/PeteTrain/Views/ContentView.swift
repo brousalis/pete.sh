@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var locationManager = LocationManager.shared
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
+    @State private var workoutDataManager = WorkoutDataManager.shared
 
     var body: some View {
         DayView(viewModel: viewModel)
@@ -18,6 +19,12 @@ struct ContentView: View {
                 requestAuthorizations()
                 setupLocationCallbacks()
                 setupNotificationCallbacks()
+            }
+            .onChange(of: workoutDataManager.days.count) { oldCount, newCount in
+                // Refresh view when workout data loads from API
+                if oldCount == 0 && newCount > 0 {
+                    viewModel.refreshDay()
+                }
             }
     }
 

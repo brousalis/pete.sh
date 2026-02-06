@@ -169,7 +169,7 @@ struct WorkoutCompleteView: View {
 }
 
 #Preview {
-    WorkoutCompleteView(day: WorkoutData.day1, duration: 2700)
+    WorkoutCompleteView(day: Day.placeholder(for: 1), duration: 2700)
 }
 
 

@@ -186,7 +186,8 @@ struct CalendarDayCell: View {
         guard let record = record else {
             return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending ? .future : .missed
         }
-        if record.isComplete {
+        if let day = WorkoutDataManager.shared.day(for: record.dayNumber),
+           record.isComplete(for: day) {
             return .complete
         }
         return .partial
@@ -368,7 +369,7 @@ struct HistoryRow: View {
             
             Spacer()
             
-            if record.isComplete {
+            if let day = day, record.isComplete(for: day) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {

@@ -249,8 +249,8 @@ struct SectionExercisesView: View {
 #Preview {
     NavigationStack {
         UnifiedExerciseListView(
-            day: WorkoutData.day1,
-            completedIds: ["a1-weighted-neutral-grip-pull-ups"],
+            day: Day.placeholder(for: 1),
+            completedIds: [],
             skippedIds: [],
             getLastWeight: { _ in 45 },
             getLastReps: { _ in 5 },

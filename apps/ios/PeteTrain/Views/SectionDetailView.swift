@@ -42,9 +42,17 @@ struct SectionDetailView: View {
 }
 
 #Preview {
-    NavigationStack {
+    let mockSection = WorkoutSection(
+        name: "Preview Workout",
+        sectionType: .workout,
+        exercises: [
+            Exercise(name: "Pull-ups", sets: 3, reps: "8"),
+            Exercise(name: "Push-ups", sets: 3, reps: "12")
+        ]
+    )
+    return NavigationStack {
         SectionDetailView(
-            section: WorkoutData.day1.sections[1],
+            section: mockSection,
             viewModel: WorkoutViewModel()
         )
     }

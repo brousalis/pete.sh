@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var locationManager = LocationManager.shared
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
+    @State private var workoutDataManager = WorkoutDataManager.shared
     @State private var showManualLog = false
     @State private var showHistoricalSync = false
     @State private var historicalSyncResult: HistoricalSyncResult?
@@ -25,7 +26,7 @@ struct SettingsView: View {
     }
     
     private var currentDay: Day {
-        CycleManager.currentDay()
+        workoutDataManager.day(for: currentDayNumber) ?? Day.placeholder(for: currentDayNumber)
     }
     
     var body: some View {
@@ -161,16 +162,16 @@ struct SettingsView: View {
             SwiftUI.Section {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(1...7), id: \.self) { dayNum in
-                        let day = WorkoutData.days.first { $0.id == dayNum }
+                        let day = workoutDataManager.day(for: dayNum)
                         let weekdayName = weekdayName(for: dayNum)
                         let isToday = dayNum == currentDayNumber
-                        
+
                         HStack {
                             Text(weekdayName)
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(isToday ? .orange : .secondary)
                                 .frame(width: 36, alignment: .leading)
-                            
+
                             Text(day?.shortName ?? "")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(isToday ? .white : .secondary)
@@ -661,7 +662,7 @@ struct SettingsView: View {
                 if devModeEnabled {
                     Picker("Day Override", selection: $devDayOverride) {
                         ForEach(1...7, id: \.self) { dayNum in
-                            let day = WorkoutData.days.first { $0.id == dayNum }
+                            let day = workoutDataManager.day(for: dayNum)
                             Text("Day \(dayNum): \(day?.shortName ?? "")")
                                 .tag(dayNum)
                         }

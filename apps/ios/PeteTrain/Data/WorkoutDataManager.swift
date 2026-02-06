@@ -50,15 +50,9 @@ final class WorkoutDataManager {
     // MARK: - Init
 
     private init() {
-        // Start with empty array - fallback is accessed via fallbackDays
-        // when needed, avoiding circular dependency at init time
+        // Start with empty array - API data will be loaded async
         days = []
         dataSource = .fallback
-    }
-
-    /// Get fallback days from WorkoutData (static bundled data)
-    private var fallbackDays: [Day] {
-        WorkoutData.days
     }
 
     // MARK: - Public API
@@ -119,37 +113,26 @@ final class WorkoutDataManager {
         } catch {
             print("❌ WorkoutDataManager: API fetch failed - \(error.localizedDescription)")
             lastError = error.localizedDescription
-
-            // Keep using cached/fallback data
-            if days.isEmpty {
-                days = fallbackDays
-                dataSource = .fallback
-            }
+            // Keep using cached data if available, otherwise days stays empty
         }
 
         isLoading = false
     }
 
     /// Get a specific day by number (1-7)
-    /// Falls back to static data if not found
+    /// Returns nil if not found (API data not loaded yet)
     func day(for number: Int) -> Day? {
-        // Try dynamic data first
-        if let day = days.first(where: { $0.id == number }) {
-            return day
-        }
-
-        // Fallback to static data
-        return fallbackDays.first(where: { $0.id == number })
+        return days.first(where: { $0.id == number })
     }
 
-    /// Clear cache and reload from fallback
+    /// Clear cache and reset state
     func clearCache() async {
         await cache.clear()
-        days = fallbackDays
+        days = []
         versionInfo = nil
         dataSource = .fallback
         lastError = nil
-        print("📚 WorkoutDataManager: Cache cleared, using fallback data")
+        print("📚 WorkoutDataManager: Cache cleared")
     }
 
     /// Get status description for UI

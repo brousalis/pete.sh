@@ -30,10 +30,10 @@ enum CycleManager {
         if isDevModeEnabled {
             return devDayOverride
         }
-        
+
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: date)
-        
+
         // Calendar weekday: 1 = Sunday, 2 = Monday, ..., 7 = Saturday
         // We want: Monday = 1, Tuesday = 2, ..., Sunday = 7
         // So: if Sunday (1) -> 7, else weekday - 1
@@ -42,13 +42,6 @@ enum CycleManager {
         } else {
             return weekday - 1  // Monday=1, Tuesday=2, etc.
         }
-    }
-    
-    /// Returns the Day object for the current day of the week
-    /// WorkoutData.days automatically uses dynamic data from WorkoutDataManager when available
-    static func currentDay(for date: Date = Date()) -> Day {
-        let dayNumber = currentDayNumber(for: date)
-        return WorkoutData.days.first { $0.id == dayNumber } ?? WorkoutData.days[0]
     }
     
     /// Returns the name of the current weekday

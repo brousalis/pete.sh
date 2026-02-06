@@ -219,7 +219,7 @@ final class SyncManager {
             // Try to fetch and sync the workout
             do {
                 if let workout = try await fetchWorkout(id: queuedWorkout.id) {
-                    let day = queuedWorkout.dayNumber.flatMap { dayNum in WorkoutData.days.first { $0.id == dayNum } }
+                    let day = queuedWorkout.dayNumber.flatMap { WorkoutDataManager.shared.day(for: $0) }
                     let payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: day)
                     try await api.syncWorkoutWithRetry(payload)
                     print("✅ Queued workout synced: \(queuedWorkout.id)")
@@ -475,7 +475,7 @@ final class SyncManager {
     }
 
     /// Try to match a HealthKit workout to a Pete Train day based on workout type and day of week
-    /// WorkoutData.days automatically uses dynamic data from WorkoutDataManager when available
+    /// Uses WorkoutDataManager for API-driven workout definitions
     private func matchWorkoutToDay(_ workout: HKWorkout) -> Day? {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: workout.startDate)
@@ -488,8 +488,8 @@ final class SyncManager {
             dayNumber = weekday - 1
         }
 
-        // Find the day (WorkoutData.days uses dynamic data when available)
-        guard let day = WorkoutData.days.first(where: { $0.id == dayNumber }) else {
+        // Find the day from WorkoutDataManager (API-driven)
+        guard let day = WorkoutDataManager.shared.day(for: dayNumber) else {
             return nil
         }
 

@@ -49,7 +49,9 @@ final class WorkoutViewModel {
     }
     
     init() {
-        self.currentDay = CycleManager.currentDay()
+        // Get current day from dynamic data (WorkoutDataManager) or fall back to placeholder
+        let dayNumber = CycleManager.currentDayNumber()
+        self.currentDay = WorkoutDataManager.shared.day(for: dayNumber) ?? Day.placeholder(for: dayNumber)
         self.selectedSection = currentDay.sections.first
     }
     
@@ -232,7 +234,9 @@ final class WorkoutViewModel {
     }
     
     func refreshDay() {
-        currentDay = CycleManager.currentDay()
+        // Get current day from dynamic data (WorkoutDataManager) or fall back to placeholder
+        let dayNumber = CycleManager.currentDayNumber()
+        currentDay = WorkoutDataManager.shared.day(for: dayNumber) ?? Day.placeholder(for: dayNumber)
         selectedSection = currentDay.sections.first
         loadTodayRecord()
         lastToggledExerciseId = nil

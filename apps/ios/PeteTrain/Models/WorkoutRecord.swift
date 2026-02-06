@@ -51,9 +51,9 @@ final class WorkoutRecord {
         self.healthKitWorkoutId = healthKitWorkoutId
     }
     
-    var isComplete: Bool {
-        let day = WorkoutData.days.first { $0.id == dayNumber }
-        guard let day = day else { return false }
+    /// Check if workout is complete for a given day
+    /// Pass the day from WorkoutDataManager.shared.day(for: dayNumber)
+    func isComplete(for day: Day) -> Bool {
         let totalRequired = day.totalExercises - skippedExerciseIds.count
         return completedExerciseIds.count >= totalRequired
     }

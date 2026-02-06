@@ -2,29 +2,30 @@ import Foundation
 import Observation
 import SwiftData
 
+@MainActor
 @Observable
 final class HistoryViewModel {
     private var modelContext: ModelContext?
-    
+
     var records: [WorkoutRecord] = []
     var currentStreak: Int = 0
     var totalWorkouts: Int = 0
-    
+
     // Cache for calendar lookups
     private var recordsByDate: [Date: WorkoutRecord] = [:]
-    
+
     func configure(with modelContext: ModelContext) {
         self.modelContext = modelContext
         loadHistory()
     }
-    
+
     func loadHistory() {
         guard let modelContext = modelContext else { return }
-        
+
         let descriptor = FetchDescriptor<WorkoutRecord>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        
+
         do {
             records = try modelContext.fetch(descriptor)
             calculateStats()
@@ -33,9 +34,12 @@ final class HistoryViewModel {
             print("Failed to fetch history: \(error)")
         }
     }
-    
+
     private func calculateStats() {
-        totalWorkouts = records.filter { $0.isComplete }.count
+        totalWorkouts = records.filter { record in
+            guard let day = WorkoutDataManager.shared.day(for: record.dayNumber) else { return false }
+            return record.isComplete(for: day)
+        }.count
         currentStreak = calculateStreak()
     }
     
@@ -56,15 +60,18 @@ final class HistoryViewModel {
         let calendar = Calendar.current
         var streak = 0
         var checkDate = calendar.startOfDay(for: Date())
-        
-        let completedDates = Set(records.filter { $0.isComplete }.map { calendar.startOfDay(for: $0.date) })
-        
+
+        let completedDates = Set(records.filter { record in
+            guard let day = WorkoutDataManager.shared.day(for: record.dayNumber) else { return false }
+            return record.isComplete(for: day)
+        }.map { calendar.startOfDay(for: $0.date) })
+
         while completedDates.contains(checkDate) {
             streak += 1
             guard let previousDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
             checkDate = previousDay
         }
-        
+
         return streak
     }
     
@@ -90,7 +97,7 @@ final class HistoryViewModel {
     }
     
     func day(for record: WorkoutRecord) -> Day? {
-        WorkoutData.days.first { $0.id == record.dayNumber }
+        WorkoutDataManager.shared.day(for: record.dayNumber)
     }
 }
 
