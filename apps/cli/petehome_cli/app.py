@@ -4,8 +4,13 @@ import asyncio
 import shlex
 import sys
 import webbrowser
+from pathlib import Path
 
 import questionary
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.history import FileHistory
 from questionary import Style
 from rich.columns import Columns
 from rich.console import Console, Group
@@ -59,6 +64,16 @@ COMMANDS = [
     # Other
     "help", "exit", "quit", "clear", "?", "c", "h", "q",
 ]
+
+
+class CommandCompleter(Completer):
+    """Autocomplete for CLI commands."""
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor.lower()
+        for cmd in COMMANDS:
+            if cmd.startswith(text):
+                yield Completion(cmd, start_position=-len(text))
 
 
 def run_async(coro):
@@ -490,6 +505,18 @@ def cmd_git(args: list[str]):
             console.print("  [red]✗[/] Failed to stage")
 
     elif subcmd == "commit":
+        # Auto-stage all changes if nothing is staged
+        with console.status("[dim]Checking...[/]", spinner="dots"):
+            status = run_async(github.get_status())
+        if status and not status.staged and status.has_changes:
+            with console.status("[dim]Staging all changes...[/]", spinner="dots"):
+                ok, _ = run_async(github.add_files())
+            if ok:
+                console.print("  [green]✓[/] Staged all changes")
+            else:
+                console.print("  [red]✗[/] Failed to stage")
+                return
+
         if not subargs:
             message = questionary.text(
                 "message:",
@@ -958,18 +985,18 @@ def run():
     print_welcome()
     print_context()
 
+    # Persistent command history with autocomplete
+    history_path = Path.home() / ".petehome_cli_history"
+    session = PromptSession(
+        history=FileHistory(str(history_path)),
+        completer=CommandCompleter(),
+        complete_while_typing=True,
+    )
+    prompt_text = FormattedText([("#6366f1 bold", "> ")])
+
     while True:
         try:
-            cmd = questionary.autocomplete(
-                "",
-                choices=COMMANDS,
-                style=custom_style,
-                qmark=">",
-                validate=lambda x: True,
-            ).ask()
-
-            if cmd is None:
-                break
+            cmd = session.prompt(prompt_text)
 
             if not parse_and_execute(cmd):
                 break

@@ -1,135 +1,161 @@
 {
   "id": "climber-physique",
-  "name": "Initial Version",
+  "name": "Rock Climber & Lean Physique Protocol (V15 Elite)",
   "userProfile": {
-    "goal": "Climber physique (Wire-strong, vascular, no bulk) + 20 lbs Weight Loss",
+    "goal": "Climber Physique (Wire-strong, vascular, 185 lb target)",
     "stats": {
       "height": "5'11\"",
-      "weight": 205
+      "weight": 196
     },
     "schedule": {
       "fasted": true,
       "startDay": "monday",
-      "trainingTime": "12:00 PM"
+      "trainingTime": "12:00 PM",
+      "trainingWindow": "2 Hours (12:00 PM - 2:00 PM)"
     },
     "shoeStrategy": {
       "cardio": [
-        "Cushioned Running shoes"
+        "Cushioned Running Shoes"
       ],
       "lifting": [
-        "Zero Drop",
-        "Flat shoes (Vans, Converse)"
+        "Cushioned Running Shoes"
       ]
+    },
+    "musicStrategy": {
+      "wednesday": "170 BPM (Cadence Lock)",
+      "thursday": "170 BPM (Cadence Lock)",
+      "saturday": "180 BPM (Sprint Speed)"
     }
   },
   "injuryProtocol": {
-    "name": "Golfer's Elbow",
+    "name": "Achilles & Elbow Rehab Protocol",
     "rules": [
-      "Use [ELBOW SAFE] alternatives listed for at least 2 weeks",
-      "Do not return to standard exercises until you can hang from a bar pain-free",
-      "Use lifting straps for Deadlifts/Rows to offload the grip"
+      "Achilles Saver: Wear Cushioned Running Shoes for ALL workouts (even lifting) for the next 7 days",
+      "Incline Cap: Keep treadmill incline between 5% - 8%",
+      "Elbow Remodeling: No weighted pulling. Use Straps for RDLs",
+      "Daily Finger Extensions + Wrist Eccentrics",
+      "Velocity Hike: Add SPEED not weight. Target 4.0 - 4.2 MPH Power Walk. Do not jog",
+      "Salt Rule: 1 tsp Salt + Electrolytes in water during workout (Mandatory)",
+      "Toe Lube Rule: Apply Vaseline/BodyGlide to toes before every run"
     ],
     "status": "active",
     "dailyRehab": [
       {
-        "name": "Forearm Smash",
-        "duration": 2,
+        "name": "Finger Extensions",
+        "description": "Rubber band on fingers. Open wide.",
         "frequency": "daily",
-        "description": "Massage the meaty part of your inner forearm with a lacrosse ball/hard object"
+        "sets": 2,
+        "reps": 25
+      },
+      {
+        "name": "DB Wrist Extension Eccentrics",
+        "description": "Forearm on bench, palm down. Lift with help, lower slowly (5 sec) with bad arm.",
+        "frequency": "workout days",
+        "sets": 3,
+        "reps": 15
       }
     ],
-    "description": "Currently feeling strain near the funny bone (inner elbow)"
+    "description": "Combined Achilles tendon recovery and Golfer's Elbow remodeling protocol"
   },
   "schedule": {
-    "friday": {
-      "goal": "Circuit (Elbow Safe) + 30m Bike + Deep Stretch",
-      "focus": "Circuit"
-    },
     "monday": {
-      "goal": "Lift (Elbow Safe) + 40m Bike + Deep Stretch",
-      "focus": "Strength"
-    },
-    "sunday": {
-      "goal": "10k Steps (No Gym)",
-      "focus": "Rest"
+      "focus": "Strength",
+      "goal": "Lift (Elbow Safe) + 40m Bike + Wrist Rehab"
     },
     "tuesday": {
-      "goal": "Core Routine + 45m Steep Hike + Deep Stretch",
-      "focus": "Core/Posture"
-    },
-    "saturday": {
-      "goal": "Sprints (20m) + 20m Walk + Deep Stretch",
-      "focus": "HIIT"
-    },
-    "thursday": {
-      "goal": "Run (4mi Slow) + 20m Recovery Spin",
-      "focus": "Endurance"
+      "focus": "Core",
+      "goal": "Core (Hollow Body) + 45m Velocity Hike"
     },
     "wednesday": {
-      "goal": "Run (2mi) + Hike (45-60m) + Tibialis Work",
-      "focus": "Hybrid"
+      "focus": "Hybrid",
+      "goal": "Run (2mi) + Hike (45-60m Velocity)"
+    },
+    "thursday": {
+      "focus": "Endurance",
+      "goal": "Run (4-5mi Slow) + 20m Spin Flush"
+    },
+    "friday": {
+      "focus": "Circuit",
+      "goal": "Circuit (DB Y-Raise) + 30m Bike"
+    },
+    "saturday": {
+      "focus": "HIIT",
+      "goal": "Sprints (20m) + Walk + Ice Bottle"
+    },
+    "sunday": {
+      "focus": "Rest",
+      "goal": "10k Steps (No Gym)"
     }
   },
   "dailyRoutines": {
-    "night": {
-      "id": "release-the-brakes",
-      "name": "Night Stretch",
-      "type": "night",
-      "duration": 5,
-      "exercises": [
-        {
-          "why": "Fixes tight hip flexors from running and hiking",
-          "name": "Couch Stretch",
-          "action": "Kneel in front of a couch (or wall). Put one shin vertical against the couch cushion behind you. Squeeze your glute and stand tall. You should feel a massive pull in the front of your hip/thigh. 60 seconds per side.",
-          "duration": 120,
-          "description": "The #1 stretch for you. Running and hiking tighten the hip flexors. Tight hip flexors cause lower back pain and \"weak\" glutes."
-        },
-        {
-          "why": "Opens chest for better breathing and posture",
-          "name": "Doorway Pec Stretch",
-          "action": "Put your forearms against a doorframe at 90 degrees. Step through gently until you feel a stretch across your chest.",
-          "duration": 60,
-          "description": "Climbers and heavy lifters tend to roll their shoulders forward. This opens the chest so you can breathe better and stand taller."
-        },
-        {
-          "why": "Loosens lats and lower back",
-          "name": "Child's Pose with Side Reach",
-          "action": "Kneel, sit back on your heels, and reach arms far forward on the floor. Then, walk both hands to the left (stretches right lat), hold, then walk to the right.",
-          "duration": 120,
-          "description": "Loosens the lats (from all the pull-ups) and the lower back (from the RDLs and hiking)."
-        }
-      ],
-      "description": "Do this 30 minutes before bed. The goal is to lengthen the muscles that tightened up during your run or lift."
-    },
     "morning": {
       "id": "oil-the-hinge",
-      "name": "Morning Stretch",
+      "name": "The Morning Armor Routine",
       "type": "morning",
-      "duration": 3,
+      "duration": 10,
       "exercises": [
         {
+          "why": "Rebuilds Achilles tendon strength through isometric loading",
+          "name": "Isometric Heel Holds (Achilles Fix)",
+          "action": "Stand on edge of step (or flat). Lift to toes. Hold 45 seconds.",
+          "duration": 135,
+          "sets": 3,
+          "description": "Primary Achilles rehab exercise. Isometric holds build tendon resilience."
+        },
+        {
           "why": "Opens ankles, knees, and hips for the day",
-          "name": "Deep Squat Hold",
-          "action": "Drop into the deepest squat you can. Keep heels flat. Use your elbows to push your knees out. Rock side to side gently.",
+          "name": "Deep Squat Hold (Active)",
+          "action": "Drop into deep squat. Use doorframe for balance if needed. Duration: 60 seconds.",
           "duration": 60,
-          "description": "Opens ankles, knees, and hips for the day. Essential for the \"high step\" moves in climbing."
+          "description": "Opens ankles, knees, and hips. Essential for climbing high-step moves."
         },
         {
           "why": "Prevents hunchback posture from pulling and carrying",
-          "name": "T-Spine Rotation",
-          "action": "On hands and knees, put one hand behind your head. Rotate that elbow down to touch the opposite wrist, then rotate it all the way up to the ceiling. 30 seconds per side.",
+          "name": "T-Spine Rotations",
+          "action": "From squat or hands/knees, reach arm to sky. 5 reps per side.",
           "duration": 60,
-          "description": "Prevents developing a \"hunchback\" posture from all the pulling and carrying."
+          "description": "Prevents developing a hunchback posture from all the pulling and carrying."
         },
         {
-          "why": "Decompresses spine and wakes up grip",
-          "name": "Dead Hang",
-          "action": "Just hang from a bar (or doorframe if sturdy). Let your back crack and pop.",
-          "duration": 60,
-          "description": "Decompresses your spine and wakes up your grip."
+          "why": "Elbow rehab and grip balance",
+          "name": "Finger Extensions",
+          "action": "Rubber band on fingers. Open wide. 2 sets x 25 reps.",
+          "sets": 2,
+          "reps": 25,
+          "description": "Counterbalances grip work and aids elbow remodeling."
         }
       ],
-      "description": "Do this right after you wake up. The goal is to open up your hips and upper back, which get stiff from sleeping."
+      "description": "Do this immediately after waking up. Sequence matters."
+    },
+    "night": {
+      "id": "release-the-brakes",
+      "name": "The Night Release Routine",
+      "type": "night",
+      "duration": 12,
+      "exercises": [
+        {
+          "why": "Fixes tight hip flexors from running and hiking",
+          "name": "Couch Stretch (Mandatory)",
+          "action": "Knee against wall. Squeeze glute. Hold: 2 Minutes per side.",
+          "duration": 240,
+          "description": "The #1 stretch. Running and hiking tighten hip flexors causing lower back pain and weak glutes."
+        },
+        {
+          "why": "Opens hips and inner thighs",
+          "name": "Frog Stretch",
+          "action": "Knees wide, hips back. Hold 2 Mins.",
+          "duration": 120,
+          "description": "Deep hip opener for climbing and squatting mobility."
+        },
+        {
+          "why": "Elbow rehab - lengthens forearm flexors",
+          "name": "Wrist Flexor Stretch",
+          "action": "Gentle pull back on fingers. Hold 30s.",
+          "duration": 30,
+          "description": "Part of elbow remodeling protocol. Lengthens tight forearm flexors."
+        }
+      ],
+      "description": "Do this right before bed."
     }
   },
   "weeks": [
@@ -1263,5 +1289,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-06T00:53:17.018Z"
+  "updatedAt": "2026-02-06T19:37:25.573Z"
 }
