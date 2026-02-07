@@ -22,6 +22,7 @@ import {
   Award,
   BarChart3,
   Battery,
+  Bike,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -31,6 +32,8 @@ import {
   Heart,
   Info,
   LineChart,
+  Pause,
+  Play,
   Route,
   Sparkles,
   Target,
@@ -70,9 +73,22 @@ interface AppleWorkout {
   hr_min: number | null
   hr_max: number | null
   hr_zones: HeartRateZone[] | null
+  // Running metrics
   cadence_average: number | null
   pace_average: number | null
   pace_best: number | null
+  stride_length_avg: number | null
+  running_power_avg: number | null
+  ground_contact_time_avg: number | null
+  vertical_oscillation_avg: number | null
+  // Cycling metrics
+  cycling_avg_speed: number | null
+  cycling_max_speed: number | null
+  cycling_avg_cadence: number | null
+  cycling_avg_power: number | null
+  cycling_max_power: number | null
+  // Effort score
+  effort_score: number | null
   source: string
 }
 
@@ -81,12 +97,50 @@ interface HrSample {
   bpm: number
 }
 
+interface CyclingSpeedSample {
+  timestamp: string
+  speed_mph: number
+}
+
+interface CyclingCadenceSample {
+  timestamp: string
+  rpm: number
+}
+
+interface CyclingPowerSample {
+  timestamp: string
+  watts: number
+}
+
+interface WorkoutEventData {
+  event_type: string
+  timestamp: string
+  duration: number | null
+  segment_index: number | null
+  lap_number: number | null
+}
+
+interface SplitData {
+  split_number: number
+  split_type: string
+  distance_meters: number
+  time_seconds: number
+  avg_pace: number | null
+  avg_heart_rate: number | null
+  avg_cadence: number | null
+}
+
 interface WorkoutDetailResponse {
   workout: AppleWorkout
   hrSamples: HrSample[]
   hrChart: HrSample[]
   cadenceSamples: { timestamp: string; steps_per_minute: number }[]
   paceSamples: { timestamp: string; minutes_per_mile: number }[]
+  cyclingSpeedSamples: CyclingSpeedSample[]
+  cyclingCadenceSamples: CyclingCadenceSample[]
+  cyclingPowerSamples: CyclingPowerSample[]
+  workoutEvents: WorkoutEventData[]
+  splits: SplitData[]
   analytics: EnhancedWorkoutAnalytics | null
 }
 
@@ -193,6 +247,8 @@ interface TimeSeriesChartProps {
   showHr?: boolean
   showCadence?: boolean
   showPace?: boolean
+  showCyclingSpeed?: boolean
+  showCyclingPower?: boolean
   height?: number
   className?: string
 }
@@ -202,12 +258,14 @@ function TimeSeriesChart({
   showHr = true,
   showCadence = true,
   showPace = true,
+  showCyclingSpeed = false,
+  showCyclingPower = false,
   height = 200,
   className,
 }: TimeSeriesChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  const { hrRange, cadenceRange, paceRange, filteredData, stats } =
+  const { hrRange, cadenceRange, paceRange, cyclingSpeedRange, cyclingPowerRange, filteredData, stats } =
     useMemo(() => {
       // Filter out null values and get ranges
       const hrValues = data.filter(d => d.hr !== null).map(d => d.hr!)
@@ -217,6 +275,12 @@ function TimeSeriesChart({
       const paceValues = data
         .filter(d => d.pace !== null && d.pace > 0 && d.pace < 30)
         .map(d => d.pace!)
+      const cyclingSpeedValues = data
+        .filter(d => d.cyclingSpeed !== null && d.cyclingSpeed > 0)
+        .map(d => d.cyclingSpeed!)
+      const cyclingPowerValues = data
+        .filter(d => d.cyclingPower !== null && d.cyclingPower > 0)
+        .map(d => d.cyclingPower!)
 
       return {
         hrRange: {
@@ -230,6 +294,14 @@ function TimeSeriesChart({
         paceRange: {
           min: paceValues.length > 0 ? Math.min(...paceValues) - 0.5 : 6,
           max: paceValues.length > 0 ? Math.max(...paceValues) + 0.5 : 15,
+        },
+        cyclingSpeedRange: {
+          min: cyclingSpeedValues.length > 0 ? Math.min(...cyclingSpeedValues) - 2 : 0,
+          max: cyclingSpeedValues.length > 0 ? Math.max(...cyclingSpeedValues) + 2 : 30,
+        },
+        cyclingPowerRange: {
+          min: cyclingPowerValues.length > 0 ? Math.min(...cyclingPowerValues) - 10 : 0,
+          max: cyclingPowerValues.length > 0 ? Math.max(...cyclingPowerValues) + 10 : 300,
         },
         filteredData: data.filter((_, i) => i % 2 === 0), // Downsample for performance
         stats: {
@@ -273,6 +345,24 @@ function TimeSeriesChart({
     )
   }
 
+  const normalizeCyclingSpeed = (speed: number) => {
+    return (
+      chartHeight -
+      10 -
+      ((speed - cyclingSpeedRange.min) / (cyclingSpeedRange.max - cyclingSpeedRange.min)) *
+        (chartHeight - 20)
+    )
+  }
+
+  const normalizeCyclingPower = (power: number) => {
+    return (
+      chartHeight -
+      10 -
+      ((power - cyclingPowerRange.min) / (cyclingPowerRange.max - cyclingPowerRange.min)) *
+        (chartHeight - 20)
+    )
+  }
+
   const width = 100
   const xScale = (i: number) => (i / (filteredData.length - 1 || 1)) * width
 
@@ -299,9 +389,27 @@ function TimeSeriesChart({
     )
     .filter(Boolean) as { x: number; y: number }[]
 
+  const cyclingSpeedPointsArray = filteredData
+    .map((d, i) =>
+      d.cyclingSpeed !== null && d.cyclingSpeed > 0
+        ? { x: xScale(i), y: normalizeCyclingSpeed(d.cyclingSpeed) }
+        : null
+    )
+    .filter(Boolean) as { x: number; y: number }[]
+
+  const cyclingPowerPointsArray = filteredData
+    .map((d, i) =>
+      d.cyclingPower !== null && d.cyclingPower > 0
+        ? { x: xScale(i), y: normalizeCyclingPower(d.cyclingPower) }
+        : null
+    )
+    .filter(Boolean) as { x: number; y: number }[]
+
   const hrPath = hrPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
   const cadencePath = cadencePointsArray.map(p => `${p.x},${p.y}`).join(' L ')
   const pacePath = pacePointsArray.map(p => `${p.x},${p.y}`).join(' L ')
+  const cyclingSpeedPath = cyclingSpeedPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
+  const cyclingPowerPath = cyclingPowerPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
 
   const hovered = hoveredIndex !== null ? filteredData[hoveredIndex] : null
   const totalDuration =
@@ -393,6 +501,34 @@ function TimeSeriesChart({
             />
           )}
 
+          {/* Cycling Speed line (cyan) */}
+          {showCyclingSpeed && cyclingSpeedPath && (
+            <path
+              d={`M ${cyclingSpeedPath}`}
+              fill="none"
+              stroke="rgb(6 182 212)"
+              strokeWidth="1.5"
+              strokeOpacity="0.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+
+          {/* Cycling Power line (amber/yellow) */}
+          {showCyclingPower && cyclingPowerPath && (
+            <path
+              d={`M ${cyclingPowerPath}`}
+              fill="none"
+              stroke="rgb(245 158 11)"
+              strokeWidth="1.5"
+              strokeOpacity="0.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+
           {/* HR line (red) - main line, on top */}
           {showHr && hrPath && (
             <path
@@ -471,6 +607,32 @@ function TimeSeriesChart({
                     vectorEffect="non-scaling-stroke"
                   />
                 )}
+              {hovered?.cyclingSpeed &&
+                hovered.cyclingSpeed > 0 &&
+                showCyclingSpeed && (
+                  <circle
+                    cx={xScale(hoveredIndex)}
+                    cy={normalizeCyclingSpeed(hovered.cyclingSpeed)}
+                    r="2.5"
+                    fill="rgb(6 182 212)"
+                    stroke="white"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+              {hovered?.cyclingPower &&
+                hovered.cyclingPower > 0 &&
+                showCyclingPower && (
+                  <circle
+                    cx={xScale(hoveredIndex)}
+                    cy={normalizeCyclingPower(hovered.cyclingPower)}
+                    r="2.5"
+                    fill="rgb(245 158 11)"
+                    stroke="white"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
             </>
           )}
         </svg>
@@ -527,6 +689,30 @@ function TimeSeriesChart({
                     </span>
                   </div>
                 )}
+              {showCyclingSpeed && hovered.cyclingSpeed && hovered.cyclingSpeed > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-1.5 text-cyan-400">
+                    <Gauge className="size-3" />
+                    <span>Speed</span>
+                  </span>
+                  <span className="text-foreground font-medium">
+                    {hovered.cyclingSpeed.toFixed(1)}{' '}
+                    <span className="text-muted-foreground font-normal">mph</span>
+                  </span>
+                </div>
+              )}
+              {showCyclingPower && hovered.cyclingPower && hovered.cyclingPower > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <Zap className="size-3" />
+                    <span>Power</span>
+                  </span>
+                  <span className="text-foreground font-medium">
+                    {Math.round(hovered.cyclingPower)}{' '}
+                    <span className="text-muted-foreground font-normal">W</span>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -548,7 +734,7 @@ function TimeSeriesChart({
       </div>
 
       {/* Legend */}
-      <div className="mt-3 flex items-center justify-center gap-5 text-xs">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
         {showHr && (
           <div className="flex items-center gap-1.5">
             <div className="h-1 w-4 rounded-full bg-red-500" />
@@ -565,6 +751,18 @@ function TimeSeriesChart({
           <div className="flex items-center gap-1.5">
             <div className="h-1 w-4 rounded-full bg-green-500" />
             <span className="text-muted-foreground">Pace</span>
+          </div>
+        )}
+        {showCyclingSpeed && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-1 w-4 rounded-full bg-cyan-500" />
+            <span className="text-muted-foreground">Speed</span>
+          </div>
+        )}
+        {showCyclingPower && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-1 w-4 rounded-full bg-amber-500" />
+            <span className="text-muted-foreground">Power</span>
           </div>
         )}
       </div>
@@ -1002,6 +1200,7 @@ export function EnhancedWorkoutDetailView({
   const workoutLabel =
     WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
   const isRunning = workout.workout_type === 'running'
+  const isCycling = workout.workout_type === 'cycling'
   const isCardio = [
     'running',
     'walking',
@@ -1070,13 +1269,19 @@ export function EnhancedWorkoutDetailView({
             <SectionHeader
               icon={<Activity className="text-primary size-4" />}
               title="Performance Timeline"
-              description="Heart rate, cadence, and pace throughout your workout"
+              description={
+                isCycling
+                  ? 'Heart rate, speed, and power throughout your workout'
+                  : 'Heart rate, cadence, and pace throughout your workout'
+              }
             />
             <TimeSeriesChart
               data={analytics.timeSeriesData}
               showHr={true}
               showCadence={isRunning && workout.cadence_average !== null}
               showPace={isRunning && workout.pace_average !== null}
+              showCyclingSpeed={isCycling && workout.cycling_avg_speed !== null}
+              showCyclingPower={isCycling && workout.cycling_avg_power !== null}
               height={160}
             />
           </CardContent>
@@ -1171,6 +1376,148 @@ export function EnhancedWorkoutDetailView({
             </Card>
           )}
         </div>
+      )}
+
+      {/* ============================================ */}
+      {/* EFFORT SCORE */}
+      {/* ============================================ */}
+      {workout.effort_score && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="mb-1 flex items-center gap-2">
+                  <Activity className="size-4 text-purple-500" />
+                  <span className="text-sm font-semibold">Effort Score</span>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Apple&apos;s workout intensity rating
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold">
+                  {workout.effort_score.toFixed(1)}
+                  <span className="text-muted-foreground text-sm font-normal">
+                    /10
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'mt-1',
+                    workout.effort_score >= 8
+                      ? 'border-red-500/50 text-red-400'
+                      : workout.effort_score >= 6
+                        ? 'border-orange-500/50 text-orange-400'
+                        : workout.effort_score >= 4
+                          ? 'border-yellow-500/50 text-yellow-400'
+                          : 'border-green-500/50 text-green-400'
+                  )}
+                >
+                  {workout.effort_score >= 8
+                    ? 'Very Hard'
+                    : workout.effort_score >= 6
+                      ? 'Hard'
+                      : workout.effort_score >= 4
+                        ? 'Moderate'
+                        : 'Easy'}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ============================================ */}
+      {/* CYCLING-SPECIFIC METRICS */}
+      {/* ============================================ */}
+      {isCycling && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {workout.cycling_avg_speed && (
+            <MetricCard
+              icon={<Gauge className="size-5 text-green-500" />}
+              label="Avg Speed"
+              value={`${workout.cycling_avg_speed.toFixed(1)}`}
+              subValue={
+                workout.cycling_max_speed
+                  ? `Max: ${workout.cycling_max_speed.toFixed(1)} mph`
+                  : undefined
+              }
+            />
+          )}
+          {workout.cycling_avg_cadence && (
+            <MetricCard
+              icon={<Bike className="size-5 text-blue-500" />}
+              label="Cadence"
+              value={`${workout.cycling_avg_cadence}`}
+              subValue="rpm"
+            />
+          )}
+          {workout.cycling_avg_power && (
+            <MetricCard
+              icon={<Zap className="size-5 text-amber-500" />}
+              label="Avg Power"
+              value={`${Math.round(workout.cycling_avg_power)}`}
+              subValue={
+                workout.cycling_max_power
+                  ? `Max: ${Math.round(workout.cycling_max_power)} W`
+                  : 'watts'
+              }
+            />
+          )}
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* WORKOUT EVENTS (Pauses/Laps) */}
+      {/* ============================================ */}
+      {data.workoutEvents && data.workoutEvents.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <SectionHeader
+              icon={<Clock className="size-4 text-cyan-500" />}
+              title="Workout Events"
+              description={`${data.workoutEvents.length} events during your workout`}
+            />
+            <div className="mt-3 space-y-2">
+              {data.workoutEvents.slice(0, 10).map((event, idx) => (
+                <div
+                  key={idx}
+                  className="bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    {event.event_type.includes('pause') ? (
+                      <Pause className="size-4 text-orange-500" />
+                    ) : event.event_type.includes('resume') ? (
+                      <Play className="size-4 text-green-500" />
+                    ) : event.event_type === 'lap' ? (
+                      <Target className="size-4 text-blue-500" />
+                    ) : (
+                      <Activity className="size-4 text-purple-500" />
+                    )}
+                    <span className="font-medium capitalize">
+                      {event.event_type.replace(/_/g, ' ')}
+                    </span>
+                    {event.lap_number && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Lap {event.lap_number}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {format(new Date(event.timestamp), 'h:mm:ss a')}
+                    {event.duration && ` (${Math.round(event.duration)}s)`}
+                  </div>
+                </div>
+              ))}
+              {data.workoutEvents.length > 10 && (
+                <p className="text-muted-foreground text-center text-xs">
+                  +{data.workoutEvents.length - 10} more events
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================ */}
@@ -1437,6 +1784,65 @@ export function EnhancedWorkoutDetailView({
                       <div className="text-muted-foreground text-xs">spm</div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Advanced Running Form Metrics */}
+            {isRunning && (workout.stride_length_avg || workout.ground_contact_time_avg || workout.vertical_oscillation_avg || workout.running_power_avg) && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Activity className="size-4 text-emerald-500" />
+                    <span className="text-sm font-semibold">
+                      Running Form Metrics
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    {workout.stride_length_avg && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">
+                          {(workout.stride_length_avg * 100).toFixed(0)}
+                        </div>
+                        <div className="text-muted-foreground text-[10px]">
+                          Stride (cm)
+                        </div>
+                      </div>
+                    )}
+                    {workout.ground_contact_time_avg && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">
+                          {Math.round(workout.ground_contact_time_avg)}
+                        </div>
+                        <div className="text-muted-foreground text-[10px]">
+                          GCT (ms)
+                        </div>
+                      </div>
+                    )}
+                    {workout.vertical_oscillation_avg && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">
+                          {workout.vertical_oscillation_avg.toFixed(1)}
+                        </div>
+                        <div className="text-muted-foreground text-[10px]">
+                          Oscillation (cm)
+                        </div>
+                      </div>
+                    )}
+                    {workout.running_power_avg && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">
+                          {Math.round(workout.running_power_avg)}
+                        </div>
+                        <div className="text-muted-foreground text-[10px]">
+                          Power (W)
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground mt-3 text-xs">
+                    Lower ground contact time and vertical oscillation typically indicate more efficient running form.
+                  </p>
                 </CardContent>
               </Card>
             )}

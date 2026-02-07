@@ -32,13 +32,76 @@ from petehome_cli.services.vercel import VercelService
 
 console = Console()
 
-# Minimalist style - questionary uses prompt_toolkit styling
+# Yellow-gold fallback when Windows accent cannot be read
+FALLBACK_ACCENT_RGB = (212, 175, 55)  # goldenrod / yellow gold
+
+
+def _get_windows_accent_rgb() -> tuple[int, int, int] | None:
+    """Read Windows 11 accent color from registry. Returns (r, g, b) or None."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent",
+            0,
+            winreg.KEY_READ,
+        )
+        try:
+            value, _ = winreg.QueryValueEx(key, "AccentColor")
+            # DWORD 0xRRGGBB00: R/G/B in high 24 bits; or LE 0x00BBGGRR in low 24 bits
+            if value > 0xFFFFFF:
+                r = (value >> 24) & 0xFF
+                g = (value >> 16) & 0xFF
+                b = (value >> 8) & 0xFF
+            else:
+                r = value & 0xFF
+                g = (value >> 8) & 0xFF
+                b = (value >> 16) & 0xFF
+            return (r, g, b)
+        finally:
+            winreg.CloseKey(key)
+    except (OSError, FileNotFoundError):
+        return None
+
+
+def _gradient_end_from_accent(rgb: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Create a lighter gradient end color by blending accent with white."""
+    r, g, b = rgb
+    blend = 0.45  # blend toward white
+    return (
+        min(255, int(r + (255 - r) * blend)),
+        min(255, int(g + (255 - g) * blend)),
+        min(255, int(b + (255 - b) * blend)),
+    )
+
+
+def _build_theme() -> dict:
+    """Build theme: accent RGB/hex and gradient start/end. Uses Windows accent or gold fallback."""
+    accent = _get_windows_accent_rgb()
+    if accent is None:
+        accent = FALLBACK_ACCENT_RGB
+    gradient_end = _gradient_end_from_accent(accent)
+    r, g, b = accent
+    hex_str = f"#{r:02x}{g:02x}{b:02x}"
+    return {
+        "accent_rgb": accent,
+        "accent_hex": hex_str,
+        "gradient_start_rgb": accent,
+        "gradient_end_rgb": gradient_end,
+    }
+
+
+THEME = _build_theme()
+
+# Minimalist style - questionary uses prompt_toolkit styling (accent = theme color)
 custom_style = Style([
-    ('qmark', 'fg:#6366f1 bold'),
+    ('qmark', f"fg:{THEME['accent_hex']} bold"),
     ('question', 'fg:#71717a'),
     ('answer', 'fg:#22c55e'),
-    ('pointer', 'fg:#6366f1 bold'),
-    ('highlighted', 'fg:#6366f1'),
+    ('pointer', f"fg:{THEME['accent_hex']} bold"),
+    ('highlighted', f"fg:{THEME['accent_hex']}"),
     ('selected', 'fg:#22c55e'),
     ('instruction', 'fg:#525252'),
 ])
@@ -134,15 +197,12 @@ def gradient_text(text: str, start_color: tuple[int, int, int], end_color: tuple
 
 
 def print_welcome():
-    """Print welcome header."""
-    # Gradient from indigo (#6366f1) to cyan (#22d3ee)
-    start = (99, 102, 241)   # indigo
-    end = (34, 211, 238)     # cyan
-
+    """Print welcome header with gradient from theme accent."""
+    start = THEME["gradient_start_rgb"]
+    end = THEME["gradient_end_rgb"]
     logo = gradient_text("petehome", start, end)
-
     console.print()
-    console.print(Text("  ◆ ", style="bold #6366f1") + logo + Text("  cli", style="dim"))
+    console.print(Text("  ◆ ", style=f"bold {THEME['accent_hex']}") + logo + Text("  cli", style="dim"))
     console.print()
 
 
@@ -153,7 +213,7 @@ def print_context():
 
     parts = []
     if branch:
-        parts.append(f"[cyan]{branch}[/]")
+        parts.append(f"[{THEME['accent_hex']}]{branch}[/]")
     if status:
         parts.append(status)
 
@@ -170,7 +230,7 @@ def cmd_help():
     """Show help."""
     # Services column
     services = Table.grid(padding=(0, 2))
-    services.add_column(style="cyan")
+    services.add_column(style=THEME["accent_hex"])
     services.add_column(style="dim")
     services.add_row("status, s", "processes")
     services.add_row("start <name>", "start")
@@ -180,7 +240,7 @@ def cmd_help():
 
     # Git column
     git = Table.grid(padding=(0, 2))
-    git.add_column(style="cyan")
+    git.add_column(style=THEME["accent_hex"])
     git.add_column(style="dim")
     git.add_row("gs", "status")
     git.add_row("ga", "add all")
@@ -194,7 +254,7 @@ def cmd_help():
 
     # Dev column
     dev = Table.grid(padding=(0, 2))
-    dev.add_column(style="cyan")
+    dev.add_column(style=THEME["accent_hex"])
     dev.add_column(style="dim")
     dev.add_row("lint [fix]", "eslint")
     dev.add_row("format", "prettier")
@@ -205,7 +265,7 @@ def cmd_help():
 
     # Deploy column
     deploy = Table.grid(padding=(0, 2))
-    deploy.add_column(style="cyan")
+    deploy.add_column(style=THEME["accent_hex"])
     deploy.add_column(style="dim")
     deploy.add_row("deploy, d", "production")
     deploy.add_row("d status", "latest")
@@ -290,7 +350,7 @@ def resolve_service_name(name: str) -> str | None:
 def cmd_start(args: list[str]):
     """Start a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]start <main|notifications|all>[/]")
+        console.print(f"  [yellow]![/] Usage: [{THEME['accent_hex']}]start <main|notifications|all>[/]")
         return
 
     target = args[0].lower()
@@ -329,7 +389,7 @@ def cmd_start(args: list[str]):
 def cmd_stop(args: list[str]):
     """Stop a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]stop <main|notifications|all>[/]")
+        console.print(f"  [yellow]![/] Usage: [{THEME['accent_hex']}]stop <main|notifications|all>[/]")
         return
 
     target = args[0].lower()
@@ -372,7 +432,7 @@ def cmd_stop(args: list[str]):
 def cmd_restart(args: list[str]):
     """Restart a service."""
     if not args:
-        console.print("  [yellow]![/] Usage: [cyan]restart <main|notifications|all>[/]")
+        console.print(f"  [yellow]![/] Usage: [{THEME['accent_hex']}]restart <main|notifications|all>[/]")
         return
 
     target = args[0].lower()
@@ -434,7 +494,7 @@ def cmd_logs(args: list[str]):
                 elif "ready" in line.lower() or "success" in line.lower() or "compiled" in line.lower():
                     console.print(f"  [green]{escape(line)}[/]")
                 elif line.startswith("PM2") or "|" in line[:30]:
-                    console.print(f"  [cyan]{escape(line)}[/]")
+                    console.print(f"  [{THEME['accent_hex']}]{escape(line)}[/]")
                 else:
                     console.print(f"  {escape(line)}")
         except KeyboardInterrupt:
@@ -558,7 +618,7 @@ def cmd_git(args: list[str]):
                 elif line.startswith('-') and not line.startswith('---'):
                     console.print(f"  [red]{escape(line)}[/]")
                 elif line.startswith('@@'):
-                    console.print(f"  [cyan]{escape(line)}[/]")
+                    console.print(f"  [{THEME['accent_hex']}]{escape(line)}[/]")
                 else:
                     console.print(f"  [dim]{escape(line)}[/]")
             console.print(Rule(style="dim"))
@@ -992,7 +1052,7 @@ def run():
         completer=CommandCompleter(),
         complete_while_typing=True,
     )
-    prompt_text = FormattedText([("#6366f1 bold", "> ")])
+    prompt_text = FormattedText([(f"{THEME['accent_hex']} bold", "> ")])
 
     while True:
         try:

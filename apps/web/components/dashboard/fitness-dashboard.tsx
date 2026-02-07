@@ -57,9 +57,22 @@ export interface AppleWorkout {
   hr_min: number | null
   hr_max: number | null
   hr_zones: any[] | null
+  // Running metrics
   cadence_average: number | null
   pace_average: number | null
   pace_best: number | null
+  stride_length_avg: number | null
+  running_power_avg: number | null
+  ground_contact_time_avg: number | null
+  vertical_oscillation_avg: number | null
+  // Cycling metrics
+  cycling_avg_speed: number | null
+  cycling_max_speed: number | null
+  cycling_avg_cadence: number | null
+  cycling_avg_power: number | null
+  cycling_max_power: number | null
+  // Effort score
+  effort_score: number | null
   source: string
 }
 

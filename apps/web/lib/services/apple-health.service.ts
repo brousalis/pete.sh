@@ -145,11 +145,23 @@ export class AppleHealthService {
       hr_min: workout.heartRate.min,
       hr_max: workout.heartRate.max,
       hr_zones: hrZones,
+      // Running metrics
       cadence_average: workout.runningMetrics?.cadence.average || null,
       pace_average: workout.runningMetrics?.pace.average || null,
       pace_best: workout.runningMetrics?.pace.best || null,
       stride_length_avg: workout.runningMetrics?.strideLength?.average || null,
       running_power_avg: workout.runningMetrics?.runningPower?.average || null,
+      ground_contact_time_avg: workout.runningMetrics?.groundContactTime?.average || null,
+      vertical_oscillation_avg: workout.runningMetrics?.verticalOscillation?.average || null,
+      // Cycling metrics
+      cycling_avg_speed: workout.cyclingMetrics?.avgSpeed || null,
+      cycling_max_speed: workout.cyclingMetrics?.maxSpeed || null,
+      cycling_avg_cadence: workout.cyclingMetrics?.avgCadence || null,
+      cycling_avg_power: workout.cyclingMetrics?.avgPower || null,
+      cycling_max_power: workout.cyclingMetrics?.maxPower || null,
+      // Effort score
+      effort_score: workout.effortScore || null,
+      // Metadata
       source: workout.source,
       source_version: workout.sourceVersion || null,
       device_name: workout.device?.name || null,
@@ -197,6 +209,27 @@ export class AppleHealthService {
     // Save route if available
     if (workout.route) {
       await this.saveRoute(workoutId, workout.route)
+    }
+
+    // Save workout events if available
+    if (workout.workoutEvents?.length) {
+      await this.saveWorkoutEvents(workoutId, workout.workoutEvents)
+    }
+
+    // Save cycling samples if available
+    if (workout.cyclingMetrics?.speedSamples?.length) {
+      await this.saveCyclingSpeedSamples(workoutId, workout.cyclingMetrics.speedSamples)
+    }
+    if (workout.cyclingMetrics?.cadenceSamples?.length) {
+      await this.saveCyclingCadenceSamples(workoutId, workout.cyclingMetrics.cadenceSamples)
+    }
+    if (workout.cyclingMetrics?.powerSamples?.length) {
+      await this.saveCyclingPowerSamples(workoutId, workout.cyclingMetrics.powerSamples)
+    }
+
+    // Save mile splits if available
+    if (workout.runningMetrics?.splits?.length) {
+      await this.saveSplits(workoutId, workout.runningMetrics.splits)
     }
 
     // Trigger workout autocomplete if linked to a day
@@ -350,6 +383,158 @@ export class AppleHealthService {
   }
 
   /**
+   * Save workout events (pauses, segments, laps)
+   */
+  private async saveWorkoutEvents(workoutId: string, events: NonNullable<AppleHealthWorkout['workoutEvents']>): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    // Delete existing events for this workout
+    await db
+      .from('apple_health_workout_events')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = events.map(event => ({
+      workout_id: workoutId,
+      event_type: event.type,
+      timestamp: event.timestamp,
+      duration: event.duration || null,
+      segment_index: event.metadata?.segmentIndex || null,
+      lap_number: event.metadata?.lapNumber || null,
+      distance_meters: event.metadata?.distance || null,
+      split_time: event.metadata?.splitTime || null,
+    }))
+
+    await db.from('apple_health_workout_events').insert(records)
+  }
+
+  /**
+   * Save cycling speed samples
+   */
+  private async saveCyclingSpeedSamples(workoutId: string, samples: NonNullable<AppleHealthWorkout['cyclingMetrics']>['speedSamples']): Promise<void> {
+    if (!samples?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_cycling_speed_samples')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = samples.map(s => ({
+      workout_id: workoutId,
+      timestamp: s.timestamp,
+      speed_mph: s.speedMph,
+    }))
+
+    const chunkSize = 1000
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize)
+      await db.from('apple_health_cycling_speed_samples').insert(chunk)
+    }
+  }
+
+  /**
+   * Save cycling cadence samples
+   */
+  private async saveCyclingCadenceSamples(workoutId: string, samples: NonNullable<AppleHealthWorkout['cyclingMetrics']>['cadenceSamples']): Promise<void> {
+    if (!samples?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_cycling_cadence_samples')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = samples.map(s => ({
+      workout_id: workoutId,
+      timestamp: s.timestamp,
+      rpm: s.rpm,
+    }))
+
+    const chunkSize = 1000
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize)
+      await db.from('apple_health_cycling_cadence_samples').insert(chunk)
+    }
+  }
+
+  /**
+   * Save cycling power samples
+   */
+  private async saveCyclingPowerSamples(workoutId: string, samples: NonNullable<AppleHealthWorkout['cyclingMetrics']>['powerSamples']): Promise<void> {
+    if (!samples?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_cycling_power_samples')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = samples.map(s => ({
+      workout_id: workoutId,
+      timestamp: s.timestamp,
+      watts: s.watts,
+    }))
+
+    const chunkSize = 1000
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize)
+      await db.from('apple_health_cycling_power_samples').insert(chunk)
+    }
+  }
+
+  /**
+   * Save mile/km splits
+   */
+  private async saveSplits(workoutId: string, splits: NonNullable<AppleHealthWorkout['runningMetrics']>['splits']): Promise<void> {
+    if (!splits?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_splits')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = splits.map(s => ({
+      workout_id: workoutId,
+      split_number: s.splitNumber,
+      split_type: s.splitType,
+      distance_meters: s.distanceMeters,
+      time_seconds: s.timeSeconds,
+      avg_pace: s.avgPace,
+      avg_heart_rate: s.avgHeartRate || null,
+      avg_cadence: s.avgCadence || null,
+      elevation_change: s.elevationChange || null,
+    }))
+
+    await db.from('apple_health_splits').insert(records)
+  }
+
+  /**
    * Get recent workouts
    * @param workoutType - Filter by workout type
    * @param limit - Max number of workouts to return
@@ -402,6 +587,11 @@ export class AppleHealthService {
     hrSamples: DbHrSample[]
     cadenceSamples: { timestamp: string; steps_per_minute: number }[]
     paceSamples: { timestamp: string; minutes_per_mile: number }[]
+    cyclingSpeedSamples: { timestamp: string; speed_mph: number }[]
+    cyclingCadenceSamples: { timestamp: string; rpm: number }[]
+    cyclingPowerSamples: { timestamp: string; watts: number }[]
+    workoutEvents: { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[]
+    splits: { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null }[]
   } | null> {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return null
@@ -420,8 +610,17 @@ export class AppleHealthService {
       return null
     }
 
-    // Fetch samples in parallel
-    const [hrResult, cadenceResult, paceResult] = await Promise.all([
+    // Fetch all samples and events in parallel
+    const [
+      hrResult,
+      cadenceResult,
+      paceResult,
+      cyclingSpeedResult,
+      cyclingCadenceResult,
+      cyclingPowerResult,
+      eventsResult,
+      splitsResult
+    ] = await Promise.all([
       db
         .from('apple_health_hr_samples')
         .select('*')
@@ -437,6 +636,31 @@ export class AppleHealthService {
         .select('timestamp, minutes_per_mile')
         .eq('workout_id', workoutId)
         .order('timestamp', { ascending: true }),
+      db
+        .from('apple_health_cycling_speed_samples')
+        .select('timestamp, speed_mph')
+        .eq('workout_id', workoutId)
+        .order('timestamp', { ascending: true }),
+      db
+        .from('apple_health_cycling_cadence_samples')
+        .select('timestamp, rpm')
+        .eq('workout_id', workoutId)
+        .order('timestamp', { ascending: true }),
+      db
+        .from('apple_health_cycling_power_samples')
+        .select('timestamp, watts')
+        .eq('workout_id', workoutId)
+        .order('timestamp', { ascending: true }),
+      db
+        .from('apple_health_workout_events')
+        .select('event_type, timestamp, duration, segment_index, lap_number')
+        .eq('workout_id', workoutId)
+        .order('timestamp', { ascending: true }),
+      db
+        .from('apple_health_splits')
+        .select('split_number, split_type, distance_meters, time_seconds, avg_pace, avg_heart_rate, avg_cadence')
+        .eq('workout_id', workoutId)
+        .order('split_number', { ascending: true }),
     ])
 
     return {
@@ -444,6 +668,11 @@ export class AppleHealthService {
       hrSamples: (hrResult.data as DbHrSample[]) || [],
       cadenceSamples: (cadenceResult.data as { timestamp: string; steps_per_minute: number }[]) || [],
       paceSamples: (paceResult.data as { timestamp: string; minutes_per_mile: number }[]) || [],
+      cyclingSpeedSamples: (cyclingSpeedResult.data || []) as { timestamp: string; speed_mph: number }[],
+      cyclingCadenceSamples: (cyclingCadenceResult.data || []) as { timestamp: string; rpm: number }[],
+      cyclingPowerSamples: (cyclingPowerResult.data || []) as { timestamp: string; watts: number }[],
+      workoutEvents: (eventsResult.data || []) as { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[],
+      splits: (splitsResult.data || []) as { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null }[],
     }
   }
 

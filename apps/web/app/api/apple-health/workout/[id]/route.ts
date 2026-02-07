@@ -83,6 +83,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         minutes_per_mile: s.minutes_per_mile
       }))
 
+      // Transform cycling samples for analytics
+      const cyclingSpeedSamplesForAnalytics = result.cyclingSpeedSamples.map(s => ({
+        timestamp: s.timestamp,
+        speed_mph: s.speed_mph
+      }))
+      
+      const cyclingPowerSamplesForAnalytics = result.cyclingPowerSamples.map(s => ({
+        timestamp: s.timestamp,
+        watts: s.watts
+      }))
+
       enhancedAnalytics = computeEnhancedAnalytics(
         {
           start_date: result.workout.start_date,
@@ -103,7 +114,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         {
           // These could come from user settings or daily metrics
           restingHr: 55, // Could fetch from daily metrics
-          maxHr: 185    // Could be user-configured
+          maxHr: 185,    // Could be user-configured
+          // Include cycling data
+          cyclingSpeedSamples: cyclingSpeedSamplesForAnalytics,
+          cyclingPowerSamples: cyclingPowerSamplesForAnalytics
         }
       )
     }
@@ -116,6 +130,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         hrChart, // Downsampled for charts
         cadenceSamples: result.cadenceSamples,
         paceSamples: result.paceSamples,
+        // Cycling data
+        cyclingSpeedSamples: result.cyclingSpeedSamples,
+        cyclingCadenceSamples: result.cyclingCadenceSamples,
+        cyclingPowerSamples: result.cyclingPowerSamples,
+        // Events and splits
+        workoutEvents: result.workoutEvents,
+        splits: result.splits,
+        // Analytics
         analytics: enhancedAnalytics,
       },
     })

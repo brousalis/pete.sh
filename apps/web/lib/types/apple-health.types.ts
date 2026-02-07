@@ -56,15 +56,88 @@ export interface RunningMetrics {
   }
   strideLength?: {
     average: number // meters
+    samples?: Array<{ timestamp: string; meters: number }>
   }
   groundContactTime?: {
     average: number // milliseconds
+    samples?: Array<{ timestamp: string; milliseconds: number }>
   }
   verticalOscillation?: {
     average: number // centimeters
+    samples?: Array<{ timestamp: string; centimeters: number }>
   }
   runningPower?: {
     average: number // watts
+    samples?: Array<{ timestamp: string; watts: number }>
+  }
+  splits?: MileSplit[]
+}
+
+export interface MileSplit {
+  splitNumber: number
+  splitType: 'mile' | 'kilometer'
+  distanceMeters: number
+  timeSeconds: number
+  avgPace: number // min/mile or min/km
+  avgHeartRate?: number
+  avgCadence?: number
+  elevationChange?: number // meters
+}
+
+// ============================================
+// CYCLING METRICS
+// ============================================
+
+export interface CyclingMetrics {
+  avgSpeed?: number // mph
+  maxSpeed?: number // mph
+  avgCadence?: number // rpm
+  avgPower?: number // watts
+  maxPower?: number // watts
+  speedSamples?: CyclingSpeedSample[]
+  cadenceSamples?: CyclingCadenceSample[]
+  powerSamples?: CyclingPowerSample[]
+}
+
+export interface CyclingSpeedSample {
+  timestamp: string
+  speedMph: number
+}
+
+export interface CyclingCadenceSample {
+  timestamp: string
+  rpm: number
+}
+
+export interface CyclingPowerSample {
+  timestamp: string
+  watts: number
+}
+
+// ============================================
+// WORKOUT EVENTS
+// ============================================
+
+export type WorkoutEventType = 
+  | 'pause'
+  | 'resume'
+  | 'motion_pause'
+  | 'motion_resume'
+  | 'segment'
+  | 'lap'
+  | 'marker'
+  | 'pause_request'
+  | 'unknown'
+
+export interface WorkoutEvent {
+  type: WorkoutEventType
+  timestamp: string
+  duration?: number // seconds, for segments
+  metadata?: {
+    segmentIndex?: number
+    lapNumber?: number
+    distance?: number // meters at this point
+    splitTime?: number // seconds for this segment/lap
   }
 }
 
@@ -125,8 +198,17 @@ export interface AppleHealthWorkout {
   // Running-specific metrics
   runningMetrics?: RunningMetrics
   
+  // Cycling-specific metrics
+  cyclingMetrics?: CyclingMetrics
+  
   // Route data (for outdoor workouts)
   route?: WorkoutRoute
+  
+  // Workout events (pauses, segments, laps)
+  workoutEvents?: WorkoutEvent[]
+  
+  // Effort score (Apple's workout intensity metric, 0-10 scale)
+  effortScore?: number
   
   // Metadata
   source: string // "PeteWatch" or device name

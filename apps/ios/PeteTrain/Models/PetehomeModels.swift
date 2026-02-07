@@ -30,7 +30,14 @@ struct AppleHealthWorkout: Codable {
     let heartRateSamples: [PetehomeHeartRateSample]
     
     let runningMetrics: PetehomeRunningMetrics?
+    let cyclingMetrics: PetehomeCyclingMetrics?
     let route: PetehomeWorkoutRoute?
+    
+    // Workout events (pauses, segments, laps)
+    let workoutEvents: [PetehomeWorkoutEvent]?
+    
+    // Effort score (Apple's workout intensity metric)
+    let effortScore: Double?
     
     let source: String
     let sourceVersion: String?
@@ -69,6 +76,9 @@ struct PetehomeRunningMetrics: Codable {
     let pace: PetehomePaceData
     let strideLength: PetehomeStrideLengthData?
     let runningPower: PetehomeRunningPowerData?
+    let groundContactTime: PetehomeGroundContactTimeData?
+    let verticalOscillation: PetehomeVerticalOscillationData?
+    let splits: [PetehomeSplit]?
 }
 
 struct PetehomeCadenceData: Codable {
@@ -95,10 +105,99 @@ struct PetehomePaceSample: Codable {
 
 struct PetehomeStrideLengthData: Codable {
     let average: Double
+    let samples: [PetehomeStrideLengthSample]?
+}
+
+struct PetehomeStrideLengthSample: Codable {
+    let timestamp: String
+    let meters: Double
 }
 
 struct PetehomeRunningPowerData: Codable {
     let average: Double
+    let samples: [PetehomeRunningPowerSample]?
+}
+
+struct PetehomeRunningPowerSample: Codable {
+    let timestamp: String
+    let watts: Double
+}
+
+struct PetehomeGroundContactTimeData: Codable {
+    let average: Double // milliseconds
+    let samples: [PetehomeGroundContactTimeSample]?
+}
+
+struct PetehomeGroundContactTimeSample: Codable {
+    let timestamp: String
+    let milliseconds: Double
+}
+
+struct PetehomeVerticalOscillationData: Codable {
+    let average: Double // centimeters
+    let samples: [PetehomeVerticalOscillationSample]?
+}
+
+struct PetehomeVerticalOscillationSample: Codable {
+    let timestamp: String
+    let centimeters: Double
+}
+
+/// Mile or kilometer split data
+struct PetehomeSplit: Codable {
+    let splitNumber: Int
+    let splitType: String // "mile" or "kilometer"
+    let distanceMeters: Double
+    let timeSeconds: Double
+    let avgPace: Double // min/mile or min/km
+    let avgHeartRate: Int?
+    let avgCadence: Int?
+    let elevationChange: Double? // meters
+}
+
+// MARK: - Cycling Metrics
+
+struct PetehomeCyclingMetrics: Codable {
+    let avgSpeed: Double? // mph
+    let maxSpeed: Double? // mph
+    let avgCadence: Int? // rpm
+    let avgPower: Double? // watts
+    let maxPower: Double? // watts
+    let speedSamples: [PetehomeCyclingSpeedSample]?
+    let cadenceSamples: [PetehomeCyclingCadenceSample]?
+    let powerSamples: [PetehomeCyclingPowerSample]?
+}
+
+struct PetehomeCyclingSpeedSample: Codable {
+    let timestamp: String
+    let speedMph: Double
+}
+
+struct PetehomeCyclingCadenceSample: Codable {
+    let timestamp: String
+    let rpm: Int
+}
+
+struct PetehomeCyclingPowerSample: Codable {
+    let timestamp: String
+    let watts: Double
+}
+
+// MARK: - Workout Events
+
+/// Represents pause, resume, segment, and lap events during a workout
+struct PetehomeWorkoutEvent: Codable {
+    let type: String // "pause", "resume", "segment", "lap", "marker"
+    let timestamp: String
+    let duration: Double? // For segments, duration in seconds
+    let metadata: PetehomeEventMetadata?
+}
+
+struct PetehomeEventMetadata: Codable {
+    let segmentIndex: Int?
+    let lapNumber: Int?
+    let distance: Double? // meters at this point
+    let splitTime: Double? // seconds for this segment/lap
 }
 
 // MARK: - Route / GPS

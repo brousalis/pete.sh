@@ -1028,7 +1028,26 @@
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "saturday": {},
+        "saturday": {
+          "workout": {
+            "workoutId": "saturday-hiit-sprints",
+            "completed": true,
+            "completedAt": "2026-02-07T22:55:37.292Z",
+            "exercisesCompleted": [
+              "sat-warmup-1",
+              "sat-intervals",
+              "sat-cooldown",
+              "sat-finisher"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-07T22:55:38.511Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "sunday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
@@ -1322,5 +1341,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-07T17:37:57.173Z"
+  "updatedAt": "2026-02-07T23:53:07.433Z"
 }

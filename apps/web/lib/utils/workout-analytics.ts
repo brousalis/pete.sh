@@ -27,6 +27,16 @@ export interface PaceSample {
   minutes_per_mile: number
 }
 
+export interface CyclingSpeedSample {
+  timestamp: string
+  speed_mph: number
+}
+
+export interface CyclingPowerSample {
+  timestamp: string
+  watts: number
+}
+
 export interface HeartRateZone {
   name: 'rest' | 'warmup' | 'fatBurn' | 'cardio' | 'peak'
   minBpm: number
@@ -163,6 +173,9 @@ export interface EnhancedWorkoutAnalytics {
     hr: number | null
     cadence: number | null
     pace: number | null
+    // Cycling metrics
+    cyclingSpeed: number | null
+    cyclingPower: number | null
   }[]
 }
 
@@ -678,173 +691,162 @@ export function calculateSplits(
  * This function handles cases where sample timestamps may not align perfectly
  * with the workout start time (common with Apple Watch cadence/pace data which
  * may start recording later in the workout or have offset timestamps).
+ *
+ * The approach is to align samples by their RELATIVE position within the sample
+ * array to the workout timeline, rather than trusting absolute timestamps for
+ * cadence/pace (which can be unreliable from Apple Watch).
  */
 export function generateTimeSeriesData(
   hrSamples: HrSample[],
   cadenceSamples: CadenceSample[],
   paceSamples: PaceSample[],
   startTime: Date,
-  durationSeconds: number
+  durationSeconds: number,
+  cyclingSpeedSamples: CyclingSpeedSample[] = [],
+  cyclingPowerSamples: CyclingPowerSample[] = []
 ): EnhancedWorkoutAnalytics['timeSeriesData'] {
   const data: EnhancedWorkoutAnalytics['timeSeriesData'] = []
   const startTimeMs = startTime.getTime()
-  const endTimeMs = startTimeMs + durationSeconds * 1000
 
-  // Helper to normalize samples and detect if timestamps need realignment
-  function normalizeSamples<T extends { timestamp: string }>(
+  // Helper to normalize samples using their timestamps relative to workout start
+  function normalizeSamplesByTimestamp<T extends { timestamp: string }>(
     samples: T[],
     getValue: (s: T) => number
-  ): {
-    map: Map<number, number>
-    needsRealignment: boolean
-    minElapsed: number
-    maxElapsed: number
-  } {
+  ): Map<number, number> {
     const map = new Map<number, number>()
-    let minElapsed = Infinity
-    let maxElapsed = -Infinity
-    let outsideCount = 0
 
     samples.forEach(sample => {
       const sampleTime = parseTimestamp(sample.timestamp).getTime()
       const elapsed = Math.round((sampleTime - startTimeMs) / 1000)
-
-      // Track if sample is outside expected workout range
-      if (elapsed < -30 || elapsed > durationSeconds + 30) {
-        outsideCount++
-      }
-
-      minElapsed = Math.min(minElapsed, elapsed)
-      maxElapsed = Math.max(maxElapsed, elapsed)
       map.set(elapsed, getValue(sample))
     })
 
-    // If more than 50% of samples are outside workout range, timestamps likely need realignment
-    const needsRealignment =
-      samples.length > 0 && outsideCount > samples.length * 0.5
-
-    return { map, needsRealignment, minElapsed, maxElapsed }
+    return map
   }
 
-  // Normalize HR samples (usually reliable)
-  const hrResult = normalizeSamples(hrSamples, s => s.bpm)
-  const hrMap = hrResult.map
+  // Normalize HR samples (usually reliable from Apple Watch heart rate sensor)
+  const hrMap = normalizeSamplesByTimestamp(hrSamples, s => s.bpm)
 
-  // Normalize cadence samples - may need realignment
-  const cadenceResult = normalizeSamples(
-    cadenceSamples,
+  // Filter cadence samples to remove outliers before normalizing
+  // Valid running cadence is typically 150-200 SPM, walking is 100-140 SPM
+  // Filter to 100-220 SPM to allow for variations
+  const validCadenceSamples = cadenceSamples.filter(
+    s => s.steps_per_minute >= 100 && s.steps_per_minute <= 220
+  )
+
+  // Use timestamps directly for cadence - they represent when cadence was actually measured
+  // Cadence data often starts late in a workout (pedometer calibration, warmup, etc.)
+  const cadenceMap = normalizeSamplesByTimestamp(
+    validCadenceSamples,
     s => s.steps_per_minute
   )
-  let cadenceMap = cadenceResult.map
 
-  // Normalize pace samples - may need realignment
-  const paceResult = normalizeSamples(paceSamples, s => s.minutes_per_mile)
-  let paceMap = paceResult.map
+  // Filter pace samples to remove outliers (valid pace is typically 5-20 min/mile)
+  const validPaceSamples = paceSamples.filter(
+    s => s.minutes_per_mile >= 4 && s.minutes_per_mile <= 25
+  )
 
-  // Check if cadence timestamps need realignment
-  // This handles cases where cadence samples use their own timestamp reference
-  // (e.g., timestamps relative to when cadence sensor started, not workout start)
-  //
-  // We detect misalignment when:
-  // 1. The sample timestamps span a range similar to workout duration, BUT
-  // 2. The first sample is significantly offset from workout start
-  // This distinguishes from legitimate late starts (user warming up) where
-  // the span would be shorter than workout duration
-  if (cadenceSamples.length > 1) {
-    const cadenceSpan = cadenceResult.maxElapsed - cadenceResult.minElapsed
-    const expectedSpan = durationSeconds * 0.7 // Samples should cover at least 70% of workout
-    const isSignificantOffset =
-      cadenceResult.minElapsed > durationSeconds * 0.25 ||
-      cadenceResult.minElapsed < -30
-    const spanMatchesDuration = cadenceSpan > expectedSpan
+  // Use timestamps directly for pace as well
+  const paceMap = normalizeSamplesByTimestamp(
+    validPaceSamples,
+    s => s.minutes_per_mile
+  )
 
-    // If samples span the expected duration but are offset, scale them to fit workout
-    if (isSignificantOffset && spanMatchesDuration) {
-      cadenceMap = new Map<number, number>()
-      // Scale samples to map from [minElapsed, maxElapsed] -> [0, durationSeconds]
-      const minElapsed = cadenceResult.minElapsed
-      const scale = cadenceSpan > 0 ? durationSeconds / cadenceSpan : 1
-      cadenceSamples.forEach(sample => {
-        const sampleTime = parseTimestamp(sample.timestamp).getTime()
-        const originalElapsed = Math.round((sampleTime - startTimeMs) / 1000)
-        // Scale to fit workout duration
-        const scaledElapsed = Math.round((originalElapsed - minElapsed) * scale)
-        // Ensure scaled time is within workout bounds
-        if (scaledElapsed >= 0 && scaledElapsed <= durationSeconds) {
-          cadenceMap.set(scaledElapsed, sample.steps_per_minute)
-        }
-      })
-    } else if (cadenceResult.needsRealignment) {
-      // Fallback: if timestamps are completely outside workout range, distribute evenly
-      cadenceMap = new Map<number, number>()
-      const cadenceInterval = durationSeconds / (cadenceSamples.length - 1 || 1)
-      cadenceSamples.forEach((sample, idx) => {
-        const elapsed = Math.round(idx * cadenceInterval)
-        cadenceMap.set(elapsed, sample.steps_per_minute)
-      })
+  // Helper to interpolate value from a map at a given elapsed time
+  // maxGap controls how far we're willing to look for nearby values
+  function interpolateFromMap(
+    map: Map<number, number>,
+    targetElapsed: number,
+    maxGap: number = 90 // Default max gap of 90 seconds for interpolation
+  ): number | null {
+    if (map.size === 0) return null
+
+    // First, try to find exact match
+    if (map.has(targetElapsed)) {
+      return map.get(targetElapsed)!
     }
-  }
 
-  // Same logic for pace samples
-  if (paceSamples.length > 1) {
-    const paceSpan = paceResult.maxElapsed - paceResult.minElapsed
-    const expectedSpan = durationSeconds * 0.7
-    const isSignificantOffset =
-      paceResult.minElapsed > durationSeconds * 0.25 ||
-      paceResult.minElapsed < -30
-    const spanMatchesDuration = paceSpan > expectedSpan
+    // Find nearest values before and after target
+    let before: { elapsed: number; value: number } | null = null
+    let after: { elapsed: number; value: number } | null = null
 
-    if (isSignificantOffset && spanMatchesDuration) {
-      paceMap = new Map<number, number>()
-      // Scale samples to map from [minElapsed, maxElapsed] -> [0, durationSeconds]
-      const minElapsed = paceResult.minElapsed
-      const scale = paceSpan > 0 ? durationSeconds / paceSpan : 1
-      paceSamples.forEach(sample => {
-        const sampleTime = parseTimestamp(sample.timestamp).getTime()
-        const originalElapsed = Math.round((sampleTime - startTimeMs) / 1000)
-        const scaledElapsed = Math.round((originalElapsed - minElapsed) * scale)
-        if (scaledElapsed >= 0 && scaledElapsed <= durationSeconds) {
-          paceMap.set(scaledElapsed, sample.minutes_per_mile)
+    for (const [elapsed, value] of map.entries()) {
+      if (elapsed <= targetElapsed) {
+        if (!before || elapsed > before.elapsed) {
+          before = { elapsed, value }
         }
-      })
-    } else if (paceResult.needsRealignment) {
-      paceMap = new Map<number, number>()
-      const paceInterval = durationSeconds / (paceSamples.length - 1 || 1)
-      paceSamples.forEach((sample, idx) => {
-        const elapsed = Math.round(idx * paceInterval)
-        paceMap.set(elapsed, sample.minutes_per_mile)
-      })
+      }
+      if (elapsed >= targetElapsed) {
+        if (!after || elapsed < after.elapsed) {
+          after = { elapsed, value }
+        }
+      }
     }
+
+    // If we have both before and after within acceptable gap, interpolate
+    if (before && after && before.elapsed !== after.elapsed) {
+      const gap = after.elapsed - before.elapsed
+      // Only interpolate if the gap between samples is reasonable
+      if (gap <= maxGap * 2) {
+        const ratio =
+          (targetElapsed - before.elapsed) / (after.elapsed - before.elapsed)
+        return Math.round(before.value + (after.value - before.value) * ratio)
+      }
+    }
+
+    // If only one side exists, use it if within maxGap
+    if (before && targetElapsed - before.elapsed <= maxGap) {
+      return before.value
+    }
+    if (after && after.elapsed - targetElapsed <= maxGap) {
+      return after.value
+    }
+
+    return null
   }
 
   // Generate data points at regular intervals (every 15 seconds)
   const interval = 15
-  for (let elapsed = 0; elapsed <= durationSeconds; elapsed += interval) {
-    // Find nearest values (within 30 seconds)
-    let hr: number | null = null
-    let cadence: number | null = null
-    let pace: number | null = null
 
-    for (let offset = 0; offset <= 30; offset++) {
-      if (hr === null && hrMap.has(elapsed + offset))
-        hr = hrMap.get(elapsed + offset)!
-      if (hr === null && hrMap.has(elapsed - offset))
-        hr = hrMap.get(elapsed - offset)!
-      if (cadence === null && cadenceMap.has(elapsed + offset))
-        cadence = cadenceMap.get(elapsed + offset)!
-      if (cadence === null && cadenceMap.has(elapsed - offset))
-        cadence = cadenceMap.get(elapsed - offset)!
-      if (pace === null && paceMap.has(elapsed + offset))
-        pace = paceMap.get(elapsed + offset)!
-      if (pace === null && paceMap.has(elapsed - offset))
-        pace = paceMap.get(elapsed - offset)!
-    }
+  // HR samples are dense (~every 5-7 seconds), use small gap
+  // Cadence/pace samples are sparse (~every 60 seconds), use larger gap
+  const hrMaxGap = 30 // HR should interpolate within 30 seconds
+  const cadenceMaxGap = 90 // Cadence can interpolate within 90 seconds (1.5 min)
+  const paceMaxGap = 90
+  const cyclingMaxGap = 60 // Cycling data can interpolate within 60 seconds
+
+  // Normalize cycling speed samples (valid speeds: 1-50 mph)
+  const validCyclingSpeedSamples = cyclingSpeedSamples.filter(
+    s => s.speed_mph >= 1 && s.speed_mph <= 50
+  )
+  const cyclingSpeedMap = normalizeSamplesByTimestamp(
+    validCyclingSpeedSamples,
+    s => s.speed_mph
+  )
+
+  // Normalize cycling power samples (valid power: 0-2000 watts)
+  const validCyclingPowerSamples = cyclingPowerSamples.filter(
+    s => s.watts >= 0 && s.watts <= 2000
+  )
+  const cyclingPowerMap = normalizeSamplesByTimestamp(
+    validCyclingPowerSamples,
+    s => s.watts
+  )
+
+  for (let elapsed = 0; elapsed <= durationSeconds; elapsed += interval) {
+    const hr = interpolateFromMap(hrMap, elapsed, hrMaxGap)
+    const cadence = interpolateFromMap(cadenceMap, elapsed, cadenceMaxGap)
+    const pace = interpolateFromMap(paceMap, elapsed, paceMaxGap)
+    const cyclingSpeed = interpolateFromMap(cyclingSpeedMap, elapsed, cyclingMaxGap)
+    const cyclingPower = interpolateFromMap(cyclingPowerMap, elapsed, cyclingMaxGap)
 
     data.push({
       elapsedSeconds: elapsed,
       hr,
       cadence,
       pace,
+      cyclingSpeed,
+      cyclingPower,
     })
   }
 
@@ -1008,9 +1010,11 @@ export function computeEnhancedAnalytics(
   options: {
     restingHr?: number
     maxHr?: number
+    cyclingSpeedSamples?: CyclingSpeedSample[]
+    cyclingPowerSamples?: CyclingPowerSample[]
   } = {}
 ): EnhancedWorkoutAnalytics {
-  const { restingHr = 60, maxHr = 185 } = options
+  const { restingHr = 60, maxHr = 185, cyclingSpeedSamples = [], cyclingPowerSamples = [] } = options
 
   const startTime = parseTimestamp(workout.start_date)
   const durationSeconds = workout.duration
@@ -1103,7 +1107,9 @@ export function computeEnhancedAnalytics(
     cadenceSamples,
     paceSamples,
     startTime,
-    durationSeconds
+    durationSeconds,
+    cyclingSpeedSamples,
+    cyclingPowerSamples
   )
 
   // Generate insights

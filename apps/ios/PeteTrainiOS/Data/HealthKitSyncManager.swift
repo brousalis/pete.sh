@@ -118,12 +118,19 @@ final class HealthKitSyncManager {
             HKQuantityType(.runningPower),
             HKQuantityType(.runningGroundContactTime),
             HKQuantityType(.runningVerticalOscillation),
+            // Cycling Metrics
+            HKQuantityType(.cyclingSpeed),
+            HKQuantityType(.cyclingCadence),
+            HKQuantityType(.cyclingPower),
+            HKQuantityType(.distanceCycling),
             // Walking Metrics
             HKQuantityType(.walkingHeartRateAverage),
             HKQuantityType(.walkingDoubleSupportPercentage),
             HKQuantityType(.walkingAsymmetryPercentage),
             HKQuantityType(.walkingSpeed),
             HKQuantityType(.walkingStepLength),
+            // Workout Effort
+            HKQuantityType(.physicalEffort),
             // Activity Summary
             HKObjectType.activitySummaryType(),
             // Workouts & Routes
@@ -437,15 +444,42 @@ final class HealthKitSyncManager {
     // MARK: - Workout Payload Building
 
     private func buildWorkoutPayload(workout: HKWorkout) async throws -> WorkoutPayload {
+        // Query all samples in parallel for efficiency
         async let hrSamples = queryHeartRateSamples(for: workout)
         async let cadenceSamples = queryCadenceSamples(for: workout)
         async let paceSamples = queryPaceSamples(for: workout)
         async let route = queryRoute(for: workout)
+        
+        // Query advanced running metrics (only available for running workouts)
+        let isRunning = workout.workoutActivityType == .running
+        async let strideLength = isRunning ? queryStrideLength(for: workout) : nil
+        async let runningPower = isRunning ? queryRunningPower(for: workout) : nil
+        async let groundContactTime = isRunning ? queryGroundContactTime(for: workout) : nil
+        async let verticalOscillation = isRunning ? queryVerticalOscillation(for: workout) : nil
+        
+        // Query cycling metrics (only for cycling workouts)
+        async let cyclingMetrics = queryCyclingMetrics(for: workout)
+        
+        // Query effort score (available for all workout types)
+        async let effortScore = queryEffortScore(for: workout)
 
         let hrSamplesResult = try await hrSamples
         let cadenceSamplesResult = try await cadenceSamples
         let paceSamplesResult = try await paceSamples
         let routeResult = try await route
+        
+        // Await advanced metrics
+        let strideLengthResult = try await strideLength
+        let runningPowerResult = try await runningPower
+        let groundContactTimeResult = try await groundContactTime
+        let verticalOscillationResult = try await verticalOscillation
+        
+        // Await cycling and effort
+        let cyclingMetricsResult = try await cyclingMetrics
+        let effortScoreResult = try await effortScore
+        
+        // Get workout events (synchronous)
+        let workoutEvents = queryWorkoutEvents(for: workout)
 
         let hrValues = hrSamplesResult.map { $0.bpm }
         let avgHR = hrValues.isEmpty ? 0 : hrValues.reduce(0, +) / hrValues.count
@@ -463,16 +497,30 @@ final class HealthKitSyncManager {
         )
 
         var runningMetrics: PetehomeRunningMetrics? = nil
-        if !cadenceSamplesResult.isEmpty || !paceSamplesResult.isEmpty {
+        let hasRunningData = !cadenceSamplesResult.isEmpty || !paceSamplesResult.isEmpty ||
+                             strideLengthResult != nil || runningPowerResult != nil
+        
+        if hasRunningData {
             let avgCadence = cadenceSamplesResult.isEmpty ? 0 : cadenceSamplesResult.map { $0.stepsPerMinute }.reduce(0, +) / cadenceSamplesResult.count
             let avgPace = paceSamplesResult.isEmpty ? 0 : paceSamplesResult.map { $0.minutesPerMile }.reduce(0, +) / Double(paceSamplesResult.count)
             let bestPace = paceSamplesResult.map { $0.minutesPerMile }.filter { $0 > 0 }.min() ?? 0
+            
+            // Calculate mile splits
+            let splits = calculateMileSplits(
+                for: workout,
+                hrSamples: hrSamplesResult,
+                cadenceSamples: cadenceSamplesResult,
+                paceSamples: paceSamplesResult
+            )
 
             runningMetrics = PetehomeRunningMetrics(
                 cadence: PetehomeCadenceData(average: avgCadence, samples: cadenceSamplesResult),
                 pace: PetehomePaceData(average: avgPace, best: bestPace, samples: paceSamplesResult),
-                strideLength: nil,
-                runningPower: nil
+                strideLength: strideLengthResult,
+                runningPower: runningPowerResult,
+                groundContactTime: groundContactTimeResult,
+                verticalOscillation: verticalOscillationResult,
+                splits: splits.isEmpty ? nil : splits
             )
         }
 
@@ -503,7 +551,10 @@ final class HealthKitSyncManager {
             heartRate: heartRateSummary,
             heartRateSamples: hrSamplesResult,
             runningMetrics: runningMetrics,
+            cyclingMetrics: cyclingMetricsResult,
             route: routeResult,
+            workoutEvents: workoutEvents.isEmpty ? nil : workoutEvents,
+            effortScore: effortScoreResult,
             source: "PeteTrain-iOS",
             sourceVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             device: deviceInfo,
@@ -592,6 +643,155 @@ final class HealthKitSyncManager {
     // MARK: - Cadence Samples
 
     private func queryCadenceSamples(for workout: HKWorkout) async throws -> [PetehomeCadenceSample] {
+        // Try to calculate cadence from speed and stride length first (more accurate)
+        // Cadence = Speed / Stride Length (in steps per minute)
+        let cadenceFromMetrics = try await queryCadenceFromSpeedAndStride(for: workout)
+        if !cadenceFromMetrics.isEmpty {
+            return cadenceFromMetrics
+        }
+        
+        // Fallback: Query individual step count samples and calculate cadence from sample duration
+        let stepType = HKQuantityType(.stepCount)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: stepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                var cadenceSamples: [PetehomeCadenceSample] = []
+                
+                if let quantitySamples = samples as? [HKQuantitySample] {
+                    for sample in quantitySamples {
+                        let steps = sample.quantity.doubleValue(for: .count())
+                        let durationMinutes = sample.endDate.timeIntervalSince(sample.startDate) / 60.0
+                        
+                        // Calculate steps per minute for this sample
+                        if durationMinutes > 0 {
+                            let stepsPerMinute = Int(steps / durationMinutes)
+                            // Only include reasonable cadence values (100-220 SPM for running)
+                            if stepsPerMinute >= 100 && stepsPerMinute <= 220 {
+                                cadenceSamples.append(PetehomeCadenceSample(
+                                    timestamp: sample.startDate.iso8601String,
+                                    stepsPerMinute: stepsPerMinute
+                                ))
+                            }
+                        }
+                    }
+                }
+
+                continuation.resume(returning: cadenceSamples)
+            }
+
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Calculate cadence from running speed and stride length
+    /// Formula: Cadence (spm) = Speed (m/s) / Stride Length (m) * 60
+    private func queryCadenceFromSpeedAndStride(for workout: HKWorkout) async throws -> [PetehomeCadenceSample] {
+        let speedType = HKQuantityType(.runningSpeed)
+        let strideType = HKQuantityType(.runningStrideLength)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        // Query speed samples
+        let speedSamples: [HKQuantitySample] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: speedType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: (samples as? [HKQuantitySample]) ?? [])
+            }
+            self.healthStore.execute(query)
+        }
+        
+        // Query stride length samples
+        let strideSamples: [HKQuantitySample] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: strideType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: (samples as? [HKQuantitySample]) ?? [])
+            }
+            self.healthStore.execute(query)
+        }
+        
+        // Need both speed and stride samples to calculate cadence
+        guard !speedSamples.isEmpty && !strideSamples.isEmpty else {
+            return []
+        }
+        
+        // Create a dictionary of stride lengths by timestamp for quick lookup
+        var strideByTimestamp: [TimeInterval: Double] = [:]
+        for sample in strideSamples {
+            let stride = sample.quantity.doubleValue(for: .meter())
+            strideByTimestamp[sample.startDate.timeIntervalSinceReferenceDate] = stride
+        }
+        
+        var cadenceSamples: [PetehomeCadenceSample] = []
+        
+        for speedSample in speedSamples {
+            let speedMps = speedSample.quantity.doubleValue(for: .meter().unitDivided(by: .second()))
+            
+            // Find nearest stride length sample
+            let timestamp = speedSample.startDate.timeIntervalSinceReferenceDate
+            var nearestStride: Double? = nil
+            var minDiff = TimeInterval.infinity
+            
+            for (strideTimestamp, stride) in strideByTimestamp {
+                let diff = abs(timestamp - strideTimestamp)
+                if diff < minDiff && diff < 60 { // Within 60 seconds
+                    minDiff = diff
+                    nearestStride = stride
+                }
+            }
+            
+            if let stride = nearestStride, stride > 0 {
+                // Cadence = (speed / stride) * 60 seconds
+                let cadence = Int((speedMps / stride) * 60.0)
+                
+                // Filter to reasonable running cadence
+                if cadence >= 100 && cadence <= 220 {
+                    cadenceSamples.append(PetehomeCadenceSample(
+                        timestamp: speedSample.startDate.iso8601String,
+                        stepsPerMinute: cadence
+                    ))
+                }
+            }
+        }
+        
+        return cadenceSamples
+    }
+    
+    /// Fallback method to calculate cadence from step count aggregated per minute
+    private func queryCadenceFromStepCount(for workout: HKWorkout) async throws -> [PetehomeCadenceSample] {
         let stepType = HKQuantityType(.stepCount)
         let predicate = HKQuery.predicateForSamples(
             withStart: workout.startDate,
@@ -620,10 +820,15 @@ final class HealthKitSyncManager {
                 results?.enumerateStatistics(from: workout.startDate, to: workout.endDate) { statistics, _ in
                     if let sum = statistics.sumQuantity() {
                         let steps = sum.doubleValue(for: .count())
-                        samples.append(PetehomeCadenceSample(
-                            timestamp: statistics.startDate.iso8601String,
-                            stepsPerMinute: Int(steps)
-                        ))
+                        // This is total steps in the minute, which equals steps-per-minute
+                        let stepsPerMinute = Int(steps)
+                        // Only include reasonable cadence values
+                        if stepsPerMinute >= 100 && stepsPerMinute <= 220 {
+                            samples.append(PetehomeCadenceSample(
+                                timestamp: statistics.startDate.iso8601String,
+                                stepsPerMinute: stepsPerMinute
+                            ))
+                        }
                     }
                 }
 
@@ -671,6 +876,519 @@ final class HealthKitSyncManager {
                 continuation.resume(returning: paceSamples)
             }
 
+            self.healthStore.execute(query)
+        }
+    }
+    
+    // MARK: - Advanced Running Metrics
+    
+    /// Query stride length samples from HealthKit
+    private func queryStrideLength(for workout: HKWorkout) async throws -> PetehomeStrideLengthData? {
+        let strideLengthType = HKQuantityType(.runningStrideLength)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: strideLengthType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let strideSamples: [PetehomeStrideLengthSample] = quantitySamples.map { sample in
+                    let meters = sample.quantity.doubleValue(for: .meter())
+                    return PetehomeStrideLengthSample(
+                        timestamp: sample.startDate.iso8601String,
+                        meters: meters
+                    )
+                }
+                
+                let avgStride = strideSamples.map { $0.meters }.reduce(0, +) / Double(strideSamples.count)
+                
+                continuation.resume(returning: PetehomeStrideLengthData(
+                    average: avgStride,
+                    samples: strideSamples
+                ))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query running power samples from HealthKit
+    private func queryRunningPower(for workout: HKWorkout) async throws -> PetehomeRunningPowerData? {
+        let powerType = HKQuantityType(.runningPower)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: powerType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let powerSamples: [PetehomeRunningPowerSample] = quantitySamples.map { sample in
+                    let watts = sample.quantity.doubleValue(for: .watt())
+                    return PetehomeRunningPowerSample(
+                        timestamp: sample.startDate.iso8601String,
+                        watts: watts
+                    )
+                }
+                
+                let avgPower = powerSamples.map { $0.watts }.reduce(0, +) / Double(powerSamples.count)
+                
+                continuation.resume(returning: PetehomeRunningPowerData(
+                    average: avgPower,
+                    samples: powerSamples
+                ))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query ground contact time samples from HealthKit
+    private func queryGroundContactTime(for workout: HKWorkout) async throws -> PetehomeGroundContactTimeData? {
+        let gctType = HKQuantityType(.runningGroundContactTime)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: gctType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let gctSamples: [PetehomeGroundContactTimeSample] = quantitySamples.map { sample in
+                    let milliseconds = sample.quantity.doubleValue(for: .secondUnit(with: .milli))
+                    return PetehomeGroundContactTimeSample(
+                        timestamp: sample.startDate.iso8601String,
+                        milliseconds: milliseconds
+                    )
+                }
+                
+                let avgGCT = gctSamples.map { $0.milliseconds }.reduce(0, +) / Double(gctSamples.count)
+                
+                continuation.resume(returning: PetehomeGroundContactTimeData(
+                    average: avgGCT,
+                    samples: gctSamples
+                ))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query vertical oscillation samples from HealthKit
+    private func queryVerticalOscillation(for workout: HKWorkout) async throws -> PetehomeVerticalOscillationData? {
+        let voType = HKQuantityType(.runningVerticalOscillation)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: voType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let voSamples: [PetehomeVerticalOscillationSample] = quantitySamples.map { sample in
+                    let centimeters = sample.quantity.doubleValue(for: .meterUnit(with: .centi))
+                    return PetehomeVerticalOscillationSample(
+                        timestamp: sample.startDate.iso8601String,
+                        centimeters: centimeters
+                    )
+                }
+                
+                let avgVO = voSamples.map { $0.centimeters }.reduce(0, +) / Double(voSamples.count)
+                
+                continuation.resume(returning: PetehomeVerticalOscillationData(
+                    average: avgVO,
+                    samples: voSamples
+                ))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    // MARK: - Mile Splits
+    
+    /// Calculate mile splits from distance and time data
+    private func calculateMileSplits(
+        for workout: HKWorkout,
+        hrSamples: [PetehomeHeartRateSample],
+        cadenceSamples: [PetehomeCadenceSample],
+        paceSamples: [PetehomePaceSample]
+    ) -> [PetehomeSplit] {
+        guard let distanceMeters = workout.statistics(for: HKQuantityType(.distanceWalkingRunning))?.sumQuantity()?.doubleValue(for: .meter()),
+              distanceMeters > 0 else {
+            return []
+        }
+        
+        let distanceMiles = distanceMeters / 1609.344
+        let numFullMiles = Int(distanceMiles)
+        
+        guard numFullMiles > 0 else { return [] }
+        
+        var splits: [PetehomeSplit] = []
+        let totalDuration = workout.duration
+        
+        // If we have pace samples, use them for accurate splits
+        if !paceSamples.isEmpty {
+            let samplesPerMile = paceSamples.count / numFullMiles
+            
+            for mileNum in 1...numFullMiles {
+                let startIdx = (mileNum - 1) * samplesPerMile
+                let endIdx = min(mileNum * samplesPerMile, paceSamples.count)
+                let milePaceSamples = Array(paceSamples[startIdx..<endIdx])
+                
+                let avgPace = milePaceSamples.isEmpty ? 0 :
+                    milePaceSamples.map { $0.minutesPerMile }.reduce(0, +) / Double(milePaceSamples.count)
+                let timeSeconds = avgPace * 60
+                
+                // Find corresponding HR samples
+                let hrStartIdx = (mileNum - 1) * hrSamples.count / numFullMiles
+                let hrEndIdx = mileNum * hrSamples.count / numFullMiles
+                let mileHrSamples = Array(hrSamples[hrStartIdx..<min(hrEndIdx, hrSamples.count)])
+                let avgHr = mileHrSamples.isEmpty ? nil :
+                    mileHrSamples.map { $0.bpm }.reduce(0, +) / mileHrSamples.count
+                
+                // Find corresponding cadence samples
+                let cadenceStartIdx = (mileNum - 1) * cadenceSamples.count / numFullMiles
+                let cadenceEndIdx = mileNum * cadenceSamples.count / numFullMiles
+                let mileCadenceSamples = Array(cadenceSamples[cadenceStartIdx..<min(cadenceEndIdx, cadenceSamples.count)])
+                let avgCadence = mileCadenceSamples.isEmpty ? nil :
+                    mileCadenceSamples.map { $0.stepsPerMinute }.reduce(0, +) / mileCadenceSamples.count
+                
+                splits.append(PetehomeSplit(
+                    splitNumber: mileNum,
+                    splitType: "mile",
+                    distanceMeters: 1609.344,
+                    timeSeconds: timeSeconds,
+                    avgPace: avgPace,
+                    avgHeartRate: avgHr,
+                    avgCadence: avgCadence,
+                    elevationChange: nil
+                ))
+            }
+        } else {
+            // Fallback: calculate splits from total time and distance
+            let avgPace = totalDuration / 60.0 / distanceMiles // min/mile
+            let mileTime = avgPace * 60 // seconds per mile
+            
+            for mileNum in 1...numFullMiles {
+                splits.append(PetehomeSplit(
+                    splitNumber: mileNum,
+                    splitType: "mile",
+                    distanceMeters: 1609.344,
+                    timeSeconds: mileTime,
+                    avgPace: avgPace,
+                    avgHeartRate: nil,
+                    avgCadence: nil,
+                    elevationChange: nil
+                ))
+            }
+        }
+        
+        return splits
+    }
+    
+    // MARK: - Cycling Metrics
+    
+    /// Query cycling metrics for a cycling workout
+    private func queryCyclingMetrics(for workout: HKWorkout) async throws -> PetehomeCyclingMetrics? {
+        // Only query cycling metrics for cycling workouts
+        guard workout.workoutActivityType == .cycling else { return nil }
+        
+        async let speedSamples = queryCyclingSpeed(for: workout)
+        async let cadenceSamples = queryCyclingCadence(for: workout)
+        async let powerSamples = queryCyclingPower(for: workout)
+        
+        let speedResult = try await speedSamples
+        let cadenceResult = try await cadenceSamples
+        let powerResult = try await powerSamples
+        
+        // Return nil if no cycling data available
+        guard !speedResult.isEmpty || !cadenceResult.isEmpty || !powerResult.isEmpty else {
+            return nil
+        }
+        
+        let avgSpeed = speedResult.isEmpty ? nil : speedResult.map { $0.speedMph }.reduce(0, +) / Double(speedResult.count)
+        let maxSpeed = speedResult.map { $0.speedMph }.max()
+        let avgCadence = cadenceResult.isEmpty ? nil : cadenceResult.map { $0.rpm }.reduce(0, +) / cadenceResult.count
+        let avgPower = powerResult.isEmpty ? nil : powerResult.map { $0.watts }.reduce(0, +) / Double(powerResult.count)
+        let maxPower = powerResult.map { $0.watts }.max()
+        
+        return PetehomeCyclingMetrics(
+            avgSpeed: avgSpeed,
+            maxSpeed: maxSpeed,
+            avgCadence: avgCadence,
+            avgPower: avgPower,
+            maxPower: maxPower,
+            speedSamples: speedResult.isEmpty ? nil : speedResult,
+            cadenceSamples: cadenceResult.isEmpty ? nil : cadenceResult,
+            powerSamples: powerResult.isEmpty ? nil : powerResult
+        )
+    }
+    
+    private func queryCyclingSpeed(for workout: HKWorkout) async throws -> [PetehomeCyclingSpeedSample] {
+        let speedType = HKQuantityType(.cyclingSpeed)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: speedType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                let speedSamples: [PetehomeCyclingSpeedSample] = (samples as? [HKQuantitySample])?.map { sample in
+                    let speedMps = sample.quantity.doubleValue(for: .meter().unitDivided(by: .second()))
+                    let speedMph = speedMps * 2.237
+                    return PetehomeCyclingSpeedSample(
+                        timestamp: sample.startDate.iso8601String,
+                        speedMph: speedMph
+                    )
+                } ?? []
+                
+                continuation.resume(returning: speedSamples)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    private func queryCyclingCadence(for workout: HKWorkout) async throws -> [PetehomeCyclingCadenceSample] {
+        let cadenceType = HKQuantityType(.cyclingCadence)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: cadenceType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                let cadenceSamples: [PetehomeCyclingCadenceSample] = (samples as? [HKQuantitySample])?.map { sample in
+                    let rpm = Int(sample.quantity.doubleValue(for: .count().unitDivided(by: .minute())))
+                    return PetehomeCyclingCadenceSample(
+                        timestamp: sample.startDate.iso8601String,
+                        rpm: rpm
+                    )
+                } ?? []
+                
+                continuation.resume(returning: cadenceSamples)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    private func queryCyclingPower(for workout: HKWorkout) async throws -> [PetehomeCyclingPowerSample] {
+        let powerType = HKQuantityType(.cyclingPower)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: powerType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                let powerSamples: [PetehomeCyclingPowerSample] = (samples as? [HKQuantitySample])?.map { sample in
+                    let watts = sample.quantity.doubleValue(for: .watt())
+                    return PetehomeCyclingPowerSample(
+                        timestamp: sample.startDate.iso8601String,
+                        watts: watts
+                    )
+                } ?? []
+                
+                continuation.resume(returning: powerSamples)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    // MARK: - Workout Events
+    
+    /// Query workout events (pauses, resumes, segments, laps) from a workout
+    private func queryWorkoutEvents(for workout: HKWorkout) -> [PetehomeWorkoutEvent] {
+        guard let events = workout.workoutEvents else { return [] }
+        
+        var petehomeEvents: [PetehomeWorkoutEvent] = []
+        var segmentIndex = 0
+        var lapNumber = 0
+        
+        for event in events {
+            let eventType: String
+            var metadata: PetehomeEventMetadata? = nil
+            
+            switch event.type {
+            case .pause:
+                eventType = "pause"
+            case .resume:
+                eventType = "resume"
+            case .motionPaused:
+                eventType = "motion_pause"
+            case .motionResumed:
+                eventType = "motion_resume"
+            case .segment:
+                eventType = "segment"
+                segmentIndex += 1
+                metadata = PetehomeEventMetadata(
+                    segmentIndex: segmentIndex,
+                    lapNumber: nil,
+                    distance: nil,
+                    splitTime: event.dateInterval?.duration
+                )
+            case .lap:
+                eventType = "lap"
+                lapNumber += 1
+                metadata = PetehomeEventMetadata(
+                    segmentIndex: nil,
+                    lapNumber: lapNumber,
+                    distance: nil,
+                    splitTime: event.dateInterval?.duration
+                )
+            case .marker:
+                eventType = "marker"
+            case .pauseOrResumeRequest:
+                eventType = "pause_request"
+            @unknown default:
+                eventType = "unknown"
+            }
+            
+            petehomeEvents.append(PetehomeWorkoutEvent(
+                type: eventType,
+                timestamp: event.dateInterval?.start.iso8601String ?? workout.startDate.iso8601String,
+                duration: event.dateInterval?.duration,
+                metadata: metadata
+            ))
+        }
+        
+        return petehomeEvents
+    }
+    
+    // MARK: - Effort Score
+    
+    /// Query physical effort score for a workout (iOS 17+/watchOS 10+)
+    private func queryEffortScore(for workout: HKWorkout) async throws -> Double? {
+        let effortType = HKQuantityType(.physicalEffort)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: effortType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                // Calculate average effort score (scale 0-10)
+                let totalEffort = quantitySamples.reduce(0.0) { sum, sample in
+                    sum + sample.quantity.doubleValue(for: HKUnit.appleEffortScore())
+                }
+                let avgEffort = totalEffort / Double(quantitySamples.count)
+                
+                continuation.resume(returning: avgEffort)
+            }
+            
             self.healthStore.execute(query)
         }
     }
