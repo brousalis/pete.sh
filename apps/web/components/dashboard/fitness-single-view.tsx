@@ -683,6 +683,7 @@ export function FitnessSingleView({
   const [openVideoId, setOpenVideoId] = useState<string | null>(null)
   const [skipDayDialogOpen, setSkipDayDialogOpen] = useState(false)
   const [skipDayReason, setSkipDayReason] = useState('')
+  const [activeVersionNumber, setActiveVersionNumber] = useState<number | null>(null)
 
   // Derive initial day from initial date
   const getInitialDay = (): DayOfWeek | null => {
@@ -731,12 +732,14 @@ export function FitnessSingleView({
         consistencyRes,
         appleWorkoutsRes,
         dailyMetricsRes,
+        workoutDefsRes,
       ] = await Promise.all([
         apiGet<WeeklyRoutine>('/api/fitness/routine'),
         apiGet<Workout>(`/api/fitness/workout/${day}`),
         apiGet<ConsistencyStats>('/api/fitness/consistency'),
         apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=10'),
         apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=1'),
+        apiGet<{ version: { number: number; name: string } | null }>('/api/fitness/workout-definitions'),
       ])
 
       if (routineRes.success && routineRes.data) {
@@ -760,6 +763,10 @@ export function FitnessSingleView({
           ? dailyMetricsRes.data[0]
           : dailyMetricsRes.data
         setDailyMetrics(metrics || null)
+      }
+
+      if (workoutDefsRes.success && workoutDefsRes.data?.version) {
+        setActiveVersionNumber(workoutDefsRes.data.version.number)
       }
     } catch (error) {
       console.error('Failed to fetch fitness data', error)
@@ -1545,6 +1552,7 @@ export function FitnessSingleView({
             onSkip={handleWorkoutSkip}
             onUnskip={handleWorkoutUnskip}
             isSkipping={skippingWorkout}
+            versionNumber={activeVersionNumber}
             className="order-1 md:order-none"
           />
 

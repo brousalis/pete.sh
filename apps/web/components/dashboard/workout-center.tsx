@@ -88,6 +88,8 @@ interface WorkoutCenterProps {
   onUnskip?: () => void
   /** Whether skip operation is in progress */
   isSkipping?: boolean
+  /** Active routine version number */
+  versionNumber?: number | null
 }
 
 // Exercise-to-workout type mapping
@@ -185,6 +187,7 @@ export function WorkoutCenter({
   onSkip,
   onUnskip,
   isSkipping = false,
+  versionNumber,
 }: WorkoutCenterProps) {
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
     new Set(completion?.exercisesCompleted || [])
@@ -445,6 +448,11 @@ export function WorkoutCenter({
               )}>
                 {workout.name}
               </h2>
+              {versionNumber != null && (
+                <span className="shrink-0 text-[9px] sm:text-[10px] font-medium text-muted-foreground/60 tabular-nums">
+                  v{versionNumber}
+                </span>
+              )}
               {hasInjuryProtocol && (
                 <Badge
                   className="h-4 sm:h-5 shrink-0 gap-0.5 text-[9px] sm:text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-500 border-0"

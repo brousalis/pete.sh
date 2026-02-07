@@ -992,9 +992,42 @@
               "thu-run",
               "thu-flush"
             ]
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-06T19:47:01.827Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "friday": {},
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": true,
+            "completedAt": "2026-02-07T16:28:28.615Z",
+            "exercisesCompleted": [
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "fri-rehab-1",
+              "fri-flush"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-07T16:47:10.757Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-07T16:47:11.737Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "saturday": {},
         "sunday": {
           "morningRoutine": {
@@ -1289,5 +1322,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-06T19:37:25.573Z"
+  "updatedAt": "2026-02-07T17:37:57.173Z"
 }
