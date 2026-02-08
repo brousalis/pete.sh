@@ -115,6 +115,30 @@ export interface CyclingPowerSample {
 }
 
 // ============================================
+// WALKING METRICS (for Maple walks)
+// ============================================
+
+export interface WalkingSpeedSample {
+  timestamp: string
+  metersPerSecond: number
+}
+
+export interface WalkingStepLengthSample {
+  timestamp: string
+  meters: number
+}
+
+export interface WalkingMetrics {
+  avgSpeed?: number // m/s - average walking speed
+  avgStepLength?: number // meters - average step length
+  doubleSupportPercentage?: number // % time both feet on ground (gait stability)
+  asymmetryPercentage?: number // % left/right imbalance
+  stepCount?: number // total steps during workout
+  speedSamples?: WalkingSpeedSample[]
+  stepLengthSamples?: WalkingStepLengthSample[]
+}
+
+// ============================================
 // WORKOUT EVENTS
 // ============================================
 
@@ -200,6 +224,9 @@ export interface AppleHealthWorkout {
   
   // Cycling-specific metrics
   cyclingMetrics?: CyclingMetrics
+  
+  // Walking-specific metrics (for Maple walks)
+  walkingMetrics?: WalkingMetrics
   
   // Route data (for outdoor workouts)
   route?: WorkoutRoute
