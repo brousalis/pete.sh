@@ -30,9 +30,26 @@ import {
 import { useRouter } from 'next/navigation'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
+import type { LucideIcon } from 'lucide-react'
+
+// Define NavItem type
+export type NavItem = {
+  href: string
+  label: string
+  icon: LucideIcon
+  keywords: string[]
+  shortcut?: string
+}
+
+// Define NavCategory type
+type NavCategory = {
+  id: string
+  label: string
+  items: NavItem[]
+}
 
 // Navigation categories with items
-export const navCategories = [
+export const navCategories: NavCategory[] = [
   {
     id: 'quick',
     label: 'Quick Access',
@@ -82,12 +99,10 @@ export const navCategories = [
       { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9', keywords: ['grid', 'overview'] },
     ],
   },
-] as const
+]
 
 // Flatten all items for search
 export const allNavItems = navCategories.flatMap((cat) => cat.items)
-
-export type NavItem = (typeof allNavItems)[number]
 
 interface CommandPaletteProps {
   open: boolean

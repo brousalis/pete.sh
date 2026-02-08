@@ -973,6 +973,7 @@ function RingStreaks({ dailyMetrics, className }: RingStreaksProps) {
       // Current streak: count backwards from today
       for (let i = sortedMetrics.length - 1; i >= 0; i--) {
         const m = sortedMetrics[i]
+        if (!m) continue
         const metricDate = new Date(m.date)
         metricDate.setHours(0, 0, 0, 0)
 
