@@ -215,19 +215,19 @@ final class HealthKitSyncManager {
     }
 
     /// Sync recent workouts (last N days)
-    func syncRecent(days: Int = 7) async -> HistoricalSyncResult {
-        return await syncHistoricalWorkouts(days: days)
+    func syncRecent(days: Int = 7, forceResync: Bool = false) async -> HistoricalSyncResult {
+        return await syncHistoricalWorkouts(days: days, forceResync: forceResync)
     }
 
     /// Sync all history
-    func syncAllHistory() async -> HistoricalSyncResult {
-        return await syncHistoricalWorkouts(days: 365)
+    func syncAllHistory(forceResync: Bool = false) async -> HistoricalSyncResult {
+        return await syncHistoricalWorkouts(days: 365, forceResync: forceResync)
     }
 
     // MARK: - Historical Sync
 
     /// Sync historical workouts from HealthKit
-    func syncHistoricalWorkouts(days: Int = 90) async -> HistoricalSyncResult {
+    func syncHistoricalWorkouts(days: Int = 90, forceResync: Bool = false) async -> HistoricalSyncResult {
         guard canSync else {
             log("API not configured")
             return HistoricalSyncResult(total: 0, synced: 0, skipped: 0, failed: 0, errors: ["API not configured"])
@@ -244,11 +244,15 @@ final class HealthKitSyncManager {
 
         // Get already-synced workout IDs to avoid duplicates
         var alreadySynced: Set<String> = []
-        do {
-            alreadySynced = try await api.getSyncedWorkoutIDs(limit: 500)
-            log("Server has \(alreadySynced.count) workouts")
-        } catch {
-            log("Can't check server: \(error.localizedDescription)")
+        if forceResync {
+            log("Force resync enabled — will re-upload all workouts")
+        } else {
+            do {
+                alreadySynced = try await api.getSyncedWorkoutIDs(limit: 500)
+                log("Server has \(alreadySynced.count) workouts")
+            } catch {
+                log("Can't check server: \(error.localizedDescription)")
+            }
         }
 
         // Fetch all workouts from HealthKit
@@ -620,11 +624,12 @@ final class HealthKitSyncManager {
     private nonisolated func downsampleHRSamples(_ samples: [PetehomeHeartRateSample], targetInterval: TimeInterval = 5) -> [PetehomeHeartRateSample] {
         guard samples.count > 100 else { return samples }
 
+        let formatter = ISO8601DateFormatter()
         var result: [PetehomeHeartRateSample] = []
         var lastTimestamp: Date?
 
         for sample in samples {
-            guard let date = sample.timestamp.iso8601Date else { continue }
+            guard let date = formatter.date(from: sample.timestamp) else { continue }
 
             if let last = lastTimestamp {
                 if date.timeIntervalSince(last) >= targetInterval {
@@ -1322,7 +1327,7 @@ final class HealthKitSyncManager {
                     segmentIndex: segmentIndex,
                     lapNumber: nil,
                     distance: nil,
-                    splitTime: event.dateInterval?.duration
+                    splitTime: event.dateInterval.duration
                 )
             case .lap:
                 eventType = "lap"
@@ -1331,7 +1336,7 @@ final class HealthKitSyncManager {
                     segmentIndex: nil,
                     lapNumber: lapNumber,
                     distance: nil,
-                    splitTime: event.dateInterval?.duration
+                    splitTime: event.dateInterval.duration
                 )
             case .marker:
                 eventType = "marker"
@@ -1343,8 +1348,8 @@ final class HealthKitSyncManager {
             
             petehomeEvents.append(PetehomeWorkoutEvent(
                 type: eventType,
-                timestamp: event.dateInterval?.start.iso8601String ?? workout.startDate.iso8601String,
-                duration: event.dateInterval?.duration,
+                timestamp: event.dateInterval.start.iso8601String,
+                duration: event.dateInterval.duration,
                 metadata: metadata
             ))
         }
@@ -1381,10 +1386,16 @@ final class HealthKitSyncManager {
                 }
                 
                 // Calculate average effort score (scale 0-10)
-                let totalEffort = quantitySamples.reduce(0.0) { sum, sample in
-                    sum + sample.quantity.doubleValue(for: HKUnit.appleEffortScore())
+                let effortUnit = HKUnit.appleEffortScore()
+                let compatibleSamples = quantitySamples.filter { $0.quantity.is(compatibleWith: effortUnit) }
+                guard !compatibleSamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
                 }
-                let avgEffort = totalEffort / Double(quantitySamples.count)
+                let totalEffort = compatibleSamples.reduce(0.0) { sum, sample in
+                    sum + sample.quantity.doubleValue(for: effortUnit)
+                }
+                let avgEffort = totalEffort / Double(compatibleSamples.count)
                 
                 continuation.resume(returning: avgEffort)
             }
