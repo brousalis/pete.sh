@@ -48,7 +48,6 @@ type NavItem = {
 
 // Main navigation items (excludes Deck which has its own icon)
 const navItems: NavItem[] = [
-  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
   { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
@@ -56,11 +55,11 @@ const navItems: NavItem[] = [
   { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
 ]
 
 // All items including Deck for keyboard shortcuts
 const allNavItems: NavItem[] = [
-  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
   { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
@@ -69,6 +68,7 @@ const allNavItems: NavItem[] = [
   { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
   { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '1' },
 ]
 
 // Mobile bottom nav - curated primary items for quick thumb access
@@ -82,12 +82,12 @@ const mobileBottomItems: NavItem[] = [
 // Overflow items accessible via "More" in bottom nav
 const mobileOverflowItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/me', label: 'Me', icon: User },
   { href: '/lights', label: 'Lights', icon: Lightbulb },
   { href: '/music', label: 'Music', icon: Music },
   { href: '/coffee', label: 'Coffee', icon: Coffee },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/me', label: 'Me', icon: User },
 ]
 
 export function TopNavigation() {

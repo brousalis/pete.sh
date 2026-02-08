@@ -13,4 +13,5 @@ petehome_cli/services/__init__.py
 petehome_cli/services/dev_server.py
 petehome_cli/services/github.py
 petehome_cli/services/pm2.py
+petehome_cli/services/supabase.py
 petehome_cli/services/vercel.py

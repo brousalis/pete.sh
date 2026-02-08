@@ -152,4 +152,8 @@
   // Cursor/LLM Specific Settings
   "cursor.chat.enableCodeActions": true,
   "cursor.general.enableAutoSave": true,
+
+  // Window: use native OS title bar instead of custom (inline) title bar.
+  // For frameless/hidden title bar, install "Apc Customize UI++" and set apc.electron.titleBarStyle.
+  "window.titleBarStyle": "native",
 }

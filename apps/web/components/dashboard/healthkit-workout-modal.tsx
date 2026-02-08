@@ -17,8 +17,7 @@ import {
     Heart,
     MapPin,
     Timer,
-    TrendingUp,
-    Watch
+    TrendingUp
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -152,8 +151,8 @@ export function HealthKitWorkoutModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Watch className="size-5 text-red-500" />
-            Apple Watch Workout
+            <Activity className="size-5 text-primary" />
+            Workout Details
           </DialogTitle>
         </DialogHeader>
 

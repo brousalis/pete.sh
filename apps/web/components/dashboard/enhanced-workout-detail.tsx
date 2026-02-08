@@ -2,12 +2,6 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import type {
@@ -20,31 +14,40 @@ import {
   Activity,
   AlertTriangle,
   Award,
-  BarChart3,
   Battery,
-  Bike,
-  ChevronDown,
-  ChevronUp,
+  CheckCircle2,
+  ChevronLeft,
   Clock,
+  Dumbbell,
   Flame,
   Footprints,
-  Gauge,
   Heart,
   Info,
-  LineChart,
+  Lightbulb,
   Pause,
   Play,
-  Route,
+  RefreshCw,
   Sparkles,
   Target,
-  Timer,
   TrendingDown,
   TrendingUp,
   Watch,
   Wind,
   Zap,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 // ============================================
 // TYPES
@@ -73,7 +76,6 @@ interface AppleWorkout {
   hr_min: number | null
   hr_max: number | null
   hr_zones: HeartRateZone[] | null
-  // Running metrics
   cadence_average: number | null
   pace_average: number | null
   pace_best: number | null
@@ -81,13 +83,11 @@ interface AppleWorkout {
   running_power_avg: number | null
   ground_contact_time_avg: number | null
   vertical_oscillation_avg: number | null
-  // Cycling metrics
   cycling_avg_speed: number | null
   cycling_max_speed: number | null
   cycling_avg_cadence: number | null
   cycling_avg_power: number | null
   cycling_max_power: number | null
-  // Effort score
   effort_score: number | null
   source: string
 }
@@ -130,6 +130,20 @@ interface SplitData {
   avg_cadence: number | null
 }
 
+interface HrZoneConfig {
+  zone: number
+  label: string
+  maxBpm?: number
+  minBpm?: number
+  color: string
+}
+
+interface HrZonesConfig {
+  maxHr: number
+  restingHr: number | null
+  zones: HrZoneConfig[]
+}
+
 interface WorkoutDetailResponse {
   workout: AppleWorkout
   hrSamples: HrSample[]
@@ -142,49 +156,24 @@ interface WorkoutDetailResponse {
   workoutEvents: WorkoutEventData[]
   splits: SplitData[]
   analytics: EnhancedWorkoutAnalytics | null
+  hrZonesConfig: HrZonesConfig | null
 }
 
 // ============================================
 // CONSTANTS
 // ============================================
 
-const ZONE_COLORS: Record<
-  HeartRateZone['name'],
-  { bg: string; text: string; bar: string; fill: string }
-> = {
-  rest: {
-    bg: 'bg-gray-500/20',
-    text: 'text-gray-400',
-    bar: 'bg-gray-500',
-    fill: 'fill-gray-500',
-  },
-  warmup: {
-    bg: 'bg-blue-500/20',
-    text: 'text-blue-400',
-    bar: 'bg-blue-500',
-    fill: 'fill-blue-500',
-  },
-  fatBurn: {
-    bg: 'bg-green-500/20',
-    text: 'text-green-400',
-    bar: 'bg-green-500',
-    fill: 'fill-green-500',
-  },
-  cardio: {
-    bg: 'bg-orange-500/20',
-    text: 'text-orange-400',
-    bar: 'bg-orange-500',
-    fill: 'fill-orange-500',
-  },
-  peak: {
-    bg: 'bg-red-500/20',
-    text: 'text-red-400',
-    bar: 'bg-red-500',
-    fill: 'fill-red-500',
-  },
+const ZONE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
+  rest: { bg: 'bg-gray-500/20', text: 'text-gray-400', bar: 'bg-gray-500' },
+  warmup: { bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500' },
+  fatBurn: { bg: 'bg-green-500/20', text: 'text-green-400', bar: 'bg-green-500' },
+  cardio: { bg: 'bg-orange-500/20', text: 'text-orange-400', bar: 'bg-orange-500' },
+  peak: { bg: 'bg-red-500/20', text: 'text-red-400', bar: 'bg-red-500' },
 }
 
-const ZONE_LABELS: Record<HeartRateZone['name'], string> = {
+const DEFAULT_ZONE_COLOR = { bg: 'bg-gray-500/20', text: 'text-gray-400', bar: 'bg-gray-500' }
+
+const ZONE_LABELS: Record<string, string> = {
   rest: 'Rest',
   warmup: 'Warm Up',
   fatBurn: 'Fat Burn',
@@ -214,19 +203,13 @@ function formatDuration(seconds: number): string {
   const hrs = Math.floor(seconds / 3600)
   const mins = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
-
-  if (hrs > 0) {
-    return `${hrs}h ${mins}m`
-  }
-  if (mins > 0) {
-    return `${mins}m ${secs}s`
-  }
+  if (hrs > 0) return `${hrs}h ${mins}m`
+  if (mins > 0) return `${mins}m ${secs}s`
   return `${secs}s`
 }
 
 function formatPace(minutesPerMile: number): string {
-  if (!minutesPerMile || minutesPerMile <= 0 || minutesPerMile > 30)
-    return '--:--'
+  if (!minutesPerMile || minutesPerMile <= 0 || minutesPerMile > 30) return '--:--'
   const mins = Math.floor(minutesPerMile)
   const secs = Math.round((minutesPerMile - mins) * 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -234,536 +217,1221 @@ function formatPace(minutesPerMile: number): string {
 
 function formatElapsedTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
+  const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
 // ============================================
-// MULTI-AXIS TIME SERIES CHART
+// ADVICE GENERATION HELPERS
+// ============================================
+
+type IconType = 'zap' | 'target' | 'refresh' | 'heart' | 'alert' | 'award' | 'trending-down' | 'footprints' | 'flame' | 'trending-up'
+
+interface WorkoutAdvice {
+  keyTakeaways: Array<{ iconType: IconType; text: string; type: 'positive' | 'neutral' | 'improvement' }>
+  trainingType: { label: string; description: string; iconType: IconType; iconColor: string }
+  recoveryTime: { hours: number; description: string }
+  nextWorkoutSuggestion: string
+  zoneAnalysis: string
+}
+
+function generateWorkoutAdvice(
+  workout: AppleWorkout,
+  analytics: EnhancedWorkoutAnalytics | null,
+  hrZones: HeartRateZone[] | null
+): WorkoutAdvice {
+  const takeaways: WorkoutAdvice['keyTakeaways'] = []
+  
+  // Determine training type based on zones
+  const peakPercent = hrZones?.find(z => z.name === 'peak')?.percentage || 0
+  const cardioPercent = hrZones?.find(z => z.name === 'cardio')?.percentage || 0
+  const fatBurnPercent = hrZones?.find(z => z.name === 'fatBurn')?.percentage || 0
+  
+  let trainingType: WorkoutAdvice['trainingType']
+  let recoveryHours: number
+  let nextWorkout: string
+  let zoneAnalysis: string
+  
+  // High intensity (mostly peak/cardio)
+  if (peakPercent >= 50) {
+    trainingType = { 
+      label: 'VO2 Max / Speed Work', 
+      description: 'High-intensity effort targeting peak cardiovascular capacity',
+      iconType: 'zap',
+      iconColor: 'text-red-500'
+    }
+    recoveryHours = 48
+    nextWorkout = 'Easy recovery run or rest day recommended'
+    zoneAnalysis = `You spent ${peakPercent}% in your peak zone - this was a maximal effort that builds speed and VO2max.`
+  } else if (peakPercent + cardioPercent >= 60) {
+    trainingType = { 
+      label: 'Threshold Training', 
+      description: 'Sustained hard effort building lactate threshold',
+      iconType: 'flame',
+      iconColor: 'text-orange-500'
+    }
+    recoveryHours = 36
+    nextWorkout = 'Easy run or cross-training tomorrow'
+    zoneAnalysis = `With ${cardioPercent}% in cardio and ${peakPercent}% in peak, this was a solid threshold workout improving your ability to sustain hard efforts.`
+  } else if (cardioPercent >= 40) {
+    trainingType = { 
+      label: 'Tempo / Aerobic Power', 
+      description: 'Moderate-hard effort building aerobic efficiency',
+      iconType: 'trending-up',
+      iconColor: 'text-amber-500'
+    }
+    recoveryHours = 24
+    nextWorkout = 'Another moderate effort or easy run'
+    zoneAnalysis = `${cardioPercent}% in the cardio zone indicates good aerobic development - you're building the engine.`
+  } else if (fatBurnPercent >= 40) {
+    trainingType = { 
+      label: 'Aerobic Base', 
+      description: 'Building endurance foundation and fat adaptation',
+      iconType: 'heart',
+      iconColor: 'text-green-500'
+    }
+    recoveryHours = 12
+    nextWorkout = 'Good to train again tomorrow - consider adding intensity'
+    zoneAnalysis = `${fatBurnPercent}% in fat burn zone - great for building aerobic base and teaching your body to burn fat efficiently.`
+  } else {
+    trainingType = { 
+      label: 'Recovery / Easy', 
+      description: 'Low-intensity effort promoting recovery',
+      iconType: 'refresh',
+      iconColor: 'text-blue-500'
+    }
+    recoveryHours = 8
+    nextWorkout = 'Ready for any workout - this promoted recovery'
+    zoneAnalysis = 'This was a recovery effort, keeping heart rate low to promote adaptation from previous hard efforts.'
+  }
+  
+  // Adjust recovery based on effort score
+  if (workout.effort_score) {
+    if (workout.effort_score >= 8) recoveryHours = Math.max(recoveryHours, 48)
+    else if (workout.effort_score >= 6) recoveryHours = Math.max(recoveryHours, 36)
+  }
+  
+  // Generate key takeaways
+  // 1. Effort/intensity summary
+  if (workout.effort_score) {
+    if (workout.effort_score >= 8) {
+      takeaways.push({
+        iconType: 'zap',
+        text: `High intensity effort (${workout.effort_score.toFixed(1)}/10) - excellent work pushing your limits`,
+        type: 'positive'
+      })
+    } else if (workout.effort_score >= 5) {
+      takeaways.push({
+        iconType: 'target',
+        text: `Moderate effort (${workout.effort_score.toFixed(1)}/10) - solid training stimulus`,
+        type: 'positive'
+      })
+    } else {
+      takeaways.push({
+        iconType: 'refresh',
+        text: `Easy effort (${workout.effort_score.toFixed(1)}/10) - good for recovery and base building`,
+        type: 'neutral'
+      })
+    }
+  }
+  
+  // 2. Cardiac drift analysis
+  if (analytics) {
+    if (analytics.cardiacDrift.driftPercentage <= 3) {
+      takeaways.push({
+        iconType: 'heart',
+        text: `Excellent cardiac efficiency - only ${analytics.cardiacDrift.driftPercentage}% drift indicates strong aerobic fitness`,
+        type: 'positive'
+      })
+    } else if (analytics.cardiacDrift.driftPercentage <= 7) {
+      takeaways.push({
+        iconType: 'heart',
+        text: `Normal cardiac drift (${analytics.cardiacDrift.driftPercentage}%) - good pacing and hydration`,
+        type: 'neutral'
+      })
+    } else {
+      takeaways.push({
+        iconType: 'alert',
+        text: `High cardiac drift (${analytics.cardiacDrift.driftPercentage}%) - consider better pacing, hydration, or more base training`,
+        type: 'improvement'
+      })
+    }
+    
+    // 3. Pacing strategy
+    if (analytics.paceAnalysis && analytics.splits.length > 1) {
+      if (analytics.paceAnalysis.splitStrategy === 'negative') {
+        takeaways.push({
+          iconType: 'award',
+          text: 'Negative split achieved - textbook pacing with a strong finish',
+          type: 'positive'
+        })
+      } else if (analytics.paceAnalysis.splitStrategy === 'positive') {
+        const paceDropPercent = Math.round(((analytics.paceAnalysis.worst - analytics.paceAnalysis.best) / analytics.paceAnalysis.best) * 100)
+        if (paceDropPercent > 10) {
+          takeaways.push({
+            iconType: 'trending-down',
+            text: `Pace faded ~${paceDropPercent}% - try starting more conservatively`,
+            type: 'improvement'
+          })
+        }
+      }
+    }
+    
+    // 4. Cadence feedback for running
+    if (workout.workout_type === 'running' && analytics.cadenceAnalysis.average > 0) {
+      if (analytics.cadenceAnalysis.optimalRange) {
+        takeaways.push({
+          iconType: 'footprints',
+          text: `Optimal cadence (${analytics.cadenceAnalysis.average} spm) - efficient running form`,
+          type: 'positive'
+        })
+      } else if (analytics.cadenceAnalysis.average < 165) {
+        takeaways.push({
+          iconType: 'footprints',
+          text: `Low cadence (${analytics.cadenceAnalysis.average} spm) - try shorter, quicker steps to reduce injury risk`,
+          type: 'improvement'
+        })
+      }
+    }
+  }
+  
+  // Limit to top 3-4 takeaways
+  const limitedTakeaways = takeaways.slice(0, 4)
+  
+  return {
+    keyTakeaways: limitedTakeaways,
+    trainingType,
+    recoveryTime: { hours: recoveryHours, description: getRecoveryDescription(recoveryHours) },
+    nextWorkoutSuggestion: nextWorkout,
+    zoneAnalysis
+  }
+}
+
+function getRecoveryDescription(hours: number): string {
+  if (hours <= 12) return 'Light recovery - ready for most workouts'
+  if (hours <= 24) return 'Moderate recovery - avoid high intensity tomorrow'
+  if (hours <= 36) return 'Significant recovery needed - easy day recommended'
+  return 'Full recovery needed - rest or very easy activity only'
+}
+
+// Helper to render icon from type string
+function renderIcon(iconType: IconType, className?: string) {
+  const iconClass = cn('size-4', className)
+  switch (iconType) {
+    case 'zap': return <Zap className={iconClass} />
+    case 'target': return <Target className={iconClass} />
+    case 'refresh': return <RefreshCw className={iconClass} />
+    case 'heart': return <Heart className={iconClass} />
+    case 'alert': return <AlertTriangle className={iconClass} />
+    case 'award': return <Award className={iconClass} />
+    case 'trending-down': return <TrendingDown className={iconClass} />
+    case 'trending-up': return <TrendingUp className={iconClass} />
+    case 'footprints': return <Footprints className={iconClass} />
+    case 'flame': return <Flame className={iconClass} />
+    default: return <Info className={iconClass} />
+  }
+}
+
+// ============================================
+// KEY TAKEAWAYS COMPONENT
+// ============================================
+
+function KeyTakeaways({ advice }: { advice: WorkoutAdvice }) {
+  if (advice.keyTakeaways.length === 0) return null
+  
+  const typeColors = {
+    positive: 'border-green-500/30 bg-green-500/5',
+    neutral: 'border-blue-500/30 bg-blue-500/5',
+    improvement: 'border-amber-500/30 bg-amber-500/5'
+  }
+  
+  const iconColors = {
+    positive: 'text-green-500',
+    neutral: 'text-blue-500',
+    improvement: 'text-amber-500'
+  }
+  
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Lightbulb className="size-4 text-amber-400" />
+        <span className="text-sm font-semibold">Key Takeaways</span>
+      </div>
+      <div className="space-y-2">
+        {advice.keyTakeaways.map((takeaway, idx) => (
+          <div 
+            key={idx} 
+            className={cn(
+              'flex items-start gap-3 rounded-lg border px-3 py-2.5',
+              typeColors[takeaway.type]
+            )}
+          >
+            <div className={cn('mt-0.5 shrink-0', iconColors[takeaway.type])}>
+              {renderIcon(takeaway.iconType)}
+            </div>
+            <span className="text-sm leading-relaxed">{takeaway.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// RECOVERY & NEXT STEPS COMPONENT
+// ============================================
+
+function RecoveryNextSteps({ advice }: { advice: WorkoutAdvice }) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Battery className="size-4 text-emerald-400" />
+        <span className="text-sm font-semibold">Recovery & Next Steps</span>
+      </div>
+      
+      <div className="space-y-4">
+        {/* Training Type */}
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-muted/50 p-2">
+            {renderIcon(advice.trainingType.iconType, advice.trainingType.iconColor)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">{advice.trainingType.label}</div>
+            <div className="text-xs text-muted-foreground">{advice.trainingType.description}</div>
+          </div>
+        </div>
+        
+        {/* Recovery Time */}
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-muted/50 p-2">
+            <Clock className="size-4 text-blue-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">
+              {advice.recoveryTime.hours}h recovery suggested
+            </div>
+            <div className="text-xs text-muted-foreground">{advice.recoveryTime.description}</div>
+          </div>
+        </div>
+        
+        {/* Next Workout */}
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-muted/50 p-2">
+            <Dumbbell className="size-4 text-purple-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">Next Workout</div>
+            <div className="text-xs text-muted-foreground">{advice.nextWorkoutSuggestion}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// ZONE ANALYSIS COMPONENT
+// ============================================
+
+function ZoneAnalysisCard({ advice, zones }: { advice: WorkoutAdvice; zones: HeartRateZone[] | null }) {
+  if (!zones || zones.length === 0) return null
+  
+  const activeZones = zones.filter(z => z.percentage > 0)
+  if (activeZones.length === 0) return null
+  
+  const getZoneColor = (name: string) => ZONE_COLORS[name] || DEFAULT_ZONE_COLOR
+  
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Target className="size-4 text-cyan-400" />
+        <span className="text-sm font-semibold">Zone Analysis</span>
+      </div>
+      
+      {/* Zone Bar */}
+      <div className="mb-3">
+        <div className="flex h-6 w-full overflow-hidden rounded-lg">
+          {activeZones.map((zone, idx) => {
+            const colors = getZoneColor(zone.name)
+            return (
+              <div
+                key={idx}
+                className={cn(colors.bar, 'flex items-center justify-center transition-all')}
+                style={{ width: `${zone.percentage}%`, opacity: 0.9 }}
+              >
+                {zone.percentage >= 15 && (
+                  <span className="text-[10px] font-semibold text-white/90">{zone.percentage}%</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {activeZones.map((zone, idx) => {
+            const colors = getZoneColor(zone.name)
+            return (
+              <span key={idx} className="flex items-center gap-1.5">
+                <span className={cn('size-2 rounded-sm', colors.bar)} />
+                <span className={colors.text}>{ZONE_LABELS[zone.name] || zone.name}</span>
+                <span className="text-muted-foreground">{zone.percentage}%</span>
+                <span className="text-muted-foreground">({formatDuration(zone.duration)})</span>
+              </span>
+            )
+          })}
+        </div>
+      </div>
+      
+      {/* Analysis Text */}
+      <div className="rounded-lg bg-muted/30 px-3 py-2">
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {advice.zoneAnalysis}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// PERFORMANCE CHART (Recharts)
 // ============================================
 
 interface TimeSeriesChartProps {
   data: EnhancedWorkoutAnalytics['timeSeriesData']
+  hrAverage?: number | null
   showHr?: boolean
   showCadence?: boolean
   showPace?: boolean
   showCyclingSpeed?: boolean
   showCyclingPower?: boolean
-  height?: number
   className?: string
+}
+
+// Custom tooltip component
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: number }) {
+  if (!active || !payload || payload.length === 0) return null
+
+  const hrData = payload.find(p => p.dataKey === 'hr')
+  const cadenceData = payload.find(p => p.dataKey === 'cadence')
+  const paceData = payload.find(p => p.dataKey === 'pace')
+  const speedData = payload.find(p => p.dataKey === 'cyclingSpeed')
+  const powerData = payload.find(p => p.dataKey === 'cyclingPower')
+
+  return (
+    <div className="bg-popover/95 rounded-lg border border-border/50 px-3 py-2 shadow-xl backdrop-blur-sm">
+      <div className="text-muted-foreground mb-2 text-xs font-medium">
+        {formatElapsedTime(label || 0)}
+      </div>
+      <div className="space-y-1">
+        {hrData && hrData.value != null && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Heart className="size-3 text-red-500" />
+              <span className="text-xs text-muted-foreground">Heart Rate</span>
+            </div>
+            <span className="text-sm font-semibold text-red-400">{Math.round(hrData.value)} bpm</span>
+          </div>
+        )}
+        {cadenceData && cadenceData.value != null && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Footprints className="size-3 text-blue-400" />
+              <span className="text-xs text-muted-foreground">Cadence</span>
+            </div>
+            <span className="text-sm font-semibold text-blue-400">{Math.round(cadenceData.value)} spm</span>
+          </div>
+        )}
+        {paceData && paceData.value != null && paceData.value > 0 && paceData.value < 30 && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Activity className="size-3 text-emerald-400" />
+              <span className="text-xs text-muted-foreground">Pace</span>
+            </div>
+            <span className="text-sm font-semibold text-emerald-400">{formatPace(paceData.value)}/mi</span>
+          </div>
+        )}
+        {speedData && speedData.value != null && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Activity className="size-3 text-cyan-400" />
+              <span className="text-xs text-muted-foreground">Speed</span>
+            </div>
+            <span className="text-sm font-semibold text-cyan-400">{speedData.value.toFixed(1)} mph</span>
+          </div>
+        )}
+        {powerData && powerData.value != null && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Zap className="size-3 text-amber-400" />
+              <span className="text-xs text-muted-foreground">Power</span>
+            </div>
+            <span className="text-sm font-semibold text-amber-400">{Math.round(powerData.value)} W</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function TimeSeriesChart({
   data,
+  hrAverage,
   showHr = true,
   showCadence = true,
   showPace = true,
   showCyclingSpeed = false,
   showCyclingPower = false,
-  height = 200,
   className,
 }: TimeSeriesChartProps) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [activeMetrics, setActiveMetrics] = useState({
+    hr: showHr,
+    cadence: showCadence,
+    pace: showPace,
+    cyclingSpeed: showCyclingSpeed,
+    cyclingPower: showCyclingPower,
+  })
 
-  const { hrRange, cadenceRange, paceRange, cyclingSpeedRange, cyclingPowerRange, filteredData, stats } =
-    useMemo(() => {
-      // Filter out null values and get ranges
-      const hrValues = data.filter(d => d.hr !== null).map(d => d.hr!)
-      const cadenceValues = data
-        .filter(d => d.cadence !== null)
-        .map(d => d.cadence!)
-      const paceValues = data
-        .filter(d => d.pace !== null && d.pace > 0 && d.pace < 30)
-        .map(d => d.pace!)
-      const cyclingSpeedValues = data
-        .filter(d => d.cyclingSpeed !== null && d.cyclingSpeed > 0)
-        .map(d => d.cyclingSpeed!)
-      const cyclingPowerValues = data
-        .filter(d => d.cyclingPower !== null && d.cyclingPower > 0)
-        .map(d => d.cyclingPower!)
+  // Calculate stats and ranges
+  const stats = useMemo(() => {
+    const hrValues = data.filter(d => d.hr !== null).map(d => d.hr!)
+    const cadenceValues = data.filter(d => d.cadence !== null).map(d => d.cadence!)
+    const paceValues = data.filter(d => d.pace !== null && d.pace > 0 && d.pace < 30).map(d => d.pace!)
 
+    return {
+      hr: {
+        min: hrValues.length > 0 ? Math.min(...hrValues) : 0,
+        max: hrValues.length > 0 ? Math.max(...hrValues) : 200,
+        avg: hrValues.length > 0 ? Math.round(hrValues.reduce((a, b) => a + b, 0) / hrValues.length) : 0,
+      },
+      cadence: {
+        min: cadenceValues.length > 0 ? Math.min(...cadenceValues) : 0,
+        max: cadenceValues.length > 0 ? Math.max(...cadenceValues) : 200,
+        avg: cadenceValues.length > 0 ? Math.round(cadenceValues.reduce((a, b) => a + b, 0) / cadenceValues.length) : 0,
+      },
+      pace: {
+        min: paceValues.length > 0 ? Math.min(...paceValues) : 0,
+        max: paceValues.length > 0 ? Math.max(...paceValues) : 15,
+        avg: paceValues.length > 0 ? paceValues.reduce((a, b) => a + b, 0) / paceValues.length : 0,
+      },
+    }
+  }, [data])
+
+  // Sample data for performance (take every Nth point if too many)
+  // Also forward-fill cadence values so tooltips always show the last known value
+  const chartData = useMemo(() => {
+    const maxPoints = 300
+    const sampled = data.length <= maxPoints 
+      ? data 
+      : data.filter((_, idx) => idx % Math.ceil(data.length / maxPoints) === 0)
+    
+    // Forward-fill null values for cadence so tooltip always shows something
+    let lastCadence: number | null = null
+    let lastPace: number | null = null
+    
+    return sampled.map(point => {
+      if (point.cadence != null) lastCadence = point.cadence
+      if (point.pace != null && point.pace > 0 && point.pace < 30) lastPace = point.pace
+      
       return {
-        hrRange: {
-          min: hrValues.length > 0 ? Math.min(...hrValues) - 5 : 0,
-          max: hrValues.length > 0 ? Math.max(...hrValues) + 5 : 200,
-        },
-        cadenceRange: {
-          min: cadenceValues.length > 0 ? Math.min(...cadenceValues) - 5 : 0,
-          max: cadenceValues.length > 0 ? Math.max(...cadenceValues) + 5 : 200,
-        },
-        paceRange: {
-          min: paceValues.length > 0 ? Math.min(...paceValues) - 0.5 : 6,
-          max: paceValues.length > 0 ? Math.max(...paceValues) + 0.5 : 15,
-        },
-        cyclingSpeedRange: {
-          min: cyclingSpeedValues.length > 0 ? Math.min(...cyclingSpeedValues) - 2 : 0,
-          max: cyclingSpeedValues.length > 0 ? Math.max(...cyclingSpeedValues) + 2 : 30,
-        },
-        cyclingPowerRange: {
-          min: cyclingPowerValues.length > 0 ? Math.min(...cyclingPowerValues) - 10 : 0,
-          max: cyclingPowerValues.length > 0 ? Math.max(...cyclingPowerValues) + 10 : 300,
-        },
-        filteredData: data.filter((_, i) => i % 2 === 0), // Downsample for performance
-        stats: {
-          minHr: hrValues.length > 0 ? Math.min(...hrValues) : 0,
-          maxHr: hrValues.length > 0 ? Math.max(...hrValues) : 0,
-          avgHr:
-            hrValues.length > 0
-              ? Math.round(
-                  hrValues.reduce((a, b) => a + b, 0) / hrValues.length
-                )
-              : 0,
-        },
+        ...point,
+        cadence: point.cadence ?? lastCadence,
+        pace: point.pace ?? lastPace,
       }
-    }, [data])
+    })
+  }, [data])
 
-  const chartHeight = height - 30 // Reserve space for labels
-  const normalizeHr = (hr: number) => {
-    return (
-      chartHeight -
-      10 -
-      ((hr - hrRange.min) / (hrRange.max - hrRange.min)) * (chartHeight - 20)
-    )
+  if (data.length === 0) return null
+
+  const toggleMetric = (metric: keyof typeof activeMetrics) => {
+    setActiveMetrics(prev => ({ ...prev, [metric]: !prev[metric] }))
   }
-
-  const normalizeCadence = (cadence: number) => {
-    return (
-      chartHeight -
-      10 -
-      ((cadence - cadenceRange.min) / (cadenceRange.max - cadenceRange.min)) *
-        (chartHeight - 20)
-    )
-  }
-
-  // Pace is inverted (lower is better)
-  const normalizePace = (pace: number) => {
-    return (
-      chartHeight -
-      10 -
-      ((paceRange.max - pace) / (paceRange.max - paceRange.min)) *
-        (chartHeight - 20)
-    )
-  }
-
-  const normalizeCyclingSpeed = (speed: number) => {
-    return (
-      chartHeight -
-      10 -
-      ((speed - cyclingSpeedRange.min) / (cyclingSpeedRange.max - cyclingSpeedRange.min)) *
-        (chartHeight - 20)
-    )
-  }
-
-  const normalizeCyclingPower = (power: number) => {
-    return (
-      chartHeight -
-      10 -
-      ((power - cyclingPowerRange.min) / (cyclingPowerRange.max - cyclingPowerRange.min)) *
-        (chartHeight - 20)
-    )
-  }
-
-  const width = 100
-  const xScale = (i: number) => (i / (filteredData.length - 1 || 1)) * width
-
-  // Generate smooth paths using bezier curves
-  const hrPointsArray = filteredData
-    .map((d, i) =>
-      d.hr !== null ? { x: xScale(i), y: normalizeHr(d.hr) } : null
-    )
-    .filter(Boolean) as { x: number; y: number }[]
-
-  const cadencePointsArray = filteredData
-    .map((d, i) =>
-      d.cadence !== null
-        ? { x: xScale(i), y: normalizeCadence(d.cadence) }
-        : null
-    )
-    .filter(Boolean) as { x: number; y: number }[]
-
-  const pacePointsArray = filteredData
-    .map((d, i) =>
-      d.pace !== null && d.pace > 0 && d.pace < 30
-        ? { x: xScale(i), y: normalizePace(d.pace) }
-        : null
-    )
-    .filter(Boolean) as { x: number; y: number }[]
-
-  const cyclingSpeedPointsArray = filteredData
-    .map((d, i) =>
-      d.cyclingSpeed !== null && d.cyclingSpeed > 0
-        ? { x: xScale(i), y: normalizeCyclingSpeed(d.cyclingSpeed) }
-        : null
-    )
-    .filter(Boolean) as { x: number; y: number }[]
-
-  const cyclingPowerPointsArray = filteredData
-    .map((d, i) =>
-      d.cyclingPower !== null && d.cyclingPower > 0
-        ? { x: xScale(i), y: normalizeCyclingPower(d.cyclingPower) }
-        : null
-    )
-    .filter(Boolean) as { x: number; y: number }[]
-
-  const hrPath = hrPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
-  const cadencePath = cadencePointsArray.map(p => `${p.x},${p.y}`).join(' L ')
-  const pacePath = pacePointsArray.map(p => `${p.x},${p.y}`).join(' L ')
-  const cyclingSpeedPath = cyclingSpeedPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
-  const cyclingPowerPath = cyclingPowerPointsArray.map(p => `${p.x},${p.y}`).join(' L ')
-
-  const hovered = hoveredIndex !== null ? filteredData[hoveredIndex] : null
-  const totalDuration =
-    data.length > 0 ? (data[data.length - 1]?.elapsedSeconds ?? 0) : 0
 
   return (
-    <div className={cn('relative', className)}>
-      {/* Chart Container */}
-      <div className="bg-muted/20 relative rounded-lg p-2">
-        <svg
-          viewBox={`0 0 ${width} ${chartHeight}`}
-          className="w-full"
-          style={{ height: chartHeight }}
-          preserveAspectRatio="none"
-          onMouseLeave={() => setHoveredIndex(null)}
-        >
-          {/* Gradient definitions */}
-          <defs>
-            <linearGradient id="hrGradientFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(239 68 68)" stopOpacity="0.4" />
-              <stop
-                offset="50%"
-                stopColor="rgb(239 68 68)"
-                stopOpacity="0.15"
-              />
-              <stop offset="100%" stopColor="rgb(239 68 68)" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="paceGradientFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(34 197 94)" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="rgb(34 197 94)" stopOpacity="0" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="1" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+    <div className={cn('space-y-3', className)}>
+      {/* Toggle buttons and stats */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {showHr && (
+            <button
+              onClick={() => toggleMetric('hr')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all',
+                activeMetrics.hr
+                  ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              <Heart className="size-3" />
+              Heart Rate
+            </button>
+          )}
+          {showCadence && stats.cadence.avg > 0 && (
+            <button
+              onClick={() => toggleMetric('cadence')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all',
+                activeMetrics.cadence
+                  ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              <Footprints className="size-3" />
+              Cadence
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {activeMetrics.hr && (
+            <span>
+              <span className="text-red-400 font-medium">{stats.hr.min}–{stats.hr.max}</span> bpm
+            </span>
+          )}
+          {activeMetrics.cadence && stats.cadence.avg > 0 && (
+            <span>
+              <span className="text-blue-400 font-medium">{stats.cadence.min}–{stats.cadence.max}</span> spm
+            </span>
+          )}
+        </div>
+      </div>
 
-          {/* Horizontal grid lines */}
-          {[0.25, 0.5, 0.75].map((ratio, i) => (
+      {/* Chart */}
+      <div className="h-52">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 10, right: 45, left: 5, bottom: 5 }}>
+            <defs>
+              <linearGradient id="perfHrGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4} />
+                <stop offset="50%" stopColor="#ef4444" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="perfCadenceGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="#60a5fa" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+
+            <XAxis
+              dataKey="elapsedSeconds"
+              tickFormatter={(value) => formatElapsedTime(value)}
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              tickLine={false}
+            />
+
+            <YAxis
+              yAxisId="left"
+              domain={[stats.hr.min - 10, stats.hr.max + 10]}
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fill: '#ef4444', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={35}
+            />
+
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[stats.cadence.min - 10, stats.cadence.max + 10]}
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fill: '#60a5fa', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={35}
+            />
+
+            <Tooltip content={<ChartTooltip />} />
+
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey="hr"
+              stroke="transparent"
+              fill="url(#perfHrGrad)"
+              connectNulls={true}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="hr"
+              stroke="#ef4444"
+              strokeWidth={2}
+              dot={false}
+              connectNulls={true}
+            />
+
+            <Area
+              yAxisId="right"
+              type="monotone"
+              dataKey="cadence"
+              stroke="transparent"
+              fill="url(#perfCadenceGrad)"
+              connectNulls={true}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="cadence"
+              stroke="#60a5fa"
+              strokeWidth={2}
+              dot={false}
+              connectNulls={true}
+            />
+
+            {/* Pace Line (inverted - lower is better) */}
+            {activeMetrics.pace && stats.pace.avg > 0 && (
+              <Line
+                yAxisId="hr"
+                type="monotone"
+                dataKey="pace"
+                stroke="#34d399"
+                strokeWidth={1}
+                strokeDasharray="4 2"
+                dot={false}
+                connectNulls
+                activeDot={{ r: 3, fill: '#34d399', stroke: '#fff', strokeWidth: 2 }}
+              />
+            )}
+
+            {/* Cycling Speed */}
+            {activeMetrics.cyclingSpeed && (
+              <Line
+                yAxisId="hr"
+                type="monotone"
+                dataKey="cyclingSpeed"
+                stroke="#22d3ee"
+                strokeWidth={1.5}
+                dot={false}
+                connectNulls
+                activeDot={{ r: 3, fill: '#22d3ee', stroke: '#fff', strokeWidth: 2 }}
+              />
+            )}
+
+            {/* Cycling Power */}
+            {activeMetrics.cyclingPower && (
+              <Line
+                yAxisId="hr"
+                type="monotone"
+                dataKey="cyclingPower"
+                stroke="#fbbf24"
+                strokeWidth={1.5}
+                dot={false}
+                connectNulls
+                activeDot={{ r: 3, fill: '#fbbf24', stroke: '#fff', strokeWidth: 2 }}
+              />
+            )}
+
+            <Legend
+              verticalAlign="bottom"
+              height={30}
+              content={() => null}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Interactive legend / toggles */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {showHr && (
+          <button
+            onClick={() => toggleMetric('hr')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-all',
+              activeMetrics.hr
+                ? 'bg-red-500/20 text-red-400'
+                : 'bg-muted/30 text-muted-foreground'
+            )}
+          >
+            <Heart className="size-3" />
+            Heart Rate
+          </button>
+        )}
+        {showCadence && stats.cadence.avg > 0 && (
+          <button
+            onClick={() => toggleMetric('cadence')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-all',
+              activeMetrics.cadence
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-muted/30 text-muted-foreground'
+            )}
+          >
+            <Footprints className="size-3" />
+            Cadence
+          </button>
+        )}
+        {showPace && stats.pace.avg > 0 && (
+          <button
+            onClick={() => toggleMetric('pace')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-all',
+              activeMetrics.pace
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'bg-muted/30 text-muted-foreground'
+            )}
+          >
+            <Activity className="size-3" />
+            Pace
+          </button>
+        )}
+        {showCyclingSpeed && (
+          <button
+            onClick={() => toggleMetric('cyclingSpeed')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-all',
+              activeMetrics.cyclingSpeed
+                ? 'bg-cyan-500/20 text-cyan-400'
+                : 'bg-muted/30 text-muted-foreground'
+            )}
+          >
+            <Activity className="size-3" />
+            Speed
+          </button>
+        )}
+        {showCyclingPower && (
+          <button
+            onClick={() => toggleMetric('cyclingPower')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-all',
+              activeMetrics.cyclingPower
+                ? 'bg-amber-500/20 text-amber-400'
+                : 'bg-muted/30 text-muted-foreground'
+            )}
+          >
+            <Zap className="size-3" />
+            Power
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// ZONE-COLORED HR CHART (Apple Fitness style)
+// ============================================
+
+interface ZoneColoredHrChartProps {
+  data: EnhancedWorkoutAnalytics['timeSeriesData']
+  hrZonesConfig: HrZonesConfig
+  hrAverage?: number | null
+  className?: string
+}
+
+function ZoneColoredHrChart({ data, hrZonesConfig, hrAverage, className }: ZoneColoredHrChartProps) {
+  const [hoverData, setHoverData] = useState<{ x: number; hr: number; zone: number; zoneLabel: string; zoneColor: string; time: number } | null>(null)
+  const chartRef = React.useRef<HTMLDivElement>(null)
+
+  if (data.length === 0 || !hrZonesConfig || hrZonesConfig.zones.length < 5) return null
+
+  const zones = hrZonesConfig.zones
+
+  // Get zone for a given BPM using minBpm thresholds from Apple Watch
+  // Zone 1: <135, Zone 2: 136-147, Zone 3: 148-158, Zone 4: 159-169, Zone 5: 170+
+  const getZoneForBpm = (bpm: number): { zone: number; color: string; label: string } => {
+    const z5 = zones[4]
+    const z4 = zones[3]
+    const z3 = zones[2]
+    const z2 = zones[1]
+    const z1 = zones[0]
+    
+    // Check from highest to lowest zone using minBpm
+    if (z5 && z5.minBpm && bpm >= z5.minBpm) return { zone: 5, color: z5.color, label: z5.label }
+    if (z4 && z4.minBpm && bpm >= z4.minBpm) return { zone: 4, color: z4.color, label: z4.label }
+    if (z3 && z3.minBpm && bpm >= z3.minBpm) return { zone: 3, color: z3.color, label: z3.label }
+    if (z2 && z2.minBpm && bpm >= z2.minBpm) return { zone: 2, color: z2.color, label: z2.label }
+    return { zone: 1, color: z1?.color || '#60a5fa', label: z1?.label || 'Zone 1' }
+  }
+
+  const getZoneColor = (bpm: number): string => getZoneForBpm(bpm).color
+  const getZoneNumber = (bpm: number): number => getZoneForBpm(bpm).zone
+
+  // Sample data for performance
+  const maxPoints = 200
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const chartData = useMemo(() => {
+    if (data.length <= maxPoints) return data.filter(d => d.hr !== null)
+    const step = Math.ceil(data.length / maxPoints)
+    return data.filter((d, idx) => idx % step === 0 && d.hr !== null)
+  }, [data])
+
+  // Calculate stats
+  const hrValues = chartData.filter(d => d.hr !== null).map(d => d.hr!)
+  if (hrValues.length === 0) return null
+  
+  const minHr = Math.min(...hrValues)
+  const maxHr = Math.max(...hrValues)
+  const lastPoint = chartData[chartData.length - 1]
+  const totalSeconds = lastPoint ? lastPoint.elapsedSeconds : 0
+
+  // Build segments with zone colors
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const segments = useMemo(() => {
+    const segs: { startIdx: number; endIdx: number; color: string; zone: number }[] = []
+    let currentZone = -1
+    let segStart = 0
+
+    chartData.forEach((point, idx) => {
+      if (point.hr === null) return
+      const zone = getZoneNumber(point.hr)
+      if (zone !== currentZone) {
+        if (currentZone !== -1) {
+          const startPoint = chartData[segStart]
+          if (startPoint && startPoint.hr !== null) {
+            segs.push({
+              startIdx: segStart,
+              endIdx: idx,
+              color: getZoneColor(startPoint.hr),
+              zone: currentZone,
+            })
+          }
+        }
+        segStart = idx
+        currentZone = zone
+      }
+    })
+    // Push last segment
+    if (currentZone !== -1) {
+      const startPoint = chartData[segStart]
+      if (startPoint && startPoint.hr !== null) {
+        segs.push({
+          startIdx: segStart,
+          endIdx: chartData.length - 1,
+          color: getZoneColor(startPoint.hr),
+          zone: currentZone,
+        })
+      }
+    }
+    return segs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartData])
+
+  // SVG dimensions
+  const width = 400
+  const height = 140
+  const padding = { top: 15, right: 40, bottom: 30, left: 45 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+
+  // Scale functions
+  const xScale = (idx: number) => padding.left + (idx / (chartData.length - 1)) * chartWidth
+  const yScale = (hr: number) => padding.top + chartHeight - ((hr - minHr + 10) / (maxHr - minHr + 20)) * chartHeight
+
+  // Build path for each segment
+  const segmentPaths = segments.map((seg, segIdx) => {
+    const points: string[] = []
+    for (let i = seg.startIdx; i <= seg.endIdx; i++) {
+      const point = chartData[i]
+      if (point && point.hr !== null) {
+        const x = xScale(i)
+        const y = yScale(point.hr)
+        points.push(`${points.length === 0 ? 'M' : 'L'} ${x} ${y}`)
+      }
+    }
+    return { path: points.join(' '), color: seg.color, key: segIdx }
+  })
+
+  // Y-axis ticks
+  const yTicks = [minHr, Math.round((minHr + maxHr) / 2), maxHr]
+
+  return (
+    <div className={cn('space-y-3', className)}>
+      {/* Header with avg HR */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Heart className="size-4 text-red-500" />
+          <span className="text-sm font-medium">Heart Rate</span>
+        </div>
+        {hrAverage && (
+          <div className="text-right">
+            <span className="text-2xl font-bold text-red-500">{hrAverage}</span>
+            <span className="text-muted-foreground ml-1 text-xs">BPM AVG</span>
+          </div>
+        )}
+      </div>
+
+      {/* Chart */}
+      <div 
+        ref={chartRef}
+        className="relative"
+        onMouseMove={(e) => {
+          if (!chartRef.current) return
+          const rect = chartRef.current.getBoundingClientRect()
+          const relativeX = e.clientX - rect.left
+          const svgWidth = rect.width
+          const dataX = ((relativeX / svgWidth) * width - padding.left) / chartWidth
+          const dataIdx = Math.round(dataX * (chartData.length - 1))
+          
+          if (dataIdx >= 0 && dataIdx < chartData.length) {
+            const point = chartData[dataIdx]
+            if (point && point.hr != null) {
+              const zoneInfo = getZoneForBpm(point.hr)
+              setHoverData({
+                x: relativeX,
+                hr: point.hr,
+                zone: zoneInfo.zone,
+                zoneLabel: zoneInfo.label,
+                zoneColor: zoneInfo.color,
+                time: point.elapsedSeconds
+              })
+            }
+          }
+        }}
+        onMouseLeave={() => setHoverData(null)}
+      >
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+          {/* Zone background bands */}
+          {hrZonesConfig.zones.map((zone, idx) => {
+            const topBpm = idx === 4 ? maxHr + 10 : (hrZonesConfig.zones[idx + 1]?.maxBpm || zone.minBpm || 0)
+            const bottomBpm = zone.maxBpm || zone.minBpm || minHr
+            const y1 = yScale(topBpm)
+            const y2 = yScale(bottomBpm)
+            if (y1 >= padding.top + chartHeight || y2 <= padding.top) return null
+            return (
+              <rect
+                key={idx}
+                x={padding.left}
+                y={Math.max(y1, padding.top)}
+                width={chartWidth}
+                height={Math.min(y2, padding.top + chartHeight) - Math.max(y1, padding.top)}
+                fill={zone.color}
+                fillOpacity={0.08}
+              />
+            )
+          })}
+
+          {/* Grid lines */}
+          {yTicks.map((tick, idx) => (
             <line
-              key={i}
-              x1={0}
-              y1={chartHeight * ratio}
-              x2={width}
-              y2={chartHeight * ratio}
-              stroke="currentColor"
-              strokeOpacity="0.1"
-              strokeWidth="0.3"
-              vectorEffect="non-scaling-stroke"
+              key={idx}
+              x1={padding.left}
+              y1={yScale(tick)}
+              x2={padding.left + chartWidth}
+              y2={yScale(tick)}
+              stroke="rgba(255,255,255,0.1)"
+              strokeDasharray="2 4"
             />
           ))}
 
-          {/* HR area fill */}
-          {showHr && hrPath && (
-            <path
-              d={`M ${hrPath} L ${width},${chartHeight - 10} L 0,${chartHeight - 10} Z`}
-              fill="url(#hrGradientFill)"
+          {/* Average HR line */}
+          {hrAverage && (
+            <line
+              x1={padding.left}
+              y1={yScale(hrAverage)}
+              x2={padding.left + chartWidth}
+              y2={yScale(hrAverage)}
+              stroke="#ef4444"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              strokeOpacity={0.6}
             />
           )}
 
-          {/* Pace line (green) - thinner, behind HR */}
-          {showPace && pacePath && (
+          {/* Zone-colored HR line segments */}
+          {segmentPaths.map(({ path, color, key }) => (
             <path
-              d={`M ${pacePath}`}
+              key={key}
+              d={path}
               fill="none"
-              stroke="rgb(34 197 94)"
-              strokeWidth="1.5"
-              strokeOpacity="0.7"
+              stroke={color}
+              strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
-
-          {/* Cadence line (blue) */}
-          {showCadence && cadencePath && (
-            <path
-              d={`M ${cadencePath}`}
-              fill="none"
-              stroke="rgb(59 130 246)"
-              strokeWidth="1.5"
-              strokeOpacity="0.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
-
-          {/* Cycling Speed line (cyan) */}
-          {showCyclingSpeed && cyclingSpeedPath && (
-            <path
-              d={`M ${cyclingSpeedPath}`}
-              fill="none"
-              stroke="rgb(6 182 212)"
-              strokeWidth="1.5"
-              strokeOpacity="0.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
-
-          {/* Cycling Power line (amber/yellow) */}
-          {showCyclingPower && cyclingPowerPath && (
-            <path
-              d={`M ${cyclingPowerPath}`}
-              fill="none"
-              stroke="rgb(245 158 11)"
-              strokeWidth="1.5"
-              strokeOpacity="0.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          )}
-
-          {/* HR line (red) - main line, on top */}
-          {showHr && hrPath && (
-            <path
-              d={`M ${hrPath}`}
-              fill="none"
-              stroke="rgb(239 68 68)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-              filter="url(#glow)"
-            />
-          )}
-
-          {/* Hover detection areas */}
-          {filteredData.map((_, i) => (
-            <rect
-              key={i}
-              x={xScale(i) - width / filteredData.length / 2}
-              y={0}
-              width={width / filteredData.length}
-              height={chartHeight}
-              fill="transparent"
-              onMouseEnter={() => setHoveredIndex(i)}
             />
           ))}
 
           {/* Hover indicator line */}
-          {hoveredIndex !== null && (
+          {hoverData && (
             <>
               <line
-                x1={xScale(hoveredIndex)}
-                y1={0}
-                x2={xScale(hoveredIndex)}
-                y2={chartHeight}
-                stroke="white"
-                strokeOpacity="0.6"
-                strokeWidth="1"
-                strokeDasharray="3,3"
-                vectorEffect="non-scaling-stroke"
+                x1={hoverData.x / (chartRef.current?.getBoundingClientRect().width || 1) * width}
+                y1={padding.top}
+                x2={hoverData.x / (chartRef.current?.getBoundingClientRect().width || 1) * width}
+                y2={padding.top + chartHeight}
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth={1}
               />
-              {/* Hover dots */}
-              {hovered?.hr && showHr && (
-                <circle
-                  cx={xScale(hoveredIndex)}
-                  cy={normalizeHr(hovered.hr)}
-                  r="3"
-                  fill="rgb(239 68 68)"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )}
-              {hovered?.cadence && showCadence && (
-                <circle
-                  cx={xScale(hoveredIndex)}
-                  cy={normalizeCadence(hovered.cadence)}
-                  r="2.5"
-                  fill="rgb(59 130 246)"
-                  stroke="white"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )}
-              {hovered?.pace &&
-                hovered.pace > 0 &&
-                hovered.pace < 30 &&
-                showPace && (
-                  <circle
-                    cx={xScale(hoveredIndex)}
-                    cy={normalizePace(hovered.pace)}
-                    r="2.5"
-                    fill="rgb(34 197 94)"
-                    stroke="white"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
-              {hovered?.cyclingSpeed &&
-                hovered.cyclingSpeed > 0 &&
-                showCyclingSpeed && (
-                  <circle
-                    cx={xScale(hoveredIndex)}
-                    cy={normalizeCyclingSpeed(hovered.cyclingSpeed)}
-                    r="2.5"
-                    fill="rgb(6 182 212)"
-                    stroke="white"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
-              {hovered?.cyclingPower &&
-                hovered.cyclingPower > 0 &&
-                showCyclingPower && (
-                  <circle
-                    cx={xScale(hoveredIndex)}
-                    cy={normalizeCyclingPower(hovered.cyclingPower)}
-                    r="2.5"
-                    fill="rgb(245 158 11)"
-                    stroke="white"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
+              <circle
+                cx={hoverData.x / (chartRef.current?.getBoundingClientRect().width || 1) * width}
+                cy={yScale(hoverData.hr)}
+                r={5}
+                fill={hoverData.zoneColor}
+                stroke="#fff"
+                strokeWidth={2}
+              />
             </>
           )}
+
+          {/* Y-axis labels */}
+          {yTicks.map((tick, idx) => (
+            <text
+              key={idx}
+              x={padding.left - 8}
+              y={yScale(tick) + 4}
+              textAnchor="end"
+              className="fill-muted-foreground"
+              style={{ fontSize: '10px' }}
+            >
+              {tick}
+            </text>
+          ))}
+
+          {/* X-axis labels */}
+          <text x={padding.left} y={height - 8} className="fill-muted-foreground" style={{ fontSize: '10px' }}>
+            {formatElapsedTime(0)}
+          </text>
+          <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: '10px' }}>
+            {formatElapsedTime(totalSeconds / 2)}
+          </text>
+          <text x={padding.left + chartWidth} y={height - 8} textAnchor="end" className="fill-muted-foreground" style={{ fontSize: '10px' }}>
+            {formatElapsedTime(totalSeconds)}
+          </text>
+
+          {/* Min/Max labels on right */}
+          <text x={width - 5} y={yScale(maxHr) + 4} textAnchor="end" className="fill-muted-foreground" style={{ fontSize: '10px' }}>
+            {maxHr}
+          </text>
+          <text x={width - 5} y={yScale(minHr) + 4} textAnchor="end" className="fill-muted-foreground" style={{ fontSize: '10px' }}>
+            {minHr}
+          </text>
         </svg>
 
         {/* Tooltip */}
-        {hovered && (
-          <div className="bg-background/95 border-border/50 absolute top-3 right-3 z-10 min-w-[120px] rounded-lg border p-2.5 text-xs shadow-xl backdrop-blur-md">
-            <div className="text-foreground border-border/30 mb-1.5 border-b pb-1 font-semibold">
-              {formatElapsedTime(hovered.elapsedSeconds)}
+        {hoverData && (
+          <div 
+            className="absolute pointer-events-none bg-popover/95 rounded-lg border border-border/50 px-3 py-2 shadow-xl backdrop-blur-sm z-10"
+            style={{ 
+              left: Math.min(hoverData.x + 10, (chartRef.current?.getBoundingClientRect().width || 300) - 140),
+              top: 20 
+            }}
+          >
+            <div className="text-muted-foreground mb-1.5 text-xs font-medium">
+              {formatElapsedTime(hoverData.time)}
             </div>
-            <div className="space-y-1">
-              {showHr && hovered.hr && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-1.5 text-red-400">
-                    <Heart className="size-3" />
-                    <span>HR</span>
-                  </span>
-                  <span className="text-foreground font-medium">
-                    {hovered.hr}{' '}
-                    <span className="text-muted-foreground font-normal">
-                      bpm
-                    </span>
-                  </span>
-                </div>
-              )}
-              {showCadence && hovered.cadence && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-1.5 text-blue-400">
-                    <Footprints className="size-3" />
-                    <span>Cadence</span>
-                  </span>
-                  <span className="text-foreground font-medium">
-                    {hovered.cadence}{' '}
-                    <span className="text-muted-foreground font-normal">
-                      spm
-                    </span>
-                  </span>
-                </div>
-              )}
-              {showPace &&
-                hovered.pace &&
-                hovered.pace > 0 &&
-                hovered.pace < 30 && (
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-1.5 text-green-400">
-                      <Gauge className="size-3" />
-                      <span>Pace</span>
-                    </span>
-                    <span className="text-foreground font-medium">
-                      {formatPace(hovered.pace)}{' '}
-                      <span className="text-muted-foreground font-normal">
-                        /mi
-                      </span>
-                    </span>
-                  </div>
-                )}
-              {showCyclingSpeed && hovered.cyclingSpeed && hovered.cyclingSpeed > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-1.5 text-cyan-400">
-                    <Gauge className="size-3" />
-                    <span>Speed</span>
-                  </span>
-                  <span className="text-foreground font-medium">
-                    {hovered.cyclingSpeed.toFixed(1)}{' '}
-                    <span className="text-muted-foreground font-normal">mph</span>
-                  </span>
-                </div>
-              )}
-              {showCyclingPower && hovered.cyclingPower && hovered.cyclingPower > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-1.5 text-amber-400">
-                    <Zap className="size-3" />
-                    <span>Power</span>
-                  </span>
-                  <span className="text-foreground font-medium">
-                    {Math.round(hovered.cyclingPower)}{' '}
-                    <span className="text-muted-foreground font-normal">W</span>
-                  </span>
-                </div>
-              )}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Heart className="size-3" style={{ color: hoverData.zoneColor }} />
+                <span className="text-xs text-muted-foreground">Heart Rate</span>
+              </div>
+              <span className="text-sm font-semibold" style={{ color: hoverData.zoneColor }}>
+                {Math.round(hoverData.hr)} bpm
+              </span>
             </div>
-          </div>
-        )}
-
-        {/* Y-axis labels - HR range */}
-        {showHr && stats.maxHr > 0 && (
-          <div className="pointer-events-none absolute top-2 bottom-2 left-1 flex flex-col justify-between text-[9px] font-medium text-red-400/70">
-            <span>{stats.maxHr}</span>
-            <span>{stats.minHr}</span>
+            <div className="flex items-center justify-between gap-4 mt-1">
+              <span className="text-xs text-muted-foreground">Zone</span>
+              <div className="flex items-center gap-1.5">
+                <div className="size-2 rounded-full" style={{ backgroundColor: hoverData.zoneColor }} />
+                <span className="text-xs font-medium" style={{ color: hoverData.zoneColor }}>
+                  {hoverData.zoneLabel}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Time axis */}
-      <div className="text-muted-foreground mt-1 flex justify-between px-1 text-[10px]">
+      {/* Zone legend - showing exact BPM ranges from Apple Watch */}
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+        {hrZonesConfig.zones.map((zone) => {
+          // Build BPM range string based on zone
+          let rangeStr = ''
+          if (zone.zone === 1) {
+            rangeStr = `<${(zone.maxBpm || 0) + 1}`
+          } else if (zone.zone === 5) {
+            rangeStr = `${zone.minBpm}+`
+          } else {
+            rangeStr = `${zone.minBpm}-${zone.maxBpm}`
+          }
+          return (
+            <div key={zone.zone} className="flex items-center gap-1.5">
+              <div className="size-2.5 rounded-full" style={{ backgroundColor: zone.color }} />
+              <span style={{ color: zone.color }} className="font-medium">{zone.label}</span>
+              <span className="text-muted-foreground">{rangeStr}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// EVENT TIMELINE (CSS-based, not SVG)
+// ============================================
+
+function EventTimeline({
+  events,
+  workoutDuration,
+  startTime,
+  className,
+}: {
+  events: WorkoutEventData[]
+  workoutDuration: number
+  startTime: Date
+  className?: string
+}) {
+  if (events.length === 0) return null
+
+  const segments = events.filter(e => e.event_type === 'segment')
+  const pauses = events.filter(e => e.event_type.includes('pause'))
+
+  const getPositionPercent = (timestamp: string) => {
+    const elapsed = (new Date(timestamp).getTime() - startTime.getTime()) / 1000
+    return (elapsed / workoutDuration) * 100
+  }
+
+  return (
+    <div className={className}>
+      {/* Timeline bar */}
+      <div className="bg-muted/40 relative h-4 w-full overflow-hidden rounded">
+        {/* Segments */}
+        {segments.map((seg, idx) => {
+          const left = getPositionPercent(seg.timestamp)
+          const width = seg.duration ? (seg.duration / workoutDuration) * 100 : 1
+          return (
+            <div
+              key={`seg-${idx}`}
+              className="absolute top-0 h-full bg-green-500/70"
+              style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
+            />
+          )
+        })}
+        {/* Pause markers */}
+        {pauses.map((p, idx) => {
+          const left = getPositionPercent(p.timestamp)
+          return (
+            <div
+              key={`pause-${idx}`}
+              className="absolute top-0 h-full w-0.5 bg-orange-500"
+              style={{ left: `${left}%` }}
+            />
+          )
+        })}
+      </div>
+
+      {/* Time labels */}
+      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
         <span>0:00</span>
-        <span>{formatElapsedTime(Math.round(totalDuration / 2))}</span>
-        <span>{formatElapsedTime(totalDuration)}</span>
+        <span>{formatElapsedTime(workoutDuration / 2)}</span>
+        <span>{formatElapsedTime(workoutDuration)}</span>
       </div>
 
       {/* Legend */}
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
-        {showHr && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-4 rounded-full bg-red-500" />
-            <span className="text-muted-foreground">Heart Rate</span>
-          </div>
+      <div className="mt-2 flex items-center gap-4 text-xs">
+        {segments.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-sm bg-green-500" />
+            {segments.length} segments
+          </span>
         )}
-        {showCadence && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-4 rounded-full bg-blue-500" />
-            <span className="text-muted-foreground">Cadence</span>
-          </div>
-        )}
-        {showPace && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-4 rounded-full bg-green-500" />
-            <span className="text-muted-foreground">Pace</span>
-          </div>
-        )}
-        {showCyclingSpeed && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-4 rounded-full bg-cyan-500" />
-            <span className="text-muted-foreground">Speed</span>
-          </div>
-        )}
-        {showCyclingPower && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-4 rounded-full bg-amber-500" />
-            <span className="text-muted-foreground">Power</span>
-          </div>
+        {pauses.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-sm bg-orange-500" />
+            {pauses.length} pauses
+          </span>
         )}
       </div>
     </div>
@@ -771,1170 +1439,523 @@ function TimeSeriesChart({
 }
 
 // ============================================
-// HR ZONES BAR
+// HR ZONES (CSS-based flexbox)
 // ============================================
 
-interface HrZonesBarProps {
-  zones: HeartRateZone[]
-  showLabels?: boolean
-  showDuration?: boolean
-  className?: string
-}
+function HrZonesBar({ zones, className }: { zones: HeartRateZone[]; className?: string }) {
+  const activeZones = zones.filter(z => z.percentage > 0)
+  if (activeZones.length === 0) return null
 
-function HrZonesBar({
-  zones,
-  showLabels = true,
-  showDuration = false,
-  className,
-}: HrZonesBarProps) {
-  const orderedZones = ['fatBurn', 'cardio', 'peak'] as const
-  const sortedZones = orderedZones
-    .map(name => zones.find(z => z.name === name))
-    .filter(Boolean) as HeartRateZone[]
+  const getZoneColor = (name: string) => ZONE_COLORS[name] || DEFAULT_ZONE_COLOR
+  const getZoneLabel = (name: string) => ZONE_LABELS[name] || name
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <div className="bg-muted/30 flex h-6 overflow-hidden rounded-full">
-        {sortedZones.map(
-          zone =>
-            zone.percentage > 0 && (
+    <div className={className}>
+      {/* Bar */}
+      <div className="flex h-5 w-full overflow-hidden rounded">
+        {activeZones.map((zone, idx) => {
+          const colors = getZoneColor(zone.name)
+          return (
+            <div
+              key={idx}
+              className={cn(colors.bar)}
+              style={{ width: `${zone.percentage}%`, opacity: 0.85 }}
+            />
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {activeZones.map((zone, idx) => {
+          const colors = getZoneColor(zone.name)
+          return (
+            <span key={idx} className="flex items-center gap-1.5">
+              <span className={cn('size-2 rounded-sm', colors.bar)} />
+              <span className={colors.text}>{getZoneLabel(zone.name)}</span>
+              <span className="text-muted-foreground">{zone.percentage}%</span>
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// SPLITS BAR CHART (CSS-based)
+// ============================================
+
+function SplitsChart({ splits, className }: { splits: WorkoutSplit[]; className?: string }) {
+  if (splits.length === 0) return null
+
+  const paces = splits.map(s => s.avgPace)
+  const minPace = Math.min(...paces)
+  const maxPace = Math.max(...paces)
+  const range = maxPace - minPace || 1
+  const avgPace = paces.reduce((a, b) => a + b, 0) / paces.length
+
+  return (
+    <div className={className}>
+      {/* Bars */}
+      <div className="flex h-20 items-end gap-1">
+        {splits.map((split, idx) => {
+          const isFastest = split.avgPace === minPace
+          const heightPercent = 30 + ((maxPace - split.avgPace) / range) * 70
+          return (
+            <div key={idx} className="flex flex-1 flex-col items-center gap-1">
               <div
-                key={zone.name}
                 className={cn(
-                  'group relative h-full transition-all',
-                  ZONE_COLORS[zone.name].bar
+                  'w-full rounded-t transition-all',
+                  isFastest ? 'bg-green-500' : 'bg-muted-foreground/40'
                 )}
-                style={{ width: `${zone.percentage}%` }}
-                title={`${ZONE_LABELS[zone.name]}: ${zone.percentage}%`}
-              >
-                {zone.percentage > 10 && (
-                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white">
-                    {zone.percentage}%
-                  </span>
-                )}
-              </div>
-            )
-        )}
+                style={{ height: `${heightPercent}%` }}
+              />
+              <span className="text-muted-foreground text-[10px]">{split.splitNumber}</span>
+            </div>
+          )
+        })}
       </div>
 
-      {showLabels && (
-        <div className="flex flex-wrap gap-2 text-xs">
-          {sortedZones.map(
-            zone =>
-              zone.percentage > 0 && (
-                <div
-                  key={zone.name}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-full px-2 py-1',
-                    ZONE_COLORS[zone.name].bg,
-                    ZONE_COLORS[zone.name].text
-                  )}
-                >
-                  <span className="font-medium">{ZONE_LABELS[zone.name]}</span>
-                  <span>{zone.percentage}%</span>
-                  {showDuration && zone.duration > 0 && (
-                    <span className="opacity-75">
-                      ({formatDuration(zone.duration)})
-                    </span>
-                  )}
-                </div>
-              )
-          )}
-        </div>
-      )}
+      {/* Stats */}
+      <div className="mt-2 flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">
+          Best: <span className="font-medium text-green-400">{formatPace(minPace)}/mi</span>
+        </span>
+        <span className="text-muted-foreground">
+          Avg: <span className="font-medium">{formatPace(avgPace)}/mi</span>
+        </span>
+      </div>
     </div>
   )
 }
 
 // ============================================
-// SPLITS TABLE
+// STAT COMPONENT
 // ============================================
 
-interface SplitsTableProps {
-  splits: WorkoutSplit[]
-  avgPace: number
-  avgHr: number
-  className?: string
-}
-
-function SplitsTable({ splits, avgPace, avgHr, className }: SplitsTableProps) {
-  if (splits.length === 0) {
-    return (
-      <div className="text-muted-foreground py-4 text-center text-sm">
-        Not enough distance for mile splits
-      </div>
-    )
-  }
-
-  const minPace = Math.min(...splits.map(s => s.avgPace))
-  const maxPace = Math.max(...splits.map(s => s.avgPace))
-  const paceRange = maxPace - minPace || 1
-
-  // Calculate bar width based on pace (faster = longer bar)
-  const getPaceBarWidth = (pace: number) => {
-    // Invert so faster pace = longer bar
-    const normalized = 1 - (pace - minPace) / paceRange
-    return Math.max(20, normalized * 100) // Min 20%, max 100%
-  }
-
-  const showCadence = splits.some(s => s.avgCadence !== null)
-
+function Stat({ label, value, unit, subtext, color, size = 'default' }: {
+  label: string
+  value: string | number
+  unit?: string
+  subtext?: string
+  color?: string
+  size?: 'default' | 'large'
+}) {
   return (
-    <div className={cn('space-y-2', className)}>
-      {splits.map(split => {
-        const isFastest = split.avgPace === minPace
-        const isSlowest = split.avgPace === maxPace
-        const barWidth = getPaceBarWidth(split.avgPace)
-
-        return (
-          <div
-            key={split.splitNumber}
-            className={cn(
-              'relative rounded-lg border p-3 transition-colors',
-              isFastest
-                ? 'border-green-500/50 bg-green-500/5'
-                : isSlowest
-                  ? 'border-red-500/30 bg-red-500/5'
-                  : 'border-border/30 bg-muted/20'
-            )}
-          >
-            {/* Mile number and badge */}
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold">
-                  Mile {split.splitNumber}
-                </span>
-                {isFastest && (
-                  <Badge className="border-green-500/30 bg-green-500/20 text-[10px] text-green-400">
-                    <Zap className="mr-0.5 size-2.5" />
-                    Fastest
-                  </Badge>
-                )}
-              </div>
-              <Badge
-                variant={
-                  split.paceVsAvg < 0
-                    ? 'default'
-                    : split.paceVsAvg > 0
-                      ? 'secondary'
-                      : 'outline'
-                }
-                className="text-[10px]"
-              >
-                {split.paceVsAvg > 0 ? '+' : ''}
-                {split.paceVsAvg}% vs avg
-              </Badge>
-            </div>
-
-            {/* Pace bar visualization */}
-            <div className="mb-2">
-              <div className="mb-1 flex items-center gap-2">
-                <Gauge className="size-3 text-green-500" />
-                <span className="text-muted-foreground text-xs">Pace</span>
-                <span className="ml-auto font-mono font-semibold">
-                  {formatPace(split.avgPace)}/mi
-                </span>
-              </div>
-              <div className="bg-muted/30 h-2 overflow-hidden rounded-full">
-                <div
-                  className={cn(
-                    'h-full rounded-full transition-all',
-                    isFastest
-                      ? 'bg-green-500'
-                      : isSlowest
-                        ? 'bg-red-400'
-                        : 'bg-primary/60'
-                  )}
-                  style={{ width: `${barWidth}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Stats row */}
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <Heart className="size-3 text-red-500" />
-                <span className="text-muted-foreground">HR:</span>
-                <span className="font-medium">{split.avgHr} bpm</span>
-              </div>
-              {showCadence && split.avgCadence && (
-                <div className="flex items-center gap-1.5">
-                  <Footprints className="size-3 text-blue-500" />
-                  <span className="text-muted-foreground">Cadence:</span>
-                  <span className="font-medium">{split.avgCadence} spm</span>
-                </div>
-              )}
-              <div className="ml-auto flex items-center gap-1.5">
-                <Timer className="text-muted-foreground size-3" />
-                <span className="font-medium">
-                  {formatDuration(split.timeSeconds)}
-                </span>
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ============================================
-// INSIGHT CARD
-// ============================================
-
-interface InsightCardProps {
-  insight: PerformanceInsight
-  className?: string
-}
-
-function InsightCard({ insight, className }: InsightCardProps) {
-  const iconMap: Record<string, React.ReactNode> = {
-    heart: <Heart className="size-4" />,
-    'trending-up': <TrendingUp className="size-4" />,
-    'trending-down': <TrendingDown className="size-4" />,
-    footprints: <Footprints className="size-4" />,
-    target: <Target className="size-4" />,
-    award: <Award className="size-4" />,
-    'alert-triangle': <AlertTriangle className="size-4" />,
-    flame: <Flame className="size-4" />,
-    zap: <Zap className="size-4" />,
-    clock: <Clock className="size-4" />,
-    'battery-charging': <Battery className="size-4" />,
-  }
-
-  const categoryStyles: Record<
-    PerformanceInsight['category'],
-    { bg: string; border: string; icon: string }
-  > = {
-    strength: {
-      bg: 'bg-green-500/10',
-      border: 'border-green-500/30',
-      icon: 'text-green-500',
-    },
-    improvement: {
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/30',
-      icon: 'text-blue-500',
-    },
-    warning: {
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/30',
-      icon: 'text-amber-500',
-    },
-    info: {
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/30',
-      icon: 'text-purple-500',
-    },
-  }
-
-  const styles = categoryStyles[insight.category]
-
-  return (
-    <div
-      className={cn(
-        'rounded-lg border p-3',
-        styles.bg,
-        styles.border,
-        className
-      )}
-    >
-      <div className="flex gap-3">
-        <div className={cn('mt-0.5', styles.icon)}>
-          {insight.icon ? (
-            iconMap[insight.icon] || <Info className="size-4" />
-          ) : (
-            <Info className="size-4" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-0.5 flex items-center gap-2">
-            <span className="text-sm font-medium">{insight.title}</span>
-            {insight.metric && (
-              <Badge variant="outline" className="text-[10px]">
-                {insight.metric}
-              </Badge>
-            )}
-          </div>
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {insight.description}
-          </p>
-        </div>
+    <div className="min-w-0">
+      <div className="text-muted-foreground mb-1 text-xs uppercase tracking-wide">{label}</div>
+      <div className={cn('flex items-baseline gap-1', size === 'large' ? 'text-2xl' : 'text-lg')}>
+        <span className={cn('font-semibold tabular-nums', color)}>{value}</span>
+        {unit && <span className="text-muted-foreground text-sm">{unit}</span>}
       </div>
+      {subtext && <div className="text-muted-foreground text-xs">{subtext}</div>}
     </div>
   )
 }
 
 // ============================================
-// METRIC CARD
+// METRIC ROW
 // ============================================
 
-interface MetricCardProps {
+function MetricRow({ icon, label, value, unit, badge, description }: {
   icon: React.ReactNode
   label: string
   value: string | number
-  subValue?: string
-  trend?: 'up' | 'down' | 'neutral'
-  className?: string
-}
-
-function MetricCard({
-  icon,
-  label,
-  value,
-  subValue,
-  trend,
-  className,
-}: MetricCardProps) {
-  return (
-    <Card className={cn('', className)}>
-      <CardContent className="p-3 text-center">
-        <div className="mb-1 flex justify-center">{icon}</div>
-        <div className="flex items-center justify-center gap-1 text-lg font-semibold">
-          {value}
-          {trend === 'up' && <TrendingUp className="size-3 text-green-500" />}
-          {trend === 'down' && <TrendingDown className="size-3 text-red-500" />}
-        </div>
-        <div className="text-muted-foreground text-xs">{label}</div>
-        {subValue && (
-          <div className="text-muted-foreground mt-0.5 text-[10px]">
-            {subValue}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-// ============================================
-// SECTION HEADER COMPONENT
-// ============================================
-
-interface SectionHeaderProps {
-  icon: React.ReactNode
-  title: string
+  unit?: string
+  badge?: { label: string; variant: 'good' | 'neutral' | 'warning' }
   description?: string
-  badge?: React.ReactNode
-}
+}) {
+  const badgeColors = {
+    good: 'bg-green-500/20 text-green-400',
+    neutral: 'bg-blue-500/20 text-blue-400',
+    warning: 'bg-amber-500/20 text-amber-400',
+  }
 
-function SectionHeader({
-  icon,
-  title,
-  description,
-  badge,
-}: SectionHeaderProps) {
   return (
-    <div className="mb-3 flex items-start justify-between">
-      <div className="flex items-center gap-2">
-        {icon}
-        <div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {description && (
-            <p className="text-muted-foreground text-xs">{description}</p>
-          )}
+    <div className="flex items-center justify-between py-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="text-muted-foreground shrink-0">{icon}</div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">{label}</span>
+            {badge && <span className={cn('rounded px-1.5 py-0.5 text-[10px]', badgeColors[badge.variant])}>{badge.label}</span>}
+          </div>
+          {description && <div className="text-muted-foreground text-xs">{description}</div>}
         </div>
       </div>
-      {badge}
+      <div className="text-right shrink-0 ml-3">
+        <span className="text-base font-semibold tabular-nums">{value}</span>
+        {unit && <span className="text-muted-foreground ml-1 text-xs">{unit}</span>}
+      </div>
     </div>
   )
 }
 
 // ============================================
-// MAIN ENHANCED WORKOUT DETAIL VIEW
+// INSIGHT ROW
+// ============================================
+
+function InsightRow({ insight }: { insight: PerformanceInsight }) {
+  const icons = {
+    positive: <TrendingUp className="size-4 text-green-400" />,
+    negative: <TrendingDown className="size-4 text-red-400" />,
+    neutral: <Info className="size-4 text-blue-400" />,
+    warning: <AlertTriangle className="size-4 text-amber-400" />,
+  }
+
+  return (
+    <div className="flex items-start gap-2.5 py-2">
+      <div className="mt-0.5 shrink-0">{(icons as any)[insight.category]}</div>
+      <div className="min-w-0">
+        <div className="text-sm font-medium">{insight.title}</div>
+        <div className="text-muted-foreground text-xs leading-relaxed">{insight.description}</div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// SECTION LABEL
+// ============================================
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">{children}</div>
+}
+
+// ============================================
+// MAIN COMPONENT
 // ============================================
 
 interface EnhancedWorkoutDetailViewProps {
   workoutId: string
-  onClose?: () => void
+  onBack?: () => void
   className?: string
 }
 
-export function EnhancedWorkoutDetailView({
-  workoutId,
-  onClose,
-  className,
-}: EnhancedWorkoutDetailViewProps) {
+export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: EnhancedWorkoutDetailViewProps) {
   const [data, setData] = useState<WorkoutDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showAllMetrics, setShowAllMetrics] = useState(false)
 
   useEffect(() => {
     async function fetchWorkout() {
       try {
-        const response = await apiGet<WorkoutDetailResponse>(
-          `/api/apple-health/workout/${workoutId}`
-        )
-        if (response.success && response.data) {
-          setData(response.data)
-        }
+        const response = await apiGet<WorkoutDetailResponse>(`/api/apple-health/workout/${workoutId}`)
+        if (response.success && response.data) setData(response.data)
       } catch (error) {
         console.error('Error fetching workout:', error)
       } finally {
         setLoading(false)
       }
     }
-
     fetchWorkout()
   }, [workoutId])
 
+  // Generate personalized advice - must be before early returns to maintain hook order
+  const advice = useMemo(() => {
+    if (!data) return null
+    return generateWorkoutAdvice(data.workout, data.analytics, data.workout.hr_zones)
+  }, [data])
+
   if (loading) {
     return (
-      <div className={cn('flex items-center justify-center p-8', className)}>
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <div className="border-primary size-4 animate-spin rounded-full border-2 border-t-transparent" />
-          Loading workout data...
+      <div className={cn('flex items-center justify-center p-12', className)}>
+        <div className="text-muted-foreground flex items-center gap-2">
+          <div className="border-primary size-5 animate-spin rounded-full border-2 border-t-transparent" />
+          Loading...
         </div>
       </div>
     )
   }
 
-  if (!data) {
+  if (!data || !advice) {
     return (
-      <div className={cn('flex items-center justify-center p-8', className)}>
-        <div className="text-muted-foreground text-sm">Workout not found</div>
+      <div className={cn('flex items-center justify-center p-12', className)}>
+        <div className="text-muted-foreground">Workout not found</div>
       </div>
     )
   }
 
   const { workout, analytics } = data
-  const workoutLabel =
-    WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
+  const workoutLabel = WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
   const isRunning = workout.workout_type === 'running'
   const isCycling = workout.workout_type === 'cycling'
-  const isCardio = [
-    'running',
-    'walking',
-    'cycling',
-    'rowing',
-    'elliptical',
-    'stairClimbing',
-  ].includes(workout.workout_type)
   const hasAnalytics = analytics !== null
+  const hasEvents = data.workoutEvents && data.workoutEvents.length > 0
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn(' px-4 py-4', className)}>
       {/* ============================================ */}
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       {/* ============================================ */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Badge className="px-2.5 py-0.5 text-sm">{workoutLabel}</Badge>
-          <span className="text-muted-foreground text-sm">
-            {format(new Date(workout.start_date), 'EEEE, MMM d, yyyy')}
-          </span>
-        </div>
-        <div className="text-muted-foreground text-sm">
-          {format(new Date(workout.start_date), 'h:mm a')} -{' '}
-          {format(new Date(workout.end_date), 'h:mm a')}
-        </div>
-      </div>
-
-      {/* ============================================ */}
-      {/* PRIMARY METRICS */}
-      {/* ============================================ */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricCard
-          icon={<Timer className="text-muted-foreground size-5" />}
-          label="Duration"
-          value={formatDuration(workout.duration)}
-        />
-        <MetricCard
-          icon={<Flame className="size-5 text-orange-500" />}
-          label="Active Cal"
-          value={Math.round(workout.active_calories)}
-        />
-        {workout.distance_miles && (
-          <MetricCard
-            icon={<Route className="size-5 text-blue-500" />}
-            label="Miles"
-            value={workout.distance_miles.toFixed(2)}
-          />
-        )}
-        {workout.hr_average && (
-          <MetricCard
-            icon={<Heart className="size-5 text-red-500" />}
-            label="Avg BPM"
-            value={workout.hr_average}
-            subValue={`${workout.hr_min} - ${workout.hr_max}`}
-          />
-        )}
-      </div>
-
-      {/* ============================================ */}
-      {/* PERFORMANCE TIMELINE (Time Series Chart) */}
-      {/* ============================================ */}
-      {hasAnalytics && analytics.timeSeriesData.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <SectionHeader
-              icon={<Activity className="text-primary size-4" />}
-              title="Performance Timeline"
-              description={
-                isCycling
-                  ? 'Heart rate, speed, and power throughout your workout'
-                  : 'Heart rate, cadence, and pace throughout your workout'
-              }
-            />
-            <TimeSeriesChart
-              data={analytics.timeSeriesData}
-              showHr={true}
-              showCadence={isRunning && workout.cadence_average !== null}
-              showPace={isRunning && workout.pace_average !== null}
-              showCyclingSpeed={isCycling && workout.cycling_avg_speed !== null}
-              showCyclingPower={isCycling && workout.cycling_avg_power !== null}
-              height={160}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ============================================ */}
-      {/* HEART RATE ZONES */}
-      {/* ============================================ */}
-      {workout.hr_zones && workout.hr_zones.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <SectionHeader
-              icon={<Heart className="size-4 text-red-500" />}
-              title="Heart Rate Zones"
-              description="Time spent in each training zone"
-            />
-            <HrZonesBar
-              zones={workout.hr_zones}
-              showLabels={true}
-              showDuration={true}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ============================================ */}
-      {/* RUNNING-SPECIFIC METRICS */}
-      {/* ============================================ */}
-      {isRunning && (workout.pace_average || workout.cadence_average) && (
-        <div className="grid grid-cols-2 gap-3">
-          {workout.pace_average && (
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Gauge className="size-4 text-green-500" />
-                  <span className="text-muted-foreground text-xs font-medium">
-                    Pace
-                  </span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {formatPace(workout.pace_average)}
-                  <span className="text-muted-foreground text-sm font-normal">
-                    /mi
-                  </span>
-                </div>
-                <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
-                  {workout.pace_best && (
-                    <span className="flex items-center gap-1">
-                      <Zap className="size-3 text-amber-500" />
-                      Best: {formatPace(workout.pace_best)}
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+      <header className="mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          {onBack && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground -ml-2 h-8 px-2">
+              <ChevronLeft className="mr-1 size-4" />Back
+            </Button>
           )}
-
-          {workout.cadence_average && (
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Footprints className="size-4 text-blue-500" />
-                  <span className="text-muted-foreground text-xs font-medium">
-                    Cadence
-                  </span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {workout.cadence_average}{' '}
-                  <span className="text-muted-foreground text-sm font-normal">
-                    spm
-                  </span>
-                </div>
-                {hasAnalytics && (
-                  <div className="mt-2">
-                    {analytics.cadenceAnalysis.optimalRange ? (
-                      <Badge variant="default" className="text-[10px]">
-                        Optimal (170-180)
-                      </Badge>
-                    ) : analytics.cadenceAnalysis.average < 170 ? (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Below optimal
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Above optimal
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* ============================================ */}
-      {/* EFFORT SCORE */}
-      {/* ============================================ */}
-      {workout.effort_score && (
-        <Card className="border-purple-500/30 bg-purple-500/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <Activity className="size-4 text-purple-500" />
-                  <span className="text-sm font-semibold">Effort Score</span>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  Apple&apos;s workout intensity rating
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold">
-                  {workout.effort_score.toFixed(1)}
-                  <span className="text-muted-foreground text-sm font-normal">
-                    /10
-                  </span>
-                </div>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'mt-1',
-                    workout.effort_score >= 8
-                      ? 'border-red-500/50 text-red-400'
-                      : workout.effort_score >= 6
-                        ? 'border-orange-500/50 text-orange-400'
-                        : workout.effort_score >= 4
-                          ? 'border-yellow-500/50 text-yellow-400'
-                          : 'border-green-500/50 text-green-400'
-                  )}
-                >
-                  {workout.effort_score >= 8
-                    ? 'Very Hard'
-                    : workout.effort_score >= 6
-                      ? 'Hard'
-                      : workout.effort_score >= 4
-                        ? 'Moderate'
-                        : 'Easy'}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ============================================ */}
-      {/* CYCLING-SPECIFIC METRICS */}
-      {/* ============================================ */}
-      {isCycling && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {workout.cycling_avg_speed && (
-            <MetricCard
-              icon={<Gauge className="size-5 text-green-500" />}
-              label="Avg Speed"
-              value={`${workout.cycling_avg_speed.toFixed(1)}`}
-              subValue={
-                workout.cycling_max_speed
-                  ? `Max: ${workout.cycling_max_speed.toFixed(1)} mph`
-                  : undefined
-              }
-            />
-          )}
-          {workout.cycling_avg_cadence && (
-            <MetricCard
-              icon={<Bike className="size-5 text-blue-500" />}
-              label="Cadence"
-              value={`${workout.cycling_avg_cadence}`}
-              subValue="rpm"
-            />
-          )}
-          {workout.cycling_avg_power && (
-            <MetricCard
-              icon={<Zap className="size-5 text-amber-500" />}
-              label="Avg Power"
-              value={`${Math.round(workout.cycling_avg_power)}`}
-              subValue={
-                workout.cycling_max_power
-                  ? `Max: ${Math.round(workout.cycling_max_power)} W`
-                  : 'watts'
-              }
-            />
-          )}
-        </div>
-      )}
-
-      {/* ============================================ */}
-      {/* WORKOUT EVENTS (Pauses/Laps) */}
-      {/* ============================================ */}
-      {data.workoutEvents && data.workoutEvents.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <SectionHeader
-              icon={<Clock className="size-4 text-cyan-500" />}
-              title="Workout Events"
-              description={`${data.workoutEvents.length} events during your workout`}
-            />
-            <div className="mt-3 space-y-2">
-              {data.workoutEvents.slice(0, 10).map((event, idx) => (
-                <div
-                  key={idx}
-                  className="bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    {event.event_type.includes('pause') ? (
-                      <Pause className="size-4 text-orange-500" />
-                    ) : event.event_type.includes('resume') ? (
-                      <Play className="size-4 text-green-500" />
-                    ) : event.event_type === 'lap' ? (
-                      <Target className="size-4 text-blue-500" />
-                    ) : (
-                      <Activity className="size-4 text-purple-500" />
-                    )}
-                    <span className="font-medium capitalize">
-                      {event.event_type.replace(/_/g, ' ')}
-                    </span>
-                    {event.lap_number && (
-                      <Badge variant="outline" className="text-[10px]">
-                        Lap {event.lap_number}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    {format(new Date(event.timestamp), 'h:mm:ss a')}
-                    {event.duration && ` (${Math.round(event.duration)}s)`}
-                  </div>
-                </div>
-              ))}
-              {data.workoutEvents.length > 10 && (
-                <p className="text-muted-foreground text-center text-xs">
-                  +{data.workoutEvents.length - 10} more events
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ============================================ */}
-      {/* MILE SPLITS */}
-      {/* ============================================ */}
-      {hasAnalytics && analytics.splits.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <SectionHeader
-              icon={<BarChart3 className="size-4 text-purple-500" />}
-              title="Mile Splits"
-              description={
-                analytics.paceAnalysis.splitStrategy === 'negative'
-                  ? 'Negative split - great pacing!'
-                  : analytics.paceAnalysis.splitStrategy === 'positive'
-                    ? 'Positive split - slowed in second half'
-                    : analytics.paceAnalysis.splitStrategy === 'variable'
-                      ? 'Variable pacing throughout'
-                      : 'Even pacing'
-              }
-              badge={
-                analytics.paceAnalysis.splitStrategy === 'negative' && (
-                  <Badge className="border-green-500/30 bg-green-500/20 text-green-400">
-                    <Award className="mr-1 size-3" />
-                    Great Pacing
-                  </Badge>
-                )
-              }
-            />
-            <SplitsTable
-              splits={analytics.splits}
-              avgPace={analytics.avgPace}
-              avgHr={analytics.avgHr}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ============================================ */}
-      {/* PERFORMANCE INSIGHTS */}
-      {/* ============================================ */}
-      {hasAnalytics && analytics.insights.length > 0 && (
-        <div className="space-y-3">
-          <SectionHeader
-            icon={<Sparkles className="size-4 text-amber-500" />}
-            title="Performance Insights"
-            description="AI-powered analysis of your workout"
-          />
-          <div className="grid gap-3">
-            {analytics.insights.map((insight, idx) => (
-              <InsightCard key={idx} insight={insight} />
-            ))}
+          <div className="text-muted-foreground text-sm">
+            {format(new Date(workout.start_date), 'EEEE, MMMM d, yyyy')}
           </div>
         </div>
+
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">{workoutLabel}</h1>
+          {workout.effort_score && (
+            <div className={cn(
+              'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
+              workout.effort_score >= 8 ? 'bg-red-500/20 text-red-400' :
+              workout.effort_score >= 6 ? 'bg-orange-500/20 text-orange-400' :
+              workout.effort_score >= 4 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
+            )}>
+              <Activity className="size-3.5" />
+              {workout.effort_score.toFixed(1)}/10
+            </div>
+          )}
+        </div>
+        <div className="text-muted-foreground mt-1 text-sm">
+          {format(new Date(workout.start_date), 'h:mm a')} – {format(new Date(workout.end_date), 'h:mm a')} • {workout.source}
+        </div>
+      </header>
+
+      {/* ============================================ */}
+      {/* KEY TAKEAWAYS (Full Width) */}
+      {/* ============================================ */}
+      {advice.keyTakeaways.length > 0 && (
+        <section className="mb-8">
+          <KeyTakeaways advice={advice} />
+        </section>
       )}
 
       {/* ============================================ */}
-      {/* ADVANCED METRICS (Collapsible) */}
+      {/* TWO COLUMN LAYOUT */}
       {/* ============================================ */}
-      {hasAnalytics && (
-        <Collapsible open={showAllMetrics} onOpenChange={setShowAllMetrics}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="h-12 w-full justify-between">
-              <span className="flex items-center gap-2">
-                <LineChart className="size-4" />
-                <span className="font-medium">Advanced Training Metrics</span>
-              </span>
-              <span className="text-muted-foreground flex items-center gap-2 text-xs">
-                {showAllMetrics ? 'Hide' : 'Show'} Details
-                {showAllMetrics ? (
-                  <ChevronUp className="size-4" />
-                ) : (
-                  <ChevronDown className="size-4" />
+      <div className="grid gap-10 lg:grid-cols-2">
+        {/* LEFT COLUMN: DATA */}
+        <div className="space-y-8">
+          {/* Primary Stats */}
+          <section>
+            <SectionLabel>Summary</SectionLabel>
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+              <Stat label="Duration" value={formatDuration(workout.duration)} size="large" />
+              <Stat label="Calories" value={Math.round(workout.active_calories)} unit="kcal" color="text-orange-500" size="large" />
+              {workout.distance_miles && <Stat label="Distance" value={workout.distance_miles.toFixed(2)} unit="mi" color="text-blue-500" size="large" />}
+              {workout.hr_average && <Stat label="Avg HR" value={workout.hr_average} unit="bpm" color="text-red-500" subtext={`${workout.hr_min}–${workout.hr_max}`} size="large" />}
+            </div>
+          </section>
+
+          {/* Running/Cycling specific */}
+          {(isRunning || isCycling) && (
+            <section>
+              <SectionLabel>{isRunning ? 'Running' : 'Cycling'} Metrics</SectionLabel>
+              <div className="grid grid-cols-2 gap-6">
+                {isRunning && workout.pace_average && <Stat label="Avg Pace" value={formatPace(workout.pace_average)} unit="/mi" color="text-emerald-500" subtext={workout.pace_best ? `Best: ${formatPace(workout.pace_best)}` : undefined} />}
+                {isRunning && workout.cadence_average && <Stat label="Cadence" value={workout.cadence_average} unit="spm" subtext={workout.cadence_average >= 170 ? 'Optimal' : 'Below optimal'} />}
+                {isCycling && workout.cycling_avg_speed && <Stat label="Avg Speed" value={workout.cycling_avg_speed.toFixed(1)} unit="mph" color="text-cyan-500" subtext={workout.cycling_max_speed ? `Max: ${workout.cycling_max_speed.toFixed(1)}` : undefined} />}
+                {isCycling && workout.cycling_avg_power && <Stat label="Avg Power" value={Math.round(workout.cycling_avg_power)} unit="W" color="text-amber-500" />}
+                {isCycling && workout.cycling_avg_cadence && <Stat label="Cadence" value={workout.cycling_avg_cadence} unit="rpm" />}
+              </div>
+            </section>
+          )}
+
+          {/* Running Form */}
+          {isRunning && (workout.stride_length_avg || workout.ground_contact_time_avg || workout.vertical_oscillation_avg || workout.running_power_avg) && (
+            <section>
+              <SectionLabel>Running Form</SectionLabel>
+              <div className="grid grid-cols-2 gap-6">
+                {workout.stride_length_avg && <Stat label="Stride" value={(workout.stride_length_avg * 100).toFixed(0)} unit="cm" />}
+                {workout.ground_contact_time_avg && <Stat label="Ground Contact" value={Math.round(workout.ground_contact_time_avg)} unit="ms" />}
+                {workout.vertical_oscillation_avg && <Stat label="Vertical Osc" value={workout.vertical_oscillation_avg.toFixed(1)} unit="cm" />}
+                {workout.running_power_avg && <Stat label="Power" value={Math.round(workout.running_power_avg)} unit="W" />}
+              </div>
+            </section>
+          )}
+
+          {/* Training Analysis */}
+          {hasAnalytics && (
+            <section>
+              <SectionLabel>Training Analysis</SectionLabel>
+              <div className="divide-border/30 -my-0.5 divide-y">
+                <MetricRow
+                  icon={<Zap className="size-4 text-amber-500" />}
+                  label="Training Load"
+                  value={analytics.trainingImpulse.trimp}
+                  badge={{ label: analytics.trainingImpulse.intensity, variant: analytics.trainingImpulse.intensity === 'easy' ? 'good' : analytics.trainingImpulse.intensity === 'moderate' ? 'neutral' : 'warning' }}
+                />
+                <MetricRow
+                  icon={<Heart className="size-4 text-red-500" />}
+                  label="Cardiac Drift"
+                  value={`${analytics.cardiacDrift.driftPercentage > 0 ? '+' : ''}${analytics.cardiacDrift.driftPercentage}%`}
+                  badge={{ label: analytics.cardiacDrift.interpretation, variant: analytics.cardiacDrift.interpretation === 'minimal' ? 'good' : analytics.cardiacDrift.interpretation === 'moderate' ? 'neutral' : 'warning' }}
+                  description={`${analytics.cardiacDrift.firstHalfAvgHr} → ${analytics.cardiacDrift.secondHalfAvgHr} bpm`}
+                />
+                <MetricRow
+                  icon={<TrendingUp className="size-4 text-blue-500" />}
+                  label="Aerobic Decoupling"
+                  value={`${analytics.aerobicDecoupling.decouplingPercentage}%`}
+                  badge={{ label: analytics.aerobicDecoupling.interpretation, variant: ['excellent', 'good'].includes(analytics.aerobicDecoupling.interpretation) ? 'good' : analytics.aerobicDecoupling.interpretation === 'moderate' ? 'neutral' : 'warning' }}
+                />
+                <MetricRow
+                  icon={<Wind className="size-4 text-cyan-500" />}
+                  label="Efficiency Factor"
+                  value={analytics.efficiencyFactor.toFixed(3)}
+                />
+                {isRunning && analytics.cadenceAnalysis.average > 0 && (
+                  <MetricRow
+                    icon={<Footprints className="size-4 text-green-500" />}
+                    label="Cadence"
+                    value={analytics.cadenceAnalysis.average}
+                    unit="spm"
+                    badge={{ label: analytics.cadenceAnalysis.optimalRange ? 'Optimal' : 'Low', variant: analytics.cadenceAnalysis.optimalRange ? 'good' : 'neutral' }}
+                    description={`Range: ${analytics.cadenceAnalysis.min}–${analytics.cadenceAnalysis.max}`}
+                  />
                 )}
-              </span>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4 space-y-4">
-            {/* Training Load (TRIMP) */}
-            <Card className="border-amber-500/30 bg-amber-500/5">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Zap className="size-4 text-amber-500" />
-                      <span className="text-sm font-semibold">
-                        Training Load (TRIMP)
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground pr-4 text-xs leading-relaxed">
-                      {analytics.trainingImpulse.recommendation}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-3xl font-bold">
-                      {analytics.trainingImpulse.trimp}
-                    </div>
-                    <Badge variant="outline" className="mt-1 capitalize">
-                      {analytics.trainingImpulse.intensity}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <MetricRow
+                  icon={<Activity className="size-4 text-purple-500" />}
+                  label="HR Variability"
+                  value={analytics.hrVariability.range}
+                  unit="bpm"
+                  description={`${analytics.hrVariability.min}–${analytics.hrVariability.max}`}
+                />
+              </div>
+            </section>
+          )}
 
-            {/* Cardiac Drift */}
-            <Card
-              className={cn(
-                'border-l-4',
-                analytics.cardiacDrift.interpretation === 'minimal'
-                  ? 'border-l-green-500'
-                  : analytics.cardiacDrift.interpretation === 'moderate'
-                    ? 'border-l-yellow-500'
-                    : 'border-l-red-500'
-              )}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Heart className="size-4 text-red-500" />
-                      <span className="text-sm font-semibold">
-                        Cardiac Drift
-                      </span>
-                      <Badge
-                        variant={
-                          analytics.cardiacDrift.interpretation === 'minimal'
-                            ? 'default'
-                            : 'secondary'
-                        }
-                        className="text-[10px]"
-                      >
-                        {analytics.cardiacDrift.interpretation}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground pr-4 text-xs leading-relaxed">
-                      {analytics.cardiacDrift.recommendation}
-                    </p>
-                    <div className="mt-2 flex gap-4 text-xs">
-                      <span className="text-muted-foreground">
-                        1st Half:{' '}
-                        <span className="text-foreground font-medium">
-                          {analytics.cardiacDrift.firstHalfAvgHr} bpm
-                        </span>
-                      </span>
-                      <span className="text-muted-foreground">
-                        2nd Half:{' '}
-                        <span className="text-foreground font-medium">
-                          {analytics.cardiacDrift.secondHalfAvgHr} bpm
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-3xl font-bold">
-                      {analytics.cardiacDrift.driftPercentage > 0 ? '+' : ''}
-                      {analytics.cardiacDrift.driftPercentage}%
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Insights */}
+          {hasAnalytics && analytics.insights.length > 0 && (
+            <section>
+              <SectionLabel>Insights</SectionLabel>
+              <div className="divide-border/30 -my-0.5 divide-y">
+                {analytics.insights.map((insight, idx) => (
+                  <InsightRow key={idx} insight={insight} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
 
-            {/* Aerobic Decoupling */}
-            <Card
-              className={cn(
-                'border-l-4',
-                analytics.aerobicDecoupling.interpretation === 'excellent'
-                  ? 'border-l-green-500'
-                  : analytics.aerobicDecoupling.interpretation === 'good'
-                    ? 'border-l-blue-500'
-                    : analytics.aerobicDecoupling.interpretation === 'moderate'
-                      ? 'border-l-yellow-500'
-                      : 'border-l-red-500'
-              )}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <TrendingUp className="size-4 text-blue-500" />
-                      <span className="text-sm font-semibold">
-                        Aerobic Decoupling
-                      </span>
-                      <Badge
-                        variant={
-                          analytics.aerobicDecoupling.interpretation ===
-                            'excellent' ||
-                          analytics.aerobicDecoupling.interpretation === 'good'
-                            ? 'default'
-                            : 'secondary'
-                        }
-                        className="text-[10px]"
-                      >
-                        {analytics.aerobicDecoupling.interpretation}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground pr-4 text-xs leading-relaxed">
-                      {analytics.aerobicDecoupling.recommendation}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-3xl font-bold">
-                      {analytics.aerobicDecoupling.decouplingPercentage}%
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* RIGHT COLUMN: CHARTS & ADVICE */}
+        <div className="space-y-8">
+          {/* Zone-Colored HR Chart (Apple Fitness style) */}
+          {hasAnalytics && analytics.timeSeriesData.length > 0 && data.hrZonesConfig && (
+            <section>
+              <ZoneColoredHrChart
+                data={analytics.timeSeriesData}
+                hrZonesConfig={data.hrZonesConfig}
+                hrAverage={workout.hr_average}
+              />
+            </section>
+          )}
 
-            {/* Cadence Analysis (for running) */}
-            {isRunning && analytics.cadenceAnalysis.average > 0 && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Footprints className="size-4 text-green-500" />
-                        <span className="text-sm font-semibold">
-                          Cadence Analysis
-                        </span>
-                        <Badge
-                          variant={
-                            analytics.cadenceAnalysis.optimalRange
-                              ? 'default'
-                              : 'secondary'
-                          }
-                          className="text-[10px] capitalize"
-                        >
-                          {analytics.cadenceAnalysis.consistency.replace(
-                            /_/g,
-                            ' '
-                          )}
-                        </Badge>
-                      </div>
-                      <p className="text-muted-foreground pr-4 text-xs leading-relaxed">
-                        {analytics.cadenceAnalysis.recommendation}
-                      </p>
-                      <div className="mt-2 flex gap-4 text-xs">
-                        <span className="text-muted-foreground">
-                          Min:{' '}
-                          <span className="text-foreground font-medium">
-                            {analytics.cadenceAnalysis.min}
-                          </span>
-                        </span>
-                        <span className="text-muted-foreground">
-                          Max:{' '}
-                          <span className="text-foreground font-medium">
-                            {analytics.cadenceAnalysis.max}
-                          </span>
-                        </span>
-                        <span className="text-muted-foreground">
-                          Std Dev:{' '}
-                          <span className="text-foreground font-medium">
-                            {analytics.cadenceAnalysis.standardDeviation}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-3xl font-bold">
-                        {analytics.cadenceAnalysis.average}
-                      </div>
-                      <div className="text-muted-foreground text-xs">spm</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          {/* HR Zones Bar - Moved directly under zone chart */}
+          {workout.hr_zones && workout.hr_zones.length > 0 && (
+            <section className="-mt-4">
+              <HrZonesBar zones={workout.hr_zones} />
+            </section>
+          )}
 
-            {/* Advanced Running Form Metrics */}
-            {isRunning && (workout.stride_length_avg || workout.ground_contact_time_avg || workout.vertical_oscillation_avg || workout.running_power_avg) && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Activity className="size-4 text-emerald-500" />
-                    <span className="text-sm font-semibold">
-                      Running Form Metrics
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    {workout.stride_length_avg && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">
-                          {(workout.stride_length_avg * 100).toFixed(0)}
-                        </div>
-                        <div className="text-muted-foreground text-[10px]">
-                          Stride (cm)
-                        </div>
-                      </div>
-                    )}
-                    {workout.ground_contact_time_avg && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">
-                          {Math.round(workout.ground_contact_time_avg)}
-                        </div>
-                        <div className="text-muted-foreground text-[10px]">
-                          GCT (ms)
-                        </div>
-                      </div>
-                    )}
-                    {workout.vertical_oscillation_avg && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">
-                          {workout.vertical_oscillation_avg.toFixed(1)}
-                        </div>
-                        <div className="text-muted-foreground text-[10px]">
-                          Oscillation (cm)
-                        </div>
-                      </div>
-                    )}
-                    {workout.running_power_avg && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">
-                          {Math.round(workout.running_power_avg)}
-                        </div>
-                        <div className="text-muted-foreground text-[10px]">
-                          Power (W)
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground mt-3 text-xs">
-                    Lower ground contact time and vertical oscillation typically indicate more efficient running form.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+          {/* Zone Analysis Card */}
+          {workout.hr_zones && workout.hr_zones.length > 0 && (
+            <section>
+              <ZoneAnalysisCard advice={advice} zones={workout.hr_zones} />
+            </section>
+          )}
 
-            {/* Efficiency Factor */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Wind className="size-4 text-cyan-500" />
-                      <span className="text-sm font-semibold">
-                        Efficiency Factor
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground pr-4 text-xs leading-relaxed">
-                      Speed relative to heart rate effort. Higher is more
-                      efficient. Track this metric over time to measure aerobic
-                      fitness improvements.
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-3xl font-bold">
-                      {analytics.efficiencyFactor.toFixed(3)}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Recovery & Next Steps */}
+          <section>
+            <RecoveryNextSteps advice={advice} />
+          </section>
 
-            {/* HR Variability Stats */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Activity className="size-4 text-purple-500" />
-                  <span className="text-sm font-semibold">
-                    Heart Rate Variability During Workout
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 gap-3 text-center">
-                  <div>
-                    <div className="text-xl font-bold">
-                      {analytics.hrVariability.min}
+          {/* Performance Chart (Multi-metric) */}
+          {hasAnalytics && analytics.timeSeriesData.length > 0 && (
+            <section>
+              <SectionLabel>Performance Metrics</SectionLabel>
+              <TimeSeriesChart
+                data={analytics.timeSeriesData}
+                hrAverage={workout.hr_average}
+                showHr={true}
+                showCadence={isRunning && workout.cadence_average !== null}
+                showPace={isRunning && workout.pace_average !== null}
+                showCyclingSpeed={isCycling && workout.cycling_avg_speed !== null}
+                showCyclingPower={isCycling && workout.cycling_avg_power !== null}
+              />
+            </section>
+          )}
+
+          {/* Event Timeline */}
+          {hasEvents && (
+            <section>
+              <SectionLabel>Activity Timeline</SectionLabel>
+              <EventTimeline
+                events={data.workoutEvents}
+                workoutDuration={workout.duration}
+                startTime={new Date(workout.start_date)}
+              />
+            </section>
+          )}
+
+          {/* Splits Chart */}
+          {hasAnalytics && analytics.splits.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <SectionLabel>Mile Splits</SectionLabel>
+                {analytics.paceAnalysis.splitStrategy === 'negative' && (
+                  <Badge variant="outline" className="border-green-500/30 bg-green-500/10 text-green-400 text-xs">
+                    <Award className="mr-1 size-3" />Negative Split
+                  </Badge>
+                )}
+              </div>
+              <SplitsChart splits={analytics.splits} />
+            </section>
+          )}
+
+          {/* Events List */}
+          {hasEvents && (
+            <section>
+              <SectionLabel>Events ({data.workoutEvents.length})</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                {data.workoutEvents.slice(0, 16).map((event, idx) => {
+                  const isPause = event.event_type.includes('pause')
+                  const isResume = event.event_type.includes('resume')
+                  const isSegment = event.event_type === 'segment'
+
+                  return (
+                    <div key={idx} className={cn(
+                      'inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs',
+                      isPause ? 'bg-orange-500/20 text-orange-400' :
+                      isResume ? 'bg-green-500/20 text-green-400' :
+                      isSegment ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                    )}>
+                      {isPause ? <Pause className="size-3" /> : isResume ? <Play className="size-3" /> : <Activity className="size-3" />}
+                      {format(new Date(event.timestamp), 'h:mm:ss')}
                     </div>
-                    <div className="text-muted-foreground text-[10px]">
-                      Min BPM
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold">
-                      {analytics.hrVariability.max}
-                    </div>
-                    <div className="text-muted-foreground text-[10px]">
-                      Max BPM
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold">
-                      {analytics.hrVariability.range}
-                    </div>
-                    <div className="text-muted-foreground text-[10px]">
-                      Range
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold">{analytics.avgHr}</div>
-                    <div className="text-muted-foreground text-[10px]">
-                      Avg BPM
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+                  )
+                })}
+                {data.workoutEvents.length > 16 && (
+                  <span className="text-muted-foreground self-center text-xs">+{data.workoutEvents.length - 16} more</span>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
 
       {/* ============================================ */}
       {/* FOOTER */}
       {/* ============================================ */}
-      <div className="text-muted-foreground flex items-center justify-between border-t pt-3 text-xs">
+      <footer className="text-muted-foreground border-border/30 mt-10 flex items-center justify-between border-t pt-4 text-xs">
         <div className="flex items-center gap-2">
-          <Watch className="size-3" />
-          <span>Recorded by {workout.source}</span>
+          <Watch className="size-4" />
+          {workout.source}
         </div>
         {hasAnalytics && (
-          <div className="flex items-center gap-1">
-            <Sparkles className="size-3" />
-            <span>Enhanced Analytics</span>
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="size-4" />
+            Enhanced Analytics
           </div>
         )}
-      </div>
+      </footer>
     </div>
   )
 }

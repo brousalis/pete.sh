@@ -78,7 +78,7 @@ interface WorkoutCenterProps {
   onVideoToggle?: (exerciseId: string | null) => void
   /** Whether viewing in preview mode (another day) */
   isPreview?: boolean
-  /** Apple Watch workouts for today */
+  /** Tracked workouts for today */
   appleWorkouts?: AppleWorkout[]
   /** Custom class name */
   className?: string
@@ -206,7 +206,7 @@ export function WorkoutCenter({
     setCompletedExercises(new Set(completion?.exercisesCompleted || []))
   }, [completion?.exercisesCompleted])
 
-  // Match exercises to Apple Watch workouts
+  // Match exercises to tracked workouts
   const exerciseWorkoutMap = useMemo(() => {
     const map = new Map<string, AppleWorkout>()
     if (!workout || appleWorkouts.length === 0) return map
@@ -757,7 +757,7 @@ function WorkoutSection({
                 <TooltipTrigger asChild>
                   <Watch className="size-3.5 text-green-500" />
                 </TooltipTrigger>
-                <TooltipContent>Apple Watch data linked</TooltipContent>
+                <TooltipContent>Activity data linked</TooltipContent>
               </Tooltip>
             )}
             {section.duration && (
@@ -950,7 +950,7 @@ function ExerciseRow({
                       Tracked
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent>Apple Watch workout linked</TooltipContent>
+                  <TooltipContent>Tracked workout linked</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}

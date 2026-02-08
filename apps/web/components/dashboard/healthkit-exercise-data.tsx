@@ -762,7 +762,7 @@ export function HealthKitExerciseData({
                 {format(new Date(workout.start_date), 'h:mm a')} ·{' '}
                 {workout.source}
               </span>
-              <Link href={`/fitness/watch?workout=${workoutId}`}>
+              <Link href={`/fitness/activity?workout=${workoutId}`}>
                 <Button
                   variant="ghost"
                   size="sm"

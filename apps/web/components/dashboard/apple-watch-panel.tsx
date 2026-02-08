@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { 
-  Watch, 
+  Activity, 
   RefreshCw, 
   ChevronLeft,
   Footprints,
   Heart,
-  Activity,
   Flame
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,12 +86,15 @@ interface WeeklySummary {
 // MAIN COMPONENT
 // ============================================
 
-interface AppleWatchPanelProps {
+interface ActivityDashboardPanelProps {
   className?: string
   maxHeight?: string
 }
 
-export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }: AppleWatchPanelProps) {
+/** @deprecated Use ActivityDashboardPanel instead */
+export const AppleWatchPanel = ActivityDashboardPanel
+
+export function ActivityDashboardPanel({ className, maxHeight = "calc(100vh - 200px)" }: ActivityDashboardPanelProps) {
   const [workouts, setWorkouts] = useState<AppleWorkout[]>([])
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(null)
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary[]>([])
@@ -128,8 +130,8 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
         setWeeklySummary(summaryData.data.weeks)
       }
     } catch (err) {
-      console.error('Error fetching Apple Health data:', err)
-      setError('Unable to load Apple Watch data')
+      console.error('Error fetching activity data:', err)
+      setError('Unable to load activity data')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -152,16 +154,16 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
       <Card className={cn("", className)}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Watch className="size-4" />
-            Apple Watch
+            <Activity className="size-4 text-primary" />
+            Activity Dashboard
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <Watch className="size-12 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground mb-2">No Apple Watch data yet</p>
+            <Activity className="size-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground mb-2">No activity data yet</p>
             <p className="text-xs text-muted-foreground">
-              Sync workouts from PeteWatch to see your health data here
+              Sync workouts from your watch to see your activity here
             </p>
           </div>
         </CardContent>
@@ -201,8 +203,8 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Watch className="size-4" />
-            Apple Watch
+            <Activity className="size-4 text-primary" />
+            Activity Dashboard
           </CardTitle>
           <Button
             variant="ghost"
@@ -307,12 +309,15 @@ export function AppleWatchPanel({ className, maxHeight = "calc(100vh - 200px)" }
 // COMPACT WIDGET (For dashboard overview)
 // ============================================
 
-interface AppleWatchWidgetProps {
+interface ActivityWidgetProps {
   className?: string
   onClick?: () => void
 }
 
-export function AppleWatchWidget({ className, onClick }: AppleWatchWidgetProps) {
+/** @deprecated Use ActivityWidget instead */
+export const AppleWatchWidget = ActivityWidget
+
+export function ActivityWidget({ className, onClick }: ActivityWidgetProps) {
   const [latestWorkout, setLatestWorkout] = useState<AppleWorkout | null>(null)
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(null)
   const [loading, setLoading] = useState(true)
@@ -371,8 +376,8 @@ export function AppleWatchWidget({ className, onClick }: AppleWatchWidgetProps) 
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Watch className="size-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Apple Watch</span>
+          <Activity className="size-4 text-primary" />
+          <span className="text-sm font-medium">Activity</span>
         </div>
 
         <div className="flex items-center justify-between">

@@ -264,7 +264,7 @@ export function SettingsEditor() {
             <CardTitle className="text-base">Fitness Data</CardTitle>
           </div>
           <CardDescription>
-            Manage your fitness tracking data and Apple Watch integration
+            Manage your fitness tracking data and activity dashboard integration
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -275,7 +275,7 @@ export function SettingsEditor() {
                 HealthKit Workout Backfill
               </label>
               <p className="text-muted-foreground text-xs">
-                Link historical Apple Watch workouts to your fitness routines.
+                Link historical workouts to your fitness routines.
                 This will auto-complete exercises based on your synced workout data.
               </p>
             </div>

@@ -3,9 +3,42 @@
  * GET - Get a specific workout with all samples and enhanced analytics
  */
 
-import { NextRequest, NextResponse } from 'next/server'
 import { appleHealthService } from '@/lib/services/apple-health.service'
 import { computeEnhancedAnalytics } from '@/lib/utils/workout-analytics'
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+
+// Initialize Supabase client for HR zones query
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+interface HrZonesConfig {
+  id: string
+  max_hr: number | null
+  resting_hr: number | null
+  // Direct BPM thresholds from Apple Watch
+  zone1_max_bpm: number
+  zone2_min_bpm: number
+  zone2_max_bpm: number
+  zone3_min_bpm: number
+  zone3_max_bpm: number
+  zone4_min_bpm: number
+  zone4_max_bpm: number
+  zone5_min_bpm: number
+  // Labels and colors
+  zone1_label: string
+  zone2_label: string
+  zone3_label: string
+  zone4_label: string
+  zone5_label: string
+  zone1_color: string
+  zone2_color: string
+  zone3_color: string
+  zone4_color: string
+  zone5_color: string
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -31,7 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       // Just get basic workout data without samples
       const workouts = await appleHealthService.getRecentWorkouts(undefined, 100)
       const workout = workouts.find(w => w.id === id)
-      
+
       if (!workout) {
         return NextResponse.json(
           { success: false, error: 'Workout not found' },
@@ -62,22 +95,44 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       hrChart = result.hrSamples.filter((_, i) => i % interval === 0)
     }
 
+    // Fetch user's HR zones config (get the active one where effective_to is null)
+    let hrZonesConfig: HrZonesConfig | null = null
+
+    const { data: zonesData, error: zonesError } = await supabase
+      .from('user_hr_zones_config')
+      .select('*')
+      .is('effective_to', null)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (zonesError) {
+      console.error('Error fetching HR zones config:', zonesError)
+    }
+
+    if (zonesData) {
+      hrZonesConfig = zonesData as HrZonesConfig
+      console.log('Loaded HR zones config:', hrZonesConfig.id)
+    } else {
+      console.log('No HR zones config found')
+    }
+
     // Compute enhanced analytics for running/cardio workouts
     let enhancedAnalytics = null
     const isCardioWorkout = ['running', 'walking', 'cycling', 'rowing', 'elliptical', 'stairClimbing'].includes(result.workout.workout_type)
-    
+
     if (includeAnalytics && isCardioWorkout) {
       // Transform samples to analytics format
       const hrSamplesForAnalytics = result.hrSamples.map(s => ({
         timestamp: s.timestamp,
         bpm: s.bpm
       }))
-      
+
       const cadenceSamplesForAnalytics = result.cadenceSamples.map(s => ({
         timestamp: s.timestamp,
         steps_per_minute: s.steps_per_minute
       }))
-      
+
       const paceSamplesForAnalytics = result.paceSamples.map(s => ({
         timestamp: s.timestamp,
         minutes_per_mile: s.minutes_per_mile
@@ -88,11 +143,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         timestamp: s.timestamp,
         speed_mph: s.speed_mph
       }))
-      
+
       const cyclingPowerSamplesForAnalytics = result.cyclingPowerSamples.map(s => ({
         timestamp: s.timestamp,
         watts: s.watts
       }))
+
+      // Use HR zones config if available, otherwise defaults
+      const restingHr = hrZonesConfig?.resting_hr || 55
+      const maxHr = hrZonesConfig?.max_hr || 185
 
       enhancedAnalytics = computeEnhancedAnalytics(
         {
@@ -112,10 +171,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         cadenceSamplesForAnalytics,
         paceSamplesForAnalytics,
         {
-          // These could come from user settings or daily metrics
-          restingHr: 55, // Could fetch from daily metrics
-          maxHr: 185,    // Could be user-configured
-          // Include cycling data
+          restingHr,
+          maxHr,
           cyclingSpeedSamples: cyclingSpeedSamplesForAnalytics,
           cyclingPowerSamples: cyclingPowerSamplesForAnalytics
         }
@@ -139,6 +196,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         splits: result.splits,
         // Analytics
         analytics: enhancedAnalytics,
+        // User's HR zones config (for zone-colored charts)
+        // Direct BPM thresholds from Apple Watch HealthKit
+        hrZonesConfig: hrZonesConfig ? {
+          maxHr: hrZonesConfig.max_hr,
+          restingHr: hrZonesConfig.resting_hr,
+          zones: [
+            { zone: 1, label: hrZonesConfig.zone1_label, minBpm: 0, maxBpm: hrZonesConfig.zone1_max_bpm, color: hrZonesConfig.zone1_color },
+            { zone: 2, label: hrZonesConfig.zone2_label, minBpm: hrZonesConfig.zone2_min_bpm, maxBpm: hrZonesConfig.zone2_max_bpm, color: hrZonesConfig.zone2_color },
+            { zone: 3, label: hrZonesConfig.zone3_label, minBpm: hrZonesConfig.zone3_min_bpm, maxBpm: hrZonesConfig.zone3_max_bpm, color: hrZonesConfig.zone3_color },
+            { zone: 4, label: hrZonesConfig.zone4_label, minBpm: hrZonesConfig.zone4_min_bpm, maxBpm: hrZonesConfig.zone4_max_bpm, color: hrZonesConfig.zone4_color },
+            { zone: 5, label: hrZonesConfig.zone5_label, minBpm: hrZonesConfig.zone5_min_bpm, maxBpm: 999, color: hrZonesConfig.zone5_color },
+          ]
+        } : null,
       },
     })
   } catch (error) {

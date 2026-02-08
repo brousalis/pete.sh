@@ -28,6 +28,12 @@ from petehome_cli.config import PM2_PROCESSES
 from petehome_cli.services.dev_server import DevServerService
 from petehome_cli.services.github import GitHubService
 from petehome_cli.services.pm2 import PM2Service
+from petehome_cli.services.supabase import (
+    is_configured as supabase_configured,
+    mark_applied as supabase_mark_applied,
+    migration_status,
+    run_migrations,
+)
 from petehome_cli.services.vercel import VercelService
 
 console = Console()
@@ -124,6 +130,8 @@ COMMANDS = [
     "lint", "lint fix", "format", "build", "clean", "typecheck", "sync",
     # Deploy
     "deploy", "deploy status", "deploy history", "deploy open", "d",
+    # Supabase
+    "migrate", "migrate status", "migrate mark-applied", "migrate dry-run", "supabase", "supabase migrate", "supabase status",
     # Other
     "help", "exit", "quit", "clear", "?", "c", "h", "q",
 ]
@@ -272,6 +280,15 @@ def cmd_help():
     deploy.add_row("d history", "history")
     deploy.add_row("d open", "browser")
 
+    # Supabase column
+    supabase = Table.grid(padding=(0, 2))
+    supabase.add_column(style=THEME["accent_hex"])
+    supabase.add_column(style="dim")
+    supabase.add_row("migrate", "run pending")
+    supabase.add_row("migrate status", "list applied")
+    supabase.add_row("migrate mark-applied", "sync history (e.g. 001-014)")
+    supabase.add_row("migrate dry-run", "preview")
+
     console.print()
     console.print(Panel(
         Columns([
@@ -279,12 +296,13 @@ def cmd_help():
             Panel(git, title="[bold]Git[/]", border_style="dim", padding=(0, 1)),
             Panel(dev, title="[bold]Dev[/]", border_style="dim", padding=(0, 1)),
             Panel(deploy, title="[bold]Deploy[/]", border_style="dim", padding=(0, 1)),
+            Panel(supabase, title="[bold]Supabase[/]", border_style="dim", padding=(0, 1)),
         ], equal=True, expand=True),
         border_style="dim",
         padding=(1, 2),
     ))
     console.print("  [dim]Services: main · notifications · all[/]")
-    console.print("  [dim]Also: git <cmd> · clear · help · exit[/]")
+    console.print("  [dim]Also: git <cmd> · migrate · clear · help · exit[/]")
     console.print()
 
 
@@ -936,6 +954,82 @@ def cmd_deploy(args: list[str]):
         console.print(f"  [red]✗[/] Unknown: deploy {subcmd}")
 
 
+def cmd_migrate(args: list[str]):
+    """Run Supabase migrations on prod (SUPABASE_DB_URL) or show status."""
+    dry_run = "dry-run" in args or "dry_run" in args
+    subcmd = (args[0].lower() if args else "run").strip()
+    if subcmd in ("dry-run", "dry_run"):
+        subcmd = "run"
+
+    if subcmd == "status":
+        if not supabase_configured():
+            console.print("  [red]✗[/] SUPABASE_DB_URL not set")
+            console.print("  [dim]Set it in apps/web/.env (Postgres URI from Supabase dashboard)[/]")
+            return
+        ok, rows = migration_status()
+        if not ok:
+            console.print("  [red]✗[/] Could not read migration status (check SUPABASE_DB_URL)")
+            return
+        if not rows:
+            console.print("  [dim]No migration files in apps/web/supabase/migrations[/]")
+            return
+        table = Table(show_header=True, header_style="bold dim", box=None, padding=(0, 2))
+        table.add_column("Migration")
+        table.add_column("Status")
+        for r in rows:
+            status = "[green]● applied[/]" if r["applied"] else "[yellow]○ pending[/]"
+            table.add_row(r["name"], status)
+        console.print()
+        console.print(Panel(table, border_style="dim", padding=(1, 2), title="[bold]Migration Status[/]", title_align="left"))
+        console.print()
+        return
+
+    if subcmd == "mark-applied":
+        # migrate mark-applied 001-014  or  migrate mark-applied 001 002 ... 014
+        rest = [a for a in args[1:] if a not in ("dry-run", "dry_run")]
+        if not rest:
+            console.print("  [yellow]![/] Usage: migrate mark-applied 001 002 ... 014  or  migrate mark-applied 001-014")
+            return
+        with console.status("[dim]Marking migrations as applied...[/]", spinner="dots"):
+            success, msg = supabase_mark_applied(rest)
+        console.print()
+        if success:
+            console.print(f"  [green]✓[/] {msg}")
+        else:
+            console.print(f"  [red]✗[/] {msg}")
+        console.print()
+        return
+
+    if subcmd in ("run", "up", "") or dry_run:
+        with console.status("[dim]Running migrations...[/]" if not dry_run else "[dim]Checking pending...[/]", spinner="dots"):
+            success, msg = run_migrations(dry_run=dry_run)
+        console.print()
+        if success:
+            console.print(f"  [green]✓[/] {msg}")
+        else:
+            console.print(f"  [red]✗[/] {msg}")
+        console.print()
+        return
+
+    console.print(f"  [red]✗[/] Unknown: migrate {subcmd}")
+    console.print("  [dim]Use: migrate · migrate status · migrate mark-applied 001-014 · migrate dry-run[/]")
+
+
+def cmd_supabase(args: list[str]):
+    """Supabase: migrate or status (alias for migrate)."""
+    if not args:
+        cmd_migrate(["run"])
+        return
+    subcmd = args[0].lower()
+    if subcmd == "migrate":
+        cmd_migrate(args[1:])
+    elif subcmd == "status":
+        cmd_migrate(["status"])
+    else:
+        console.print(f"  [red]✗[/] Unknown: supabase {subcmd}")
+        console.print("  [dim]Use: supabase migrate · supabase status[/]")
+
+
 # ============================================================================
 # Main Loop
 # ============================================================================
@@ -1031,6 +1125,12 @@ def parse_and_execute(cmd: str):
     # Deploy
     elif command in ("deploy", "d"):
         cmd_deploy(args)
+
+    # Supabase
+    elif command == "migrate":
+        cmd_migrate(args)
+    elif command == "supabase":
+        cmd_supabase(args)
 
     else:
         console.print(f"  [red]✗[/] Unknown: {command}")

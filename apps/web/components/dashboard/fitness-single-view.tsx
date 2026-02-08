@@ -54,6 +54,7 @@ import {
     subMonths,
 } from 'date-fns'
 import {
+    Activity,
     ArrowLeft,
     Ban,
     Calendar,
@@ -67,7 +68,6 @@ import {
     Settings,
     Sun,
     Target,
-    Watch,
     Zap
 } from 'lucide-react'
 import Link from 'next/link'
@@ -1465,13 +1465,14 @@ export function FitnessSingleView({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href="/fitness/watch">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground touch-manipulation">
-                        <Watch className="size-4" />
+                    <Link href="/fitness/activity">
+                      <Button variant="outline" size="sm" className="h-7 sm:h-8 gap-1.5 text-xs font-medium touch-manipulation">
+                        <Activity className="size-3.5" />
+                        <span className="hidden sm:inline">Activity</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent>Apple Watch Data</TooltipContent>
+                  <TooltipContent>Activity Dashboard</TooltipContent>
                 </Tooltip>
 
                 {onSwitchToEdit && (
@@ -1497,8 +1498,8 @@ export function FitnessSingleView({
                   metrics={isViewingToday ? dailyMetrics : null}
                   consistencyStats={consistencyStats}
                   viewingDate={viewingDate}
-                  onWorkoutClick={id => router.push(`/fitness/watch?workout=${id}`)}
-                  onViewAll={() => router.push('/fitness/watch')}
+                  onWorkoutClick={id => router.push(`/fitness/activity?workout=${id}`)}
+                  onViewAll={() => router.push('/fitness/activity')}
                 />
               </div>
             )}
