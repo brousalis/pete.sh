@@ -69,6 +69,9 @@ const mobileBottomItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/transit', label: 'CTA', icon: Bus },
+  { href: '/lights', label: 'Lights', icon: Lightbulb },
+  { href: '/music', label: 'Music', icon: Music },
+  { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]
 
 export function TopNavigation() {
@@ -270,7 +273,7 @@ export function TopNavigation() {
                   >
                     home
                   </motion.span>
-                  
+
                   {/* Gradient layer - shown on hover/active */}
                   <motion.span
                     className="absolute inset-0 flex items-baseline"
@@ -879,14 +882,14 @@ export function MobileBottomNavigation() {
                         )}
                       />
                     </motion.span>
-                    <span
+                    {/* <span
                       className={cn(
                         'w-full truncate text-center text-[10px] font-medium leading-tight',
                         active ? 'text-brand font-semibold' : 'text-muted-foreground'
                       )}
                     >
                       {label}
-                    </span>
+                    </span> */}
                   </Link>
                 </li>
               )
@@ -932,7 +935,7 @@ export function MobileBottomNavigation() {
                     />
                   )}
                 </motion.span>
-                <span
+                {/* <span
                   className={cn(
                     'w-full truncate text-center text-[10px] font-medium leading-tight',
                     moreOpen || isOverflowActive
@@ -941,7 +944,7 @@ export function MobileBottomNavigation() {
                   )}
                 >
                   More
-                </span>
+                </span> */}
               </button>
             </li>
           </ul>
