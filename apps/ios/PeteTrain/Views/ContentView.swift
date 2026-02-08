@@ -4,6 +4,7 @@ import WatchKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = WorkoutViewModel()
     @State private var healthKit = HealthKitManager.shared
     @State private var prManager = PRManager.shared
@@ -11,6 +12,12 @@ struct ContentView: View {
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
     @State private var workoutDataManager = WorkoutDataManager.shared
+
+    /// Track when the app last became active to throttle syncs
+    @State private var lastActiveSyncDate: Date?
+
+    /// Minimum time between auto-syncs (15 minutes for watch since it's opened less frequently)
+    private let minimumSyncInterval: TimeInterval = 15 * 60
 
     var body: some View {
         DayView(viewModel: viewModel)
@@ -26,6 +33,33 @@ struct ContentView: View {
                     viewModel.refreshDay()
                 }
             }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .active {
+                    handleAppBecameActive()
+                }
+            }
+    }
+
+    /// Handle app becoming active - sync daily metrics if auto-sync is enabled
+    private func handleAppBecameActive() {
+        guard syncManager.autoSyncEnabled else { return }
+
+        // Determine if enough time has passed since last sync
+        let shouldSync: Bool
+        if let lastSync = lastActiveSyncDate {
+            shouldSync = Date().timeIntervalSince(lastSync) >= minimumSyncInterval
+        } else {
+            // First activation this session - sync
+            shouldSync = true
+        }
+
+        if shouldSync {
+            lastActiveSyncDate = Date()
+            Task { @MainActor in
+                print("📱 Auto-syncing daily metrics on app activation")
+                await syncManager.syncDailyMetrics()
+            }
+        }
     }
 
     private func configureManagers() {

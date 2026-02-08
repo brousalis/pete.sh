@@ -69,6 +69,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: true,
           data: today,
+          syncMetadata: {
+            lastSyncTimestamp: today.recorded_at,
+            dataDate: today.date,
+          },
         })
       }
       
@@ -79,14 +83,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: match || null,
+        syncMetadata: match ? {
+          lastSyncTimestamp: match.recorded_at,
+          dataDate: match.date,
+        } : null,
       })
     }
 
     const metrics = await appleHealthService.getDailyMetrics(daysBack)
 
+    // Calculate sync metadata from the most recent record
+    const mostRecentSync = metrics.length > 0
+      ? metrics.reduce((latest, current) => 
+          new Date(current.recorded_at) > new Date(latest.recorded_at) ? current : latest
+        )
+      : null
+
     return NextResponse.json({
       success: true,
       data: metrics,
+      syncMetadata: mostRecentSync ? {
+        lastSyncTimestamp: mostRecentSync.recorded_at,
+        totalDays: metrics.length,
+        dateRange: {
+          start: metrics[metrics.length - 1]?.date,
+          end: metrics[0]?.date,
+        },
+      } : null,
     })
   } catch (error) {
     console.error('Error fetching daily metrics:', error)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.petehome.dailyMetricsSync</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Pete Train needs access to read your health data to sync your activity rings and workout data.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Pete Train needs access to write workout data to HealthKit.</string>
+</dict>
+</plist>

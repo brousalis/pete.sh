@@ -1578,7 +1578,8 @@ final class HealthKitSyncManager {
         async let walkingSpeed = queryMostRecentSample(.walkingSpeed, start: startOfDay, end: endOfDay)
         async let walkingStepLength = queryMostRecentSample(.walkingStepLength, start: startOfDay, end: endOfDay)
 
-        let standHrs = await queryStandHours(for: date)
+        // Fetch activity summary including stand hours AND activity ring goals
+        let activitySummary = await queryActivitySummary(for: date)
 
         return await PetehomeDailyMetrics(
             date: date.dateOnlyString,
@@ -1586,10 +1587,10 @@ final class HealthKitSyncManager {
             activeCalories: activeCalories,
             totalCalories: activeCalories + basalCalories,
             exerciseMinutes: Int(exerciseMinutes),
-            standHours: standHrs,
-            moveGoal: nil,
-            exerciseGoal: nil,
-            standGoal: nil,
+            standHours: activitySummary.standHours,
+            moveGoal: activitySummary.moveGoal,
+            exerciseGoal: activitySummary.exerciseGoal,
+            standGoal: activitySummary.standGoal,
             restingHeartRate: restingHR != nil ? Int(restingHR!) : nil,
             heartRateVariability: hrv,
             vo2Max: vo2Max,
@@ -1641,7 +1642,16 @@ final class HealthKitSyncManager {
         }
     }
 
-    private func queryStandHours(for date: Date) async -> Int {
+    /// Activity summary data including stand hours and ring goals
+    private struct ActivitySummaryData {
+        let standHours: Int
+        let moveGoal: Int?
+        let exerciseGoal: Int?
+        let standGoal: Int?
+    }
+
+    /// Query activity summary for a specific date, including stand hours and activity ring goals
+    private func queryActivitySummary(for date: Date) async -> ActivitySummaryData {
         let calendar = Calendar.current
         var dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
         dateComponents.calendar = calendar
@@ -1650,12 +1660,36 @@ final class HealthKitSyncManager {
 
         return await withCheckedContinuation { continuation in
             let query = HKActivitySummaryQuery(predicate: predicate) { _, summaries, error in
-                let standHours = summaries?.first.map { Int($0.appleStandHours.doubleValue(for: .count())) } ?? 0
-                continuation.resume(returning: standHours)
+                guard let summary = summaries?.first else {
+                    continuation.resume(returning: ActivitySummaryData(
+                        standHours: 0,
+                        moveGoal: nil,
+                        exerciseGoal: nil,
+                        standGoal: nil
+                    ))
+                    return
+                }
+
+                let standHours = Int(summary.appleStandHours.doubleValue(for: .count()))
+                let moveGoal = Int(summary.activeEnergyBurnedGoal.doubleValue(for: .kilocalorie()))
+                let exerciseGoal = Int(summary.appleExerciseTimeGoal.doubleValue(for: .minute()))
+                let standGoal = Int(summary.appleStandHoursGoal.doubleValue(for: .count()))
+
+                continuation.resume(returning: ActivitySummaryData(
+                    standHours: standHours,
+                    moveGoal: moveGoal > 0 ? moveGoal : nil,
+                    exerciseGoal: exerciseGoal > 0 ? exerciseGoal : nil,
+                    standGoal: standGoal > 0 ? standGoal : nil
+                ))
             }
 
             self.healthStore.execute(query)
         }
+    }
+
+    private func queryStandHours(for date: Date) async -> Int {
+        let summary = await queryActivitySummary(for: date)
+        return summary.standHours
     }
 
     private func unitForType(_ identifier: HKQuantityTypeIdentifier) -> HKUnit {

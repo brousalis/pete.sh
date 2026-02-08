@@ -1,11 +1,11 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { apiGet } from '@/lib/api/client'
 import type { MapleWalk } from '@/lib/types/maple.types'
 import { cn } from '@/lib/utils'
-import { Dog, Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { MapleAddWalkDialog } from './maple-add-walk-dialog'
 import { MapleMoodBreakdown, MapleStatsCards, MapleStatsOverview } from './maple-stats'
@@ -144,30 +144,6 @@ export function MapleDashboard({ className }: MapleDashboardProps) {
         <div className="space-y-6">
           {/* Mood Breakdown */}
           <MapleMoodBreakdown />
-
-          {/* Quick Tips Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Dog className="size-4" />
-                Tips
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>
-                <strong>Recording walks:</strong> Just start an "Outdoor Walk" on your Apple Watch
-                when you head out with Maple.
-              </p>
-              <p>
-                <strong>Syncing:</strong> Sync your workout from the iOS app, then add it here as a
-                Maple walk.
-              </p>
-              <p>
-                <strong>Mood ratings:</strong> Help track how Maple's behavior was - great for
-                noticing patterns!
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
 

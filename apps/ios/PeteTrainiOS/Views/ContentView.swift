@@ -2,8 +2,14 @@ import SwiftUI
 
 /// Main content view - WebView that can trigger native sync sheet
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var isLoading = true
     @State private var showSyncSheet = false
+    @State private var hasPerformedInitialSync = false
+    @State private var lastActiveDate: Date?
+
+    /// Minimum time between automatic syncs (30 minutes)
+    private let minimumSyncInterval: TimeInterval = 30 * 60
 
     var body: some View {
         ZStack {
@@ -43,6 +49,44 @@ struct ContentView: View {
         }
         .task {
             _ = await HealthKitSyncManager.shared.requestHealthKitAuthorization()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                handleAppBecameActive()
+            } else if newPhase == .background {
+                // Re-schedule background sync when app goes to background
+                BackgroundSyncManager.shared.scheduleBackgroundSync()
+            }
+        }
+    }
+
+    /// Handle app becoming active - sync daily metrics if needed
+    private func handleAppBecameActive() {
+        let syncManager = HealthKitSyncManager.shared
+
+        // Check if we should perform auto-sync
+        guard syncManager.autoSyncEnabled else { return }
+
+        // Determine if enough time has passed since last sync
+        let shouldSync: Bool
+        if !hasPerformedInitialSync {
+            // Always sync on first app launch
+            shouldSync = true
+            hasPerformedInitialSync = true
+        } else if let lastActive = lastActiveDate {
+            // Sync if more than minimumSyncInterval has passed
+            shouldSync = Date().timeIntervalSince(lastActive) >= minimumSyncInterval
+        } else {
+            shouldSync = true
+        }
+
+        lastActiveDate = Date()
+
+        if shouldSync {
+            Task {
+                print("[ContentView] Auto-syncing daily metrics on app activation")
+                _ = await syncManager.syncDailyMetrics(days: 1)
+            }
         }
     }
 }

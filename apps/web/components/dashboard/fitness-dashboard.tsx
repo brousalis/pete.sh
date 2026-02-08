@@ -18,6 +18,7 @@ import {
 } from 'date-fns'
 import {
     Activity,
+    AlertCircle,
     Bike,
     Calendar,
     ChevronDown,
@@ -29,6 +30,7 @@ import {
     Heart,
     HeartPulse,
     Moon,
+    RefreshCw,
     Route,
     Sparkles,
     Sun,
@@ -109,6 +111,16 @@ export interface DailyMetrics {
   move_goal: number | null
   exercise_goal: number | null
   stand_goal: number | null
+  recorded_at?: string
+}
+
+export interface SyncMetadata {
+  lastSyncTimestamp: string | null
+  totalDays?: number
+  dateRange?: {
+    start: string
+    end: string
+  }
 }
 
 export interface WeeklySummary {
@@ -288,6 +300,31 @@ function getDayDisplayName(date: Date): string {
   const daysAgo = differenceInDays(new Date(), date)
   if (daysAgo < 7) return format(date, 'EEEE')
   return format(date, 'EEE, MMM d')
+}
+
+function formatRelativeTime(timestamp: string): string {
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays === 1) return 'yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  return format(date, 'MMM d')
+}
+
+function isSyncStale(timestamp: string | null, thresholdHours: number = 6): boolean {
+  if (!timestamp) return true
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffHours = diffMs / (1000 * 60 * 60)
+  return diffHours > thresholdHours
 }
 
 function groupWorkoutsByDay(workouts: AppleWorkout[]): DayGroup[] {
@@ -470,6 +507,682 @@ function ActivityRings({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ============================================
+// SYNC STATUS INDICATOR
+// ============================================
+
+interface SyncStatusIndicatorProps {
+  lastSyncTimestamp: string | null
+  staleThresholdHours?: number
+  className?: string
+}
+
+function SyncStatusIndicator({
+  lastSyncTimestamp,
+  staleThresholdHours = 6,
+  className,
+}: SyncStatusIndicatorProps) {
+  const isStale = isSyncStale(lastSyncTimestamp, staleThresholdHours)
+  const timeDisplay = lastSyncTimestamp
+    ? formatRelativeTime(lastSyncTimestamp)
+    : 'never'
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 text-xs',
+        isStale ? 'text-amber-500' : 'text-muted-foreground',
+        className
+      )}
+    >
+      {isStale ? (
+        <AlertCircle className="size-3.5 animate-pulse" />
+      ) : (
+        <Watch className="size-3.5" />
+      )}
+      <span>
+        {isStale ? 'Stale data' : 'Synced'} {timeDisplay}
+      </span>
+    </div>
+  )
+}
+
+// ============================================
+// WEEKLY RING SUMMARY
+// ============================================
+
+interface WeeklyRingSummaryProps {
+  dailyMetrics: DailyMetrics[]
+  className?: string
+}
+
+function WeeklyRingSummary({ dailyMetrics, className }: WeeklyRingSummaryProps) {
+  // Get last 7 days of data
+  const last7Days = useMemo(() => {
+    const days: Array<{
+      date: Date
+      dateStr: string
+      dayLabel: string
+      metrics: DailyMetrics | null
+      moveComplete: boolean
+      exerciseComplete: boolean
+      standComplete: boolean
+      ringsComplete: number
+    }> = []
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yest' : format(date, 'EEE')
+      const metrics = dailyMetrics.find(m => m.date === dateStr) || null
+
+      const moveGoal = metrics?.move_goal || 500
+      const exerciseGoal = metrics?.exercise_goal || 30
+      const standGoal = metrics?.stand_goal || 12
+
+      const moveComplete = metrics ? metrics.active_calories >= moveGoal : false
+      const exerciseComplete = metrics ? metrics.exercise_minutes >= exerciseGoal : false
+      const standComplete = metrics ? metrics.stand_hours >= standGoal : false
+
+      days.push({
+        date,
+        dateStr,
+        dayLabel,
+        metrics,
+        moveComplete,
+        exerciseComplete,
+        standComplete,
+        ringsComplete: [moveComplete, exerciseComplete, standComplete].filter(Boolean).length,
+      })
+    }
+
+    return days
+  }, [dailyMetrics])
+
+  const totalRingsClosed = last7Days.reduce((sum, day) => sum + day.ringsComplete, 0)
+  const perfectDays = last7Days.filter(day => day.ringsComplete === 3).length
+
+  return (
+    <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-medium">
+          <Calendar className="size-4 text-muted-foreground" />
+          This Week
+        </h3>
+        <div className="text-xs text-muted-foreground">
+          {perfectDays}/7 perfect days
+        </div>
+      </div>
+
+      {/* 7-day ring row */}
+      <div className="flex justify-between gap-1">
+        {last7Days.map(day => (
+          <div
+            key={day.dateStr}
+            className="flex flex-1 flex-col items-center gap-1"
+          >
+            {/* Mini activity rings */}
+            <MiniActivityRings
+              move={day.metrics?.active_calories || 0}
+              moveGoal={day.metrics?.move_goal || 500}
+              exercise={day.metrics?.exercise_minutes || 0}
+              exerciseGoal={day.metrics?.exercise_goal || 30}
+              stand={day.metrics?.stand_hours || 0}
+              standGoal={day.metrics?.stand_goal || 12}
+              size={32}
+            />
+            {/* Day label */}
+            <span className={cn(
+              'text-[10px]',
+              day.ringsComplete === 3
+                ? 'font-medium text-green-500'
+                : 'text-muted-foreground'
+            )}>
+              {day.dayLabel}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div className="mt-3 flex items-center justify-center gap-4 border-t border-border/30 pt-3 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="size-2 rounded-full bg-[#FF2D55]" />
+          <span className="text-muted-foreground">
+            {last7Days.filter(d => d.moveComplete).length}/7
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="size-2 rounded-full bg-[#92E82A]" />
+          <span className="text-muted-foreground">
+            {last7Days.filter(d => d.exerciseComplete).length}/7
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="size-2 rounded-full bg-[#00D4FF]" />
+          <span className="text-muted-foreground">
+            {last7Days.filter(d => d.standComplete).length}/7
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// MONTHLY RING CALENDAR
+// ============================================
+
+interface MonthlyRingCalendarProps {
+  dailyMetrics: DailyMetrics[]
+  className?: string
+}
+
+function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  // Generate calendar data for the current month
+  const calendarData = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startDayOfWeek = firstDay.getDay() // 0 = Sunday
+
+    // Create a map of date -> metrics for quick lookup
+    const metricsMap = new Map<string, DailyMetrics>()
+    dailyMetrics.forEach(m => metricsMap.set(m.date, m))
+
+    const weeks: Array<Array<{
+      date: Date | null
+      dateStr: string | null
+      dayNum: number | null
+      metrics: DailyMetrics | null
+      ringsComplete: number
+      isToday: boolean
+      isFuture: boolean
+    }>> = []
+
+    let currentWeek: typeof weeks[0] = []
+    
+    // Add empty cells for days before the first of the month
+    for (let i = 0; i < startDayOfWeek; i++) {
+      currentWeek.push({
+        date: null,
+        dateStr: null,
+        dayNum: null,
+        metrics: null,
+        ringsComplete: 0,
+        isToday: false,
+        isFuture: false,
+      })
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const metrics = metricsMap.get(dateStr) || null
+      const isTodayDate = date.getTime() === today.getTime()
+      const isFuture = date.getTime() > today.getTime()
+
+      let ringsComplete = 0
+      if (metrics) {
+        const moveGoal = metrics.move_goal || 500
+        const exerciseGoal = metrics.exercise_goal || 30
+        const standGoal = metrics.stand_goal || 12
+        if (metrics.active_calories >= moveGoal) ringsComplete++
+        if (metrics.exercise_minutes >= exerciseGoal) ringsComplete++
+        if (metrics.stand_hours >= standGoal) ringsComplete++
+      }
+
+      currentWeek.push({
+        date,
+        dateStr,
+        dayNum: day,
+        metrics,
+        ringsComplete,
+        isToday: isTodayDate,
+        isFuture,
+      })
+
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek)
+        currentWeek = []
+      }
+    }
+
+    // Add empty cells for remaining days
+    while (currentWeek.length > 0 && currentWeek.length < 7) {
+      currentWeek.push({
+        date: null,
+        dateStr: null,
+        dayNum: null,
+        metrics: null,
+        ringsComplete: 0,
+        isToday: false,
+        isFuture: false,
+      })
+    }
+    if (currentWeek.length > 0) {
+      weeks.push(currentWeek)
+    }
+
+    return weeks
+  }, [currentMonth, dailyMetrics])
+
+  // Stats for the month
+  const monthStats = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    let perfectDays = 0
+    let totalDaysWithData = 0
+    let totalRingsClosed = 0
+
+    dailyMetrics.forEach(m => {
+      const date = new Date(m.date)
+      if (date.getFullYear() === year && date.getMonth() === month && date <= today) {
+        totalDaysWithData++
+        const moveGoal = m.move_goal || 500
+        const exerciseGoal = m.exercise_goal || 30
+        const standGoal = m.stand_goal || 12
+        let rings = 0
+        if (m.active_calories >= moveGoal) rings++
+        if (m.exercise_minutes >= exerciseGoal) rings++
+        if (m.stand_hours >= standGoal) rings++
+        totalRingsClosed += rings
+        if (rings === 3) perfectDays++
+      }
+    })
+
+    return { perfectDays, totalDaysWithData, totalRingsClosed }
+  }, [currentMonth, dailyMetrics])
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+  }
+
+  const goToNextMonth = () => {
+    const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    const today = new Date()
+    if (nextMonth <= today) {
+      setCurrentMonth(nextMonth)
+    }
+  }
+
+  const canGoNext = useMemo(() => {
+    const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    return nextMonth <= new Date()
+  }, [currentMonth])
+
+  const getRingColorClass = (ringsComplete: number, isFuture: boolean): string => {
+    if (isFuture) return 'bg-muted/20'
+    switch (ringsComplete) {
+      case 0: return 'bg-muted/30'
+      case 1: return 'bg-amber-500/30'
+      case 2: return 'bg-lime-500/40'
+      case 3: return 'bg-green-500/50'
+      default: return 'bg-muted/30'
+    }
+  }
+
+  return (
+    <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
+      {/* Header with month navigation */}
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          onClick={goToPreviousMonth}
+          className="rounded-lg p-1 hover:bg-muted"
+        >
+          <ChevronDown className="size-5 rotate-90" />
+        </button>
+        <h3 className="text-sm font-medium">
+          {format(currentMonth, 'MMMM yyyy')}
+        </h3>
+        <button
+          onClick={goToNextMonth}
+          disabled={!canGoNext}
+          className={cn(
+            'rounded-lg p-1',
+            canGoNext ? 'hover:bg-muted' : 'opacity-30 cursor-not-allowed'
+          )}
+        >
+          <ChevronDown className="size-5 -rotate-90" />
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="mb-2 grid grid-cols-7 gap-1">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+          <div key={i} className="text-center text-[10px] text-muted-foreground">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid gap-1">
+        {calendarData.map((week, weekIdx) => (
+          <div key={weekIdx} className="grid grid-cols-7 gap-1">
+            {week.map((day, dayIdx) => (
+              <div
+                key={dayIdx}
+                className={cn(
+                  'relative flex aspect-square items-center justify-center rounded-md text-xs transition-colors',
+                  day.dayNum !== null && getRingColorClass(day.ringsComplete, day.isFuture),
+                  day.isToday && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+                  day.ringsComplete === 3 && !day.isFuture && 'font-medium text-green-700 dark:text-green-300'
+                )}
+                title={day.dateStr ? `${day.dateStr}: ${day.ringsComplete}/3 rings` : undefined}
+              >
+                {day.dayNum}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Legend and stats */}
+      <div className="mt-4 flex items-center justify-between border-t border-border/30 pt-3">
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <div className="size-2.5 rounded bg-muted/30" />
+            <span>0</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="size-2.5 rounded bg-amber-500/30" />
+            <span>1</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="size-2.5 rounded bg-lime-500/40" />
+            <span>2</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="size-2.5 rounded bg-green-500/50" />
+            <span>3</span>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {monthStats.perfectDays} perfect days
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// RING STREAKS
+// ============================================
+
+interface RingStreaksProps {
+  dailyMetrics: DailyMetrics[]
+  className?: string
+}
+
+interface StreakData {
+  current: number
+  longest: number
+  completionPercent: number
+}
+
+function RingStreaks({ dailyMetrics, className }: RingStreaksProps) {
+  const streakData = useMemo(() => {
+    // Sort metrics by date ascending
+    const sortedMetrics = [...dailyMetrics].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const calculateStreak = (
+      checkFn: (m: DailyMetrics) => boolean
+    ): StreakData => {
+      let currentStreak = 0
+      let longestStreak = 0
+      let tempStreak = 0
+      let completedDays = 0
+
+      // Calculate streaks and completion
+      sortedMetrics.forEach(m => {
+        const metricDate = new Date(m.date)
+        metricDate.setHours(0, 0, 0, 0)
+        
+        // Only count days up to today
+        if (metricDate > today) return
+
+        if (checkFn(m)) {
+          tempStreak++
+          completedDays++
+          longestStreak = Math.max(longestStreak, tempStreak)
+        } else {
+          tempStreak = 0
+        }
+      })
+
+      // Current streak: count backwards from today
+      for (let i = sortedMetrics.length - 1; i >= 0; i--) {
+        const m = sortedMetrics[i]
+        const metricDate = new Date(m.date)
+        metricDate.setHours(0, 0, 0, 0)
+        
+        if (metricDate > today) continue
+
+        if (checkFn(m)) {
+          currentStreak++
+        } else {
+          break
+        }
+      }
+
+      const totalDays = sortedMetrics.filter(m => {
+        const d = new Date(m.date)
+        d.setHours(0, 0, 0, 0)
+        return d <= today
+      }).length
+
+      return {
+        current: currentStreak,
+        longest: longestStreak,
+        completionPercent: totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0,
+      }
+    }
+
+    const move = calculateStreak(m => {
+      const goal = m.move_goal || 500
+      return m.active_calories >= goal
+    })
+
+    const exercise = calculateStreak(m => {
+      const goal = m.exercise_goal || 30
+      return m.exercise_minutes >= goal
+    })
+
+    const stand = calculateStreak(m => {
+      const goal = m.stand_goal || 12
+      return m.stand_hours >= goal
+    })
+
+    const allRings = calculateStreak(m => {
+      const moveGoal = m.move_goal || 500
+      const exerciseGoal = m.exercise_goal || 30
+      const standGoal = m.stand_goal || 12
+      return (
+        m.active_calories >= moveGoal &&
+        m.exercise_minutes >= exerciseGoal &&
+        m.stand_hours >= standGoal
+      )
+    })
+
+    return { move, exercise, stand, allRings }
+  }, [dailyMetrics])
+
+  const rings = [
+    { name: 'Move', color: '#FF2D55', data: streakData.move, icon: <Flame className="size-3.5" /> },
+    { name: 'Exercise', color: '#92E82A', data: streakData.exercise, icon: <Activity className="size-3.5" /> },
+    { name: 'Stand', color: '#00D4FF', data: streakData.stand, icon: <TrendingUp className="size-3.5" /> },
+  ]
+
+  return (
+    <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-medium">
+          <Zap className="size-4 text-amber-500" />
+          Ring Streaks
+        </h3>
+        {/* Perfect days streak */}
+        {streakData.allRings.current > 0 && (
+          <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+            <Sparkles className="size-3" />
+            {streakData.allRings.current} perfect day{streakData.allRings.current !== 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+
+      {/* Individual ring streaks */}
+      <div className="space-y-3">
+        {rings.map(ring => (
+          <div key={ring.name} className="flex items-center gap-3">
+            {/* Ring indicator */}
+            <div
+              className="flex size-8 items-center justify-center rounded-full"
+              style={{ backgroundColor: `${ring.color}20`, color: ring.color }}
+            >
+              {ring.icon}
+            </div>
+
+            {/* Streak info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium">{ring.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {ring.data.completionPercent}%
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${ring.data.completionPercent}%`,
+                    backgroundColor: ring.color,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Streak numbers */}
+            <div className="text-right">
+              <div className="text-sm font-bold tabular-nums" style={{ color: ring.color }}>
+                {ring.data.current}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                best: {ring.data.longest}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* All rings streak summary */}
+      <div className="mt-4 flex items-center justify-between border-t border-border/30 pt-3">
+        <span className="text-xs text-muted-foreground">All rings closed</span>
+        <div className="flex items-center gap-3 text-xs">
+          <span>
+            Current: <strong>{streakData.allRings.current}</strong>
+          </span>
+          <span className="text-muted-foreground">|</span>
+          <span>
+            Best: <strong>{streakData.allRings.longest}</strong>
+          </span>
+          <span className="text-muted-foreground">|</span>
+          <span>{streakData.allRings.completionPercent}%</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Mini Activity Rings for weekly view
+interface MiniActivityRingsProps {
+  move: number
+  moveGoal: number
+  exercise: number
+  exerciseGoal: number
+  stand: number
+  standGoal: number
+  size?: number
+}
+
+function MiniActivityRings({
+  move,
+  moveGoal,
+  exercise,
+  exerciseGoal,
+  stand,
+  standGoal,
+  size = 32,
+}: MiniActivityRingsProps) {
+  const strokeWidth = size * 0.12
+  const radius = (size - strokeWidth) / 2
+
+  const moveProgress = Math.min((move / moveGoal) * 100, 100)
+  const exerciseProgress = Math.min((exercise / exerciseGoal) * 100, 100)
+  const standProgress = Math.min((stand / standGoal) * 100, 100)
+
+  const rings = [
+    { progress: moveProgress, color: '#FF2D55' },
+    { progress: exerciseProgress, color: '#92E82A' },
+    { progress: standProgress, color: '#00D4FF' },
+  ]
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 transform">
+        {rings.map((ring, i) => {
+          const r = radius - i * strokeWidth * 1.3
+          const c = 2 * Math.PI * r
+          const offset = c - (ring.progress / 100) * c
+
+          return (
+            <g key={i}>
+              {/* Background ring */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                strokeOpacity={0.2}
+              />
+              {/* Progress ring */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeDasharray={c}
+                strokeDashoffset={offset}
+              />
+            </g>
+          )
+        })}
+      </svg>
     </div>
   )
 }
@@ -753,9 +1466,10 @@ interface TodayHeroProps {
   workouts: AppleWorkout[]
   metrics: DailyMetrics | null
   onWorkoutClick: (workoutId: string) => void
+  lastSyncTimestamp?: string | null
 }
 
-function TodayHero({ workouts, metrics, onWorkoutClick }: TodayHeroProps) {
+function TodayHero({ workouts, metrics, onWorkoutClick, lastSyncTimestamp }: TodayHeroProps) {
   const todayWorkouts = workouts.filter(w => isToday(new Date(w.start_date)))
   const totalDuration = todayWorkouts.reduce((sum, w) => sum + w.duration, 0)
   const totalCalories = todayWorkouts.reduce(
@@ -778,6 +1492,9 @@ function TodayHero({ workouts, metrics, onWorkoutClick }: TodayHeroProps) {
         )
       : 0
 
+  // Use metrics recorded_at if available, otherwise use prop
+  const syncTimestamp = metrics?.recorded_at || lastSyncTimestamp || null
+
   return (
     <div className="from-primary/5 rounded-2xl bg-gradient-to-br to-transparent p-5 md:p-6">
       {/* Main content grid */}
@@ -799,13 +1516,23 @@ function TodayHero({ workouts, metrics, onWorkoutClick }: TodayHeroProps) {
 
           {/* Today header - positioned next to rings on mobile/tablet */}
           <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold">Today</h2>
-            <div className="text-muted-foreground mt-1 text-sm">
-              {format(new Date(), 'EEEE, MMMM d')}
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Today</h2>
+                <div className="text-muted-foreground mt-1 text-sm">
+                  {format(new Date(), 'EEEE, MMMM d')}
+                </div>
+              </div>
             </div>
 
+            {/* Sync status indicator */}
+            <SyncStatusIndicator
+              lastSyncTimestamp={syncTimestamp}
+              className="mt-2"
+            />
+
             {todayWorkouts.length > 0 ? (
-              <div className="mt-4">
+              <div className="mt-3">
                 <Badge
                   variant="secondary"
                   className="px-3 py-1 text-sm font-medium"
@@ -2024,6 +2751,7 @@ interface FitnessDashboardProps {
   dailyMetrics: DailyMetrics[]
   weeklySummary: WeeklySummary[]
   onWorkoutClick: (workoutId: string) => void
+  syncMetadata?: SyncMetadata | null
   className?: string
 }
 
@@ -2032,6 +2760,7 @@ export function FitnessDashboard({
   dailyMetrics,
   weeklySummary,
   onWorkoutClick,
+  syncMetadata,
   className,
 }: FitnessDashboardProps) {
   const dayGroups = useMemo(() => groupWorkoutsByDay(workouts), [workouts])
@@ -2049,7 +2778,14 @@ export function FitnessDashboard({
             workouts={workouts}
             metrics={todayMetrics}
             onWorkoutClick={onWorkoutClick}
+            lastSyncTimestamp={syncMetadata?.lastSyncTimestamp}
           />
+
+          {/* Weekly Ring Summary */}
+          <WeeklyRingSummary dailyMetrics={dailyMetrics} />
+
+          {/* Ring Streaks */}
+          <RingStreaks dailyMetrics={dailyMetrics} />
 
           {/* Weekly Stats + Insights - visible on mobile only */}
           <div className="space-y-4 lg:hidden">
@@ -2059,6 +2795,7 @@ export function FitnessDashboard({
                 previousSummary={weeklySummary[1]}
               />
             )}
+            <MonthlyRingCalendar dailyMetrics={dailyMetrics} />
             <InsightsPanel
               dailyMetrics={dailyMetrics}
               workouts={workouts}
@@ -2097,6 +2834,7 @@ export function FitnessDashboard({
                 previousSummary={weeklySummary[1]}
               />
             )}
+            <MonthlyRingCalendar dailyMetrics={dailyMetrics} />
             <InsightsPanel
               dailyMetrics={dailyMetrics}
               workouts={workouts}
