@@ -48,8 +48,8 @@ export interface HueSummaryStats {
   weekOverWeekChange: number // percentage change
   totalDataPoints: number
   dateRange: {
-    start: string
-    end: string
+    start: string | null
+    end: string | null
   }
 }
 

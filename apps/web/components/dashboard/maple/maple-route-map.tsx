@@ -199,7 +199,9 @@ export function MapleRouteMap({
 
       for (let i = 0; i < path.length - 1; i++) {
         const sample = samples[i]
-        if (!sample) continue
+        const currentPoint = path[i]
+        const nextPoint = path[i + 1]
+        if (!sample || !currentPoint || !nextPoint) continue
         const sampleTime = new Date(sample.timestamp).getTime()
 
         // Find closest HR sample
@@ -214,7 +216,7 @@ export function MapleRouteMap({
         }
 
         const segment = new google.maps.Polyline({
-          path: [path[i], path[i + 1]],
+          path: [currentPoint, nextPoint],
           strokeColor: getHrZoneColor(closestBpm),
           strokeOpacity: 0.9,
           strokeWeight: 4,
@@ -235,7 +237,9 @@ export function MapleRouteMap({
     }
 
     // Add start marker
-    if (path.length > 0) {
+    const startPosition = path[0]
+    const endPosition = path[path.length - 1]
+    if (startPosition && endPosition) {
       const startMarkerContent = document.createElement('div')
       startMarkerContent.innerHTML = `
         <div class="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full border-2 border-white shadow-lg">
@@ -246,7 +250,7 @@ export function MapleRouteMap({
       `
 
       const startMarker = new google.maps.marker.AdvancedMarkerElement({
-        position: path[0],
+        position: startPosition,
         map,
         content: startMarkerContent,
         title: 'Start',
@@ -265,7 +269,7 @@ export function MapleRouteMap({
       `
 
       const endMarker = new google.maps.marker.AdvancedMarkerElement({
-        position: path[path.length - 1],
+        position: endPosition,
         map,
         content: endMarkerContent,
         title: 'End',

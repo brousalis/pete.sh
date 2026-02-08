@@ -1,11 +1,11 @@
 /**
  * Data Cleanup Utilities
- * 
+ *
  * Provides functions to clean up old time-series data from Supabase.
  * Uses the cleanup functions defined in migration 018_data_retention.sql.
  */
 
-import { getSupabaseServiceClient, isSupabaseConfigured, hasServiceRoleKey } from '@/lib/supabase/client'
+import { getSupabaseServiceClient, hasServiceRoleKey, isSupabaseConfigured } from '@/lib/supabase/client'
 
 /** Default retention periods (in days) */
 export const DEFAULT_RETENTION_DAYS = {
@@ -59,7 +59,7 @@ export function isCleanupAvailable(): boolean {
 
 /**
  * Clean up old records from a specific table
- * 
+ *
  * @param table The table to clean up
  * @param retentionDays Number of days to retain (default: table-specific default)
  * @returns Cleanup result with deleted count
@@ -69,7 +69,7 @@ export async function cleanupTable(
   retentionDays?: number
 ): Promise<CleanupResult> {
   const days = retentionDays ?? DEFAULT_RETENTION_DAYS[table]
-  
+
   if (!isCleanupAvailable()) {
     return {
       table,
@@ -92,8 +92,9 @@ export async function cleanupTable(
   try {
     // Map table names to cleanup function names
     const functionName = `cleanup_${table}`
-    
-    const { data, error } = await client.rpc(functionName as 'cleanup_cta_history', { retention_days: days })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (client.rpc as any)(functionName, { retention_days: days })
 
     if (error) {
       return {
@@ -122,7 +123,7 @@ export async function cleanupTable(
 /**
  * Clean up old records from all time-series tables
  * Uses the master cleanup function from the database
- * 
+ *
  * @returns Summary of all cleanup operations
  */
 export async function cleanupAllTables(): Promise<CleanupAllResult> {
@@ -239,7 +240,7 @@ export async function getTableStats(): Promise<TableStats[]> {
  */
 export async function runCleanupWithSummary(): Promise<string> {
   const result = await cleanupAllTables()
-  
+
   if (!result.success) {
     return `Cleanup failed: ${result.results[0]?.error ?? 'Unknown error'}`
   }

@@ -200,7 +200,7 @@ export function WorkoutCenter({
   )
   const [skipDialogOpen, setSkipDialogOpen] = useState(false)
   const [skipReason, setSkipReason] = useState('')
-  
+
   // Fullscreen timer state
   const [fullscreenTimerOpen, setFullscreenTimerOpen] = useState(false)
   const [fullscreenTimerExercise, setFullscreenTimerExercise] = useState<{
@@ -316,7 +316,7 @@ export function WorkoutCenter({
     if (fullscreenTimerExercise) {
       // Mark current exercise complete
       setCompletedExercises(prev => new Set(prev).add(fullscreenTimerExercise.id))
-      
+
       // Auto-advance to next timed exercise in section
       const { sectionExercises, currentIndex } = fullscreenTimerExercise
       if (sectionExercises && currentIndex !== undefined) {
@@ -861,7 +861,7 @@ function WorkoutSection({
   )
 
   const hasLinkedWorkouts = linkedWorkouts.length > 0
-  
+
   // Check if section has timed exercises (for showing "Start Timer" button)
   const timedExercises = section.exercises.filter(ex => ex.duration)
   const hasTimedExercises = timedExercises.length > 0
@@ -901,7 +901,7 @@ function WorkoutSection({
         <CollapsibleContent>
           <div className="space-y-1 px-2 pb-2">
             {/* Start Timer button for sections with timed exercises */}
-            {hasTimedExercises && onOpenFullscreenTimer && !isWorkoutCompleted && (
+            {hasTimedExercises && firstTimedExercise && onOpenFullscreenTimer && !isWorkoutCompleted && (
               <div className="pb-1">
                 <Button
                   size="sm"

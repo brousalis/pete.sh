@@ -30,6 +30,7 @@
 const https = require('https')
 const path = require('path')
 const fs = require('fs')
+const { exec } = require('child_process')
 
 // Load .env from apps/web when run via yarn vercel-toast
 try {
@@ -114,6 +115,37 @@ function fetchDeployments() {
 const APP_ICON_PATH = path.join(__dirname, '..', 'app', 'favicon.ico')
 const TOAST_APP_ID = process.env.VERCEL_TOAST_APP_ID || 'petehome'
 
+// Map notification id -> URL so we can open the right URL when user clicks a toast
+const pendingUrlsByNotificationId = Object.create(null)
+
+function openUrl(url) {
+  if (!url) return
+  const escaped = url.replace(/"/g, '""')
+  const cmd =
+    process.platform === 'win32'
+      ? `start "" "${escaped}"`
+      : process.platform === 'darwin'
+        ? `open "${escaped}"`
+        : `xdg-open "${escaped}"`
+  exec(cmd, { shell: true }, (err) => {
+    if (err) console.error('Failed to open URL:', err.message)
+  })
+}
+
+function setupNotificationClickHandler() {
+  const notifier = require('node-notifier')
+  if (notifier._clickHandlerSetup) return
+  notifier._clickHandlerSetup = true
+  notifier.on('click', (emitter, options) => {
+    const id = options && options.id
+    const url = id && pendingUrlsByNotificationId[id]
+    if (url) {
+      openUrl(url)
+      delete pendingUrlsByNotificationId[id]
+    }
+  })
+}
+
 function showToast(title, message, url) {
   try {
     const notifier = require('node-notifier')
@@ -125,6 +157,12 @@ function showToast(title, message, url) {
       sound: true,
     }
     if (fs.existsSync(APP_ICON_PATH)) opts.icon = APP_ICON_PATH
+    if (url) {
+      const id = `vercel-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      opts.id = id
+      pendingUrlsByNotificationId[id] = url
+      setupNotificationClickHandler()
+    }
     notifier.notify(opts)
   } catch (e) {
     console.error('node-notifier not available. Install with: yarn add -D node-notifier', e.message)
