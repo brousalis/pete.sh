@@ -40,7 +40,14 @@ struct SyncSheetView: View {
                     Button {
                         Task { await syncManager.syncDailyMetrics(days: 7) }
                     } label: {
-                        Label("Sync Daily Metrics", systemImage: "heart.text.square")
+                        Label("Sync Daily Metrics (7 days)", systemImage: "heart.text.square")
+                    }
+                    .disabled(syncManager.isSyncing)
+
+                    Button {
+                        Task { await syncManager.syncAllDailyMetricsHistory() }
+                    } label: {
+                        Label("Sync All Daily Metrics History", systemImage: "calendar.badge.clock")
                     }
                     .disabled(syncManager.isSyncing)
 
