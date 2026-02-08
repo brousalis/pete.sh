@@ -3,21 +3,22 @@
 import { HrZonesChart } from '@/components/dashboard/hr-zones-chart'
 import { Badge } from '@/components/ui/badge'
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { apiGet } from '@/lib/api/client'
 import type { AppleWorkoutType } from '@/lib/types/apple-health.types'
 import {
-    Activity,
-    Flame,
-    Heart,
-    MapPin,
-    Timer,
-    TrendingUp
+  Activity,
+  Flame,
+  Heart,
+  MapPin,
+  Timer,
+  TrendingUp,
+  Watch
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

@@ -1089,7 +1089,8 @@ def parse_and_execute(cmd: str):
     elif command == "ga":
         cmd_git(["add"])
     elif command == "gc":
-        # Convenient commit: prompt for message
+        # Always stage all changes, then commit (prompt for message if needed)
+        cmd_git(["add"])
         cmd_git(["commit"] + args)
     elif command == "gp":
         cmd_git(["push"] + args)
