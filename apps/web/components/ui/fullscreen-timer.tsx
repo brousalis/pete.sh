@@ -158,6 +158,7 @@ export function FullscreenTimer({
       }, 300)
       return () => clearTimeout(timeout)
     }
+    return undefined
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, autoStart])
 

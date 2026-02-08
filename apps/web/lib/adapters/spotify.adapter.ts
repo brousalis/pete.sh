@@ -66,7 +66,7 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    * Only considers track URI and playback state (play/pause)
    * Ignores progress_ms which changes constantly
    */
-  protected computeDataHash(data: SpotifyFullState): string {
+  protected override computeDataHash(data: SpotifyFullState): string {
     const significantData = {
       trackUri: data.playbackState?.item?.uri ?? null,
       trackName: data.playbackState?.item?.name ?? null,

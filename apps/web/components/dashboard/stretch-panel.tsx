@@ -399,6 +399,7 @@ export function StretchPanel({
   // Fullscreen timer handlers
   const openFullscreenTimer = (idx: number) => {
     const exercise = routine.exercises[idx]
+    if (!exercise) return
     setFullscreenTimerExercise({
       idx,
       name: exercise.name,
@@ -414,8 +415,8 @@ export function StretchPanel({
       
       // Auto-advance to next exercise
       const nextIdx = fullscreenTimerExercise.idx + 1
-      if (nextIdx < routine.exercises.length) {
-        const nextExercise = routine.exercises[nextIdx]
+      const nextExercise = routine.exercises[nextIdx]
+      if (nextIdx < routine.exercises.length && nextExercise) {
         setFullscreenTimerExercise({
           idx: nextIdx,
           name: nextExercise.name,
@@ -434,8 +435,8 @@ export function StretchPanel({
   const handleFullscreenTimerSkip = () => {
     if (fullscreenTimerExercise) {
       const nextIdx = fullscreenTimerExercise.idx + 1
-      if (nextIdx < routine.exercises.length) {
-        const nextExercise = routine.exercises[nextIdx]
+      const nextExercise = routine.exercises[nextIdx]
+      if (nextIdx < routine.exercises.length && nextExercise) {
         setFullscreenTimerExercise({
           idx: nextIdx,
           name: nextExercise.name,

@@ -93,7 +93,7 @@ export async function cleanupTable(
     // Map table names to cleanup function names
     const functionName = `cleanup_${table}`
     
-    const { data, error } = await client.rpc(functionName, { retention_days: days })
+    const { data, error } = await client.rpc(functionName as 'cleanup_cta_history', { retention_days: days })
 
     if (error) {
       return {
@@ -168,7 +168,7 @@ export async function cleanupAllTables(): Promise<CleanupAllResult> {
       }
     }
 
-    const results: CleanupResult[] = (data ?? []).map((row: { table_name: string; deleted_count: number; retention_days: number }) => ({
+    const results: CleanupResult[] = ((data ?? []) as Array<{ table_name: string; deleted_count: number; retention_days: number }>).map((row) => ({
       table: row.table_name,
       deletedCount: row.deleted_count,
       retentionDays: row.retention_days,
@@ -221,7 +221,7 @@ export async function getTableStats(): Promise<TableStats[]> {
       return []
     }
 
-    return (data ?? []).map((row: { table_name: string; record_count: number; oldest_record: string | null; newest_record: string | null }) => ({
+    return ((data ?? []) as Array<{ table_name: string; record_count: number; oldest_record: string | null; newest_record: string | null }>).map((row) => ({
       tableName: row.table_name,
       recordCount: row.record_count,
       oldestRecord: row.oldest_record,

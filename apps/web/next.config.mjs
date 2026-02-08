@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable default Next.js request logging (we use custom logging in server.mjs)
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+  },
   // Allow being framed by the Firefox new-tab extension (keeps URL bar on extension)
   async headers() {
     return [

@@ -323,7 +323,7 @@ export function WorkoutCenter({
         // Find next exercise with duration
         for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
           const nextExercise = sectionExercises[i]
-          if (nextExercise.duration) {
+          if (nextExercise?.duration) {
             setFullscreenTimerExercise({
               id: nextExercise.id,
               name: nextExercise.name,
@@ -349,7 +349,7 @@ export function WorkoutCenter({
         // Find next exercise with duration
         for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
           const nextExercise = sectionExercises[i]
-          if (nextExercise.duration) {
+          if (nextExercise?.duration) {
             setFullscreenTimerExercise({
               id: nextExercise.id,
               name: nextExercise.name,
@@ -379,7 +379,7 @@ export function WorkoutCenter({
     }
     const { sectionExercises, currentIndex } = fullscreenTimerExercise
     for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
-      if (sectionExercises[i].duration) return true
+      if (sectionExercises[i]?.duration) return true
     }
     return false
   }

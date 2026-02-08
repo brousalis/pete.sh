@@ -44,11 +44,12 @@ export async function getAuthenticatedSpotifyService(): Promise<{
   const refreshToken = fileTokens.refreshToken || cookieRefreshToken || null
   const expiresAt = fileTokens.expiryDate || (cookieExpiresAt ? parseInt(cookieExpiresAt, 10) : null)
 
-  console.log("[Spotify Auth] Loading tokens:", {
-    fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
-    fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
-    using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
-  })
+  // Debug logging disabled - uncomment to troubleshoot auth issues
+  // console.log("[Spotify Auth] Loading tokens:", {
+  //   fromFile: { hasAccessToken: !!fileTokens.accessToken, hasRefreshToken: !!fileTokens.refreshToken },
+  //   fromCookies: { hasAccessToken: !!cookieAccessToken, hasRefreshToken: !!cookieRefreshToken },
+  //   using: { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken },
+  // })
 
   // No tokens at all - not authenticated
   if (!accessToken && !refreshToken) {
@@ -61,7 +62,7 @@ export async function getAuthenticatedSpotifyService(): Promise<{
 
   if (needsRefresh && refreshToken) {
     try {
-      console.log("[Spotify Auth] Refreshing access token...")
+      // console.log("[Spotify Auth] Refreshing access token...")
       const tokens = await spotifyService.refreshAccessToken(refreshToken)
       const newExpiresAt = Date.now() + tokens.expires_in * 1000
 

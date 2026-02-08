@@ -28,6 +28,7 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 3000,
         HOSTNAME: '0.0.0.0',
+        FORCE_COLOR: '1',  // Enable ANSI colors in logs
       },
       autorestart: true,
       watch: false,

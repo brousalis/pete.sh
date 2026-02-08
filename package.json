@@ -22,6 +22,8 @@
     "p:restart": "pm2 restart petehome",
     "p:restart:notifications": "pm2 restart petehome-notifications",
     "p:logs": "pm2 logs petehome",
+    "p:logs:pretty": "node apps/web/scripts/pretty-logs.mjs",
+    "p:logs:stats": "node apps/web/scripts/pretty-logs.mjs --stats --last 1000",
     "p:logs:notifications": "pm2 logs petehome-notifications",
     "p:status": "pm2 status",
 

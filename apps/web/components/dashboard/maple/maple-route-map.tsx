@@ -5,9 +5,60 @@ import type { LocationSample } from '@/lib/types/apple-health.types'
 import { MapPin, Navigation } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+// Google Maps type declarations
+declare namespace google.maps {
+  class Map {
+    constructor(element: HTMLElement, options: MapOptions)
+    fitBounds(bounds: LatLngBounds, padding?: { top: number; bottom: number; left: number; right: number }): void
+  }
+  class LatLngBounds {
+    constructor()
+    extend(latLng: LatLngLiteral): void
+  }
+  class Polyline {
+    constructor(options: PolylineOptions)
+    setMap(map: Map | null): void
+  }
+  namespace marker {
+    class AdvancedMarkerElement {
+      constructor(options: AdvancedMarkerElementOptions)
+      map: Map | null
+    }
+    interface AdvancedMarkerElementOptions {
+      position: LatLngLiteral
+      map: Map
+      content: HTMLElement
+      title?: string
+    }
+  }
+  interface MapOptions {
+    mapId?: string
+    disableDefaultUI?: boolean
+    zoomControl?: boolean
+    gestureHandling?: string
+    styles?: MapTypeStyle[]
+  }
+  interface LatLngLiteral {
+    lat: number
+    lng: number
+  }
+  interface PolylineOptions {
+    path: LatLngLiteral[]
+    strokeColor?: string
+    strokeOpacity?: number
+    strokeWeight?: number
+    map?: Map
+  }
+  interface MapTypeStyle {
+    featureType?: string
+    elementType?: string
+    stylers?: { visibility?: string }[]
+  }
+}
+
 declare global {
   interface Window {
-    google: typeof google
+    google: { maps: typeof google.maps }
     initMap: () => void
   }
 }
@@ -148,6 +199,7 @@ export function MapleRouteMap({
 
       for (let i = 0; i < path.length - 1; i++) {
         const sample = samples[i]
+        if (!sample) continue
         const sampleTime = new Date(sample.timestamp).getTime()
 
         // Find closest HR sample

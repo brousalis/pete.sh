@@ -76,7 +76,7 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
    * Only considers on/off state, brightness, and zone states
    * Ignores timestamps and other volatile data
    */
-  protected computeDataHash(data: HueFullState): string {
+  protected override computeDataHash(data: HueFullState): string {
     const significantData = {
       lights: Object.entries(data.lights).map(([id, light]) => ({
         id,

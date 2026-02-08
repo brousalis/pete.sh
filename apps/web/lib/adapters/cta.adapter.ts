@@ -72,7 +72,7 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
    * Only considers the arrival times and number of predictions,
    * not the full response which includes timestamps that always change
    */
-  protected computeDataHash(data: CTAFullState): string {
+  protected override computeDataHash(data: CTAFullState): string {
     const significantData = {
       bus: Object.entries(data.bus).map(([route, response]) => ({
         route,

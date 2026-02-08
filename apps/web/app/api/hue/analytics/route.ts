@@ -223,8 +223,8 @@ function calculateSummary(
     weekOverWeekChange: Math.round(weekOverWeekChange),
     totalDataPoints: statusData.length,
     dateRange: {
-      start: statusData[0].recorded_at,
-      end: statusData[statusData.length - 1].recorded_at,
+      start: statusData[0]?.recorded_at ?? null,
+      end: statusData[statusData.length - 1]?.recorded_at ?? null,
     },
   }
 }
@@ -258,14 +258,15 @@ function generateInsights(
   }
 
   // Most active room insight
-  if (roomUsage.length > 0 && roomUsage[0].percentageOn > 0) {
+  const mostUsedRoom = roomUsage[0]
+  if (mostUsedRoom && mostUsedRoom.percentageOn > 0) {
     insights.push({
       id: 'most_used_room',
       type: 'most_used_room',
       icon: 'Home',
       title: 'Most Active',
-      description: `${roomUsage[0].name} is on ${Math.round(roomUsage[0].percentageOn)}% of the time`,
-      value: roomUsage[0].name,
+      description: `${mostUsedRoom.name} is on ${Math.round(mostUsedRoom.percentageOn)}% of the time`,
+      value: mostUsedRoom.name,
     })
   }
 

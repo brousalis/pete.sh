@@ -45,6 +45,7 @@ const child = spawn('node', [serverPath], {
   env: {
     ...process.env,
     NODE_ENV: process.env.NODE_ENV || 'development',
+    CUSTOM_SERVER: 'true',
   },
 })
 
