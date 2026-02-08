@@ -1,0 +1,33 @@
+/**
+ * Available Walking Workouts API
+ * GET - List walking workouts not yet linked to maple walks
+ */
+
+import { mapleService } from '@/lib/services/maple.service'
+import { NextRequest, NextResponse } from 'next/server'
+
+/**
+ * GET /api/maple/walks/available
+ * List walking workouts that haven't been linked to a maple walk yet
+ * Query params:
+ *   - limit: Number of results (default 20)
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '20', 10)
+
+    const workouts = await mapleService.getAvailableWorkouts(limit)
+
+    return NextResponse.json({
+      success: true,
+      data: workouts,
+    })
+  } catch (error) {
+    console.error('Error fetching available workouts:', error)
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}

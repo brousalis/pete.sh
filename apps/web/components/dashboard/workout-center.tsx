@@ -20,6 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
+import { FullscreenTimer } from '@/components/ui/fullscreen-timer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -42,11 +43,13 @@ import {
     ChevronDown,
     ChevronRight,
     Dumbbell,
+    Expand,
     Footprints,
     PersonStanding,
     Play,
     RotateCcw,
     StretchVertical,
+    Timer,
     Undo2,
     Watch,
     Zap,
@@ -197,6 +200,17 @@ export function WorkoutCenter({
   )
   const [skipDialogOpen, setSkipDialogOpen] = useState(false)
   const [skipReason, setSkipReason] = useState('')
+  
+  // Fullscreen timer state
+  const [fullscreenTimerOpen, setFullscreenTimerOpen] = useState(false)
+  const [fullscreenTimerExercise, setFullscreenTimerExercise] = useState<{
+    id: string
+    name: string
+    duration: number
+    form?: string
+    sectionExercises?: Exercise[]
+    currentIndex?: number
+  } | null>(null)
 
   const isWorkoutCompleted = completion?.completed || false
   const isWorkoutSkipped = completion?.skipped || false
@@ -281,6 +295,93 @@ export function WorkoutCenter({
     } else {
       onVideoToggle?.(exerciseId)
     }
+  }
+
+  // Fullscreen timer handlers
+  const openFullscreenTimer = (exercise: Exercise, sectionExercises?: Exercise[]) => {
+    if (!exercise.duration) return
+    const currentIndex = sectionExercises?.findIndex(e => e.id === exercise.id) ?? -1
+    setFullscreenTimerExercise({
+      id: exercise.id,
+      name: exercise.name,
+      duration: exercise.duration,
+      form: exercise.form,
+      sectionExercises,
+      currentIndex: currentIndex >= 0 ? currentIndex : undefined,
+    })
+    setFullscreenTimerOpen(true)
+  }
+
+  const handleFullscreenTimerComplete = () => {
+    if (fullscreenTimerExercise) {
+      // Mark current exercise complete
+      setCompletedExercises(prev => new Set(prev).add(fullscreenTimerExercise.id))
+      
+      // Auto-advance to next timed exercise in section
+      const { sectionExercises, currentIndex } = fullscreenTimerExercise
+      if (sectionExercises && currentIndex !== undefined) {
+        // Find next exercise with duration
+        for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
+          const nextExercise = sectionExercises[i]
+          if (nextExercise.duration) {
+            setFullscreenTimerExercise({
+              id: nextExercise.id,
+              name: nextExercise.name,
+              duration: nextExercise.duration,
+              form: nextExercise.form,
+              sectionExercises,
+              currentIndex: i,
+            })
+            return
+          }
+        }
+      }
+      // No more timed exercises, close
+      setFullscreenTimerOpen(false)
+      setFullscreenTimerExercise(null)
+    }
+  }
+
+  const handleFullscreenTimerSkip = () => {
+    if (fullscreenTimerExercise) {
+      const { sectionExercises, currentIndex } = fullscreenTimerExercise
+      if (sectionExercises && currentIndex !== undefined) {
+        // Find next exercise with duration
+        for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
+          const nextExercise = sectionExercises[i]
+          if (nextExercise.duration) {
+            setFullscreenTimerExercise({
+              id: nextExercise.id,
+              name: nextExercise.name,
+              duration: nextExercise.duration,
+              form: nextExercise.form,
+              sectionExercises,
+              currentIndex: i,
+            })
+            return
+          }
+        }
+      }
+      setFullscreenTimerOpen(false)
+      setFullscreenTimerExercise(null)
+    }
+  }
+
+  const closeFullscreenTimer = () => {
+    setFullscreenTimerOpen(false)
+    setFullscreenTimerExercise(null)
+  }
+
+  // Check if there are more timed exercises after current one
+  const hasMoreTimedExercises = () => {
+    if (!fullscreenTimerExercise?.sectionExercises || fullscreenTimerExercise.currentIndex === undefined) {
+      return false
+    }
+    const { sectionExercises, currentIndex } = fullscreenTimerExercise
+    for (let i = currentIndex + 1; i < sectionExercises.length; i++) {
+      if (sectionExercises[i].duration) return true
+    }
+    return false
   }
 
   // Collect all exercise IDs from workout so completing the workout marks every exercise complete
@@ -517,6 +618,7 @@ export function WorkoutCenter({
                 isPreview={isPreview}
                 exerciseWorkoutMap={exerciseWorkoutMap}
                 isWorkoutCompleted={isWorkoutCompleted}
+                onOpenFullscreenTimer={!isWorkoutCompleted && !isWorkoutSkipped ? openFullscreenTimer : undefined}
               />
             ))}
 
@@ -672,6 +774,19 @@ export function WorkoutCenter({
               </div>
           </div>
         </div>
+
+        {/* Fullscreen Timer Modal */}
+        <FullscreenTimer
+          isOpen={fullscreenTimerOpen}
+          onClose={closeFullscreenTimer}
+          duration={fullscreenTimerExercise?.duration ?? 30}
+          exerciseName={fullscreenTimerExercise?.name ?? ""}
+          subtitle={fullscreenTimerExercise?.form}
+          onComplete={handleFullscreenTimerComplete}
+          onSkip={hasMoreTimedExercises() ? handleFullscreenTimerSkip : undefined}
+          variant="workout"
+          autoStart
+        />
       </CardContent>
     </Card>
   )
@@ -697,6 +812,7 @@ interface WorkoutSectionProps {
   isPreview?: boolean
   exerciseWorkoutMap?: Map<string, AppleWorkout>
   isWorkoutCompleted?: boolean
+  onOpenFullscreenTimer?: (exercise: Exercise, sectionExercises?: Exercise[]) => void
 }
 
 function WorkoutSection({
@@ -711,6 +827,7 @@ function WorkoutSection({
   isPreview,
   exerciseWorkoutMap,
   isWorkoutCompleted,
+  onOpenFullscreenTimer,
 }: WorkoutSectionProps) {
   const Icon = section.icon
   const completedCount = section.exercises.filter(ex =>
@@ -744,6 +861,11 @@ function WorkoutSection({
   )
 
   const hasLinkedWorkouts = linkedWorkouts.length > 0
+  
+  // Check if section has timed exercises (for showing "Start Timer" button)
+  const timedExercises = section.exercises.filter(ex => ex.duration)
+  const hasTimedExercises = timedExercises.length > 0
+  const firstTimedExercise = timedExercises[0]
 
   return (
     <div className={cn('overflow-hidden rounded-lg border', section.bgColor)}>
@@ -778,6 +900,27 @@ function WorkoutSection({
 
         <CollapsibleContent>
           <div className="space-y-1 px-2 pb-2">
+            {/* Start Timer button for sections with timed exercises */}
+            {hasTimedExercises && onOpenFullscreenTimer && !isWorkoutCompleted && (
+              <div className="pb-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "w-full h-9 sm:h-8 text-xs gap-1.5 touch-manipulation",
+                    section.iconColor,
+                    section.id === 'warmup' && "hover:bg-blue-500/10 border-blue-500/30",
+                    section.id === 'metabolic' && "hover:bg-orange-500/10 border-orange-500/30",
+                    section.id === 'mobility' && "hover:bg-purple-500/10 border-purple-500/30"
+                  )}
+                  onClick={() => onOpenFullscreenTimer(firstTimedExercise, section.exercises)}
+                >
+                  <Timer className="size-3.5" />
+                  Start {section.title} Timer
+                  <span className="text-muted-foreground ml-1">({timedExercises.length} exercises)</span>
+                </Button>
+              </div>
+            )}
             {/* Section-level workouts (strength/core) shown at top */}
             {sectionLevelWorkouts.length > 0 && isWorkoutCompleted && (
               <div className="mb-2 space-y-2">
@@ -816,6 +959,11 @@ function WorkoutSection({
                     }
                     isPreview={isPreview}
                     hasLinkedWorkout={!!linkedWorkout}
+                    onOpenFullscreenTimer={
+                      exercise.duration && onOpenFullscreenTimer
+                        ? () => onOpenFullscreenTimer(exercise, section.exercises)
+                        : undefined
+                    }
                   />
                   {/* Show linked HealthKit workout data for cardio exercises */}
                   {showInlineWorkout && (isCompleted || isWorkoutCompleted) && (
@@ -846,6 +994,7 @@ interface ExerciseRowProps {
   useAlternative?: boolean
   isPreview?: boolean
   hasLinkedWorkout?: boolean
+  onOpenFullscreenTimer?: () => void
 }
 
 function ExerciseRow({
@@ -857,6 +1006,7 @@ function ExerciseRow({
   useAlternative,
   isPreview,
   hasLinkedWorkout,
+  onOpenFullscreenTimer,
 }: ExerciseRowProps) {
   const display =
     useAlternative && exercise.alternative ? exercise.alternative : exercise
@@ -989,6 +1139,22 @@ function ExerciseRow({
             </>
           )}
         </div>
+
+        {/* Fullscreen timer button for timed exercises */}
+        {exercise.duration && onOpenFullscreenTimer && !isCompleted && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 sm:h-6 shrink-0 gap-1 px-2 text-[11px] sm:text-[10px] touch-manipulation text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+            onClick={e => {
+              e.stopPropagation()
+              onOpenFullscreenTimer()
+            }}
+          >
+            <Expand className="size-3.5 sm:size-3" />
+            <span className="hidden sm:inline">Timer</span>
+          </Button>
+        )}
 
         {/* Video button - larger on mobile */}
         {videoId && (

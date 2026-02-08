@@ -4,6 +4,13 @@
  * 
  * This module handles syncing data from real services to Supabase
  * so that production mode has fresh data to display.
+ * 
+ * Sync Strategy (after optimization):
+ * - All adapters now use change detection to minimize writes
+ * - CTA: Uses syncToHistory() which only writes on meaningful changes
+ * - Hue: Separates state sync (every 5 min) from scene sync (hourly)
+ * - Spotify: Only writes on track or playback state changes
+ * - Cleanup: Can be triggered to remove old historical data
  */
 
 import { isLocalMode } from '@/lib/utils/mode'
@@ -15,6 +22,7 @@ import { getCalendarAdapter } from '@/lib/adapters/calendar.adapter'
 import { getFitnessAdapter } from '@/lib/adapters/fitness.adapter'
 import { getSpotifyHistoryService } from '@/lib/services/spotify-history.service'
 import { getAuthenticatedSpotifyService } from '@/lib/spotify-auth'
+import { cleanupAllTables, isCleanupAvailable } from '@/lib/utils/data-cleanup'
 import type { SyncResult } from '@/lib/adapters/base.adapter'
 
 export interface SyncServiceResult {
@@ -23,6 +31,8 @@ export interface SyncServiceResult {
   recordsWritten: number
   error?: string
   durationMs: number
+  /** Whether write was skipped due to no changes (change detection) */
+  skipped?: boolean
 }
 
 export interface SyncAllResult {
@@ -31,10 +41,18 @@ export interface SyncAllResult {
   services: SyncServiceResult[]
   durationMs: number
   timestamp: string
+  /** Summary of cleanup if run */
+  cleanup?: {
+    ran: boolean
+    deleted: number
+    error?: string
+  }
 }
 
 /**
  * Sync Hue state to Supabase
+ * Uses change detection - only writes when light/zone states actually change
+ * Scenes are synced separately on a longer interval (hourly)
  */
 export async function syncHue(): Promise<SyncServiceResult> {
   const start = Date.now()
@@ -51,6 +69,7 @@ export async function syncHue(): Promise<SyncServiceResult> {
       }
     }
 
+    // refreshCache now uses change detection internally
     const result = await adapter.refreshCache()
     return {
       service: 'hue',
@@ -58,6 +77,7 @@ export async function syncHue(): Promise<SyncServiceResult> {
       recordsWritten: result.recordsWritten,
       error: result.error,
       durationMs: Date.now() - start,
+      skipped: result.skipped,
     }
   } catch (error) {
     return {
@@ -71,7 +91,47 @@ export async function syncHue(): Promise<SyncServiceResult> {
 }
 
 /**
+ * Sync Hue scenes separately (for manual/hourly sync)
+ * Scenes rarely change, so they're synced on a longer interval
+ */
+export async function syncHueScenes(): Promise<SyncServiceResult> {
+  const start = Date.now()
+  try {
+    const adapter = getHueAdapter()
+    
+    if (!adapter.isConfigured()) {
+      return {
+        service: 'hue-scenes',
+        success: false,
+        recordsWritten: 0,
+        error: 'Hue not configured',
+        durationMs: Date.now() - start,
+      }
+    }
+
+    const result = await adapter.syncScenes()
+    return {
+      service: 'hue-scenes',
+      success: result.success,
+      recordsWritten: result.recordsWritten,
+      error: result.error,
+      durationMs: Date.now() - start,
+      skipped: result.skipped,
+    }
+  } catch (error) {
+    return {
+      service: 'hue-scenes',
+      success: false,
+      recordsWritten: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs: Date.now() - start,
+    }
+  }
+}
+
+/**
  * Sync Spotify state to Supabase
+ * Uses change detection - only writes when track or playback state changes
  * Note: Requires authenticated service, so this may not work in all contexts
  */
 export async function syncSpotify(): Promise<SyncServiceResult> {
@@ -89,6 +149,7 @@ export async function syncSpotify(): Promise<SyncServiceResult> {
       }
     }
 
+    // refreshCache now uses change detection internally
     const result = await adapter.refreshCache()
     return {
       service: 'spotify',
@@ -96,6 +157,7 @@ export async function syncSpotify(): Promise<SyncServiceResult> {
       recordsWritten: result.recordsWritten,
       error: result.error,
       durationMs: Date.now() - start,
+      skipped: result.skipped,
     }
   } catch (error) {
     return {
@@ -167,6 +229,8 @@ export async function syncSpotifyHistory(): Promise<SyncServiceResult> {
 
 /**
  * Sync CTA data to Supabase
+ * Uses change detection - only writes when predictions meaningfully change
+ * (not on every poll, only during explicit sync operations)
  */
 export async function syncCTA(): Promise<SyncServiceResult> {
   const start = Date.now()
@@ -183,13 +247,15 @@ export async function syncCTA(): Promise<SyncServiceResult> {
       }
     }
 
-    const result = await adapter.refreshCache()
+    // Use syncToHistory which has built-in change detection
+    const result = await adapter.syncToHistory()
     return {
       service: 'cta',
       success: result.success,
       recordsWritten: result.recordsWritten,
       error: result.error,
       durationMs: Date.now() - start,
+      skipped: result.skipped,
     }
   } catch (error) {
     return {
@@ -270,8 +336,10 @@ export async function syncFitness(): Promise<SyncServiceResult> {
 /**
  * Sync all services to Supabase
  * This is the main function to call for a full sync
+ * 
+ * @param options.runCleanup - If true, runs data cleanup after sync
  */
-export async function syncAll(): Promise<SyncAllResult> {
+export async function syncAll(options?: { runCleanup?: boolean }): Promise<SyncAllResult> {
   const start = Date.now()
   const timestamp = new Date().toISOString()
 
@@ -297,12 +365,12 @@ export async function syncAll(): Promise<SyncAllResult> {
   }
 
   // Run all syncs in parallel
-  // Includes Spotify history for persistent listening tracking
+  // All adapters now use change detection to minimize writes
   const results = await Promise.all([
     syncHue(),
     syncCTA(),
     syncFitness(),
-    syncSpotifyHistory(), // Sync listening history
+    syncSpotifyHistory(), // Sync listening history (has deduplication built in)
     // Note: Spotify state and Calendar require auth context, so they may fail
     // These are better synced via their respective API calls
   ])
@@ -311,20 +379,43 @@ export async function syncAll(): Promise<SyncAllResult> {
   // Consider success if non-auth services succeed (spotify-history may fail if not logged in)
   const allSuccess = results.filter(r => !r.error?.includes('not authenticated')).every(r => r.success)
 
+  // Run cleanup if requested
+  let cleanup: SyncAllResult['cleanup'] = undefined
+  if (options?.runCleanup && isCleanupAvailable()) {
+    try {
+      const cleanupResult = await cleanupAllTables()
+      cleanup = {
+        ran: true,
+        deleted: cleanupResult.totalDeleted,
+        error: cleanupResult.success ? undefined : cleanupResult.results[0]?.error,
+      }
+    } catch (err) {
+      cleanup = {
+        ran: true,
+        deleted: 0,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      }
+    }
+  }
+
   return {
     success: allSuccess,
     totalRecordsWritten,
     services: results,
     durationMs: Date.now() - start,
     timestamp,
+    cleanup,
   }
 }
 
 /**
  * Sync services that don't require authentication
- * (Hue, CTA)
+ * (Hue, CTA, Fitness)
+ * All services now use change detection to minimize writes
+ * 
+ * @param options.runCleanup - If true, runs data cleanup after sync
  */
-export async function syncUnauthenticated(): Promise<SyncAllResult> {
+export async function syncUnauthenticated(options?: { runCleanup?: boolean }): Promise<SyncAllResult> {
   const start = Date.now()
   const timestamp = new Date().toISOString()
 
@@ -347,11 +438,60 @@ export async function syncUnauthenticated(): Promise<SyncAllResult> {
   const totalRecordsWritten = results.reduce((sum, r) => sum + r.recordsWritten, 0)
   const allSuccess = results.filter(r => !r.error?.includes('not configured')).every(r => r.success)
 
+  // Run cleanup if requested
+  let cleanup: SyncAllResult['cleanup'] = undefined
+  if (options?.runCleanup && isCleanupAvailable()) {
+    try {
+      const cleanupResult = await cleanupAllTables()
+      cleanup = {
+        ran: true,
+        deleted: cleanupResult.totalDeleted,
+        error: cleanupResult.success ? undefined : cleanupResult.results[0]?.error,
+      }
+    } catch (err) {
+      cleanup = {
+        ran: true,
+        deleted: 0,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      }
+    }
+  }
+
   return {
     success: allSuccess,
     totalRecordsWritten,
     services: results,
     durationMs: Date.now() - start,
     timestamp,
+    cleanup,
+  }
+}
+
+/**
+ * Run data cleanup to remove old historical records
+ * Should be called periodically (e.g., daily)
+ */
+export async function runCleanup(): Promise<{ success: boolean; deleted: number; error?: string }> {
+  if (!isCleanupAvailable()) {
+    return {
+      success: false,
+      deleted: 0,
+      error: 'Cleanup not available (requires Supabase service role key)',
+    }
+  }
+
+  try {
+    const result = await cleanupAllTables()
+    return {
+      success: result.success,
+      deleted: result.totalDeleted,
+      error: result.success ? undefined : result.results[0]?.error,
+    }
+  } catch (err) {
+    return {
+      success: false,
+      deleted: 0,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    }
   }
 }

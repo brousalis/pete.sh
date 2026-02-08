@@ -16,7 +16,7 @@ import {
   Calendar,
   ChefHat,
   Coffee,
-  Command,
+  Dog,
   Dumbbell,
   Grid3x3,
   Home,
@@ -30,9 +30,7 @@ import {
   Settings,
   Tv,
   User,
-  Wifi,
-  WifiOff,
-  X,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -49,25 +47,27 @@ type NavItem = {
 // Main navigation items (excludes Deck which has its own icon)
 const navItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
-  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '5' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
-  { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
-  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '5' },
+  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '6' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '7' },
+  { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '8' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '3' },
   { href: '/me', label: 'Me', icon: User, shortcut: '1' },
 ]
 
 // All items including Deck for keyboard shortcuts
 const allNavItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '4' },
-  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '5' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
-  { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
-  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '4' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '5' },
+  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '6' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '7' },
+  { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '8' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat },
   { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9' },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '3' },
   { href: '/me', label: 'Me', icon: User, shortcut: '1' },
 ]
 
@@ -87,6 +87,7 @@ const mobileOverflowItems: NavItem[] = [
   { href: '/coffee', label: 'Coffee', icon: Coffee },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/maple', label: 'Maple', icon: Dog },
   { href: '/me', label: 'Me', icon: User },
 ]
 
@@ -336,11 +337,6 @@ export function TopNavigation() {
                 />
               )}
             </motion.div>
-
-            {/* Keyboard shortcut indicator */}
-            <span className="border-border/60 bg-muted/50 text-muted-foreground ml-2 hidden items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] xl:flex">
-              <Command className="size-2.5" />K
-            </span>
           </Link>
 
           {/* Local Mode Indicator - shows when in production but connected to local */}
@@ -362,13 +358,11 @@ export function TopNavigation() {
             >
               {isLocalAvailable ? (
                 <>
-                  <Wifi className="size-3" />
-                  <span>Local</span>
+                  <span>local</span>
                 </>
               ) : (
                 <>
-                  <WifiOff className="size-3" />
-                  <span>Live</span>
+                  <span>live</span>
                 </>
               )}
             </motion.div>
@@ -540,7 +534,7 @@ export function TopNavigation() {
           </Link>
 
           {/* Deck Mode - quick access to dashboard grid view */}
-          <Link
+          {isIOSApp && (<Link
             href="/deck"
             className={cn(
               'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none hidden md:flex',
@@ -552,7 +546,7 @@ export function TopNavigation() {
             aria-label="Open Deck Mode"
           >
             <Grid3x3 className="size-5" aria-hidden />
-          </Link>
+          </Link>)}
 
           {/* Mobile menu button - visible below tablet (768px) */}
           <button

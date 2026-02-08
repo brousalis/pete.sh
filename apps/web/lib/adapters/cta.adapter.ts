@@ -4,9 +4,15 @@
  * 
  * CTA data is always fetched from the real API when available (public API).
  * Supabase is used for historical data storage and as a fallback.
+ * 
+ * History Recording Strategy:
+ * - Frontend polls do NOT record history (they just fetch fresh data)
+ * - Background sync operations record history with change detection
+ * - History is only written when prediction data meaningfully changes
+ *   or when the minimum write interval (5 minutes) has passed
  */
 
-import { BaseAdapter, SyncResult, getCurrentTimestamp, AVAILABILITY_CHECK_TIMEOUT } from './base.adapter'
+import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
 import { CTAService } from '@/lib/services/cta.service'
 import type {
   CTABusResponse,
@@ -46,15 +52,48 @@ const DEFAULT_ROUTE_CONFIG: CTARouteConfig = {
  * Note: CTA is a public API, so we always try to fetch from it
  * regardless of "local mode". Supabase is used for historical
  * data storage and as a fallback.
+ * 
+ * History is only recorded during explicit sync operations, not on
+ * every frontend poll. This prevents excessive data accumulation.
  */
 export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
   private ctaService: CTAService
   private routeConfig: CTARouteConfig
 
   constructor(routeConfig?: CTARouteConfig, debug: boolean = false) {
-    super({ serviceName: 'cta', debug })
+    // 5 minute minimum write interval for CTA history
+    super({ serviceName: 'cta', debug, minWriteInterval: 5 * 60 * 1000 })
     this.ctaService = new CTAService()
     this.routeConfig = routeConfig ?? DEFAULT_ROUTE_CONFIG
+  }
+
+  /**
+   * Compute a hash of CTA data based on meaningful changes
+   * Only considers the arrival times and number of predictions,
+   * not the full response which includes timestamps that always change
+   */
+  protected computeDataHash(data: CTAFullState): string {
+    const significantData = {
+      bus: Object.entries(data.bus).map(([route, response]) => ({
+        route,
+        predictions: response['bustime-response']?.prd?.map(p => ({
+          rt: p.rt,
+          prdtm: p.prdtm,
+          vid: p.vid,
+        })) ?? [],
+        hasError: !!response['bustime-response']?.error,
+      })),
+      train: Object.entries(data.train).map(([line, response]) => ({
+        line,
+        predictions: response.ctatt?.eta?.map(e => ({
+          rt: e.rt,
+          arrT: e.arrT,
+          rn: e.rn,
+        })) ?? [],
+        hasError: response.ctatt?.errCd !== '0',
+      })),
+    }
+    return JSON.stringify(significantData)
   }
 
   /**
@@ -240,18 +279,33 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
   /**
    * Get all routes data
    * Always tries to fetch from CTA API first (it's a public API)
+   * 
+   * @param config Optional route configuration
+   * @param recordHistory If true, records data to history (only for explicit sync operations)
+   *                      Default is false - frontend polls should NOT record history
    */
-  async getAllRoutes(config?: CTARouteConfig): Promise<CTAFullState> {
+  async getAllRoutes(config?: CTARouteConfig, recordHistory = false): Promise<CTAFullState> {
     const routeConfig = config ?? this.routeConfig
 
     try {
       // Always try to fetch from real API first
       const data = await this.ctaService.getAllRoutes(routeConfig)
       
-      // Write to history in background
-      if (this.isSupabaseAvailable()) {
-        this.writeToCache(data)
-          .catch(err => this.logError('Failed to record CTA history', err))
+      // Only record history when explicitly requested (during sync operations)
+      // and only if change detection passes
+      if (recordHistory && this.isSupabaseAvailable()) {
+        if (this.shouldWriteToCache(data)) {
+          this.writeToCache(data)
+            .then(result => {
+              if (result.success) {
+                this.recordWriteTimestamp(data)
+                this.log(`Recorded ${result.recordsWritten} CTA history entries`)
+              }
+            })
+            .catch(err => this.logError('Failed to record CTA history', err))
+        } else {
+          this.log('Skipping CTA history write - no significant changes')
+        }
       }
 
       return data
@@ -273,33 +327,11 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
 
   /**
    * Get bus predictions for a specific route
+   * Note: Does NOT record to history - use getAllRoutes with recordHistory=true for that
    */
   async getBusPredictions(route: string, stopId: string): Promise<CTABusResponse> {
     try {
-      const response = await this.ctaService.getBusPredictions(route, stopId)
-      
-      // Record in history (only if Supabase is configured)
-      if (this.isSupabaseAvailable()) {
-        const client = this.getWriteClient()
-        if (client) {
-          const timestamp = getCurrentTimestamp()
-          const error = response['bustime-response']?.error?.[0]
-          
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(client.from('cta_history') as any).insert({
-            route_type: 'bus',
-            route,
-            stop_id: stopId,
-            predictions: error ? null : response['bustime-response']?.prd ?? [],
-            error_message: error?.msg ?? null,
-            recorded_at: timestamp,
-          }).then(({ error: insertError }: { error: unknown }) => {
-            if (insertError) this.logError('Failed to record bus prediction', insertError)
-          })
-        }
-      }
-
-      return response
+      return await this.ctaService.getBusPredictions(route, stopId)
     } catch (error) {
       this.logError('Error fetching bus predictions', error)
       throw error
@@ -308,36 +340,45 @@ export class CTAAdapter extends BaseAdapter<CTAFullState, CTACachedState> {
 
   /**
    * Get train predictions for a specific line
+   * Note: Does NOT record to history - use getAllRoutes with recordHistory=true for that
    */
   async getTrainPredictions(line: string, stationId: string): Promise<CTATrainResponse> {
     try {
-      const response = await this.ctaService.getTrainPredictions(line, stationId)
-      
-      // Record in history (only if Supabase is configured)
-      if (this.isSupabaseAvailable()) {
-        const client = this.getWriteClient()
-        if (client) {
-          const timestamp = getCurrentTimestamp()
-          const hasError = response.ctatt?.errCd !== '0'
-          
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(client.from('cta_history') as any).insert({
-            route_type: 'train',
-            route: line,
-            station_id: stationId,
-            predictions: hasError ? null : response.ctatt?.eta ?? [],
-            error_message: hasError ? response.ctatt?.errNm : null,
-            recorded_at: timestamp,
-          }).then(({ error: insertError }: { error: unknown }) => {
-            if (insertError) this.logError('Failed to record train prediction', insertError)
-          })
-        }
-      }
-
-      return response
+      return await this.ctaService.getTrainPredictions(line, stationId)
     } catch (error) {
       this.logError('Error fetching train predictions', error)
       throw error
+    }
+  }
+
+  /**
+   * Sync CTA data to history (for background sync operations)
+   * Uses change detection to avoid writing duplicate data
+   */
+  async syncToHistory(): Promise<SyncResult> {
+    if (!this.isSupabaseAvailable()) {
+      return { success: false, recordsWritten: 0, error: 'Supabase not configured' }
+    }
+
+    try {
+      const data = await this.ctaService.getAllRoutes(this.routeConfig)
+      
+      if (!this.shouldWriteToCache(data)) {
+        this.log('Skipping CTA history sync - no significant changes')
+        return { success: true, recordsWritten: 0, skipped: true }
+      }
+
+      const result = await this.writeToCache(data)
+      
+      if (result.success) {
+        this.recordWriteTimestamp(data)
+      }
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      this.logError('Error syncing CTA history', error)
+      return { success: false, recordsWritten: 0, error: errorMessage }
     }
   }
 

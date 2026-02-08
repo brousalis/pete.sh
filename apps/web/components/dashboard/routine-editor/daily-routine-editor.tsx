@@ -29,6 +29,7 @@ import {
   Plus,
   Sun,
   Trash2,
+  Youtube,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -46,6 +47,7 @@ interface RoutineExercise {
   description: string
   why: string
   action: string
+  youtubeDemo?: string
 }
 
 interface RoutineCardProps {
@@ -82,10 +84,18 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
   )
 
   const updateExercise = (index: number, updates: Partial<RoutineExercise>) => {
-    const newExercises = [...routine.exercises]
-    const current = newExercises[index]
-    if (current == null) return
-    newExercises[index] = { ...current, ...updates } as RoutineExercise
+    const newExercises = routine.exercises.map((ex, i) => {
+      if (i !== index) return ex
+      return {
+        name: ex.name,
+        duration: ex.duration,
+        description: ex.description,
+        why: ex.why,
+        action: ex.action,
+        youtubeDemo: ex.youtubeDemo ?? '',
+        ...updates,
+      }
+    })
     onUpdate({ ...routine, exercises: newExercises })
   }
 
@@ -96,6 +106,7 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
       description: '',
       why: '',
       action: '',
+      youtubeDemo: '',
     }
     onUpdate({
       ...routine,
@@ -267,6 +278,20 @@ function RoutineCard({ routine, type, onUpdate }: RoutineCardProps) {
                           }
                           placeholder="Step by step instructions..."
                           rows={3}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1 text-xs">
+                          <Youtube className="h-3 w-3" />
+                          YouTube Demo
+                        </Label>
+                        <Input
+                          value={exercise.youtubeDemo || ''}
+                          onChange={e =>
+                            updateExercise(index, { youtubeDemo: e.target.value })
+                          }
+                          placeholder="https://youtube.com/watch?v=..."
                         />
                       </div>
 

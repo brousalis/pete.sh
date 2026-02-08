@@ -259,8 +259,6 @@ export function RoutineEditor({
 
   // Handle field updates
   const handleUpdate = useCallback((field: string, value: unknown) => {
-    if (!currentVersion) return
-
     setCurrentVersion(prev => {
       if (!prev) return prev
       return { ...prev, [field]: value }

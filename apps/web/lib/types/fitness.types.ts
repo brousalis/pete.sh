@@ -105,6 +105,7 @@ export interface DailyRoutine {
     description: string
     why: string
     action: string
+    youtubeDemo?: string // YouTube video URL for exercise demonstration
   }[]
   completed?: boolean
   completedAt?: string

@@ -27,11 +27,26 @@ interface ServiceAvailability {
 /** Cache of service availability checks */
 const serviceAvailabilityCache = new Map<ServiceName, ServiceAvailability>()
 
+/** Cache of last write timestamps for change detection */
+const lastWriteTimestampCache = new Map<ServiceName, Date>()
+
+/** Cache of last written data hash for change detection */
+const lastWriteDataHashCache = new Map<ServiceName, string>()
+
 /** How long to cache availability results (ms) */
 const AVAILABILITY_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 /** Timeout for availability checks (ms) */
 export const AVAILABILITY_CHECK_TIMEOUT = 2000 // 2 seconds
+
+/** Default minimum write intervals per service (ms) */
+const DEFAULT_MIN_WRITE_INTERVALS: Record<ServiceName, number> = {
+  hue: 5 * 60 * 1000,      // 5 minutes
+  spotify: 1 * 60 * 1000,  // 1 minute
+  cta: 5 * 60 * 1000,      // 5 minutes
+  calendar: 5 * 60 * 1000, // 5 minutes
+  fitness: 5 * 60 * 1000,  // 5 minutes
+}
 
 /**
  * Check if a cached availability result is still valid
@@ -75,6 +90,28 @@ export function clearAvailabilityCache(): void {
   serviceAvailabilityCache.clear()
 }
 
+/**
+ * Clear all write timestamp caches (for testing or manual refresh)
+ */
+export function clearWriteTimestampCaches(): void {
+  lastWriteTimestampCache.clear()
+  lastWriteDataHashCache.clear()
+}
+
+/**
+ * Get write statistics for a service
+ */
+export function getWriteStats(serviceName: ServiceName): {
+  lastWriteTime: Date | null
+  timeSinceLastWrite: number | null
+} {
+  const lastWrite = lastWriteTimestampCache.get(serviceName)
+  return {
+    lastWriteTime: lastWrite ?? null,
+    timeSinceLastWrite: lastWrite ? Date.now() - lastWrite.getTime() : null,
+  }
+}
+
 // ============================================
 // Adapter Types
 // ============================================
@@ -84,12 +121,18 @@ export interface AdapterConfig {
   serviceName: ServiceName
   /** Whether to log operations */
   debug?: boolean
+  /** Minimum interval between cache writes (ms). Overrides default for this service. */
+  minWriteInterval?: number
+  /** Whether to enable change detection (default: true) */
+  enableChangeDetection?: boolean
 }
 
 export interface SyncResult {
   success: boolean
   recordsWritten: number
   error?: string
+  /** Whether the write was skipped due to no changes */
+  skipped?: boolean
 }
 
 /**
@@ -98,6 +141,8 @@ export interface SyncResult {
 export abstract class BaseAdapter<TServiceData, TCachedData> {
   protected serviceName: ServiceName
   protected debug: boolean
+  protected minWriteInterval: number
+  protected enableChangeDetection: boolean
   
   /** Cached availability status for this adapter instance */
   private localAvailable: boolean | null = null
@@ -105,6 +150,112 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
   constructor(config: AdapterConfig) {
     this.serviceName = config.serviceName
     this.debug = config.debug ?? false
+    this.minWriteInterval = config.minWriteInterval ?? DEFAULT_MIN_WRITE_INTERVALS[config.serviceName]
+    this.enableChangeDetection = config.enableChangeDetection ?? true
+  }
+
+  // ============================================
+  // Change Detection Methods
+  // ============================================
+
+  /**
+   * Get the minimum interval between cache writes (ms)
+   * Can be overridden by subclasses for custom behavior
+   */
+  protected getMinWriteInterval(): number {
+    return this.minWriteInterval
+  }
+
+  /**
+   * Compute a hash/fingerprint of the data for change detection
+   * Override in subclasses for more efficient comparison
+   * @param data The data to hash
+   * @returns A string hash of the data
+   */
+  protected computeDataHash(data: TServiceData): string {
+    // Default implementation: JSON stringify
+    // Subclasses should override for more efficient comparison
+    try {
+      return JSON.stringify(data)
+    } catch {
+      return Date.now().toString() // Fallback to always write
+    }
+  }
+
+  /**
+   * Check if the data has changed since the last write
+   * @param newData The new data to compare
+   * @returns true if data has changed or no previous data exists
+   */
+  protected hasDataChanged(newData: TServiceData): boolean {
+    const lastHash = lastWriteDataHashCache.get(this.serviceName)
+    if (!lastHash) return true
+
+    const newHash = this.computeDataHash(newData)
+    return lastHash !== newHash
+  }
+
+  /**
+   * Get the time since the last write (ms)
+   * @returns Time in ms since last write, or Infinity if never written
+   */
+  protected getTimeSinceLastWrite(): number {
+    const lastWrite = lastWriteTimestampCache.get(this.serviceName)
+    if (!lastWrite) return Infinity
+    return Date.now() - lastWrite.getTime()
+  }
+
+  /**
+   * Determine if we should write to cache based on change detection
+   * Writes if:
+   * - Change detection is disabled, OR
+   * - Data has changed, OR
+   * - Enough time has passed since last write (for periodic snapshots)
+   * 
+   * @param newData The new data to potentially write
+   * @returns true if we should write to cache
+   */
+  protected shouldWriteToCache(newData: TServiceData): boolean {
+    if (!this.enableChangeDetection) {
+      return true
+    }
+
+    const timeSinceLastWrite = this.getTimeSinceLastWrite()
+    const minInterval = this.getMinWriteInterval()
+
+    // Always write if enough time has passed (for historical snapshots)
+    if (timeSinceLastWrite >= minInterval) {
+      this.log(`Time-based write: ${Math.round(timeSinceLastWrite / 1000)}s since last write (min: ${Math.round(minInterval / 1000)}s)`)
+      return true
+    }
+
+    // Write if data has changed
+    if (this.hasDataChanged(newData)) {
+      this.log('Data changed, writing to cache')
+      return true
+    }
+
+    this.log(`Skipping write: no changes and only ${Math.round(timeSinceLastWrite / 1000)}s since last write`)
+    return false
+  }
+
+  /**
+   * Record that we just wrote to cache
+   * @param data The data that was written (for hash computation)
+   */
+  protected recordWriteTimestamp(data: TServiceData): void {
+    lastWriteTimestampCache.set(this.serviceName, new Date())
+    if (this.enableChangeDetection) {
+      lastWriteDataHashCache.set(this.serviceName, this.computeDataHash(data))
+    }
+  }
+
+  /**
+   * Clear the write timestamp cache (useful for testing)
+   */
+  clearWriteTimestampCache(): void {
+    lastWriteTimestampCache.delete(this.serviceName)
+    lastWriteDataHashCache.delete(this.serviceName)
   }
 
   /**
@@ -338,7 +489,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
   /**
    * Get data in local mode
-   * Fetches from real service and writes to Supabase
+   * Fetches from real service and optionally writes to Supabase based on change detection
    */
   protected async getDataLocal(): Promise<TServiceData | null> {
     this.log('Fetching from real service (local mode)')
@@ -346,13 +497,14 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     try {
       const data = await this.fetchFromService()
       
-      // Write to cache in background (don't block the response)
-      if (this.isSupabaseAvailable()) {
+      // Write to cache in background only if change detection passes
+      if (this.isSupabaseAvailable() && this.shouldWriteToCache(data)) {
         this.writeToCache(data)
           .then((result) => {
             if (result.success) {
               this.log(`Cached ${result.recordsWritten} records`)
-            } else {
+              this.recordWriteTimestamp(data)
+            } else if (!result.skipped) {
               this.logError('Failed to cache data', result.error)
             }
           })
@@ -413,6 +565,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
   /**
    * Force refresh the cache (local mode only)
    * Fetches from service and writes to cache, waiting for write to complete
+   * This method bypasses change detection for explicit sync operations
    */
   async refreshCache(): Promise<SyncResult> {
     const isLocalAvailable = await this.isLocal()
@@ -429,7 +582,53 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
     try {
       const data = await this.fetchFromService()
+      
+      // For explicit sync, check if we should write (respects min interval but always writes on change)
+      if (!this.shouldWriteToCache(data)) {
+        this.log('Skipping cache write - no changes detected')
+        return { success: true, recordsWritten: 0, skipped: true }
+      }
+
       const result = await this.writeToCache(data)
+      
+      if (result.success) {
+        this.recordWriteTimestamp(data)
+      }
+      
+      await this.logSync(result.success ? 'success' : 'error', result.recordsWritten, result.error)
+      
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      await this.logSync('error', 0, errorMessage)
+      return { success: false, recordsWritten: 0, error: errorMessage }
+    }
+  }
+
+  /**
+   * Force refresh the cache, bypassing change detection
+   * Use sparingly - this writes regardless of whether data has changed
+   */
+  async forceRefreshCache(): Promise<SyncResult> {
+    const isLocalAvailable = await this.isLocal()
+    
+    if (!isLocalAvailable) {
+      return { success: false, recordsWritten: 0, error: 'Cache refresh only available when local services are reachable' }
+    }
+
+    if (!this.isSupabaseAvailable()) {
+      return { success: false, recordsWritten: 0, error: 'Supabase not configured' }
+    }
+
+    this.log('Force refreshing cache (bypassing change detection)')
+
+    try {
+      const data = await this.fetchFromService()
+      const result = await this.writeToCache(data)
+      
+      if (result.success) {
+        this.recordWriteTimestamp(data)
+      }
       
       await this.logSync(result.success ? 'success' : 'error', result.recordsWritten, result.error)
       

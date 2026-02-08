@@ -4,6 +4,11 @@
  * 
  * Spotify requires OAuth authentication, so availability depends on
  * whether the user is authenticated. Supabase cache is used as fallback.
+ * 
+ * Sync Strategy:
+ * - Only writes when track changes or playback state changes (play/pause)
+ * - Does NOT write on every progress update (that would be excessive)
+ * - Minimum write interval: 1 minute
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
@@ -41,13 +46,37 @@ export interface SpotifyCachedState {
 
 /**
  * Spotify Adapter - manages Spotify playback data
+ * 
+ * Uses change detection to minimize writes:
+ * - Writes on track change (different URI)
+ * - Writes on playback state change (play/pause)
+ * - Does NOT write on progress changes alone
  */
 export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedState> {
   private spotifyService: SpotifyService
 
   constructor(debug: boolean = false) {
-    super({ serviceName: 'spotify', debug })
+    // 1 minute minimum write interval for Spotify state
+    super({ serviceName: 'spotify', debug, minWriteInterval: 1 * 60 * 1000 })
     this.spotifyService = new SpotifyService()
+  }
+
+  /**
+   * Compute a hash of Spotify data based on meaningful changes
+   * Only considers track URI and playback state (play/pause)
+   * Ignores progress_ms which changes constantly
+   */
+  protected computeDataHash(data: SpotifyFullState): string {
+    const significantData = {
+      trackUri: data.playbackState?.item?.uri ?? null,
+      trackName: data.playbackState?.item?.name ?? null,
+      isPlaying: data.playbackState?.is_playing ?? false,
+      deviceId: data.playbackState?.device?.id ?? null,
+      // Include shuffle/repeat state as well
+      shuffleState: data.playbackState?.shuffle_state ?? false,
+      repeatState: data.playbackState?.repeat_state ?? 'off',
+    }
+    return JSON.stringify(significantData)
   }
 
   /**
@@ -197,6 +226,7 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
 
   /**
    * Get current playback state
+   * Note: Uses change detection - only writes to cache when track or playback state changes
    */
   async getPlaybackState(): Promise<SpotifyPlaybackState | null> {
     const isLocal = await this.isLocal()
@@ -205,11 +235,23 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
       try {
         const state = await this.spotifyService.getPlaybackState()
         
-        // Write to cache in background
+        // Only write to cache if track or playback state actually changed
         if (this.isSupabaseAvailable() && state) {
-          const devices = await this.spotifyService.getDevices().catch(() => [])
-          this.writeToCache({ playbackState: state, devices, user: null })
-            .catch(err => this.logError('Failed to cache playback state', err))
+          const fullState: SpotifyFullState = { playbackState: state, devices: [], user: null }
+          
+          if (this.shouldWriteToCache(fullState)) {
+            const devices = await this.spotifyService.getDevices().catch(() => [])
+            fullState.devices = devices
+            
+            this.writeToCache(fullState)
+              .then(result => {
+                if (result.success) {
+                  this.recordWriteTimestamp(fullState)
+                  this.log('Cached playback state change')
+                }
+              })
+              .catch(err => this.logError('Failed to cache playback state', err))
+          }
         }
 
         return state

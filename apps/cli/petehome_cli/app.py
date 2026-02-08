@@ -13,13 +13,10 @@ from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.history import FileHistory
 from questionary import Style
 from rich.columns import Columns
-from rich.console import Console, Group
-from rich.live import Live
+from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
 from rich.rule import Rule
-from rich.spinner import Spinner
-from rich.status import Status
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
@@ -30,7 +27,11 @@ from petehome_cli.services.github import GitHubService
 from petehome_cli.services.pm2 import PM2Service
 from petehome_cli.services.supabase import (
     is_configured as supabase_configured,
+)
+from petehome_cli.services.supabase import (
     mark_applied as supabase_mark_applied,
+)
+from petehome_cli.services.supabase import (
     migration_status,
     run_migrations,
 )
@@ -115,7 +116,7 @@ custom_style = Style([
 # All available commands for autocomplete
 COMMANDS = [
     # PM2
-    "status", "start", "stop", "restart", "logs", "s",
+    "status", "start", "stop", "restart", "logs", "s", "ls",
     "start all", "stop all", "restart all",
     "start main", "start notifications",
     "stop main", "stop notifications",
@@ -205,17 +206,22 @@ def gradient_text(text: str, start_color: tuple[int, int, int], end_color: tuple
 
 
 def print_welcome():
-    """Print welcome header with gradient from theme accent."""
+    """Print welcome header with gradient from theme accent and framed rules."""
     start = THEME["gradient_start_rgb"]
     end = THEME["gradient_end_rgb"]
-    logo = gradient_text("petehome", start, end)
+    # Slightly bigger logo: double diamond in gradient + gradient wordmark
+    diamond = gradient_text("◆◆", start, end)
+    wordmark = gradient_text("petehome", start, end)
+    logo_line = Text("   ") + diamond + Text("  ") + wordmark + Text("  cli", style="dim")
     console.print()
-    console.print(Text("  ◆ ", style=f"bold {THEME['accent_hex']}") + logo + Text("  cli", style="dim"))
+    console.print(Rule(style="dim"))
+    console.print(logo_line)
+    console.print(Rule(style=THEME["accent_hex"]))
     console.print()
 
 
 def print_context():
-    """Print context line."""
+    """Print context line with subtle left edge."""
     branch = get_git_branch()
     status = get_status_summary()
 
@@ -226,7 +232,7 @@ def print_context():
         parts.append(status)
 
     if parts:
-        console.print(f"  {' · '.join(parts)}")
+        console.print(f"  [bold {THEME['accent_hex']}]▐[/] {' · '.join(parts)}")
         console.print()
 
 
@@ -1068,7 +1074,7 @@ def parse_and_execute(cmd: str):
         return True
 
     # PM2 commands
-    if command in ("status", "s"):
+    if command in ("status", "s", "ls"):
         cmd_status()
     elif command == "start":
         cmd_start(args)
@@ -1153,7 +1159,7 @@ def run():
         completer=CommandCompleter(),
         complete_while_typing=True,
     )
-    prompt_text = FormattedText([(f"{THEME['accent_hex']} bold", "> ")])
+    prompt_text = FormattedText([(f"bold {THEME['accent_hex']}", "  ◆  ")])
 
     while True:
         try:

@@ -15,6 +15,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { ExerciseTimer } from "@/components/ui/exercise-timer"
+import { FullscreenTimer } from "@/components/ui/fullscreen-timer"
 import {
     Tooltip,
     TooltipContent,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/tooltip"
 import type { DailyRoutine, RoutineCompletion } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
-import { Ban, Check, ChevronDown, ChevronUp, Clock, ExternalLink, Info, Moon, Play, Sun, Undo2 } from "lucide-react"
+import { Ban, Check, ChevronDown, ChevronUp, Clock, ExternalLink, Expand, Info, Moon, Play, Sun, Timer, Undo2 } from "lucide-react"
 import { useState } from "react"
 
 interface StretchPanelProps {
@@ -86,6 +87,14 @@ export function StretchPanel({
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set())
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null)
   const [videoModal, setVideoModal] = useState<{ videoId: string; title: string } | null>(null)
+  // Fullscreen timer state
+  const [fullscreenTimerOpen, setFullscreenTimerOpen] = useState(false)
+  const [fullscreenTimerExercise, setFullscreenTimerExercise] = useState<{
+    idx: number
+    name: string
+    duration: number
+    action: string
+  } | null>(null)
 
   const isCompleted = completion?.completed || false
   // Show as skipped if explicitly skipped OR if day workout is skipped and routine not completed
@@ -387,6 +396,65 @@ export function StretchPanel({
     setExpandedExercise(idx)
   }
 
+  // Fullscreen timer handlers
+  const openFullscreenTimer = (idx: number) => {
+    const exercise = routine.exercises[idx]
+    setFullscreenTimerExercise({
+      idx,
+      name: exercise.name,
+      duration: exercise.duration,
+      action: exercise.action,
+    })
+    setFullscreenTimerOpen(true)
+  }
+
+  const handleFullscreenTimerComplete = () => {
+    if (fullscreenTimerExercise) {
+      setCompletedExercises((prev) => new Set(prev).add(fullscreenTimerExercise.idx))
+      
+      // Auto-advance to next exercise
+      const nextIdx = fullscreenTimerExercise.idx + 1
+      if (nextIdx < routine.exercises.length) {
+        const nextExercise = routine.exercises[nextIdx]
+        setFullscreenTimerExercise({
+          idx: nextIdx,
+          name: nextExercise.name,
+          duration: nextExercise.duration,
+          action: nextExercise.action,
+        })
+        setExpandedExercise(nextIdx)
+      } else {
+        // Close if no more exercises
+        setFullscreenTimerOpen(false)
+        setFullscreenTimerExercise(null)
+      }
+    }
+  }
+
+  const handleFullscreenTimerSkip = () => {
+    if (fullscreenTimerExercise) {
+      const nextIdx = fullscreenTimerExercise.idx + 1
+      if (nextIdx < routine.exercises.length) {
+        const nextExercise = routine.exercises[nextIdx]
+        setFullscreenTimerExercise({
+          idx: nextIdx,
+          name: nextExercise.name,
+          duration: nextExercise.duration,
+          action: nextExercise.action,
+        })
+        setExpandedExercise(nextIdx)
+      } else {
+        setFullscreenTimerOpen(false)
+        setFullscreenTimerExercise(null)
+      }
+    }
+  }
+
+  const closeFullscreenTimer = () => {
+    setFullscreenTimerOpen(false)
+    setFullscreenTimerExercise(null)
+  }
+
   const toggleExerciseExpand = (idx: number) => {
     setExpandedExercise(expandedExercise === idx ? null : idx)
   }
@@ -522,16 +590,35 @@ export function StretchPanel({
                         className="flex-1"
                       />
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 sm:h-6 px-2.5 sm:px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation"
-                        onClick={() => handleStartTimer(idx)}
-                        disabled={isExerciseCompleted}
-                      >
-                        <Clock className="size-3.5 sm:size-3" />
-                        {exercise.duration}s
-                      </Button>
+                      <>
+                        {/* Inline timer button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 sm:h-6 px-2.5 sm:px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation"
+                          onClick={() => handleStartTimer(idx)}
+                          disabled={isExerciseCompleted}
+                        >
+                          <Clock className="size-3.5 sm:size-3" />
+                          {exercise.duration}s
+                        </Button>
+                        {/* Fullscreen timer button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-7 sm:h-6 px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation",
+                            type === "morning" 
+                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10" 
+                              : "text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10"
+                          )}
+                          onClick={() => openFullscreenTimer(idx)}
+                          disabled={isExerciseCompleted}
+                        >
+                          <Expand className="size-3.5 sm:size-3" />
+                          <span className="hidden sm:inline">Focus</span>
+                        </Button>
+                      </>
                     )}
 
                     {/* Video button */}
@@ -554,7 +641,7 @@ export function StretchPanel({
         </div>
 
         {/* Footer - larger button for touch */}
-        <div className={cn("p-2 border-t", themeColors.borderColor)}>
+        <div className={cn("p-2 border-t space-y-2", themeColors.borderColor)}>
           {isPreview ? (
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground">Not completed</span>
@@ -570,15 +657,32 @@ export function StretchPanel({
               </Button>
             </div>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full h-10 sm:h-8 text-sm sm:text-xs touch-manipulation"
-              onClick={onComplete}
-              disabled={isCompleting}
-            >
-              {isCompleting ? "Completing..." : "Complete Routine"}
-            </Button>
+            <div className="flex gap-2">
+              {/* Start Routine in Fullscreen Timer */}
+              <Button
+                size="sm"
+                className={cn(
+                  "flex-1 h-10 sm:h-8 text-sm sm:text-xs touch-manipulation gap-1.5",
+                  type === "morning"
+                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                    : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                )}
+                onClick={() => openFullscreenTimer(0)}
+              >
+                <Timer className="size-4 sm:size-3.5" />
+                Start Timer
+              </Button>
+              {/* Mark Complete */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-10 sm:h-8 px-3 text-sm sm:text-xs touch-manipulation"
+                onClick={onComplete}
+                disabled={isCompleting}
+              >
+                {isCompleting ? "..." : "Done"}
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>
@@ -619,6 +723,19 @@ export function StretchPanel({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Fullscreen Timer Modal */}
+      <FullscreenTimer
+        isOpen={fullscreenTimerOpen}
+        onClose={closeFullscreenTimer}
+        duration={fullscreenTimerExercise?.duration ?? 30}
+        exerciseName={fullscreenTimerExercise?.name ?? ""}
+        subtitle={fullscreenTimerExercise?.action}
+        onComplete={handleFullscreenTimerComplete}
+        onSkip={fullscreenTimerExercise && fullscreenTimerExercise.idx < routine.exercises.length - 1 ? handleFullscreenTimerSkip : undefined}
+        variant={type}
+        autoStart
+      />
     </Card>
   )
 }

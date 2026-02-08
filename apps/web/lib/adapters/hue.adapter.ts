@@ -5,6 +5,11 @@
  * Auto-detects mode based on Hue bridge reachability:
  * - Bridge reachable: Fetches from Hue bridge, writes to Supabase
  * - Bridge unreachable: Reads from Supabase cache
+ * 
+ * Sync Strategy:
+ * - Lights and zones: sync every 5 minutes or when state changes (on/off, brightness)
+ * - Scenes: sync hourly (they rarely change, mostly static configuration)
+ * - Status: sync with lights/zones
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp, AVAILABILITY_CHECK_TIMEOUT } from './base.adapter'
@@ -38,15 +43,98 @@ export interface HueCachedState {
   recordedAt: string
 }
 
+/** Scene-only state for separate sync */
+export interface HueSceneState {
+  scenes: HueScene[]
+}
+
+/** Track last scene sync separately (1 hour interval) */
+let lastSceneSyncTime: Date | null = null
+const SCENE_SYNC_INTERVAL = 60 * 60 * 1000 // 1 hour
+
+/** Track last scene hash for change detection */
+let lastSceneHash: string | null = null
+
 /**
  * Hue Adapter - manages all Hue-related data
+ * 
+ * Uses change detection to minimize unnecessary database writes:
+ * - Lights/zones: writes on state change or every 5 minutes
+ * - Scenes: writes on change or every 1 hour (static configuration)
  */
 export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
   private hueService: HueService
 
   constructor(debug: boolean = false) {
-    super({ serviceName: 'hue', debug })
+    // 5 minute minimum write interval for Hue state
+    super({ serviceName: 'hue', debug, minWriteInterval: 5 * 60 * 1000 })
     this.hueService = new HueService()
+  }
+
+  /**
+   * Compute a hash of Hue data based on meaningful state changes
+   * Only considers on/off state, brightness, and zone states
+   * Ignores timestamps and other volatile data
+   */
+  protected computeDataHash(data: HueFullState): string {
+    const significantData = {
+      lights: Object.entries(data.lights).map(([id, light]) => ({
+        id,
+        on: light.state.on,
+        bri: light.state.bri,
+        reachable: light.state.reachable,
+      })).sort((a, b) => a.id.localeCompare(b.id)),
+      zones: data.zones.map(zone => ({
+        id: zone.id,
+        any_on: zone.state.any_on,
+        all_on: zone.state.all_on,
+      })).sort((a, b) => a.id.localeCompare(b.id)),
+      status: {
+        lightsOn: data.status.lightsOn,
+        anyOn: data.status.anyOn,
+        allOn: data.status.allOn,
+      },
+    }
+    return JSON.stringify(significantData)
+  }
+
+  /**
+   * Compute hash for scenes (separate from state)
+   * Only considers scene IDs and names
+   */
+  private computeSceneHash(scenes: HueScene[]): string {
+    const sceneData = scenes.map(s => ({
+      id: s.id,
+      name: s.name,
+      group: s.group,
+    })).sort((a, b) => a.id.localeCompare(b.id))
+    return JSON.stringify(sceneData)
+  }
+
+  /**
+   * Check if scenes have changed since last sync
+   */
+  private haveScenesChanged(scenes: HueScene[]): boolean {
+    const newHash = this.computeSceneHash(scenes)
+    if (!lastSceneHash) return true
+    return lastSceneHash !== newHash
+  }
+
+  /**
+   * Check if enough time has passed for scene sync
+   */
+  private shouldSyncScenes(): boolean {
+    if (!lastSceneSyncTime) return true
+    const timeSinceLastSync = Date.now() - lastSceneSyncTime.getTime()
+    return timeSinceLastSync >= SCENE_SYNC_INTERVAL
+  }
+
+  /**
+   * Record scene sync timestamp and hash
+   */
+  private recordSceneSync(scenes: HueScene[]): void {
+    lastSceneSyncTime = new Date()
+    lastSceneHash = this.computeSceneHash(scenes)
   }
 
   /**
@@ -180,8 +268,12 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
 
   /**
    * Write Hue data to Supabase
+   * Separates scene syncing from state syncing for better efficiency
+   * 
+   * @param data The full Hue state
+   * @param options.includeScenes Whether to include scenes in this sync (default: based on time/change detection)
    */
-  protected async writeToCache(data: HueFullState): Promise<SyncResult> {
+  protected async writeToCache(data: HueFullState, options?: { includeScenes?: boolean }): Promise<SyncResult> {
     const client = this.getWriteClient()
     if (!client) {
       return { success: false, recordsWritten: 0, error: 'Supabase not configured' }
@@ -189,7 +281,14 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
     const timestamp = getCurrentTimestamp()
     let recordsWritten = 0
 
+    // Determine if we should sync scenes
+    const shouldIncludeScenes = options?.includeScenes ?? 
+      (this.shouldSyncScenes() || this.haveScenesChanged(data.scenes))
+
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientAny = client as any
+
       // Write lights
       const lightInserts: HueLightInsert[] = Object.entries(data.lights).map(([id, light]) => ({
         light_id: id,
@@ -203,9 +302,6 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
         is_reachable: light.state.reachable,
         recorded_at: timestamp,
       }))
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const clientAny = client as any
 
       if (lightInserts.length > 0) {
         const { error: lightsError } = await clientAny
@@ -239,27 +335,33 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
         recordsWritten += zoneInserts.length
       }
 
-      // Write scenes
-      const sceneInserts: HueSceneInsert[] = data.scenes.map(scene => ({
-        scene_id: scene.id,
-        name: scene.name,
-        type: scene.type,
-        zone_id: scene.group ?? null,
-        zone_name: scene.zoneName ?? null,
-        lights: scene.lights,
-        owner: scene.owner ?? null,
-        recycle: scene.recycle ?? false,
-        locked: scene.locked ?? false,
-        recorded_at: timestamp,
-      }))
+      // Only write scenes if needed (hourly or on change)
+      if (shouldIncludeScenes) {
+        const sceneInserts: HueSceneInsert[] = data.scenes.map(scene => ({
+          scene_id: scene.id,
+          name: scene.name,
+          type: scene.type,
+          zone_id: scene.group ?? null,
+          zone_name: scene.zoneName ?? null,
+          lights: scene.lights,
+          owner: scene.owner ?? null,
+          recycle: scene.recycle ?? false,
+          locked: scene.locked ?? false,
+          recorded_at: timestamp,
+        }))
 
-      if (sceneInserts.length > 0) {
-        const { error: scenesError } = await clientAny
-          .from('hue_scenes')
-          .insert(sceneInserts)
-        
-        if (scenesError) throw scenesError
-        recordsWritten += sceneInserts.length
+        if (sceneInserts.length > 0) {
+          const { error: scenesError } = await clientAny
+            .from('hue_scenes')
+            .insert(sceneInserts)
+          
+          if (scenesError) throw scenesError
+          recordsWritten += sceneInserts.length
+          this.recordSceneSync(data.scenes)
+          this.log(`Synced ${sceneInserts.length} scenes`)
+        }
+      } else {
+        this.log('Skipping scene sync (no changes, not due yet)')
       }
 
       // Write status
@@ -287,43 +389,79 @@ export class HueAdapter extends BaseAdapter<HueFullState, HueCachedState> {
     }
   }
 
+  /**
+   * Force sync scenes (useful for manual refresh)
+   */
+  async syncScenes(): Promise<SyncResult> {
+    if (!this.isSupabaseAvailable()) {
+      return { success: false, recordsWritten: 0, error: 'Supabase not configured' }
+    }
+
+    const isLocal = await this.isLocal()
+    if (!isLocal) {
+      return { success: false, recordsWritten: 0, error: 'Scene sync only available in local mode' }
+    }
+
+    try {
+      const scenes = await this.hueService.getScenes()
+      const scenesArray = Object.entries(scenes)
+        .map(([id, scene]) => ({ ...scene, id }))
+
+      // Check if scenes have changed
+      if (!this.haveScenesChanged(scenesArray) && !this.shouldSyncScenes()) {
+        this.log('Skipping scene sync - no changes detected')
+        return { success: true, recordsWritten: 0, skipped: true }
+      }
+
+      const client = this.getWriteClient()
+      if (!client) {
+        return { success: false, recordsWritten: 0, error: 'Supabase client not available' }
+      }
+
+      const timestamp = getCurrentTimestamp()
+      const sceneInserts: HueSceneInsert[] = scenesArray.map(scene => ({
+        scene_id: scene.id,
+        name: scene.name,
+        type: scene.type,
+        zone_id: scene.group ?? null,
+        zone_name: scene.zoneName ?? null,
+        lights: scene.lights,
+        owner: scene.owner ?? null,
+        recycle: scene.recycle ?? false,
+        locked: scene.locked ?? false,
+        recorded_at: timestamp,
+      }))
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (client as any)
+        .from('hue_scenes')
+        .insert(sceneInserts)
+
+      if (error) throw error
+
+      this.recordSceneSync(scenesArray)
+      return { success: true, recordsWritten: sceneInserts.length }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      this.logError('Error syncing scenes', error)
+      return { success: false, recordsWritten: 0, error: errorMessage }
+    }
+  }
+
   // ==========================================
   // High-level API methods
   // ==========================================
 
   /**
    * Get all lights status
+   * Note: Does NOT write to cache on every fetch. Use refreshCache() for explicit sync.
    */
   async getAllLightsStatus(): Promise<HueAllLightsStatus | null> {
     const isLocal = await this.isLocal()
     
     if (isLocal) {
       try {
-        const status = await this.hueService.getAllLightsStatus()
-        
-        // Write to cache in background (only if Supabase is configured)
-        if (this.isSupabaseAvailable()) {
-          const client = this.getWriteClient()
-          if (client) {
-            const timestamp = getCurrentTimestamp()
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ;(client as any)
-              .from('hue_status')
-              .insert({
-                total_lights: status.totalLights,
-                lights_on: status.lightsOn,
-                any_on: status.anyOn,
-                all_on: status.allOn,
-                average_brightness: status.averageBrightness,
-                recorded_at: timestamp,
-              })
-              .then(({ error }: { error: unknown }) => {
-                if (error) this.logError('Failed to cache status', error)
-              })
-          }
-        }
-
-        return status
+        return await this.hueService.getAllLightsStatus()
       } catch (error) {
         this.logError('Error fetching status', error)
         throw error
