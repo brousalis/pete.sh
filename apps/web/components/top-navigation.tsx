@@ -219,80 +219,79 @@ export function TopNavigation() {
                   variants={{
                     idle: {
                       opacity: 0,
-                      boxShadow: '0 0 0px 0px hsl(var(--brand) / 0)',
                     },
                     hover: {
                       opacity: 1,
-                      boxShadow: '0 0 20px 2px hsl(var(--brand) / 0.15)',
                     },
                     tap: {
-                      opacity: 0.8,
-                      boxShadow: '0 0 12px 1px hsl(var(--brand) / 0.2)',
+                      opacity: 0.9,
                     },
                     active: {
                       opacity: 1,
-                      boxShadow: '0 0 24px 4px hsl(var(--brand) / 0.2)',
                     },
-                  }}
-                  transition={{ duration: 0.25 }}
-                />
-
-                <motion.div
-                  className="bg-brand/10 absolute inset-0 rounded-lg"
-                  variants={{
-                    idle: { opacity: 0 },
-                    hover: { opacity: 0.5 },
-                    tap: { opacity: 0.7 },
-                    active: { opacity: 1 },
                   }}
                   transition={{ duration: 0.2 }}
                 />
 
-                <motion.span className="relative flex items-baseline text-lg font-bold transition-all sm:text-xl">
+                <motion.div
+                  className="absolute inset-0 rounded-lg bg-foreground/[0.03]"
+                  variants={{
+                    idle: { opacity: 0 },
+                    hover: { opacity: 1 },
+                    tap: { opacity: 1 },
+                    active: { opacity: 0 },
+                  }}
+                  transition={{ duration: 0.2 }}
+                />
+
+                <span className="relative flex items-baseline text-lg font-bold sm:text-xl">
+                  {/* Muted base layer with subtle animation */}
                   <motion.span
+                    className="logo-gradient-pete-muted"
                     variants={{
-                      idle: {
-                        color:
-                          'color-mix(in oklab, var(--foreground) 70%, transparent)',
-                      },
-                      tap: { color: 'var(--foreground)' },
-                      active: { color: 'var(--brand)' },
+                      idle: { opacity: 1 },
+                      hover: { opacity: 0 },
+                      tap: { opacity: 0 },
+                      active: { opacity: 0 },
                     }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.3 }}
                   >
                     pete
                   </motion.span>
                   <motion.span
+                    className="logo-gradient-home-muted"
                     variants={{
-                      idle: {
-                        color:
-                          'color-mix(in oklab, var(--foreground) 70%, transparent)',
-                      },
-                      hover: { color: 'var(--foreground)' },
-                      tap: { color: 'var(--foreground)' },
-                      active: { color: 'var(--foreground)' },
+                      idle: { opacity: 1 },
+                      hover: { opacity: 0 },
+                      tap: { opacity: 0 },
+                      active: { opacity: 0 },
                     }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.3 }}
                   >
                     home
                   </motion.span>
-                </motion.span>
+                  
+                  {/* Gradient layer - shown on hover/active */}
+                  <motion.span
+                    className="absolute inset-0 flex items-baseline"
+                    variants={{
+                      idle: { opacity: 0 },
+                      hover: { opacity: 1 },
+                      tap: { opacity: 1 },
+                      active: { opacity: 1 },
+                    }}
+                    transition={{ duration: 0.3 }}
+                    aria-hidden
+                  >
+                    <span className="logo-gradient-pete">
+                      pete
+                    </span>
+                    <span className="logo-gradient-home">
+                      home
+                    </span>
+                  </motion.span>
+                </span>
 
-                {isActive('/') && (
-                  <motion.div
-                    className="bg-brand/20 pointer-events-none absolute inset-0 rounded-lg"
-                    initial={{ opacity: 0, scale: 1 }}
-                    animate={{
-                      opacity: [0.3, 0, 0.3],
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                )}
               </motion.div>
             </Link>
 
@@ -518,10 +517,10 @@ export function TopNavigation() {
                           href={href}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
-                            'flex flex-col items-center justify-center gap-1 rounded-xl p-2 transition-colors',
+                            'flex flex-col items-center justify-center gap-1 rounded-xl p-2 transition-all',
                             'min-h-[56px] touch-manipulation active:scale-95',
                             active
-                              ? 'bg-brand/10 text-brand'
+                              ? 'bg-brand/10'
                               : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground active:bg-muted'
                           )}
                         >
@@ -539,7 +538,7 @@ export function TopNavigation() {
                           <span
                             className={cn(
                               'text-[10px] font-medium leading-tight',
-                              active && 'font-semibold'
+                              active ? 'font-semibold text-brand' : ''
                             )}
                           >
                             {label}
@@ -615,17 +614,12 @@ function NavItemWithLabel({
       onMouseLeave={() => setIsHovered(false)}
       title={`${label}${shortcut ? ` (⌘${shortcut})` : ''}`}
     >
-      {/* Background - only on hover */}
+      {/* Background on hover */}
       <motion.div
         className="absolute inset-0 rounded-lg"
         initial={false}
         animate={{
-          backgroundColor: isHovered
-            ? 'hsl(var(--card))'
-            : 'hsla(var(--card) / 0)',
-          boxShadow: isHovered
-            ? '0 4px 20px -4px hsl(var(--brand) / 0.2), 0 0 0 1px hsl(var(--brand) / 0.08)'
-            : '0 0 0 0 transparent',
+          backgroundColor: isHovered ? 'var(--card)' : 'transparent',
         }}
         transition={smoothTransition}
       />
@@ -641,28 +635,12 @@ function NavItemWithLabel({
           }}
           transition={springTransition}
         >
-          {/* Icon glow on hover */}
-          <motion.div
-            className="bg-brand/25 pointer-events-none absolute size-6 rounded-full blur-md"
-            initial={false}
-            animate={{
-              opacity: isHovered ? 1 : 0,
-              scale: isHovered ? 1.5 : 0.8,
-            }}
-            transition={{
-              duration: 0.3,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-          />
-
           <Icon
             className={cn(
               'relative size-[18px] shrink-0 transition-colors duration-200',
-              active
+              active || isHovered
                 ? 'text-brand'
-                : isHovered
-                  ? 'text-foreground'
-                  : 'text-muted-foreground'
+                : 'text-muted-foreground'
             )}
           />
         </motion.div>
@@ -693,23 +671,47 @@ function NavItemWithLabel({
             },
           }}
         >
-          <motion.span
-            className="text-foreground block whitespace-nowrap px-2 text-sm font-medium"
+          <motion.div
             initial={false}
             animate={{
               x: isHovered ? 0 : -8,
-              filter: isHovered ? 'blur(0px)' : 'blur(3px)',
             }}
-            transition={{
-              x: smoothTransition,
-              filter: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
-            }}
+            transition={{ ...smoothTransition }}
           >
-            {label}
-          </motion.span>
+            <AnimatedGradientText className="block whitespace-nowrap px-2 text-sm font-medium">
+              {label}
+            </AnimatedGradientText>
+          </motion.div>
         </motion.div>
       </div>
     </Link>
+  )
+}
+
+/**
+ * Animated gradient text component
+ * Uses CSS animation with proper background-clip isolation
+ */
+function AnimatedGradientText({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <span
+      className={cn(className)}
+      style={{
+        background: 'linear-gradient(90deg, var(--foreground) 0%, var(--brand) 50%, var(--foreground) 100%)',
+        backgroundSize: '200% 100%',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        animation: 'gradient-shift 4s ease-in-out infinite',
+      }}
+    >
+      {children}
+    </span>
   )
 }
 

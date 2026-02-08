@@ -274,6 +274,58 @@
    KEYFRAME ANIMATIONS
    ============================================================================ */
 
+/* NFO/AOL Progz scene-inspired gradient animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes text-gradient-cycle {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px var(--brand)) drop-shadow(0 0 4px color-mix(in oklab, var(--brand) 50%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 4px var(--brand)) drop-shadow(0 0 8px color-mix(in oklab, var(--brand) 60%, transparent));
+  }
+}
+
+@keyframes border-gradient-spin {
+  0% {
+    --gradient-angle: 0deg;
+  }
+  100% {
+    --gradient-angle: 360deg;
+  }
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%) skewX(-15deg);
@@ -518,4 +570,175 @@
     transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
     transition-duration: 300ms;
   }
+
+  /* ============================================================================
+     NFO / AOL PROGZ SCENE GRADIENT UTILITIES
+     ============================================================================ */
+
+  /* Logo "pete" - muted idle state with subtle animation */
+  .logo-gradient-pete-muted {
+    background: linear-gradient(
+      90deg,
+      var(--muted-foreground) 0%,
+      color-mix(in oklch, var(--muted-foreground) 80%, var(--foreground)) 25%,
+      var(--muted-foreground) 50%,
+      color-mix(in oklch, var(--muted-foreground) 80%, var(--foreground)) 75%,
+      var(--muted-foreground) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 12s linear infinite;
+  }
+
+  /* Logo "home" - muted idle state with subtle animation */
+  .logo-gradient-home-muted {
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--muted-foreground) 60%, transparent) 0%,
+      var(--muted-foreground) 25%,
+      color-mix(in oklch, var(--muted-foreground) 60%, transparent) 50%,
+      var(--muted-foreground) 75%,
+      color-mix(in oklch, var(--muted-foreground) 60%, transparent) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 12s linear infinite;
+    animation-delay: -3s;
+  }
+
+  /* Logo "pete" - vibrant brand gradient */
+  .logo-gradient-pete {
+    background: linear-gradient(
+      90deg,
+      var(--brand) 0%,
+      color-mix(in oklch, var(--brand) 85%, white) 15%,
+      var(--brand) 30%,
+      color-mix(in oklch, var(--brand) 90%, black 10%) 50%,
+      var(--brand) 70%,
+      color-mix(in oklch, var(--brand) 85%, white) 85%,
+      var(--brand) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 4s linear infinite;
+  }
+
+  /* Logo "home" - softer brand complement */
+  .logo-gradient-home {
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--brand) 60%, var(--foreground)) 0%,
+      color-mix(in oklch, var(--brand) 80%, var(--foreground)) 25%,
+      color-mix(in oklch, var(--brand) 60%, var(--foreground)) 50%,
+      color-mix(in oklch, var(--brand) 80%, var(--foreground)) 75%,
+      color-mix(in oklch, var(--brand) 60%, var(--foreground)) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 4s linear infinite;
+    animation-delay: -1s;
+  }
+
+  /* Nav label gradient */
+  .nav-label-gradient {
+    background: linear-gradient(
+      90deg,
+      var(--foreground) 0%,
+      var(--brand) 50%,
+      var(--foreground) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 4s ease-in-out infinite;
+  }
+
+  /* Nav icon gradient */
+  .nav-icon-gradient {
+    background: linear-gradient(
+      90deg,
+      var(--brand) 0%,
+      var(--brand-2) 50%,
+      var(--brand) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 4s ease-in-out infinite;
+  }
+
+  /* Animated gradient text - classic scene style */
+  .text-gradient-scene {
+    background: linear-gradient(
+      135deg,
+      oklch(0.75 0.2 200) 0%,    /* cyan */
+      oklch(0.7 0.25 280) 25%,   /* purple */
+      oklch(0.75 0.22 330) 50%,  /* magenta */
+      oklch(0.8 0.2 60) 75%,     /* orange */
+      oklch(0.75 0.2 200) 100%   /* cyan */
+    );
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-flow 8s linear infinite;
+  }
+
+  /* Subtle animated gradient text - for nav labels */
+  .text-gradient-scene-subtle {
+    background: linear-gradient(
+      90deg,
+      var(--brand) 0%,
+      oklch(0.72 0.2 280) 50%,   /* violet */
+      var(--brand) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+
+  /* Nav icon gradient text for active state */
+  .nav-icon-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--brand) 0%,
+      oklch(0.72 0.2 280) 50%,
+      var(--brand) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 4s ease-in-out infinite;
+  }
+
+  /* Nav label gradient - revealed on hover */
+  .nav-label-gradient {
+    background: linear-gradient(
+      90deg,
+      var(--foreground) 0%,
+      var(--brand) 25%,
+      oklch(0.72 0.2 280) 50%,
+      var(--brand) 75%,
+      var(--foreground) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+
 }
