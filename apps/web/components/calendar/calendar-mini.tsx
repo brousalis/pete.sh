@@ -150,7 +150,7 @@ export function CalendarMini({
         {WEEKDAYS.map(day => (
           <div
             key={day}
-            className="text-muted-foreground py-1 text-center text-[10px] font-medium"
+            className="text-muted-foreground/80 py-1 text-center text-[10px] font-semibold"
           >
             {day}
           </div>
@@ -180,15 +180,15 @@ export function CalendarMini({
                   type="button"
                   onClick={() => onSelectDate(day)}
                   className={cn(
-                    'relative flex aspect-square items-center justify-center rounded-md text-xs font-normal transition-colors',
+                    'relative flex aspect-square items-center justify-center rounded-md text-xs font-medium transition-colors',
                     'hover:bg-accent hover:text-accent-foreground',
                     'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-                    !isCurrentMonth && 'text-muted-foreground/40',
+                    !isCurrentMonth && 'text-muted-foreground/50',
                     isToday &&
                       !isSelected &&
-                      'bg-accent text-accent-foreground',
+                      'bg-brand/15 text-brand font-semibold',
                     isSelected &&
-                      'bg-brand hover:bg-brand text-white hover:text-white'
+                      'bg-brand hover:bg-brand text-white hover:text-white font-semibold'
                   )}
                 >
                   {day.getDate()}

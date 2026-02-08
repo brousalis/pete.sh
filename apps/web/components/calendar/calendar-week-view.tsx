@@ -73,9 +73,9 @@ export function CalendarWeekView({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header with day names */}
-      <div className="border-border/50 flex shrink-0 border-b">
+      <div className="border-border/60 bg-card/50 flex shrink-0 border-b">
         {/* Time column spacer */}
-        <div className="border-border/30 w-12 shrink-0 border-r" />
+        <div className="border-border/40 w-14 shrink-0 border-r" />
 
         {/* Day headers */}
         <div className="grid flex-1 grid-cols-7">
@@ -84,22 +84,22 @@ export function CalendarWeekView({
               key={day.date.toISOString()}
               onClick={() => onSelectDate(day.date)}
               className={cn(
-                'border-border/30 flex flex-col items-center gap-0 border-r py-1.5 transition-colors last:border-r-0',
+                'border-border/40 flex flex-col items-center gap-0.5 border-r py-2 transition-colors last:border-r-0',
                 'hover:bg-muted/50',
                 day.isSelected && 'bg-brand/10'
               )}
             >
               <span
                 className={cn(
-                  'text-[10px] font-medium uppercase',
-                  day.isToday ? 'text-brand' : 'text-muted-foreground'
+                  'text-[11px] font-semibold uppercase tracking-wide',
+                  day.isToday ? 'text-brand' : 'text-muted-foreground/80'
                 )}
               >
                 {day.dayName}
               </span>
               <span
                 className={cn(
-                  'flex size-6 items-center justify-center rounded-full text-xs font-semibold',
+                  'flex size-7 items-center justify-center rounded-full text-sm font-semibold',
                   day.isToday && 'bg-brand text-white',
                   day.isSelected && !day.isToday && 'bg-brand/20 text-brand'
                 )}
@@ -113,11 +113,11 @@ export function CalendarWeekView({
 
       {/* All-day events section */}
       {allDayEvents.length > 0 && (
-        <div className="border-border/50 bg-muted/20 flex shrink-0 border-b">
-          <div className="border-border/30 text-muted-foreground flex w-12 shrink-0 items-center justify-center border-r text-[9px] font-medium">
+        <div className="border-border/60 bg-muted/30 flex shrink-0 border-b">
+          <div className="border-border/40 text-muted-foreground/80 flex w-14 shrink-0 items-center justify-center border-r text-[10px] font-semibold tracking-wide">
             ALL DAY
           </div>
-          <div className="grid min-h-[32px] flex-1 grid-cols-7">
+          <div className="grid min-h-[36px] flex-1 grid-cols-7">
             {weekDays.map(day => {
               const dayAllDayEvents = allDayEvents.filter(
                 e => getEventsForDay(day.date, [e]).length > 0
@@ -125,7 +125,7 @@ export function CalendarWeekView({
               return (
                 <div
                   key={day.date.toISOString()}
-                  className="border-border/30 flex flex-col gap-0.5 border-r p-1 last:border-r-0"
+                  className="border-border/40 flex flex-col gap-0.5 border-r p-1.5 last:border-r-0"
                 >
                   {dayAllDayEvents.slice(0, 2).map(event => {
                     const colors = getEventColor(event.colorId)
@@ -134,7 +134,7 @@ export function CalendarWeekView({
                         key={event.id}
                         onClick={() => onSelectEvent(event)}
                         className={cn(
-                          'truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium',
+                          'truncate rounded-md px-2 py-1 text-left text-[11px] font-semibold',
                           'hover:ring-brand/50 hover:ring-1',
                           colors?.bg,
                           colors?.text
@@ -145,7 +145,7 @@ export function CalendarWeekView({
                     )
                   })}
                   {dayAllDayEvents.length > 2 && (
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground/80 text-[10px] font-medium">
                       +{dayAllDayEvents.length - 2}
                     </span>
                   )}
@@ -174,11 +174,11 @@ export function CalendarWeekView({
               style={{ height: HOURS.length * HOUR_HEIGHT }}
             >
               {/* Time labels */}
-              <div className="border-border/30 relative w-12 shrink-0 border-r">
+              <div className="border-border/40 bg-card/30 relative w-14 shrink-0 border-r">
                 {HOURS.map(hour => (
                   <div
                     key={hour}
-                    className="text-muted-foreground absolute right-0 left-0 -translate-y-2 pr-1 text-right text-[9px] font-medium"
+                    className="text-muted-foreground/90 absolute right-0 left-0 -translate-y-2 pr-2 text-right text-[11px] font-medium tabular-nums"
                     style={{ top: hour * HOUR_HEIGHT }}
                   >
                     {format(new Date().setHours(hour, 0, 0, 0), 'h a')}
@@ -192,7 +192,7 @@ export function CalendarWeekView({
                 {HOURS.map(hour => (
                   <div
                     key={hour}
-                    className="border-border/20 absolute inset-x-0 border-t"
+                    className="border-border/40 absolute inset-x-0 border-t"
                     style={{ top: hour * HOUR_HEIGHT }}
                   />
                 ))}
@@ -215,8 +215,8 @@ export function CalendarWeekView({
                     <div
                       key={day.date.toISOString()}
                       className={cn(
-                        'border-border/30 relative border-r last:border-r-0',
-                        day.isToday && 'bg-brand/5'
+                        'border-border/40 relative border-r last:border-r-0',
+                        day.isToday && 'bg-brand/[0.07]'
                       )}
                       onClick={() => onSelectDate(day.date)}
                     >
@@ -230,8 +230,8 @@ export function CalendarWeekView({
                               onSelectEvent(pos.event)
                             }}
                             className={cn(
-                              'absolute overflow-hidden rounded border-l-2 px-1 py-0.5 text-left transition-all',
-                              'hover:ring-brand/50 hover:z-10 hover:ring-1',
+                              'absolute overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 text-left transition-all shadow-sm',
+                              'hover:ring-brand/50 hover:z-10 hover:ring-2 hover:shadow-md',
                               colors?.bg,
                               colors?.border
                             )}
@@ -239,19 +239,24 @@ export function CalendarWeekView({
                               top: pos.top,
                               height: pos.height,
                               left: `${pos.left}%`,
-                              width: `calc(${pos.width}% - 4px)`,
-                              marginLeft: 2,
+                              width: `calc(${pos.width}% - 6px)`,
+                              marginLeft: 3,
                             }}
                           >
                             <span
                               className={cn(
-                                'block truncate text-[10px] font-semibold',
+                                'block truncate text-[11px] font-semibold leading-tight',
                                 colors?.text
                               )}
                             >
                               {pos.event.summary}
                             </span>
-                            <span className="text-muted-foreground block truncate text-[9px]">
+                            <span
+                              className={cn(
+                                'block truncate text-[10px] font-medium opacity-80',
+                                colors?.text
+                              )}
+                            >
                               {formatEventTime(pos.event)}
                             </span>
                           </button>

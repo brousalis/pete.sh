@@ -77,7 +77,7 @@ export function CalendarDayView({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Day header */}
-      <div className="border-border/50 bg-muted/20 flex shrink-0 items-center gap-4 border-b px-4 py-3">
+      <div className="border-border/60 bg-card/50 flex shrink-0 items-center gap-4 border-b px-4 py-3">
         <div className="flex items-center gap-3">
           <div
             className={cn(
@@ -113,8 +113,8 @@ export function CalendarDayView({
 
       {/* All-day events */}
       {allDayEvents.length > 0 && (
-        <div className="border-border/50 bg-muted/10 shrink-0 border-b px-4 py-2">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold uppercase">
+        <div className="border-border/60 bg-muted/30 shrink-0 border-b px-4 py-2">
+          <div className="text-muted-foreground/80 mb-1.5 text-[11px] font-semibold uppercase tracking-wide">
             All Day
           </div>
           <div className="flex flex-wrap gap-2">
@@ -165,11 +165,11 @@ export function CalendarDayView({
               style={{ height: HOURS.length * HOUR_HEIGHT }}
             >
               {/* Time labels */}
-              <div className="border-border/30 relative w-20 shrink-0 border-r">
+              <div className="border-border/40 bg-card/30 relative w-20 shrink-0 border-r">
                 {HOURS.map(hour => (
                   <div
                     key={hour}
-                    className="text-muted-foreground absolute right-0 left-0 -translate-y-2 pr-3 text-right text-xs font-medium"
+                    className="text-muted-foreground/90 absolute right-0 left-0 -translate-y-2 pr-3 text-right text-sm font-medium tabular-nums"
                     style={{ top: hour * HOUR_HEIGHT }}
                   >
                     {format(new Date().setHours(hour, 0, 0, 0), 'h:mm a')}
@@ -183,12 +183,12 @@ export function CalendarDayView({
                 {HOURS.map(hour => (
                   <div
                     key={hour}
-                    className="border-border/20 absolute inset-x-0 border-t"
+                    className="border-border/40 absolute inset-x-0 border-t"
                     style={{ top: hour * HOUR_HEIGHT }}
                   >
                     {/* Half-hour line */}
                     <div
-                      className="border-border/10 absolute inset-x-0 border-t"
+                      className="border-border/25 absolute inset-x-0 border-t"
                       style={{ top: HOUR_HEIGHT / 2 }}
                     />
                   </div>
@@ -207,8 +207,8 @@ export function CalendarDayView({
                       key={pos.event.id}
                       onClick={() => onSelectEvent(pos.event)}
                       className={cn(
-                        'absolute overflow-hidden rounded-lg border-l-3 p-3 text-left transition-all',
-                        'hover:ring-brand/50 hover:z-10 hover:ring-2',
+                        'absolute overflow-hidden rounded-lg border-l-[3px] p-3 text-left transition-all shadow-sm',
+                        'hover:ring-brand/50 hover:z-10 hover:ring-2 hover:shadow-md',
                         colors?.bg,
                         colors?.border
                       )}
@@ -228,12 +228,22 @@ export function CalendarDayView({
                         >
                           {pos.event.summary}
                         </span>
-                        <span className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+                        <span
+                          className={cn(
+                            'mt-0.5 flex items-center gap-1 text-xs font-medium opacity-80',
+                            colors?.text
+                          )}
+                        >
                           <Clock className="size-3" />
                           {formatEventTime(pos.event)}
                         </span>
                         {pos.event.location && pos.height > 60 && (
-                          <span className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
+                          <span
+                            className={cn(
+                              'mt-1 flex items-center gap-1 text-xs opacity-70',
+                              colors?.text
+                            )}
+                          >
                             <MapPin className="size-3" />
                             <span className="truncate">
                               {pos.event.location.split(',')[0]}

@@ -46,15 +46,15 @@ export function CalendarMonthGrid({
   return (
     <div className="flex h-full flex-col">
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 border-b border-border/50 bg-muted/30">
+      <div className="grid grid-cols-7 border-b border-border/60 bg-card/50">
         {WEEKDAY_LABELS.map((day, index) => (
           <div
             key={day}
             className={cn(
-              "px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider",
+              "px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-wider",
               index === 0 || index === 6
-                ? "text-muted-foreground/70"
-                : "text-muted-foreground"
+                ? "text-muted-foreground/60"
+                : "text-muted-foreground/80"
             )}
           >
             {day}
@@ -85,22 +85,22 @@ export function CalendarMonthGrid({
                 key={index}
                 onClick={() => onSelectDate(day.date)}
                 className={cn(
-                  "group relative flex min-h-[90px] cursor-pointer flex-col border-b border-r border-border/30 p-1.5 transition-colors",
+                  "group relative flex min-h-[90px] cursor-pointer flex-col border-b border-r border-border/40 p-1.5 transition-colors",
                   "hover:bg-muted/50",
                   !day.isCurrentMonth && "bg-muted/20",
                   day.isSelected && "bg-brand/10 ring-1 ring-brand/30 ring-inset",
-                  day.isToday && !day.isSelected && "bg-accent/50"
+                  day.isToday && !day.isSelected && "bg-brand/[0.07]"
                 )}
               >
                 {/* Day Number */}
                 <div className="flex items-start justify-between">
                   <span
                     className={cn(
-                      "flex size-7 items-center justify-center rounded-full text-sm font-medium transition-colors",
+                      "flex size-7 items-center justify-center rounded-full text-sm font-semibold transition-colors",
                       day.isToday && "bg-brand text-white",
                       !day.isToday && day.isSelected && "bg-brand/20 text-brand",
                       !day.isCurrentMonth && "text-muted-foreground/50",
-                      day.isWeekend && day.isCurrentMonth && !day.isToday && !day.isSelected && "text-muted-foreground/70"
+                      day.isWeekend && day.isCurrentMonth && !day.isToday && !day.isSelected && "text-muted-foreground/60"
                     )}
                   >
                     {day.date.getDate()}
@@ -122,7 +122,7 @@ export function CalendarMonthGrid({
                           onSelectEvent(event)
                         }}
                         className={cn(
-                          "truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium leading-tight transition-all",
+                          "truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-semibold leading-tight transition-all",
                           "hover:ring-1 hover:ring-brand/50",
                           colors?.bg,
                           colors?.text,
@@ -136,7 +136,7 @@ export function CalendarMonthGrid({
                     )
                   })}
                   {remainingEvents > 0 && (
-                    <span className="px-1.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="px-1.5 text-[10px] font-semibold text-muted-foreground/80">
                       +{remainingEvents} more
                     </span>
                   )}
