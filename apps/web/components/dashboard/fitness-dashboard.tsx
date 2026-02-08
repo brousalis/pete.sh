@@ -3,10 +3,10 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    type ChartConfig,
 } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import {
@@ -30,7 +30,6 @@ import {
     Heart,
     HeartPulse,
     Moon,
-    RefreshCw,
     Route,
     Sparkles,
     Sun,
@@ -42,22 +41,22 @@ import {
     TrendingUp,
     Watch,
     Wind,
-    Zap,
+    Zap
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    XAxis,
+    YAxis,
 } from 'recharts'
 
 // ============================================
@@ -710,7 +709,7 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
     }>> = []
 
     let currentWeek: typeof weeks[0] = []
-    
+
     // Add empty cells for days before the first of the month
     for (let i = 0; i < startDayOfWeek; i++) {
       currentWeek.push({
@@ -958,7 +957,7 @@ function RingStreaks({ dailyMetrics, className }: RingStreaksProps) {
       sortedMetrics.forEach(m => {
         const metricDate = new Date(m.date)
         metricDate.setHours(0, 0, 0, 0)
-        
+
         // Only count days up to today
         if (metricDate > today) return
 
@@ -974,9 +973,10 @@ function RingStreaks({ dailyMetrics, className }: RingStreaksProps) {
       // Current streak: count backwards from today
       for (let i = sortedMetrics.length - 1; i >= 0; i--) {
         const m = sortedMetrics[i]
+        if (!m) continue
         const metricDate = new Date(m.date)
         metricDate.setHours(0, 0, 0, 0)
-        
+
         if (metricDate > today) continue
 
         if (checkFn(m)) {
@@ -1336,8 +1336,8 @@ function DayGroupSection({
             <div
               className={cn(
                 'flex size-12 flex-col items-center justify-center rounded-full md:size-14',
-                isCurrentDay 
-                  ? 'bg-primary text-primary-foreground' 
+                isCurrentDay
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted/60'
               )}
             >
@@ -1785,8 +1785,8 @@ function WeeklyStatsSection({ summary, previousSummary }: WeeklyStatsSectionProp
       {/* Stats - 4-col grid on mobile/tablet, 2x2 grid on lg sidebar */}
       <div className="grid grid-cols-4 gap-3 lg:grid-cols-2 lg:gap-4">
         {stats.map(stat => (
-          <div 
-            key={stat.label} 
+          <div
+            key={stat.label}
             className="text-center lg:flex lg:items-center lg:gap-3 lg:rounded-lg lg:bg-background/40 lg:p-3 lg:text-left"
           >
             <div className="mb-2 flex justify-center lg:mb-0 lg:shrink-0">
@@ -1869,20 +1869,20 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
     )
     let count = 0
     const today = startOfDay(new Date())
-    
+
     // Check backwards from today (or yesterday if no workout today yet)
     let checkDate = today
     if (!workoutDays.has(checkDate.toISOString())) {
       checkDate = new Date(checkDate)
       checkDate.setDate(checkDate.getDate() - 1)
     }
-    
+
     while (workoutDays.has(checkDate.toISOString())) {
       count++
       checkDate = new Date(checkDate)
       checkDate.setDate(checkDate.getDate() - 1)
     }
-    
+
     return count
   }, [workouts])
 
@@ -1890,7 +1890,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
   const heatmapData = useMemo(() => {
     const weeks: { date: Date; hasWorkout: boolean; count: number }[][] = []
     const workoutCounts = new Map<string, number>()
-    
+
     workouts.forEach(w => {
       const key = startOfDay(new Date(w.start_date)).toISOString()
       workoutCounts.set(key, (workoutCounts.get(key) || 0) + 1)
@@ -1898,11 +1898,11 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
 
     const today = new Date()
     const currentDay = today.getDay() // 0 = Sunday
-    
+
     // Start from 5 weeks ago, aligned to Sunday
     const startDate = new Date(today)
     startDate.setDate(startDate.getDate() - currentDay - 28) // Go back 4 full weeks + current partial week
-    
+
     for (let week = 0; week < 5; week++) {
       const weekData: { date: Date; hasWorkout: boolean; count: number }[] = []
       for (let day = 0; day < 7; day++) {
@@ -1918,7 +1918,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
       }
       weeks.push(weekData)
     }
-    
+
     return weeks
   }, [workouts])
 
@@ -1988,8 +1988,8 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
           )}
 
           {/* Fallback if no health data */}
-          {!currentMetrics?.resting_heart_rate && 
-           !currentMetrics?.heart_rate_variability && 
+          {!currentMetrics?.resting_heart_rate &&
+           !currentMetrics?.heart_rate_variability &&
            !currentMetrics?.vo2_max && (
             <div className="text-muted-foreground py-4 text-center text-sm">
               No health metrics available
@@ -2031,7 +2031,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
                 {week.map((day, dayIdx) => {
                   const isToday = startOfDay(new Date()).getTime() === startOfDay(day.date).getTime()
                   const isFuture = day.date > new Date()
-                  
+
                   return (
                     <div
                       key={dayIdx}
@@ -2196,14 +2196,14 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
   // Aggregate data for volume chart
   const volumeChartData = useMemo(() => {
     const grouped = new Map<string, Record<string, number>>()
-    
+
     // Determine grouping interval based on time range
     const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
-    
+
     filteredWorkouts.forEach(w => {
       const date = new Date(w.start_date)
       let key: string
-      
+
       if (useWeekly) {
         // Group by week
         const weekStart = new Date(date)
@@ -2213,17 +2213,17 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
         // Group by day
         key = format(date, 'MMM d')
       }
-      
+
       if (!grouped.has(key)) {
         grouped.set(key, {})
       }
-      
+
       const dayData = grouped.get(key)!
       const type = w.workout_type
-      const value = volumeMetric === 'duration' 
+      const value = volumeMetric === 'duration'
         ? w.duration / 60 // Convert to minutes
         : (w.distance_miles || 0)
-      
+
       dayData[type] = (dayData[type] || 0) + value
     })
 
@@ -2236,7 +2236,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
   // Aggregate data for distribution chart
   const distributionData = useMemo(() => {
     const counts: Record<string, number> = {}
-    
+
     filteredWorkouts.forEach(w => {
       counts[w.workout_type] = (counts[w.workout_type] || 0) + 1
     })
@@ -2260,8 +2260,8 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
       icon: React.ReactNode
     }[] = []
 
-    const relevantWorkouts = selectedType === 'all' 
-      ? filteredWorkouts 
+    const relevantWorkouts = selectedType === 'all'
+      ? filteredWorkouts
       : filteredWorkouts.filter(w => w.workout_type === selectedType)
 
     if (relevantWorkouts.length === 0) return records
@@ -2271,7 +2271,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
       w => (w.workout_type === 'running' || w.workout_type === 'walking') && w.pace_best
     )
     if (runningWorkouts.length > 0) {
-      const fastest = runningWorkouts.reduce((best, w) => 
+      const fastest = runningWorkouts.reduce((best, w) =>
         (w.pace_best && (!best.pace_best || w.pace_best < best.pace_best)) ? w : best
       )
       if (fastest.pace_best) {
@@ -2289,7 +2289,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
     // Longest distance
     const distanceWorkouts = relevantWorkouts.filter(w => w.distance_miles && w.distance_miles > 0)
     if (distanceWorkouts.length > 0) {
-      const longest = distanceWorkouts.reduce((best, w) => 
+      const longest = distanceWorkouts.reduce((best, w) =>
         (w.distance_miles && w.distance_miles > (best.distance_miles || 0)) ? w : best
       )
       if (longest.distance_miles) {
@@ -2305,7 +2305,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
     }
 
     // Highest calories
-    const calorieWorkout = relevantWorkouts.reduce((best, w) => 
+    const calorieWorkout = relevantWorkouts.reduce((best, w) =>
       w.active_calories > best.active_calories ? w : best
     )
     records.push({
@@ -2318,7 +2318,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
     })
 
     // Longest duration
-    const longestDuration = relevantWorkouts.reduce((best, w) => 
+    const longestDuration = relevantWorkouts.reduce((best, w) =>
       w.duration > best.duration ? w : best
     )
     records.push({
@@ -2333,7 +2333,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
     // Highest effort score (if available)
     const effortWorkouts = relevantWorkouts.filter(w => w.effort_score && w.effort_score > 0)
     if (effortWorkouts.length > 0) {
-      const highestEffort = effortWorkouts.reduce((best, w) => 
+      const highestEffort = effortWorkouts.reduce((best, w) =>
         (w.effort_score && w.effort_score > (best.effort_score || 0)) ? w : best
       )
       if (highestEffort.effort_score) {
@@ -2355,13 +2355,13 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
   const performanceData = useMemo(() => {
     // Group workouts and calculate averages
     const grouped = new Map<string, { hr: number[]; pace: number[]; calories: number[] }>()
-    
+
     const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
-    
+
     typeFilteredWorkouts.forEach(w => {
       const date = new Date(w.start_date)
       let key: string
-      
+
       if (useWeekly) {
         const weekStart = new Date(date)
         weekStart.setDate(date.getDate() - date.getDay())
@@ -2369,11 +2369,11 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
       } else {
         key = format(date, 'MMM d')
       }
-      
+
       if (!grouped.has(key)) {
         grouped.set(key, { hr: [], pace: [], calories: [] })
       }
-      
+
       const dayData = grouped.get(key)!
       if (w.hr_average) dayData.hr.push(w.hr_average)
       if (w.pace_average && w.pace_average > 0 && w.pace_average < 30) {
@@ -2385,13 +2385,13 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
     return Array.from(grouped.entries())
       .map(([date, data]) => ({
         date,
-        avgHr: data.hr.length > 0 
-          ? Math.round(data.hr.reduce((a, b) => a + b, 0) / data.hr.length) 
+        avgHr: data.hr.length > 0
+          ? Math.round(data.hr.reduce((a, b) => a + b, 0) / data.hr.length)
           : null,
-        avgPace: data.pace.length > 0 
-          ? data.pace.reduce((a, b) => a + b, 0) / data.pace.length 
+        avgPace: data.pace.length > 0
+          ? data.pace.reduce((a, b) => a + b, 0) / data.pace.length
           : null,
-        calPerMin: data.calories.length > 0 
+        calPerMin: data.calories.length > 0
           ? Math.round(data.calories.reduce((a, b) => a + b, 0) / data.calories.length * 10) / 10
           : null,
       }))
@@ -2529,21 +2529,21 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
             <ChartContainer config={volumeChartConfig} className="h-[200px] w-full">
               <BarChart data={volumeChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
-                <XAxis 
-                  dataKey="date" 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
                   interval="preserveStartEnd"
                 />
-                <YAxis 
-                  tickLine={false} 
+                <YAxis
+                  tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
                   width={35}
                   tickFormatter={(v) => volumeMetric === 'duration' ? `${v}m` : `${v}mi`}
                 />
-                <ChartTooltip 
+                <ChartTooltip
                   content={<ChartTooltipContent />}
                 />
                 {workoutTypes.map(type => (
@@ -2567,7 +2567,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
         {/* Distribution Chart */}
         <div className="rounded-xl bg-muted/30 p-5">
           <h3 className="mb-4 font-semibold">Distribution</h3>
-          
+
           {distributionData.length > 0 ? (
             <div className="flex flex-col items-center">
               <ChartContainer config={{}} className="h-[140px] w-full">
@@ -2585,8 +2585,8 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
                     className="cursor-pointer"
                   >
                     {distributionData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={entry.color}
                         stroke="transparent"
                         opacity={selectedType === 'all' || selectedType === entry.type ? 1 : 0.3}
@@ -2596,7 +2596,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
                   <ChartTooltip content={<ChartTooltipContent nameKey="label" />} />
                 </PieChart>
               </ChartContainer>
-              
+
               {/* Center stat */}
               <div className="-mt-[100px] mb-8 text-center">
                 <div className="text-2xl font-bold">{totalWorkouts}</div>
@@ -2614,8 +2614,8 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
                       selectedType === item.type ? 'bg-background/80 ring-1 ring-border' : 'hover:bg-background/50'
                     )}
                   >
-                    <div 
-                      className="size-2 rounded-full" 
+                    <div
+                      className="size-2 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
                     <span>{item.label}</span>
@@ -2634,50 +2634,50 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
         {/* Performance Trends - spans 2 columns */}
         <div className="rounded-xl bg-muted/30 p-5 lg:col-span-2">
           <h3 className="mb-4 font-semibold">Performance Trends</h3>
-          
+
           {performanceData.length > 0 && performanceData.some(d => d.avgHr || d.calPerMin) ? (
             <ChartContainer config={performanceChartConfig} className="h-[180px] w-full">
               <LineChart data={performanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
-                <XAxis 
-                  dataKey="date" 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
                   interval="preserveStartEnd"
                 />
-                <YAxis 
+                <YAxis
                   yAxisId="hr"
                   orientation="left"
-                  tickLine={false} 
+                  tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
                   width={35}
                   domain={['dataMin - 10', 'dataMax + 10']}
                 />
-                <YAxis 
+                <YAxis
                   yAxisId="cal"
                   orientation="right"
-                  tickLine={false} 
+                  tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
                   width={35}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line 
+                <Line
                   yAxisId="hr"
-                  type="monotone" 
-                  dataKey="avgHr" 
-                  stroke="#ef4444" 
+                  type="monotone"
+                  dataKey="avgHr"
+                  stroke="#ef4444"
                   strokeWidth={2}
                   dot={false}
                   connectNulls
                 />
-                <Line 
+                <Line
                   yAxisId="cal"
-                  type="monotone" 
-                  dataKey="calPerMin" 
-                  stroke="#f97316" 
+                  type="monotone"
+                  dataKey="calPerMin"
+                  stroke="#f97316"
                   strokeWidth={2}
                   dot={false}
                   connectNulls
@@ -2689,7 +2689,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
               No performance data for selected filters
             </div>
           )}
-          
+
           {/* Legend */}
           <div className="mt-3 flex items-center justify-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
@@ -2709,7 +2709,7 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
             <Sparkles className="size-4 text-amber-500" />
             <h3 className="font-semibold">Personal Records</h3>
           </div>
-          
+
           {personalRecords.length > 0 ? (
             <div className="space-y-2">
               {personalRecords.map(record => (
@@ -2738,6 +2738,689 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// DAILY METRICS INSIGHTS (Full-width historical analysis)
+// ============================================
+
+interface DailyMetricsInsightsProps {
+  dailyMetrics: DailyMetrics[]
+  className?: string
+}
+
+function DailyMetricsInsights({ dailyMetrics, className }: DailyMetricsInsightsProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d')
+  const [selectedMetric, setSelectedMetric] = useState<'rings' | 'steps' | 'calories' | 'health'>('rings')
+
+  // Filter metrics by time range
+  const filteredMetrics = useMemo(() => {
+    const now = new Date()
+    let cutoffDate: Date
+
+    switch (timeRange) {
+      case '7d':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case '30d':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        break
+      case '90d':
+        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+        break
+      case '6m':
+        cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+        break
+      case '1y':
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+        break
+      case 'all':
+      default:
+        cutoffDate = new Date(0)
+    }
+
+    return dailyMetrics
+      .filter(m => new Date(m.date) >= cutoffDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [dailyMetrics, timeRange])
+
+  // Calculate ring completion data
+  const ringCompletionData = useMemo(() => {
+    return filteredMetrics.map(m => {
+      const moveGoal = m.move_goal || 500
+      const exerciseGoal = m.exercise_goal || 30
+      const standGoal = m.stand_goal || 12
+
+      return {
+        date: format(new Date(m.date), 'MMM d'),
+        fullDate: m.date,
+        movePercent: Math.min((m.active_calories / moveGoal) * 100, 150),
+        exercisePercent: Math.min((m.exercise_minutes / exerciseGoal) * 100, 150),
+        standPercent: Math.min((m.stand_hours / standGoal) * 100, 150),
+        moveComplete: m.active_calories >= moveGoal,
+        exerciseComplete: m.exercise_minutes >= exerciseGoal,
+        standComplete: m.stand_hours >= standGoal,
+        allComplete: m.active_calories >= moveGoal && m.exercise_minutes >= exerciseGoal && m.stand_hours >= standGoal,
+      }
+    })
+  }, [filteredMetrics])
+
+  // Calculate step and calorie trends
+  const activityTrendData = useMemo(() => {
+    // Group by week for longer time ranges
+    const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
+
+    if (!useWeekly) {
+      return filteredMetrics.map(m => ({
+        date: format(new Date(m.date), 'MMM d'),
+        steps: m.steps,
+        activeCalories: Math.round(m.active_calories),
+        totalCalories: Math.round(m.total_calories),
+        exerciseMinutes: m.exercise_minutes,
+      }))
+    }
+
+    // Group by week
+    const weekGroups = new Map<string, DailyMetrics[]>()
+    filteredMetrics.forEach(m => {
+      const date = new Date(m.date)
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - date.getDay())
+      const key = format(weekStart, 'MMM d')
+      if (!weekGroups.has(key)) weekGroups.set(key, [])
+      weekGroups.get(key)!.push(m)
+    })
+
+    return Array.from(weekGroups.entries()).map(([date, metrics]) => ({
+      date,
+      steps: Math.round(metrics.reduce((sum, m) => sum + m.steps, 0) / metrics.length),
+      activeCalories: Math.round(metrics.reduce((sum, m) => sum + m.active_calories, 0) / metrics.length),
+      totalCalories: Math.round(metrics.reduce((sum, m) => sum + m.total_calories, 0) / metrics.length),
+      exerciseMinutes: Math.round(metrics.reduce((sum, m) => sum + m.exercise_minutes, 0) / metrics.length),
+    }))
+  }, [filteredMetrics, timeRange])
+
+  // Health metrics trends
+  const healthTrendData = useMemo(() => {
+    return filteredMetrics
+      .filter(m => m.resting_heart_rate || m.heart_rate_variability || m.vo2_max)
+      .map(m => ({
+        date: format(new Date(m.date), 'MMM d'),
+        restingHR: m.resting_heart_rate,
+        hrv: m.heart_rate_variability ? Math.round(m.heart_rate_variability) : null,
+        vo2Max: m.vo2_max ? Math.round(m.vo2_max * 10) / 10 : null,
+      }))
+  }, [filteredMetrics])
+
+  // Summary statistics
+  const summaryStats = useMemo(() => {
+    if (filteredMetrics.length === 0) return null
+
+    const totalDays = filteredMetrics.length
+    let perfectDays = 0
+    let moveDays = 0
+    let exerciseDays = 0
+    let standDays = 0
+    let totalSteps = 0
+    let totalCalories = 0
+    let totalExercise = 0
+
+    filteredMetrics.forEach(m => {
+      const moveGoal = m.move_goal || 500
+      const exerciseGoal = m.exercise_goal || 30
+      const standGoal = m.stand_goal || 12
+
+      const moveComplete = m.active_calories >= moveGoal
+      const exerciseComplete = m.exercise_minutes >= exerciseGoal
+      const standComplete = m.stand_hours >= standGoal
+
+      if (moveComplete) moveDays++
+      if (exerciseComplete) exerciseDays++
+      if (standComplete) standDays++
+      if (moveComplete && exerciseComplete && standComplete) perfectDays++
+
+      totalSteps += m.steps
+      totalCalories += m.active_calories
+      totalExercise += m.exercise_minutes
+    })
+
+    const avgSteps = Math.round(totalSteps / totalDays)
+    const avgCalories = Math.round(totalCalories / totalDays)
+    const avgExercise = Math.round(totalExercise / totalDays)
+
+    // Health averages
+    const hrMetrics = filteredMetrics.filter(m => m.resting_heart_rate)
+    const hrvMetrics = filteredMetrics.filter(m => m.heart_rate_variability)
+    const avgRestingHR = hrMetrics.length > 0
+      ? Math.round(hrMetrics.reduce((sum, m) => sum + (m.resting_heart_rate || 0), 0) / hrMetrics.length)
+      : null
+    const avgHRV = hrvMetrics.length > 0
+      ? Math.round(hrvMetrics.reduce((sum, m) => sum + (m.heart_rate_variability || 0), 0) / hrvMetrics.length)
+      : null
+
+    return {
+      totalDays,
+      perfectDays,
+      perfectPercent: Math.round((perfectDays / totalDays) * 100),
+      moveDays,
+      movePercent: Math.round((moveDays / totalDays) * 100),
+      exerciseDays,
+      exercisePercent: Math.round((exerciseDays / totalDays) * 100),
+      standDays,
+      standPercent: Math.round((standDays / totalDays) * 100),
+      avgSteps,
+      avgCalories,
+      avgExercise,
+      avgRestingHR,
+      avgHRV,
+      totalSteps,
+      totalCalories: Math.round(totalCalories),
+      totalExercise,
+    }
+  }, [filteredMetrics])
+
+  // Personal records
+  const personalRecords = useMemo(() => {
+    if (filteredMetrics.length === 0) return []
+
+    const records: {
+      id: string
+      label: string
+      value: string
+      date: string
+      icon: React.ReactNode
+    }[] = []
+
+    // Most steps
+    const maxSteps = filteredMetrics.reduce((best, m) => m.steps > best.steps ? m : best)
+    records.push({
+      id: 'max-steps',
+      label: 'Most Steps',
+      value: maxSteps.steps.toLocaleString(),
+      date: format(new Date(maxSteps.date), 'MMM d'),
+      icon: <Footprints className="size-4 text-blue-500" />,
+    })
+
+    // Most calories
+    const maxCalories = filteredMetrics.reduce((best, m) => m.active_calories > best.active_calories ? m : best)
+    records.push({
+      id: 'max-calories',
+      label: 'Most Calories',
+      value: Math.round(maxCalories.active_calories).toLocaleString() + ' cal',
+      date: format(new Date(maxCalories.date), 'MMM d'),
+      icon: <Flame className="size-4 text-orange-500" />,
+    })
+
+    // Most exercise
+    const maxExercise = filteredMetrics.reduce((best, m) => m.exercise_minutes > best.exercise_minutes ? m : best)
+    records.push({
+      id: 'max-exercise',
+      label: 'Most Exercise',
+      value: maxExercise.exercise_minutes + ' min',
+      date: format(new Date(maxExercise.date), 'MMM d'),
+      icon: <Activity className="size-4 text-green-500" />,
+    })
+
+    // Lowest resting HR (good)
+    const hrMetrics = filteredMetrics.filter(m => m.resting_heart_rate && m.resting_heart_rate > 30)
+    if (hrMetrics.length > 0) {
+      const lowestHR = hrMetrics.reduce((best, m) =>
+        (m.resting_heart_rate || 999) < (best.resting_heart_rate || 999) ? m : best
+      )
+      records.push({
+        id: 'lowest-hr',
+        label: 'Lowest Resting HR',
+        value: lowestHR.resting_heart_rate + ' bpm',
+        date: format(new Date(lowestHR.date), 'MMM d'),
+        icon: <Heart className="size-4 text-red-500" />,
+      })
+    }
+
+    // Highest HRV (good)
+    const hrvMetrics = filteredMetrics.filter(m => m.heart_rate_variability)
+    if (hrvMetrics.length > 0) {
+      const highestHRV = hrvMetrics.reduce((best, m) =>
+        (m.heart_rate_variability || 0) > (best.heart_rate_variability || 0) ? m : best
+      )
+      records.push({
+        id: 'highest-hrv',
+        label: 'Highest HRV',
+        value: Math.round(highestHRV.heart_rate_variability || 0) + ' ms',
+        date: format(new Date(highestHRV.date), 'MMM d'),
+        icon: <HeartPulse className="size-4 text-purple-500" />,
+      })
+    }
+
+    return records
+  }, [filteredMetrics])
+
+  // Weekly comparison
+  const weeklyComparison = useMemo(() => {
+    if (filteredMetrics.length < 14) return null
+
+    const thisWeekMetrics = filteredMetrics.slice(-7)
+    const lastWeekMetrics = filteredMetrics.slice(-14, -7)
+
+    const thisWeekAvgSteps = Math.round(thisWeekMetrics.reduce((sum, m) => sum + m.steps, 0) / 7)
+    const lastWeekAvgSteps = Math.round(lastWeekMetrics.reduce((sum, m) => sum + m.steps, 0) / 7)
+    const stepsChange = thisWeekAvgSteps - lastWeekAvgSteps
+    const stepsChangePercent = lastWeekAvgSteps > 0 ? Math.round((stepsChange / lastWeekAvgSteps) * 100) : 0
+
+    const thisWeekAvgCals = Math.round(thisWeekMetrics.reduce((sum, m) => sum + m.active_calories, 0) / 7)
+    const lastWeekAvgCals = Math.round(lastWeekMetrics.reduce((sum, m) => sum + m.active_calories, 0) / 7)
+    const calsChange = thisWeekAvgCals - lastWeekAvgCals
+    const calsChangePercent = lastWeekAvgCals > 0 ? Math.round((calsChange / lastWeekAvgCals) * 100) : 0
+
+    return {
+      thisWeekAvgSteps,
+      lastWeekAvgSteps,
+      stepsChange,
+      stepsChangePercent,
+      thisWeekAvgCals,
+      lastWeekAvgCals,
+      calsChange,
+      calsChangePercent,
+    }
+  }, [filteredMetrics])
+
+  const ringChartConfig: ChartConfig = {
+    movePercent: { label: 'Move', color: '#FF2D55' },
+    exercisePercent: { label: 'Exercise', color: '#92E82A' },
+    standPercent: { label: 'Stand', color: '#00D4FF' },
+  }
+
+  const activityChartConfig: ChartConfig = {
+    steps: { label: 'Steps', color: '#60a5fa' },
+    activeCalories: { label: 'Active Cal', color: '#f97316' },
+    exerciseMinutes: { label: 'Exercise', color: '#22c55e' },
+  }
+
+  const healthChartConfig: ChartConfig = {
+    restingHR: { label: 'Resting HR', color: '#ef4444' },
+    hrv: { label: 'HRV', color: '#a855f7' },
+    vo2Max: { label: 'VO2 Max', color: '#06b6d4' },
+  }
+
+  if (dailyMetrics.length === 0) {
+    return null
+  }
+
+  return (
+    <div className={cn('mt-8 space-y-6', className)}>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-xl font-bold">
+            <Target className="size-5 text-primary" />
+            Activity Insights
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {filteredMetrics.length} days of activity data
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Metric selector */}
+          <div className="flex rounded-lg bg-muted/50 p-1">
+            {[
+              { value: 'rings', label: 'Rings' },
+              { value: 'steps', label: 'Activity' },
+              { value: 'health', label: 'Health' },
+            ].map(option => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedMetric(option.value as typeof selectedMetric)}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                  selectedMetric === option.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Time range selector */}
+          <div className="flex rounded-lg bg-muted/50 p-1">
+            {TIME_RANGES.map(range => (
+              <button
+                key={range.value}
+                onClick={() => setTimeRange(range.value)}
+                className={cn(
+                  'rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                  timeRange === range.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Stats Cards */}
+      {summaryStats && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Sparkles className="size-3.5 text-green-500" />
+              Perfect Days
+            </div>
+            <div className="mt-1 text-2xl font-bold">{summaryStats.perfectDays}</div>
+            <div className="text-muted-foreground text-xs">
+              {summaryStats.perfectPercent}% of {summaryStats.totalDays} days
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Footprints className="size-3.5 text-blue-500" />
+              Avg Steps
+            </div>
+            <div className="mt-1 text-2xl font-bold">{summaryStats.avgSteps.toLocaleString()}</div>
+            {weeklyComparison && (
+              <div className={cn(
+                'flex items-center gap-1 text-xs',
+                weeklyComparison.stepsChange >= 0 ? 'text-green-500' : 'text-red-500'
+              )}>
+                {weeklyComparison.stepsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                {weeklyComparison.stepsChangePercent}% vs last week
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Flame className="size-3.5 text-orange-500" />
+              Avg Calories
+            </div>
+            <div className="mt-1 text-2xl font-bold">{summaryStats.avgCalories.toLocaleString()}</div>
+            {weeklyComparison && (
+              <div className={cn(
+                'flex items-center gap-1 text-xs',
+                weeklyComparison.calsChange >= 0 ? 'text-green-500' : 'text-red-500'
+              )}>
+                {weeklyComparison.calsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                {weeklyComparison.calsChangePercent}% vs last week
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Activity className="size-3.5 text-green-500" />
+              Avg Exercise
+            </div>
+            <div className="mt-1 text-2xl font-bold">{summaryStats.avgExercise} min</div>
+            <div className="text-muted-foreground text-xs">
+              {summaryStats.totalExercise.toLocaleString()} min total
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ring Completion Stats */}
+      {summaryStats && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="flex items-center gap-4 rounded-xl bg-muted/30 p-4">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[#FF2D55]/20">
+              <Flame className="size-6 text-[#FF2D55]" />
+            </div>
+            <div>
+              <div className="text-muted-foreground text-xs">Move Ring</div>
+              <div className="text-xl font-bold">{summaryStats.movePercent}%</div>
+              <div className="text-muted-foreground text-xs">{summaryStats.moveDays}/{summaryStats.totalDays} days</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-xl bg-muted/30 p-4">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[#92E82A]/20">
+              <Activity className="size-6 text-[#92E82A]" />
+            </div>
+            <div>
+              <div className="text-muted-foreground text-xs">Exercise Ring</div>
+              <div className="text-xl font-bold">{summaryStats.exercisePercent}%</div>
+              <div className="text-muted-foreground text-xs">{summaryStats.exerciseDays}/{summaryStats.totalDays} days</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-xl bg-muted/30 p-4">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[#00D4FF]/20">
+              <TrendingUp className="size-6 text-[#00D4FF]" />
+            </div>
+            <div>
+              <div className="text-muted-foreground text-xs">Stand Ring</div>
+              <div className="text-xl font-bold">{summaryStats.standPercent}%</div>
+              <div className="text-muted-foreground text-xs">{summaryStats.standDays}/{summaryStats.totalDays} days</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Charts Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Chart */}
+        <div className="rounded-xl bg-muted/30 p-5 lg:col-span-2">
+          <h3 className="mb-4 font-semibold">
+            {selectedMetric === 'rings' && 'Ring Completion Over Time'}
+            {selectedMetric === 'steps' && 'Activity Trends'}
+            {selectedMetric === 'health' && 'Health Metrics'}
+          </h3>
+
+          {selectedMetric === 'rings' && ringCompletionData.length > 0 && (
+            <ChartContainer config={ringChartConfig} className="h-[250px] w-full">
+              <AreaChart data={ringCompletionData.slice(-30)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={[0, 150]}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area
+                  type="monotone"
+                  dataKey="movePercent"
+                  stroke="#FF2D55"
+                  fill="#FF2D55"
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="exercisePercent"
+                  stroke="#92E82A"
+                  fill="#92E82A"
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="standPercent"
+                  stroke="#00D4FF"
+                  fill="#00D4FF"
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          )}
+
+          {selectedMetric === 'steps' && activityTrendData.length > 0 && (
+            <ChartContainer config={activityChartConfig} className="h-[250px] w-full">
+              <BarChart data={activityTrendData.slice(-20)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar yAxisId="left" dataKey="steps" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke="#f97316" strokeWidth={2} dot={false} />
+              </BarChart>
+            </ChartContainer>
+          )}
+
+          {selectedMetric === 'health' && healthTrendData.length > 0 && (
+            <ChartContainer config={healthChartConfig} className="h-[250px] w-full">
+              <LineChart data={healthTrendData.slice(-30)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="restingHR"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="hrv"
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                  connectNulls
+                />
+              </LineChart>
+            </ChartContainer>
+          )}
+
+          {((selectedMetric === 'rings' && ringCompletionData.length === 0) ||
+            (selectedMetric === 'steps' && activityTrendData.length === 0) ||
+            (selectedMetric === 'health' && healthTrendData.length === 0)) && (
+            <div className="flex h-[250px] items-center justify-center text-muted-foreground text-sm">
+              No data for selected period
+            </div>
+          )}
+        </div>
+
+        {/* Personal Records */}
+        <div className="rounded-xl bg-muted/30 p-5">
+          <h3 className="mb-4 font-semibold">Personal Bests</h3>
+
+          {personalRecords.length > 0 ? (
+            <div className="space-y-2">
+              {personalRecords.map(record => (
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between rounded-lg bg-background/40 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    {record.icon}
+                    <div>
+                      <div className="text-sm font-medium">{record.label}</div>
+                      <div className="text-muted-foreground text-xs">{record.date}</div>
+                    </div>
+                  </div>
+                  <div className="font-bold tabular-nums">{record.value}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
+              No records yet
+            </div>
+          )}
+
+          {/* Health averages */}
+          {summaryStats && (summaryStats.avgRestingHR || summaryStats.avgHRV) && (
+            <div className="mt-4 border-t border-border/30 pt-4">
+              <h4 className="mb-3 text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                Health Averages
+              </h4>
+              <div className="space-y-2">
+                {summaryStats.avgRestingHR && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-sm">
+                      <Heart className="size-4 text-red-500" />
+                      Resting HR
+                    </span>
+                    <span className="font-medium">{summaryStats.avgRestingHR} bpm</span>
+                  </div>
+                )}
+                {summaryStats.avgHRV && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-sm">
+                      <HeartPulse className="size-4 text-purple-500" />
+                      HRV
+                    </span>
+                    <span className="font-medium">{summaryStats.avgHRV} ms</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Totals Row */}
+      {summaryStats && (
+        <div className="rounded-xl bg-gradient-to-r from-primary/5 to-transparent p-5">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold">
+            <Calendar className="size-4" />
+            Period Totals ({TIME_RANGES.find(r => r.value === timeRange)?.label})
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-500">{summaryStats.totalSteps.toLocaleString()}</div>
+              <div className="text-muted-foreground text-sm">Total Steps</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-500">{summaryStats.totalCalories.toLocaleString()}</div>
+              <div className="text-muted-foreground text-sm">Active Calories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-500">{summaryStats.totalExercise.toLocaleString()}</div>
+              <div className="text-muted-foreground text-sm">Exercise Minutes</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2843,12 +3526,17 @@ export function FitnessDashboard({
         </div>
       </div>
 
-      {/* Historical Insights - Full Width */}
+      {/* Historical Workout Insights - Full Width */}
       {workouts.length > 0 && (
         <WorkoutInsights
           workouts={workouts}
           onWorkoutClick={onWorkoutClick}
         />
+      )}
+
+      {/* Daily Metrics Insights - Full Width */}
+      {dailyMetrics.length > 0 && (
+        <DailyMetricsInsights dailyMetrics={dailyMetrics} />
       )}
 
       {/* Empty state - cleaner design */}
@@ -2929,9 +3617,12 @@ export function TodayActivityBar({
       {metrics && (
         <div className="flex items-center gap-3 border-r border-border/30 pr-3">
           <MiniActivityRings
-            move={moveProgress}
-            exercise={exerciseProgress}
-            stand={standProgress}
+            move={metrics.active_calories}
+            moveGoal={metrics.move_goal || 500}
+            exercise={metrics.exercise_minutes}
+            exerciseGoal={metrics.exercise_goal || 30}
+            stand={metrics.stand_hours}
+            standGoal={metrics.stand_goal || 12}
             size={40}
           />
           <div className="hidden flex-col gap-0.5 text-[10px] sm:flex">
@@ -3049,63 +3740,3 @@ export function TodayActivityBar({
   )
 }
 
-// Mini Activity Rings for compact display
-interface MiniActivityRingsProps {
-  move: number
-  exercise: number
-  stand: number
-  size?: number
-}
-
-function MiniActivityRings({
-  move,
-  exercise,
-  stand,
-  size = 40,
-}: MiniActivityRingsProps) {
-  const strokeWidth = size * 0.12
-  const radius = (size - strokeWidth) / 2
-
-  const rings = [
-    { progress: move, color: '#FF2D55' },
-    { progress: exercise, color: '#92E82A' },
-    { progress: stand, color: '#00D4FF' },
-  ]
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 transform">
-        {rings.map((ring, i) => {
-          const r = radius - i * strokeWidth * 1.3
-          const c = 2 * Math.PI * r
-          const offset = c - (ring.progress / 100) * c
-
-          return (
-            <g key={i}>
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={r}
-                fill="none"
-                stroke={ring.color}
-                strokeWidth={strokeWidth}
-                strokeOpacity={0.2}
-              />
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={r}
-                fill="none"
-                stroke={ring.color}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-                strokeDasharray={c}
-                strokeDashoffset={offset}
-              />
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}

@@ -31,6 +31,7 @@ struct AppleHealthWorkout: Codable {
     
     let runningMetrics: PetehomeRunningMetrics?
     let cyclingMetrics: PetehomeCyclingMetrics?
+    let walkingMetrics: PetehomeWalkingMetrics?
     let route: PetehomeWorkoutRoute?
     
     // Workout events (pauses, segments, laps)
@@ -153,6 +154,30 @@ struct PetehomeSplit: Codable {
     let avgHeartRate: Int?
     let avgCadence: Int?
     let elevationChange: Double? // meters
+}
+
+// MARK: - Walking Metrics (for Maple walks and outdoor walks)
+
+struct PetehomeWalkingMetrics: Codable {
+    let avgSpeed: Double? // m/s - average walking speed
+    let avgStepLength: Double? // meters - average step length
+    let doubleSupportPercentage: Double? // % time both feet on ground (gait stability)
+    let asymmetryPercentage: Double? // % left/right imbalance
+    let stepCount: Int? // total steps during workout
+    
+    // Samples for detailed analysis (optional)
+    let speedSamples: [PetehomeWalkingSpeedSample]?
+    let stepLengthSamples: [PetehomeWalkingStepLengthSample]?
+}
+
+struct PetehomeWalkingSpeedSample: Codable {
+    let timestamp: String
+    let metersPerSecond: Double
+}
+
+struct PetehomeWalkingStepLengthSample: Codable {
+    let timestamp: String
+    let meters: Double
 }
 
 // MARK: - Cycling Metrics

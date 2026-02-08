@@ -263,68 +263,92 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
 
   // Compact card view
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       {/* Timer Display */}
-      <div className="rounded-lg border-2 border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 px-4 py-3 dark:from-amber-950/30 dark:to-orange-950/20">
-        <div className="flex items-center justify-between">
-          <div className="font-mono text-4xl font-bold tracking-tight">
-            <span>{timeDetailed.mins}</span>
-            <span className={`text-muted-foreground ${timerState === 'running' ? 'animate-pulse' : ''}`}>:</span>
-            <span>{timeDetailed.secs}</span>
+      <div className={`rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 px-3 py-3 transition-all ${
+        timerState === 'running' ? 'ring-2 ring-amber-500/30' : ''
+      }`}>
+        {/* Timer + Controls - Stack on mobile, inline on larger */}
+        <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-3">
+          <div className="flex items-center justify-between min-[420px]:justify-start">
+            <div className="font-mono text-4xl font-bold tracking-tight tabular-nums">
+              <span>{timeDetailed.mins}</span>
+              <span className={`text-muted-foreground ${timerState === 'running' ? 'animate-pulse' : ''}`}>:</span>
+              <span>{timeDetailed.secs}</span>
+            </div>
+            {/* Sound + Fullscreen buttons - visible on narrow mobile next to timer */}
+            <div className="flex items-center gap-1 min-[420px]:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="size-8"
+                title={soundEnabled ? 'Mute' : 'Unmute'}
+              >
+                {soundEnabled ? <Bell className="size-4" /> : <BellOff className="size-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="size-8" title="Fullscreen">
+                <Maximize2 className="size-4" />
+              </Button>
+            </div>
           </div>
           
-          {/* Control Buttons - Inline */}
+          {/* Control Buttons */}
           <div className="flex items-center gap-1.5">
             {timerState === 'idle' && (
-              <Button onClick={startTimer} className="h-9 gap-1.5 bg-amber-600 hover:bg-amber-700 px-4">
+              <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-amber-600 text-sm font-medium hover:bg-amber-700 min-[420px]:flex-none min-[420px]:px-4">
                 <Play className="size-4" />
                 Start
               </Button>
             )}
             {timerState === 'running' && (
               <>
-                <Button onClick={pauseTimer} variant="outline" className="h-9 gap-1.5 px-3">
+                <Button onClick={pauseTimer} variant="outline" className="h-9 flex-1 gap-1.5 text-sm min-[420px]:flex-none min-[420px]:px-3">
                   <Pause className="size-4" />
                   Pause
                 </Button>
-                <Button onClick={resetTimer} variant="outline" size="icon" className="h-9 w-9">
+                <Button onClick={resetTimer} variant="outline" size="icon" className="size-9">
                   <RotateCcw className="size-4" />
                 </Button>
               </>
             )}
             {timerState === 'paused' && (
               <>
-                <Button onClick={startTimer} className="h-9 gap-1.5 bg-amber-600 hover:bg-amber-700 px-3">
+                <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-amber-600 hover:bg-amber-700 min-[420px]:flex-none min-[420px]:px-3">
                   <Play className="size-4" />
+                  Resume
                 </Button>
-                <Button onClick={resetTimer} variant="outline" size="icon" className="h-9 w-9">
+                <Button onClick={resetTimer} variant="outline" size="icon" className="size-9">
                   <RotateCcw className="size-4" />
                 </Button>
               </>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="h-9 w-9"
-              title={soundEnabled ? 'Mute' : 'Unmute'}
-            >
-              {soundEnabled ? <Bell className="size-4" /> : <BellOff className="size-4" />}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-9 w-9" title="Fullscreen">
-              <Maximize2 className="size-4" />
-            </Button>
+            {/* Sound + Fullscreen - hidden on narrow mobile, shown on larger */}
+            <div className="hidden items-center gap-1 min-[420px]:flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="size-9"
+                title={soundEnabled ? 'Mute' : 'Unmute'}
+              >
+                {soundEnabled ? <Bell className="size-4" /> : <BellOff className="size-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="size-9" title="Fullscreen">
+                <Maximize2 className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Next Cue Indicator - Only show when running */}
         {timerState !== 'idle' && nextCue && (
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs border-t border-amber-500/20 pt-1.5">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 pt-2 text-xs">
             <span className="text-muted-foreground">Next:</span>
             <span className="font-medium">{nextCue.label}</span>
             <span className="text-muted-foreground">at {formatTime(nextCue.time)}</span>
             {nextCue.time - elapsedTime <= 10 && nextCue.time - elapsedTime > 0 && (
-              <Badge variant="default" className="animate-pulse text-[10px] px-1.5 py-0">
+              <Badge variant="default" className="animate-pulse bg-amber-600 px-1.5 py-0 text-[10px]">
                 {nextCue.time - elapsedTime}s
               </Badge>
             )}
@@ -332,18 +356,18 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
         )}
       </div>
 
-      {/* Timing Cues Preview - Compact horizontal scroll */}
+      {/* Timing Cues Preview */}
       {timingCues.length > 0 && (
-        <div className="flex gap-1 overflow-x-auto pb-0.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
           {timingCues.map((cue, idx) => (
             <div
               key={idx}
-              className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] whitespace-nowrap transition-all shrink-0 ${
+              className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[11px] transition-all ${
                 triggeredCues.has(cue.time)
-                  ? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
+                  ? 'bg-green-500/15 text-green-700 dark:text-green-400'
                   : cue.time === nextCue?.time
-                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                    : 'bg-muted/30 border-border'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                    : 'bg-muted/50'
               }`}
             >
               <span className="font-mono font-semibold">{formatTime(cue.time)}</span>

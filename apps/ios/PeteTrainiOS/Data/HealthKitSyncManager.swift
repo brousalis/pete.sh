@@ -523,6 +523,9 @@ final class HealthKitSyncManager {
         // Query cycling metrics (only for cycling workouts)
         async let cyclingMetrics = queryCyclingMetrics(for: workout)
         
+        // Query walking metrics (only for walking workouts - Maple walks!)
+        async let walkingMetrics = queryWalkingMetrics(for: workout)
+        
         // Query effort score (available for all workout types)
         async let effortScore = queryEffortScore(for: workout)
 
@@ -537,8 +540,9 @@ final class HealthKitSyncManager {
         let groundContactTimeResult = try await groundContactTime
         let verticalOscillationResult = try await verticalOscillation
         
-        // Await cycling and effort
+        // Await cycling, walking, and effort
         let cyclingMetricsResult = try await cyclingMetrics
+        let walkingMetricsResult = try await walkingMetrics
         let effortScoreResult = try await effortScore
         
         // Get workout events (synchronous)
@@ -615,6 +619,7 @@ final class HealthKitSyncManager {
             heartRateSamples: hrSamplesResult,
             runningMetrics: runningMetrics,
             cyclingMetrics: cyclingMetricsResult,
+            walkingMetrics: walkingMetricsResult,
             route: routeResult,
             workoutEvents: workoutEvents.isEmpty ? nil : workoutEvents,
             effortScore: effortScoreResult,
@@ -1562,6 +1567,243 @@ final class HealthKitSyncManager {
             totalElevationGain: totalElevationGain,
             totalElevationLoss: totalElevationLoss,
             samples: samples
+        )
+    }
+
+    // MARK: - Walking Metrics (for Maple walks)
+    
+    /// Query walking speed samples from HealthKit (only for walking workouts)
+    private func queryWalkingSpeed(for workout: HKWorkout) async throws -> (average: Double?, samples: [PetehomeWalkingSpeedSample])? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        let speedType = HKQuantityType(.walkingSpeed)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: speedType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let speedSamples: [PetehomeWalkingSpeedSample] = quantitySamples.map { sample in
+                    let metersPerSecond = sample.quantity.doubleValue(for: .meter().unitDivided(by: .second()))
+                    return PetehomeWalkingSpeedSample(
+                        timestamp: sample.startDate.iso8601String,
+                        metersPerSecond: metersPerSecond
+                    )
+                }
+                
+                let avgSpeed = speedSamples.map { $0.metersPerSecond }.reduce(0, +) / Double(speedSamples.count)
+                
+                continuation.resume(returning: (average: avgSpeed, samples: speedSamples))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query walking step length samples from HealthKit (only for walking workouts)
+    private func queryWalkingStepLength(for workout: HKWorkout) async throws -> (average: Double?, samples: [PetehomeWalkingStepLengthSample])? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        let stepLengthType = HKQuantityType(.walkingStepLength)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: stepLengthType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let stepLengthSamples: [PetehomeWalkingStepLengthSample] = quantitySamples.map { sample in
+                    let meters = sample.quantity.doubleValue(for: .meter())
+                    return PetehomeWalkingStepLengthSample(
+                        timestamp: sample.startDate.iso8601String,
+                        meters: meters
+                    )
+                }
+                
+                let avgStepLength = stepLengthSamples.map { $0.meters }.reduce(0, +) / Double(stepLengthSamples.count)
+                
+                continuation.resume(returning: (average: avgStepLength, samples: stepLengthSamples))
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query walking double support percentage from HealthKit (only for walking workouts)
+    private func queryWalkingDoubleSupport(for workout: HKWorkout) async throws -> Double? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        let doubleSupportType = HKQuantityType(.walkingDoubleSupportPercentage)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: doubleSupportType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let values = quantitySamples.map { $0.quantity.doubleValue(for: .percent()) * 100 }
+                let avgDoubleSupport = values.reduce(0, +) / Double(values.count)
+                
+                continuation.resume(returning: avgDoubleSupport)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query walking asymmetry percentage from HealthKit (only for walking workouts)
+    private func queryWalkingAsymmetry(for workout: HKWorkout) async throws -> Double? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        let asymmetryType = HKQuantityType(.walkingAsymmetryPercentage)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: asymmetryType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let values = quantitySamples.map { $0.quantity.doubleValue(for: .percent()) * 100 }
+                let avgAsymmetry = values.reduce(0, +) / Double(values.count)
+                
+                continuation.resume(returning: avgAsymmetry)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Query step count during a walking workout
+    private func queryWalkingStepCount(for workout: HKWorkout) async throws -> Int? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        let stepType = HKQuantityType(.stepCount)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: stepType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, statistics, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let sum = statistics?.sumQuantity() else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let steps = Int(sum.doubleValue(for: .count()))
+                continuation.resume(returning: steps)
+            }
+            
+            self.healthStore.execute(query)
+        }
+    }
+    
+    /// Build walking metrics for a walking workout (for Maple walks)
+    private func queryWalkingMetrics(for workout: HKWorkout) async throws -> PetehomeWalkingMetrics? {
+        guard workout.workoutActivityType == .walking else { return nil }
+        
+        // Query all walking metrics in parallel
+        async let speedData = queryWalkingSpeed(for: workout)
+        async let stepLengthData = queryWalkingStepLength(for: workout)
+        async let doubleSupport = queryWalkingDoubleSupport(for: workout)
+        async let asymmetry = queryWalkingAsymmetry(for: workout)
+        async let stepCount = queryWalkingStepCount(for: workout)
+        
+        let speedResult = try await speedData
+        let stepLengthResult = try await stepLengthData
+        let doubleSupportResult = try await doubleSupport
+        let asymmetryResult = try await asymmetry
+        let stepCountResult = try await stepCount
+        
+        // Only return metrics if we have at least some data
+        let hasData = speedResult != nil || stepLengthResult != nil || 
+                      doubleSupportResult != nil || asymmetryResult != nil || stepCountResult != nil
+        
+        guard hasData else { return nil }
+        
+        return PetehomeWalkingMetrics(
+            avgSpeed: speedResult?.average,
+            avgStepLength: stepLengthResult?.average,
+            doubleSupportPercentage: doubleSupportResult,
+            asymmetryPercentage: asymmetryResult,
+            stepCount: stepCountResult,
+            speedSamples: speedResult?.samples,
+            stepLengthSamples: stepLengthResult?.samples
         )
     }
 

@@ -1072,7 +1072,13 @@
       "weekNumber": 7,
       "startDate": "2026-02-09T06:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": false,
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -1367,5 +1373,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-08T15:53:05.400Z"
+  "updatedAt": "2026-02-08T21:05:50.410Z"
 }

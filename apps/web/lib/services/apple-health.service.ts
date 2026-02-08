@@ -159,6 +159,12 @@ export class AppleHealthService {
       cycling_avg_cadence: workout.cyclingMetrics?.avgCadence || null,
       cycling_avg_power: workout.cyclingMetrics?.avgPower || null,
       cycling_max_power: workout.cyclingMetrics?.maxPower || null,
+      // Walking metrics (for Maple walks)
+      walking_avg_speed: workout.walkingMetrics?.avgSpeed || null,
+      walking_avg_step_length: workout.walkingMetrics?.avgStepLength || null,
+      walking_double_support_pct: workout.walkingMetrics?.doubleSupportPercentage || null,
+      walking_asymmetry_pct: workout.walkingMetrics?.asymmetryPercentage || null,
+      walking_step_count: workout.walkingMetrics?.stepCount || null,
       // Effort score
       effort_score: workout.effortScore || null,
       // Metadata
@@ -230,6 +236,14 @@ export class AppleHealthService {
     // Save mile splits if available
     if (workout.runningMetrics?.splits?.length) {
       await this.saveSplits(workoutId, workout.runningMetrics.splits)
+    }
+
+    // Save walking samples if available (for Maple walks)
+    if (workout.walkingMetrics?.speedSamples?.length) {
+      await this.saveWalkingSpeedSamples(workoutId, workout.walkingMetrics.speedSamples)
+    }
+    if (workout.walkingMetrics?.stepLengthSamples?.length) {
+      await this.saveWalkingStepLengthSamples(workoutId, workout.walkingMetrics.stepLengthSamples)
     }
 
     // Trigger workout autocomplete if linked to a day
@@ -499,6 +513,66 @@ export class AppleHealthService {
     for (let i = 0; i < records.length; i += chunkSize) {
       const chunk = records.slice(i, i + chunkSize)
       await db.from('apple_health_cycling_power_samples').insert(chunk)
+    }
+  }
+
+  /**
+   * Save walking speed samples (for Maple walks)
+   */
+  private async saveWalkingSpeedSamples(workoutId: string, samples: NonNullable<AppleHealthWorkout['walkingMetrics']>['speedSamples']): Promise<void> {
+    if (!samples?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_walking_speed_samples')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = samples.map(s => ({
+      workout_id: workoutId,
+      timestamp: s.timestamp,
+      meters_per_second: s.metersPerSecond,
+    }))
+
+    const chunkSize = 1000
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize)
+      await db.from('apple_health_walking_speed_samples').insert(chunk)
+    }
+  }
+
+  /**
+   * Save walking step length samples (for Maple walks)
+   */
+  private async saveWalkingStepLengthSamples(workoutId: string, samples: NonNullable<AppleHealthWorkout['walkingMetrics']>['stepLengthSamples']): Promise<void> {
+    if (!samples?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db
+      .from('apple_health_walking_step_length_samples')
+      .delete()
+      .eq('workout_id', workoutId)
+
+    const records = samples.map(s => ({
+      workout_id: workoutId,
+      timestamp: s.timestamp,
+      meters: s.meters,
+    }))
+
+    const chunkSize = 1000
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize)
+      await db.from('apple_health_walking_step_length_samples').insert(chunk)
     }
   }
 

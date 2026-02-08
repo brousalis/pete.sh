@@ -567,6 +567,12 @@ export interface AppleHealthWorkoutInsert {
   cycling_avg_cadence?: number | null
   cycling_avg_power?: number | null
   cycling_max_power?: number | null
+  // Walking metrics (for Maple walks)
+  walking_avg_speed?: number | null
+  walking_avg_step_length?: number | null
+  walking_double_support_pct?: number | null
+  walking_asymmetry_pct?: number | null
+  walking_step_count?: number | null
   // Effort score
   effort_score?: number | null
   // Metadata
