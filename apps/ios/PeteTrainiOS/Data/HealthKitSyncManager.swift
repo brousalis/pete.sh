@@ -399,6 +399,65 @@ final class HealthKitSyncManager {
         return syncedCount
     }
 
+    /// Sync all historical daily metrics (up to 365 days)
+    func syncAllDailyMetricsHistory() async -> Int {
+        guard canSync else {
+            log("API not configured")
+            return 0
+        }
+
+        log("Starting full daily metrics history sync (365 days)...")
+
+        // Use the historical sync progress tracking
+        isHistoricalSyncInProgress = true
+        historicalSyncTotal = 365
+        historicalSyncCompleted = 0
+        historicalSyncFailed = 0
+
+        let calendar = Calendar.current
+        var syncedCount = 0
+
+        for dayOffset in 0..<365 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else {
+                historicalSyncFailed += 1
+                continue
+            }
+
+            do {
+                let metrics = try await queryDailyMetrics(for: date)
+                try await api.syncDailyMetrics(metrics)
+                syncedCount += 1
+                historicalSyncCompleted += 1
+
+                // Log progress every 30 days
+                if (dayOffset + 1) % 30 == 0 {
+                    log("Daily metrics: \(dayOffset + 1)/365 days processed (\(syncedCount) synced)")
+                }
+            } catch {
+                historicalSyncFailed += 1
+                // Only log failures periodically to avoid log spam
+                if historicalSyncFailed <= 5 {
+                    log("Day \(dayOffset + 1) failed: \(error.localizedDescription)")
+                }
+            }
+
+            // Small delay to avoid overwhelming the API
+            if dayOffset < 364 {
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            }
+        }
+
+        isHistoricalSyncInProgress = false
+        log("Full daily metrics sync complete: \(syncedCount)/365 days synced, \(historicalSyncFailed) failed")
+
+        if syncedCount > 0 {
+            lastSyncTimestamp = Date()
+            lastSyncDate = lastSyncTimestamp
+        }
+
+        return syncedCount
+    }
+
     // MARK: - HealthKit Queries
 
     private func fetchAllWorkouts(days: Int) async throws -> [HKWorkout] {
