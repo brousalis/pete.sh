@@ -1,0 +1,188 @@
+/* petehome-cli — Textual TUI styles */
+
+/* -- Logo -- */
+
+#logo {
+    width: auto;
+    padding: 1 2 0 1;
+}
+
+Footer {
+    dock: bottom;
+    background: $surface;
+}
+
+FooterKey {
+    background: $surface;
+    color: $text-muted;
+}
+
+FooterKey:hover {
+    background: $surface-lighten-1;
+    color: $text;
+}
+
+FooterKey .footer-key--key {
+    background: $surface-lighten-2;
+    color: $text;
+}
+
+FooterKey:hover .footer-key--key {
+    background: $accent;
+    color: $text;
+}
+
+/* -- Status bar -- */
+
+#status-bar {
+    height: 4;
+    padding: 0;
+    background: $surface;
+    border-bottom: solid #22c55e;
+}
+
+#status-bar.input-top {
+    height: 3;
+    border-bottom: none;
+}
+
+.btn-pm2 {
+    width: 8;
+    min-width: 8;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $surface-lighten-2;
+    background: $surface;
+}
+
+.btn-pm2.running {
+    background: $success-darken-2;
+    color: $text;
+    border: round $success-darken-1;
+}
+
+.btn-pm2.stopped {
+    background: $error-darken-2;
+    color: $text;
+    border: round $error-darken-1;
+}
+
+.btn-icon {
+    width: 8;
+    min-width: 8;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $surface-lighten-2;
+    background: $surface;
+    color: $text-muted;
+}
+
+.btn-icon:hover {
+    background: $surface-lighten-1;
+    color: $text;
+    border: round $surface-lighten-3;
+}
+
+.status-spacer {
+    width: 1fr;
+}
+
+/* -- Collapsible sections -- */
+
+#log-panels {
+    height: 3fr;
+}
+
+#log-panels #col-logs {
+    width: 1fr;
+    height: 100%;
+}
+
+#col-output {
+    height: 1fr;
+}
+
+#col-logs.-collapsed, #col-output.-collapsed {
+    height: auto;
+}
+
+#col-logs Contents, #col-output Contents {
+    height: 1fr;
+}
+
+CollapsibleTitle {
+    background: $surface;
+    color: $text-muted;
+    padding: 0 1;
+}
+
+CollapsibleTitle:hover {
+    background: $surface-lighten-1;
+    color: $text;
+}
+
+#pm2-log, #cmd-output {
+    height: 1fr;
+    border: none;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-size: 1 1;
+}
+
+/* Running/stopped accent on collapsible title via classes */
+#col-logs.col-running CollapsibleTitle {
+    color: $success;
+}
+
+/* -- Input bar -- */
+
+#input-bar {
+    height: 3;
+    margin: 0;
+    padding: 0;
+    border: round #22c55e;
+    transition: border 500ms in_out_cubic;
+}
+
+#input-bar:focus-within {
+    border: round #4ade80;
+}
+
+#prompt-char {
+    width: 3;
+    padding: 0 0 0 1;
+    color: #22c55e;
+    text-style: bold;
+    transition: color 500ms in_out_cubic;
+}
+
+#input-bar:focus-within #prompt-char {
+    color: #4ade80;
+}
+
+#cmd-input {
+    width: 1fr;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+#cmd-input:focus {
+    background: transparent;
+}
+
+/* -- Autocomplete dropdown -- */
+
+AutoComplete {
+    & AutoCompleteList {
+        max-height: 12;
+        background: $surface;
+        border: round $accent;
+        scrollbar-size: 1 1;
+    }
+    & .autocomplete--highlight-match {
+        color: $text-accent;
+        text-style: bold;
+    }
+}

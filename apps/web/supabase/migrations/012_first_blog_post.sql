@@ -508,7 +508,7 @@ INSERT INTO blog_posts (
 <p><strong><code>switch-hdmi.ps1</code></strong> &mdash; switch the monitor to the windows desktop:</p>
 
 <pre><code><span style="color:#6b9955;"># switch-hdmi.ps1 — switch monitor input to hdmi (windows desktop)</span>
-<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"C:\tools\ControlMyMonitor.exe"</span>
+<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"D:\applications\ControlMyMonitor.exe"</span>
 
 <span style="color:#6b9955;"># vcp code 60 = input source, value 17 = hdmi</span>
 &amp; <span style="color:#9cdcfe;">$monitorTool</span> /SetValue <span style="color:#ce9178;">"\\.\DISPLAY1"</span> <span style="color:#b5cea8;">60</span> <span style="color:#b5cea8;">17</span></code></pre>
@@ -516,7 +516,7 @@ INSERT INTO blog_posts (
 <p><strong><code>switch-displayport.ps1</code></strong> &mdash; switch to the macbook:</p>
 
 <pre><code><span style="color:#6b9955;"># switch-displayport.ps1 — switch monitor input to displayport (macbook)</span>
-<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"C:\tools\ControlMyMonitor.exe"</span>
+<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"D:\applications\ControlMyMonitor.exe"</span>
 
 <span style="color:#6b9955;"># vcp code 60 = input source, value 15 = displayport</span>
 &amp; <span style="color:#9cdcfe;">$monitorTool</span> /SetValue <span style="color:#ce9178;">"\\.\DISPLAY1"</span> <span style="color:#b5cea8;">60</span> <span style="color:#b5cea8;">15</span></code></pre>
@@ -524,7 +524,7 @@ INSERT INTO blog_posts (
 <p><strong><code>get-display-input.ps1</code></strong> &mdash; check which input is currently active:</p>
 
 <pre><code><span style="color:#6b9955;"># get-display-input.ps1 — read the current monitor input</span>
-<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"C:\tools\ControlMyMonitor.exe"</span>
+<span style="color:#9cdcfe;">$monitorTool</span> = <span style="color:#ce9178;">"D:\applications\ControlMyMonitor.exe"</span>
 
 <span style="color:#6b9955;"># read vcp code 60 and output the raw value</span>
 <span style="color:#9cdcfe;">$value</span> = &amp; <span style="color:#9cdcfe;">$monitorTool</span> /GetValue <span style="color:#ce9178;">"\\.\DISPLAY1"</span> <span style="color:#b5cea8;">60</span>

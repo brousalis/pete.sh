@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: armhr-cli
+Version: 1.0.0
+Summary: Interactive CLI for armhr development
+Requires-Dist: textual>=3.0.0
+Requires-Dist: textual-autocomplete>=4.0.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: httpx>=0.28.0

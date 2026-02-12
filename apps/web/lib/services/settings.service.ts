@@ -5,17 +5,31 @@
 
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 
+export type DisplayInput = 'hdmi' | 'displayport'
+
 export interface AppSettings {
   id: string
   rounded_layout: boolean
   theme: 'light' | 'dark' | 'system'
   brand_color: 'purple' | 'blue' | 'teal' | 'orange' | 'pink' | 'yellow'
+  // Display/KVM configuration
+  display_monitor: string
+  display_primary_input: DisplayInput
+  display_secondary_input: DisplayInput
   created_at: string
   updated_at: string
 }
 
 export type AppSettingsUpdate = Partial<
-  Pick<AppSettings, 'rounded_layout' | 'theme' | 'brand_color'>
+  Pick<
+    AppSettings,
+    | 'rounded_layout'
+    | 'theme'
+    | 'brand_color'
+    | 'display_monitor'
+    | 'display_primary_input'
+    | 'display_secondary_input'
+  >
 >
 
 // Default settings to use when DB is not available or no settings exist
@@ -26,6 +40,10 @@ export const DEFAULT_SETTINGS: Omit<
   rounded_layout: true,
   theme: 'system',
   brand_color: 'yellow',
+  // Display defaults - DISPLAY2 (Dell U2713H) with DisplayPort as primary, HDMI as secondary
+  display_monitor: '\\\\.\\DISPLAY2',
+  display_primary_input: 'displayport',
+  display_secondary_input: 'hdmi',
 }
 
 class SettingsService {

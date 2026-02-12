@@ -1,0 +1,340 @@
+/* armhr-cli — side-by-side logs, status-aware borders */
+
+/* ── Logo ── */
+
+#logo {
+    width: auto;
+    padding: 1 2 0 1;
+}
+
+Footer {
+    dock: bottom;
+    background: $surface;
+}
+
+FooterKey {
+    background: $surface;
+    color: $text-muted;
+}
+
+FooterKey:hover {
+    background: $surface-lighten-1;
+    color: $text;
+}
+
+FooterKey .footer-key--key {
+    background: $surface-lighten-2;
+    color: $text;
+}
+
+FooterKey:hover .footer-key--key {
+    background: $accent;
+    color: $text;
+}
+
+/* ── Env preset bar ── */
+
+#env-bar {
+    height: 4;
+    padding: 0;
+    background: $surface;
+    border-bottom: solid #1789fc;
+}
+
+#env-bar.input-top {
+    height: 3;
+    border-bottom: none;
+}
+
+.btn-env-toggle {
+    width: 5;
+    min-width: 5;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $surface-lighten-2;
+    background: $surface;
+    color: $text-muted;
+}
+
+.btn-env-toggle:hover {
+    background: $surface-lighten-1;
+    color: $text;
+    border: round $surface-lighten-3;
+}
+
+.env-label {
+    width: auto;
+    padding: 1 1 0 0;
+}
+
+.env-select {
+    width: 1fr;
+    margin: 0 1 0 0;
+    height: 3;
+}
+
+.env-select SelectCurrent {
+    height: auto;
+    border: round $surface-lighten-2;
+}
+
+.env-select SelectOverlay {
+    padding: 0;
+    border: round #1789fc;
+}
+
+.env-select Option {
+    padding: 1 1;
+}
+
+/* Full-preset mode widgets are hidden by default (individual mode) */
+.env-full {
+    display: none;
+}
+
+#env-summary {
+    width: auto;
+    padding: 1 1 0 0;
+    color: #5a9fcf;
+}
+
+/* ── Collapsible sections ── */
+
+#log-panels {
+    height: 3fr;
+}
+
+#log-panels #col-be, #log-panels #col-fe {
+    width: 1fr;
+    height: 100%;
+}
+
+#log-panels.stacked #col-be, #log-panels.stacked #col-fe {
+    width: 100%;
+    height: 1fr;
+}
+
+#col-output {
+    height: 1fr;
+}
+
+#col-be.-collapsed, #col-fe.-collapsed, #col-output.-collapsed {
+    height: auto;
+}
+
+/* Side-by-side: collapsed panel yields width to sibling */
+#log-panels #col-be.-collapsed, #log-panels #col-fe.-collapsed {
+    width: auto;
+}
+
+/* Stacked: override stacked height rule when collapsed */
+#log-panels.stacked #col-be.-collapsed, #log-panels.stacked #col-fe.-collapsed {
+    height: auto;
+}
+
+#col-be Contents, #col-fe Contents, #col-output Contents {
+    height: 1fr;
+}
+
+CollapsibleTitle {
+    background: $surface;
+    color: $text-muted;
+    padding: 0 1;
+}
+
+CollapsibleTitle:hover {
+    background: $surface-lighten-1;
+    color: $text;
+}
+
+#be-log, #fe-log, #cmd-output {
+    height: 1fr;
+    border: none;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-size: 1 1;
+}
+
+/* Running/stopped accent on collapsible title via classes */
+#col-be.col-running CollapsibleTitle {
+    color: $success;
+}
+
+#col-fe.col-running CollapsibleTitle {
+    color: $warning;
+}
+
+/* ── Input bar ── */
+
+#input-bar {
+    height: 3;
+    margin: 0;
+    padding: 0;
+    border: round #1789fc;
+    transition: border 500ms in_out_cubic;
+}
+
+#input-bar:focus-within {
+    border: round #68b8fe;
+}
+
+#prompt-char {
+    width: 3;
+    padding: 0 0 0 1;
+    color: #1789fc;
+    text-style: bold;
+    transition: color 500ms in_out_cubic;
+}
+
+#input-bar:focus-within #prompt-char {
+    color: #68b8fe;
+}
+
+#cmd-input {
+    width: 1fr;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+#cmd-input:focus {
+    background: transparent;
+}
+
+/* ── Server toggle buttons (in env-bar) ── */
+
+.bar-divider {
+    width: auto;
+    padding: 1 1 0 0;
+    color: $surface-lighten-2;
+}
+
+.btn-sep {
+    width: 1;
+    padding: 1 0 0 0;
+    color: $surface-lighten-2;
+}
+
+.btn-server {
+    width: 8;
+    min-width: 8;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $surface-lighten-2;
+    background: $surface;
+}
+
+.btn-server.running {
+    background: $success-darken-2;
+    color: $text;
+    border: round $success-darken-1;
+}
+
+.btn-server.stopped {
+    background: $error-darken-2;
+    color: $text;
+    border: round $error-darken-1;
+}
+
+.btn-icon {
+    width: 8;
+    min-width: 8;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $surface-lighten-2;
+    background: $surface;
+    color: $text-muted;
+}
+
+.btn-icon:hover {
+    background: $surface-lighten-1;
+    color: $text;
+    border: round $surface-lighten-3;
+}
+
+/* ── Proxy bar ── */
+
+#proxy-bar {
+    height: 3;
+    padding: 0 1;
+    background: $surface;
+}
+
+#proxy-status {
+    width: auto;
+    padding: 1 0 0 0;
+}
+
+#proxy-info {
+    width: 1fr;
+    padding: 1 1 0 0;
+}
+
+.btn-proxy-end {
+    width: 7;
+    min-width: 7;
+    height: 3;
+    margin: 0;
+    border: none;
+    background: $error;
+    color: $text;
+    display: none;
+}
+
+.btn-proxy-end:hover {
+    background: $error-lighten-1;
+}
+
+.btn-proxy {
+    width: 12;
+    min-width: 12;
+    height: 3;
+    margin: 0 0 0 1;
+    border: round $primary-darken-2;
+    background: $surface;
+    color: $text;
+}
+
+.btn-proxy:hover {
+    background: $primary-darken-3;
+    color: $text;
+    border: round $primary-darken-1;
+}
+
+.btn-proxy.proxy-active {
+    background: $primary-darken-3;
+    color: $text;
+    border: round $primary-darken-1;
+}
+
+.btn-proxy.proxy-active:hover {
+    background: $primary-darken-2;
+    border: round $primary;
+}
+
+.btn-proxy.proxy-auth {
+    background: $warning-darken-3;
+    color: $text;
+    border: round $warning-darken-1;
+}
+
+.btn-proxy.proxy-auth:hover {
+    background: $warning-darken-2;
+    border: round $warning;
+}
+
+/* ── Autocomplete dropdown ── */
+
+AutoComplete {
+    & AutoCompleteList {
+        max-height: 12;
+        background: $surface;
+        border: round $accent;
+        scrollbar-size: 1 1;
+    }
+    & .autocomplete--highlight-match {
+        color: $text-accent;
+        text-style: bold;
+    }
+}

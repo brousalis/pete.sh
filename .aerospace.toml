@@ -1,0 +1,263 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                       AEROSPACE KEYBINDING CHEATSHEET                       ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ FOCUS (shift focus to another window)                                       ║
+# ║   Alt + U/I/O/P        Focus left/down/up/right                             ║
+# ║   Alt + 1-9            Focus workspace 1-9                                  ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ MOVE WINDOW (within workspace)                                              ║
+# ║   Alt + Shift + HJKL   Move window left/down/up/right                       ║
+# ║   Alt + Shift + Arrow  Move window in direction                             ║
+# ║   Cmd + Alt + Arrow    Move window in direction                             ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ MOVE WINDOW (across workspaces)                                             ║
+# ║   Alt + Shift + 1-9    Move window to workspace 1-9 (and follow)            ║
+# ║   Ctrl + Shift + L/R   Move window to next/prev workspace (and follow)      ║
+# ║   Cmd + Shift + L/R    Move window to next/prev workspace (and follow)      ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ MOVE WORKSPACE (to another monitor)                                         ║
+# ║   Alt + Shift + A      Move workspace to prev monitor                       ║
+# ║   Alt + Shift + F      Move workspace to next monitor                       ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ RESIZE                                                                      ║
+# ║   Alt + HJKL / Arrow   Resize window (width/height ±50px)                   ║
+# ║   Alt + R              Enter resize mode (HJKL/Arrow = ±50px, Esc to exit)  ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ WINDOW STATE                                                                ║
+# ║   Alt + F              Toggle fullscreen                                    ║
+# ║   Alt + M / Alt + S    Minimize window                                      ║
+# ║   Alt + T              Toggle floating/tiling                               ║
+# ║   Alt + Shift + Space  Toggle floating/tiling                               ║
+# ║   Alt + V              Toggle tiling direction (horizontal/vertical)        ║
+# ║   Cmd + Up             Toggle fullscreen                                    ║
+# ║   Cmd + Down           Toggle floating/tiling                               ║
+# ║   Ctrl + Shift + Up    Toggle floating/tiling                               ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ SYSTEM                                                                      ║
+# ║   Alt + Q              Close focused window                                 ║
+# ║   Alt + Enter          Launch Terminal                                      ║
+# ║   Alt + Shift + R      Reload config                                        ║
+# ║   Alt + Shift + P      Toggle pause (disable all keybindings)               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+# Converted from GlazeWM config -> AeroSpace
+# Key mapping: Windows Alt -> Mac Alt (Option), Windows Win -> Mac Cmd
+
+config-version = 2
+
+# Start AeroSpace at login
+start-at-login = true
+
+# Commands to run after AeroSpace startup
+# (GlazeWM launched Zebar bar on startup -- replace with your macOS bar if desired)
+after-startup-command = []
+
+# Normalizations (AeroSpace-specific, good defaults)
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Layout defaults -- tiles mode matches GlazeWM default tiling behavior
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Accordion padding (only relevant for accordion layout)
+accordion-padding = 30
+
+# Mouse follows focus when monitor changes
+# (Matches GlazeWM cursor_jump.enabled = true, trigger = 'monitor_focus')
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Disable macOS hide app (prevents accidental cmd-h)
+automatically-unhide-macos-hidden-apps = false
+
+# Persistent workspaces 1-9 (matches GlazeWM workspace definitions)
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+# Keyboard layout
+[key-mapping]
+preset = 'qwerty'
+
+# Gaps between windows (inner) and monitor edges (outer)
+# GlazeWM: inner_gap = 2px, outer = top:40px right:2px bottom:2px left:2px
+[gaps]
+inner.horizontal = 2
+inner.vertical = 2
+outer.left = 2
+outer.bottom = 2
+outer.top = 40
+outer.right = 2
+
+# =============================================================================
+# MAIN BINDING MODE
+# =============================================================================
+[mode.main.binding]
+
+# ---------------------------------------------------------------------------
+# Focus (shift focus to another window)
+# GlazeWM: alt+u/i/o/p -> focus left/down/up/right
+# ---------------------------------------------------------------------------
+alt-u = 'focus left'
+alt-i = 'focus down'
+alt-o = 'focus up'
+alt-p = 'focus right'
+
+# ---------------------------------------------------------------------------
+# Move focused window in a given direction
+# GlazeWM: alt+shift+hjkl, alt+shift+arrows, win+alt+arrows
+# Mac: Win key -> Cmd key
+# ---------------------------------------------------------------------------
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+alt-shift-left = 'move left'
+alt-shift-right = 'move right'
+alt-shift-up = 'move up'
+alt-shift-down = 'move down'
+
+cmd-alt-left = 'move left'
+cmd-alt-right = 'move right'
+cmd-alt-up = 'move up'
+cmd-alt-down = 'move down'
+
+# ---------------------------------------------------------------------------
+# Resize focused window
+# GlazeWM: alt+hjkl / alt+arrows -> resize +/-2%
+# AeroSpace uses pixel values; 50px is a reasonable equivalent
+# ---------------------------------------------------------------------------
+alt-h = 'resize width -50'
+alt-l = 'resize width +50'
+alt-k = 'resize height +50'
+alt-j = 'resize height -50'
+
+alt-left = 'resize width -50'
+alt-right = 'resize width +50'
+alt-up = 'resize height +50'
+alt-down = 'resize height -50'
+
+# Enter resize mode for finer-grained resizing (GlazeWM: alt+r)
+alt-r = 'mode resize'
+
+# ---------------------------------------------------------------------------
+# Toggle pause -- disable all keybindings (GlazeWM: alt+shift+p)
+# Switches to a "disabled" mode with only the unpause binding active
+# ---------------------------------------------------------------------------
+alt-shift-p = 'mode disabled'
+
+# ---------------------------------------------------------------------------
+# Toggle tiling direction -- horizontal/vertical (GlazeWM: alt+v)
+# ---------------------------------------------------------------------------
+alt-v = 'layout tiles horizontal vertical'
+
+# ---------------------------------------------------------------------------
+# Toggle floating (GlazeWM: alt+shift+space -> toggle-floating --centered)
+# ---------------------------------------------------------------------------
+alt-shift-space = 'layout floating tiling'
+
+# Toggle floating/tiling (GlazeWM: alt+t -> toggle-tiling)
+alt-t = 'layout floating tiling'
+
+# Toggle fullscreen (GlazeWM: alt+f)
+alt-f = 'fullscreen'
+
+# Minimize window (GlazeWM: alt+m, alt+s -> toggle-minimized)
+alt-m = 'macos-native-minimize'
+alt-s = 'macos-native-minimize'
+
+# Close focused window (GlazeWM: alt+q)
+alt-q = 'close'
+
+# Reload config (GlazeWM: alt+shift+r)
+alt-shift-r = 'reload-config'
+
+# Launch Terminal (GlazeWM: alt+enter -> shell-exec cmd)
+alt-enter = 'exec-and-forget open -n /System/Applications/Utilities/Terminal.app'
+
+# ---------------------------------------------------------------------------
+# Focus workspace (GlazeWM: alt+1-9)
+# ---------------------------------------------------------------------------
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+
+# ---------------------------------------------------------------------------
+# Move focused window to workspace AND follow focus
+# GlazeWM: alt+shift+1-9 -> move --workspace N + focus --workspace N
+# ---------------------------------------------------------------------------
+alt-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
+alt-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
+alt-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
+alt-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
+alt-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
+alt-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
+alt-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
+alt-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
+alt-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
+
+# ---------------------------------------------------------------------------
+# Move workspace to another monitor
+# GlazeWM: alt+shift+a/f -> move-workspace left/right
+# AeroSpace uses prev/next for monitor cycling
+# (alt+shift+d/s for up/down not supported -- AeroSpace only has prev/next)
+# ---------------------------------------------------------------------------
+alt-shift-a = 'move-workspace-to-monitor --wrap-around prev'
+alt-shift-f = 'move-workspace-to-monitor --wrap-around next'
+
+# ---------------------------------------------------------------------------
+# Move focused window to next/prev workspace and follow
+# GlazeWM: ctrl+shift+right/left, win+shift+right/left
+# ---------------------------------------------------------------------------
+ctrl-shift-right = ['move-node-to-workspace --wrap-around next', 'workspace --wrap-around next']
+ctrl-shift-left = ['move-node-to-workspace --wrap-around prev', 'workspace --wrap-around prev']
+
+cmd-shift-right = ['move-node-to-workspace --wrap-around next', 'workspace --wrap-around next']
+cmd-shift-left = ['move-node-to-workspace --wrap-around prev', 'workspace --wrap-around prev']
+
+# ---------------------------------------------------------------------------
+# Win+Arrow equivalents (GlazeWM Windows-style shortcuts)
+# Win+Left/Right -> move window in direction
+# Win+Up -> fullscreen, Win+Down -> toggle tiling
+# ---------------------------------------------------------------------------
+cmd-left = 'move left'
+cmd-right = 'move right'
+cmd-up = 'fullscreen'
+cmd-down = 'layout floating tiling'
+
+# Ctrl+Shift+Up -> toggle tiling (GlazeWM: ctrl+shift+up)
+ctrl-shift-up = 'layout floating tiling'
+
+# Ctrl+Shift+Down -> minimize (GlazeWM: ctrl+shift+down -> toggle-minimized)
+ctrl-shift-down = 'macos-native-minimize'
+
+# =============================================================================
+# RESIZE BINDING MODE (GlazeWM: binding_modes -> resize)
+# Finer-grained resizing with HJKL or arrow keys
+# =============================================================================
+[mode.resize.binding]
+h = 'resize width -50'
+l = 'resize width +50'
+k = 'resize height +50'
+j = 'resize height -50'
+
+left = 'resize width -50'
+right = 'resize width +50'
+up = 'resize height +50'
+down = 'resize height -50'
+
+# Press Escape or Enter to return to main mode
+esc = 'mode main'
+enter = 'mode main'
+
+# =============================================================================
+# DISABLED BINDING MODE (emulates GlazeWM wm-toggle-pause)
+# All keybindings are disabled except the unpause shortcut
+# =============================================================================
+[mode.disabled.binding]
+alt-shift-p = 'mode main'

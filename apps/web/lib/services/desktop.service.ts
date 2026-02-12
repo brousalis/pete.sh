@@ -4,21 +4,21 @@
  */
 
 import type { PerformanceMetrics, VolumeState } from "@/lib/types/desktop.types"
+import { DEFAULT_SETTINGS, settingsService } from "@/lib/services/settings.service"
+import { config } from "@/lib/config"
 import { exec } from "child_process"
 import { promisify } from "util"
 
 const execAsync = promisify(exec)
 
-// Display input switch script paths
-const SWITCH_TO_HDMI_SCRIPT = "D:\\applications\\switch-hdmi.ps1"
-const SWITCH_TO_DISPLAYPORT_SCRIPT = "D:\\applications\\switch-displayport.ps1"
-const GET_DISPLAY_INPUT_SCRIPT = "D:\\applications\\get-display-input.ps1"
-
-// VCP code 60 input values (adjust if your monitor uses different values)
+// VCP code 60 input values (DDC/CI standard for input source)
+// Dell U2713H & Alienware AW3423DWF both use: HDMI=17, DisplayPort=15
 const INPUT_VALUES = {
   hdmi: "17",
   displayport: "15",
 } as const
+
+type DisplayInput = 'hdmi' | 'displayport'
 
 export class DesktopService {
   /**
@@ -128,7 +128,28 @@ export class DesktopService {
   }
 
   /**
-   * Switch display from DisplayPort to HDMI
+   * Get display configuration from settings
+   */
+  private async getDisplayConfig() {
+    try {
+      const settings = await settingsService.getSettings()
+      return {
+        monitor: settings?.display_monitor ?? DEFAULT_SETTINGS.display_monitor,
+        primaryInput: (settings?.display_primary_input ?? DEFAULT_SETTINGS.display_primary_input) as DisplayInput,
+        secondaryInput: (settings?.display_secondary_input ?? DEFAULT_SETTINGS.display_secondary_input) as DisplayInput,
+      }
+    } catch (error) {
+      console.error('Failed to get display settings, using defaults:', error)
+      return {
+        monitor: DEFAULT_SETTINGS.display_monitor,
+        primaryInput: DEFAULT_SETTINGS.display_primary_input as DisplayInput,
+        secondaryInput: DEFAULT_SETTINGS.display_secondary_input as DisplayInput,
+      }
+    }
+  }
+
+  /**
+   * Switch display to the opposite input (toggle between primary and secondary)
    */
   async switchDisplay(): Promise<void> {
     if (!this.isAvailable()) {
@@ -136,10 +157,15 @@ export class DesktopService {
     }
 
     try {
-      // Execute the PowerShell script for display switching
-      // Assuming the script exists at scripts/switch-display.ps1
-      const scriptPath = require("path").join(process.cwd(), "scripts", "switch-display.ps1")
-      await execAsync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`)
+      const currentInput = await this.getDisplayInput()
+      const config = await this.getDisplayConfig()
+
+      // Toggle to the opposite input
+      const targetInput = currentInput === config.primaryInput
+        ? config.secondaryInput
+        : config.primaryInput
+
+      await this.switchToInput(targetInput)
     } catch (error) {
       throw new Error(`Failed to switch display: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
@@ -155,7 +181,10 @@ export class DesktopService {
     }
 
     try {
-      const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -File "${GET_DISPLAY_INPUT_SCRIPT}"`)
+      const displayConfig = await this.getDisplayConfig()
+      const toolPath = config.desktop.controlMyMonitorPath
+      const command = `"${toolPath}" /GetValue "${displayConfig.monitor}" 60`
+      const { stdout } = await execAsync(command)
       const value = stdout.trim()
 
       if (value === INPUT_VALUES.hdmi) return 'hdmi'
@@ -168,32 +197,42 @@ export class DesktopService {
   }
 
   /**
-   * Switch display input to HDMI
+   * Switch display to a specific input
    */
-  async switchToHdmi(): Promise<void> {
+  async switchToInput(input: DisplayInput): Promise<void> {
     if (!this.isAvailable()) {
       throw new Error("Desktop features not available")
     }
 
     try {
-      await execAsync(`powershell -ExecutionPolicy Bypass -File "${SWITCH_TO_HDMI_SCRIPT}"`)
+      const displayConfig = await this.getDisplayConfig()
+      const toolPath = config.desktop.controlMyMonitorPath
+      const value = INPUT_VALUES[input]
+      const command = `"${toolPath}" /SetValue "${displayConfig.monitor}" 60 ${value}`
+      await execAsync(command)
     } catch (error) {
-      throw new Error(`Failed to switch to HDMI: ${error instanceof Error ? error.message : "Unknown error"}`)
+      throw new Error(`Failed to switch to ${input}: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
+  }
+
+  /**
+   * Switch display input to HDMI
+   */
+  async switchToHdmi(): Promise<void> {
+    await this.switchToInput('hdmi')
   }
 
   /**
    * Switch display input to DisplayPort
    */
   async switchToDisplayPort(): Promise<void> {
-    if (!this.isAvailable()) {
-      throw new Error("Desktop features not available")
-    }
+    await this.switchToInput('displayport')
+  }
 
-    try {
-      await execAsync(`powershell -ExecutionPolicy Bypass -File "${SWITCH_TO_DISPLAYPORT_SCRIPT}"`)
-    } catch (error) {
-      throw new Error(`Failed to switch to DisplayPort: ${error instanceof Error ? error.message : "Unknown error"}`)
-    }
+  /**
+   * Get the current display configuration (for UI display)
+   */
+  async getDisplayConfiguration() {
+    return this.getDisplayConfig()
   }
 }

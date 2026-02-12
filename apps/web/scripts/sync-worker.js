@@ -26,7 +26,7 @@ const getArg = (name, defaultValue) => {
 }
 
 const INTERVAL = parseInt(getArg('interval', '30000'), 10)
-const BASE_URL = getArg('url', 'http://localhost:3000')
+const BASE_URL = getArg('url', 'https://localhost:3000')
 const RUN_ONCE = getArg('once', false)
 const DEBUG = getArg('debug', false)
 

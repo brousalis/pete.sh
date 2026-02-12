@@ -3,9 +3,9 @@
  * POST: Upload image to Supabase Storage (localhost only)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { withCors, corsOptionsResponse } from '@/lib/api/cors'
+import { corsOptionsResponse, withCors } from '@/lib/api/cors'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
+import { NextRequest, NextResponse } from 'next/server'
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -16,7 +16,8 @@ const BUCKET_NAME = 'blog-images'
  */
 function isLocalhostRequest(request: NextRequest): boolean {
   const host = request.headers.get('host') || ''
-  return host.startsWith('localhost') || host.startsWith('127.0.0.1')
+  const hostname = host.split(':')[0]
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')
 }
 
 /**

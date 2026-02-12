@@ -1090,6 +1090,12 @@
             "completed": true,
             "completedAt": "2026-02-08T15:10:39.568Z",
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-09T14:32:04.251Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         }
       }
@@ -1373,5 +1379,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-08T21:05:50.410Z"
+  "updatedAt": "2026-02-12T04:32:15.793Z"
 }

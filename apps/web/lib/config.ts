@@ -36,6 +36,9 @@ const envSchema = z.object({
   NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
   NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
 
+  // Desktop/Display control
+  CONTROL_MY_MONITOR_PATH: z.string().optional(),
+
 })
 
 // Parse and validate environment variables
@@ -107,6 +110,11 @@ export const config = {
       'user-read-private',
     ],
   },
+  desktop: {
+    // Path to ControlMyMonitor.exe (NirSoft tool for DDC/CI monitor control)
+    // Can be set via CONTROL_MY_MONITOR_PATH environment variable
+    controlMyMonitorPath: env.CONTROL_MY_MONITOR_PATH || 'D:\\applications\\ControlMyMonitor.exe',
+  },
 } as const
 
 /**
@@ -121,5 +129,6 @@ export const isLocalhost =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.endsWith('.local') ||
     window.location.hostname.startsWith('192.168.') ||
     window.location.hostname.startsWith('10.'))

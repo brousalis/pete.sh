@@ -13,8 +13,24 @@ const ALLOWED_ORIGINS = [
   'https://pete.sh',
   'https://www.pete.sh',
   'http://localhost:3000',
+  'https://localhost:3000',
   'http://127.0.0.1:3000',
+  'https://127.0.0.1:3000',
 ]
+
+/** Check if origin is a local network address (.local mDNS, 192.168.x.x, 10.x.x.x) */
+function isLocalOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin)
+    return (
+      url.hostname.endsWith('.local') ||
+      url.hostname.startsWith('192.168.') ||
+      url.hostname.startsWith('10.')
+    )
+  } catch {
+    return false
+  }
+}
 
 export function middleware(request: NextRequest) {
   // Redirect legacy /dashboard to root
@@ -37,7 +53,7 @@ export function middleware(request: NextRequest) {
     const response = new NextResponse(null, { status: 204 })
 
     // Set CORS headers
-    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    if (origin && (ALLOWED_ORIGINS.includes(origin) || isLocalOrigin(origin))) {
       response.headers.set('Access-Control-Allow-Origin', origin)
     } else {
       // Allow any origin for local development flexibility
@@ -61,7 +77,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next()
 
   // Set CORS headers
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || isLocalOrigin(origin))) {
     response.headers.set('Access-Control-Allow-Origin', origin)
   } else {
     // Allow any origin for flexibility (the API routes themselves should handle auth)

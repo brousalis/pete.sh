@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs'
 import { createServer } from 'https'
 import next from 'next'
+import { networkInterfaces, hostname as osHostname } from 'os'
 import { dirname, join } from 'path'
 import { fileURLToPath, parse } from 'url'
 
@@ -13,7 +14,7 @@ const port = parseInt(process.env.PORT || '3000', 10)
 // ============================================================================
 // ANSI Colors - disabled when NO_COLOR is set or not a TTY
 // ============================================================================
-const useColors = process.env.FORCE_COLOR === '1' || 
+const useColors = process.env.FORCE_COLOR === '1' ||
   (process.stdout.isTTY && process.env.NO_COLOR !== '1')
 
 const c = useColors ? {
@@ -116,30 +117,30 @@ function getStatusColor(status) {
 function formatApiLog(str) {
   const match = str.match(nextLogRegex)
   if (!match) return null
-  
+
   const [, method, path, status, duration, unit] = match
-  
+
   // Only format API routes
   if (!path.startsWith('/api/')) return null
-  
+
   const service = getService(path)
   const statusNum = parseInt(status, 10)
   const durationNum = parseFloat(duration)
   const durationMs = getDurationMs(durationNum, unit)
-  
+
   const methodColor = methodColors[method] || c.white
   const statusColor = getStatusColor(statusNum)
   const perfIcon = getPerfIcon(durationMs)
-  
+
   // Clean path for display (remove /api/ prefix)
   let displayPath = path.replace(/^\/api\//, '')
   if (displayPath.length > 40) {
     displayPath = displayPath.slice(0, 37) + '...'
   }
-  
+
   const icon = service?.icon || '📡'
   const pathColor = service?.color || c.white
-  
+
   // Build formatted line
   const parts = [
     icon,
@@ -148,9 +149,9 @@ function formatApiLog(str) {
     `${statusColor}${status}${c.reset}`,
     `${c.dim}${formatDuration(durationNum, unit).padStart(8)}${c.reset}`,
   ]
-  
+
   if (perfIcon) parts.push(perfIcon)
-  
+
   return parts.join(' ') + '\n'
 }
 
@@ -159,20 +160,20 @@ let stdoutBuffer = ''
 
 process.stdout.write = (chunk, encoding, callback) => {
   const str = typeof chunk === 'string' ? chunk : chunk.toString()
-  
+
   // Add to buffer and process complete lines
   stdoutBuffer += str
   const lines = stdoutBuffer.split('\n')
-  
+
   // Keep incomplete line in buffer
   stdoutBuffer = lines.pop() || ''
-  
+
   for (const line of lines) {
     if (!line.trim()) {
       originalStdoutWrite('\n')
       continue
     }
-    
+
     // Try to format as API log
     const formatted = formatApiLog(line)
     if (formatted) {
@@ -182,7 +183,7 @@ process.stdout.write = (chunk, encoding, callback) => {
       originalStdoutWrite(line + '\n')
     }
   }
-  
+
   if (typeof callback === 'function') callback()
   return true
 }
@@ -193,6 +194,23 @@ process.stderr.write = (chunk, encoding, callback) => {
   originalStderrWrite(str)
   if (typeof callback === 'function') callback()
   return true
+}
+
+// ============================================================================
+// Network helpers
+// ============================================================================
+const machineHostname = osHostname().toLowerCase()
+
+function getLanIp() {
+  const nets = networkInterfaces()
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (!net.internal && net.family === 'IPv4') {
+        return net.address
+      }
+    }
+  }
+  return null
 }
 
 // ============================================================================
@@ -207,7 +225,7 @@ if (!existsSync(keyPath) || !existsSync(certPath)) {
   originalStderrWrite('\n')
   originalStderrWrite('Generate them with mkcert:\n')
   originalStderrWrite('  cd apps/web/certs\n')
-  originalStderrWrite('  mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 192.168.1.9\n')
+  originalStderrWrite(`  mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ${machineHostname}.local ${machineHostname}\n`)
   originalStderrWrite('\n')
   process.exit(1)
 }
@@ -236,11 +254,15 @@ app.prepare().then(() => {
     }
   }).listen(port, hostname, () => {
     // Startup banner (use original write to avoid formatting)
+    const lanIp = getLanIp()
     const w = (s) => originalStdoutWrite(s + '\n')
     w('')
     w(`${c.cyan}━━━ ${c.bold}🏠 petehome${c.reset}${c.cyan} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
     w(`${c.green}▸${c.reset} Server:  ${c.cyan}https://localhost:${port}${c.reset}`)
-    w(`${c.green}▸${c.reset} Network: ${c.cyan}https://192.168.1.9:${port}${c.reset}`)
+    w(`${c.green}▸${c.reset} Network: ${c.cyan}https://${machineHostname}.local:${port}${c.reset}`)
+    if (lanIp) {
+      w(`${c.green}▸${c.reset} LAN IP:  ${c.dim}https://${lanIp}:${port}${c.reset}`)
+    }
     w(`${c.green}▸${c.reset} Mode:    ${c.magenta}${dev ? 'development' : 'production'}${c.reset}`)
     w(`${c.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
     w('')

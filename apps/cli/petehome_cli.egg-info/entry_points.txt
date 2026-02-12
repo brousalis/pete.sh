@@ -1,2 +1,2 @@
 [console_scripts]
-petehome-cli = petehome_cli.__main__:main
+petehome = petehome_cli.__main__:main

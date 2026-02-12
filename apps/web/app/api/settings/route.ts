@@ -39,7 +39,14 @@ export async function PUT(request: Request) {
     const body = await request.json()
 
     // Validate the update payload
-    const allowedKeys = ['rounded_layout', 'theme', 'brand_color']
+    const allowedKeys = [
+      'rounded_layout',
+      'theme',
+      'brand_color',
+      'display_monitor',
+      'display_primary_input',
+      'display_secondary_input',
+    ]
     const updates: Record<string, unknown> = {}
 
     for (const key of allowedKeys) {
@@ -87,6 +94,37 @@ export async function PUT(request: Request) {
           error:
             'brand_color must be one of: purple, blue, teal, orange, pink, yellow',
         },
+        { status: 400 }
+      )
+    }
+
+    // Validate display settings
+    if (
+      'display_monitor' in updates &&
+      typeof updates.display_monitor !== 'string'
+    ) {
+      return NextResponse.json(
+        { error: 'display_monitor must be a string' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      'display_primary_input' in updates &&
+      !['hdmi', 'displayport'].includes(updates.display_primary_input as string)
+    ) {
+      return NextResponse.json(
+        { error: 'display_primary_input must be one of: hdmi, displayport' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      'display_secondary_input' in updates &&
+      !['hdmi', 'displayport'].includes(updates.display_secondary_input as string)
+    ) {
+      return NextResponse.json(
+        { error: 'display_secondary_input must be one of: hdmi, displayport' },
         { status: 400 }
       )
     }

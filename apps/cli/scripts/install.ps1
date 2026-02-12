@@ -33,7 +33,7 @@ Write-Host "Installing petehome-cli from: $cliDir" -ForegroundColor Yellow
 if ($UseUv) {
     # Use uv for faster installation
     Write-Host "Using uv for installation..." -ForegroundColor Yellow
-    
+
     if ($Dev) {
         uv pip install -e ".[dev]"
     } else {
@@ -42,7 +42,7 @@ if ($UseUv) {
 } else {
     # Use pip
     Write-Host "Using pip for installation..." -ForegroundColor Yellow
-    
+
     if ($Dev) {
         pip install -e ".[dev]"
     } else {
@@ -59,13 +59,13 @@ Write-Host ""
 Write-Host "Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Usage:" -ForegroundColor Cyan
-Write-Host "  petehome-cli      # Run the CLI" -ForegroundColor White
+Write-Host "  petehome           # Run the TUI" -ForegroundColor White
 Write-Host "  python -m petehome_cli  # Alternative" -ForegroundColor White
 Write-Host ""
 
 if ($Dev) {
     Write-Host "Development tools installed:" -ForegroundColor Cyan
-    Write-Host "  textual run --dev petehome_cli.app:PetehomeApp  # Run with dev tools" -ForegroundColor White
+    Write-Host "  textual run --dev petehome_cli.app:PetehomeApp  # Run with Textual dev tools" -ForegroundColor White
     Write-Host ""
 }
 

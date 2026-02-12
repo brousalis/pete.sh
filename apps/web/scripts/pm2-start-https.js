@@ -5,8 +5,11 @@
  */
 
 const { spawn } = require('child_process')
+const os = require('os')
 const path = require('path')
 const fs = require('fs')
+
+const machineHostname = os.hostname().toLowerCase()
 
 const serverPath = path.join(__dirname, '..', 'server.mjs')
 const certDir = path.join(__dirname, '..', 'certs')
@@ -28,7 +31,7 @@ if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
   console.error('')
   console.error('  cd apps/web/certs')
   console.error(
-    '  mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 192.168.1.9'
+    `  mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ${machineHostname}.local ${machineHostname}`
   )
   console.error('')
   process.exit(1)
