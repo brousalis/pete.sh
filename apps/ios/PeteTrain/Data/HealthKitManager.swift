@@ -1426,7 +1426,7 @@ final class HealthKitManager {
                     segmentIndex: segmentIndex,
                     lapNumber: nil,
                     distance: nil,
-                    splitTime: event.dateInterval?.duration
+                    splitTime: event.dateInterval.duration
                 )
             case .lap:
                 eventType = "lap"
@@ -1435,7 +1435,7 @@ final class HealthKitManager {
                     segmentIndex: nil,
                     lapNumber: lapNumber,
                     distance: nil,
-                    splitTime: event.dateInterval?.duration
+                    splitTime: event.dateInterval.duration
                 )
             case .marker:
                 eventType = "marker"
@@ -1444,11 +1444,11 @@ final class HealthKitManager {
             @unknown default:
                 eventType = "unknown"
             }
-            
+
             petehomeEvents.append(PetehomeWorkoutEvent(
                 type: eventType,
-                timestamp: event.dateInterval?.start.iso8601String ?? workout.startDate.iso8601String,
-                duration: event.dateInterval?.duration,
+                timestamp: event.dateInterval.start.iso8601String,
+                duration: event.dateInterval.duration,
                 metadata: metadata
             ))
         }
@@ -1458,44 +1458,48 @@ final class HealthKitManager {
     
     // MARK: - Effort Score
     
-    /// Query physical effort score for a workout (iOS 17+/watchOS 10+)
+    /// Query physical effort score for a workout (watchOS 11+)
     func queryEffortScore(for workout: HKWorkout) async throws -> Double? {
         guard isHealthKitAvailable else { return nil }
-        
-        let effortType = HKQuantityType(.physicalEffort)
-        let predicate = HKQuery.predicateForSamples(
-            withStart: workout.startDate,
-            end: workout.endDate,
-            options: .strictStartDate
-        )
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: effortType,
-                predicate: predicate,
-                limit: HKObjectQueryNoLimit,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
-            ) { _, samples, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
+
+        if #available(watchOS 11.0, *) {
+            let effortType = HKQuantityType(.physicalEffort)
+            let predicate = HKQuery.predicateForSamples(
+                withStart: workout.startDate,
+                end: workout.endDate,
+                options: .strictStartDate
+            )
+
+            return try await withCheckedThrowingContinuation { continuation in
+                let query = HKSampleQuery(
+                    sampleType: effortType,
+                    predicate: predicate,
+                    limit: HKObjectQueryNoLimit,
+                    sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+                ) { _, samples, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+
+                    guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+
+                    // Calculate average effort score (scale 0-10)
+                    let totalEffort = quantitySamples.reduce(0.0) { sum, sample in
+                        sum + sample.quantity.doubleValue(for: HKUnit.appleEffortScore())
+                    }
+                    let avgEffort = totalEffort / Double(quantitySamples.count)
+
+                    continuation.resume(returning: avgEffort)
                 }
-                
-                guard let quantitySamples = samples as? [HKQuantitySample], !quantitySamples.isEmpty else {
-                    continuation.resume(returning: nil)
-                    return
-                }
-                
-                // Calculate average effort score (scale 0-10)
-                let totalEffort = quantitySamples.reduce(0.0) { sum, sample in
-                    sum + sample.quantity.doubleValue(for: HKUnit.appleEffortScore())
-                }
-                let avgEffort = totalEffort / Double(quantitySamples.count)
-                
-                continuation.resume(returning: avgEffort)
+
+                self.healthStore.execute(query)
             }
-            
-            self.healthStore.execute(query)
+        } else {
+            return nil
         }
     }
 
