@@ -61,6 +61,15 @@ const nextConfig = {
   experimental: {
     // Add any experimental features you want to enable
   },
+  allowedDevOrigins: [
+    'https://pete.sh',
+    'https://www.pete.sh',
+    'http://localhost:3000',
+    'https://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://127.0.0.1:3000',
+    'https://boufos.local:3000',
+  ]
 }
 
 export default nextConfig

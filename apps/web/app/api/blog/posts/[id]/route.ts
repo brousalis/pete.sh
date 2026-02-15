@@ -5,10 +5,10 @@
  * DELETE: Delete post (localhost only)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { withCors, corsOptionsResponse } from '@/lib/api/cors'
+import { corsOptionsResponse, withCors } from '@/lib/api/cors'
 import { blogService } from '@/lib/services/blog.service'
 import type { UpdateBlogPostInput } from '@/lib/types/blog.types'
+import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -19,7 +19,8 @@ interface RouteParams {
  */
 function isLocalhostRequest(request: NextRequest): boolean {
   const host = request.headers.get('host') || ''
-  return host.startsWith('localhost') || host.startsWith('127.0.0.1')
+  const hostname = host.split(':')[0]
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')
 }
 
 /**

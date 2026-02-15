@@ -1,6 +1,7 @@
 """Entry point for petehome-cli."""
 
 import sys
+
 from petehome_cli.app import run
 
 

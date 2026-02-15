@@ -1,78 +1,12 @@
 """PM2 process management service."""
 
-import asyncio
 import json
-import sys
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal
+from typing import Literal
 
 from petehome_cli.config import PM2_PROCESSES, REPO_ROOT
-
-
-# On Windows, npm commands are .cmd files and need shell execution
-IS_WINDOWS = sys.platform == "win32"
-
-
-async def run_command(
-    *args: str,
-    cwd: str | None = None,
-) -> tuple[int, str, str]:
-    """Run a command and return exit code, stdout, stderr.
-
-    On Windows, uses shell execution for npm commands.
-    """
-    if IS_WINDOWS:
-        cmd = " ".join(args)
-        proc = await asyncio.create_subprocess_shell(
-            cmd,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    else:
-        proc = await asyncio.create_subprocess_exec(
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-    stdout, stderr = await proc.communicate()
-    # Use utf-8 with error handling for Windows unicode issues
-    return (
-        proc.returncode or 0,
-        stdout.decode("utf-8", errors="replace"),
-        stderr.decode("utf-8", errors="replace"),
-    )
-
-
-async def stream_command(
-    *args: str,
-    cwd: str | None = None,
-) -> AsyncIterator[str]:
-    """Run a command and stream output lines.
-
-    On Windows, uses shell execution for npm commands.
-    """
-    if IS_WINDOWS:
-        cmd = " ".join(args)
-        proc = await asyncio.create_subprocess_shell(
-            cmd,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-    else:
-        proc = await asyncio.create_subprocess_exec(
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-
-    if proc.stdout:
-        async for line in proc.stdout:
-            yield line.decode("utf-8", errors="replace").rstrip()
+from petehome_cli.services.process import run_command, stream_command
 
 
 @dataclass
@@ -192,15 +126,7 @@ class PM2Service:
         name: str | None = None,
         lines: int = 100,
     ) -> AsyncIterator[str]:
-        """Stream logs from PM2 processes.
-
-        Args:
-            name: Process name to filter logs. If None, streams all logs.
-            lines: Number of historical lines to include.
-
-        Yields:
-            Log lines as they come in.
-        """
+        """Stream logs from PM2 processes."""
         if name:
             args = ("pm2", "logs", name, "--raw", "--lines", str(lines))
         else:
@@ -215,7 +141,7 @@ class PM2Service:
         if name:
             args = ("pm2", "flush", name)
         else:
-            args = ("pm2", "flush")
+            args = ("pm2", "flush",)
 
         returncode, stdout, stderr = await run_command(*args)
         success = returncode == 0

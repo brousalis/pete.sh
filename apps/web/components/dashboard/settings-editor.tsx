@@ -11,9 +11,16 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { apiGet, apiPost } from '@/lib/api/client'
-import { Activity, GitBranch, Layout, Loader2, Palette, Settings, Sunrise, Watch } from 'lucide-react'
+import { Activity, GitBranch, Layout, Loader2, Monitor, Palette, Settings, Sunrise, Watch } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -252,6 +259,87 @@ export function SettingsEditor() {
               Choose your preferred accent color
             </p>
             <ColorThemePicker />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Display/KVM Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Monitor className="text-muted-foreground size-4" />
+            <CardTitle className="text-base">Display / KVM</CardTitle>
+          </div>
+          <CardDescription>
+            Configure monitor input switching for your KVM setup
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Target Monitor */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Target Monitor</label>
+            <p className="text-muted-foreground mb-2 text-xs">
+              Windows display identifier to control (e.g., DISPLAY1 for primary, DISPLAY2 for secondary)
+            </p>
+            <Select
+              value={settings?.display_monitor ?? '\\\\.\\DISPLAY2'}
+              onValueChange={async (value) => {
+                await updateSettings({ display_monitor: value })
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select monitor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="\\.\DISPLAY1">DISPLAY1 (Primary)</SelectItem>
+                <SelectItem value="\\.\DISPLAY2">DISPLAY2 (Secondary)</SelectItem>
+                <SelectItem value="\\.\DISPLAY3">DISPLAY3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Primary Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Primary Input</label>
+            <p className="text-muted-foreground mb-2 text-xs">
+              The main input source for this monitor (usually your PC connection)
+            </p>
+            <Select
+              value={settings?.display_primary_input ?? 'displayport'}
+              onValueChange={async (value) => {
+                await updateSettings({ display_primary_input: value as 'hdmi' | 'displayport' })
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select input" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hdmi">HDMI</SelectItem>
+                <SelectItem value="displayport">DisplayPort</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Secondary Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Secondary Input</label>
+            <p className="text-muted-foreground mb-2 text-xs">
+              The alternate input source (e.g., work laptop, gaming console)
+            </p>
+            <Select
+              value={settings?.display_secondary_input ?? 'hdmi'}
+              onValueChange={async (value) => {
+                await updateSettings({ display_secondary_input: value as 'hdmi' | 'displayport' })
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select input" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hdmi">HDMI</SelectItem>
+                <SelectItem value="displayport">DisplayPort</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

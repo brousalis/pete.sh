@@ -26,6 +26,9 @@ struct AppleHealthWorkout: Codable {
     let distanceMiles: Double?
     let elevationGain: Double?
     
+    // Indoor/outdoor distinction
+    let isIndoor: Bool?
+    
     let heartRate: HeartRateSummary
     let heartRateSamples: [PetehomeHeartRateSample]
     

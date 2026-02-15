@@ -215,6 +215,10 @@ export interface AppleHealthWorkout {
   // Elevation (for outdoor workouts)
   elevationGain?: number // meters
   
+  // Indoor/outdoor distinction
+  // true = indoor, false = outdoor, undefined = unknown (legacy)
+  isIndoor?: boolean
+  
   // Heart rate data
   heartRate: HeartRateSummary
   heartRateSamples: HeartRateSample[] // Granular per-second/5-second samples

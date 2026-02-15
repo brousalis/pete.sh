@@ -12,7 +12,7 @@
 
 param(
     [int]$Interval = 0,      # Interval in seconds (0 = run once)
-    [string]$BaseUrl = "http://localhost:3000",
+    [string]$BaseUrl = "https://localhost:3000",
     [switch]$Debug
 )
 

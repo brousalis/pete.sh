@@ -15,6 +15,10 @@ const DEFAULT_SETTINGS: Omit<AppSettings, 'id' | 'created_at' | 'updated_at'> =
     rounded_layout: true,
     theme: 'system',
     brand_color: 'yellow',
+    // Display defaults - DISPLAY2 (Dell U2713H) with DisplayPort as primary, HDMI as secondary
+    display_monitor: '\\\\.\\DISPLAY2',
+    display_primary_input: 'displayport',
+    display_secondary_input: 'hdmi',
   }
 
 interface SettingsContextType {

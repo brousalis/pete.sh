@@ -1075,13 +1075,86 @@
         "monday": {
           "morningRoutine": {
             "routineId": "oil-the-hinge",
-            "completed": false,
+            "completed": true,
+            "completedAt": "2026-02-12T04:32:54.874Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-02-12T04:32:52.360Z",
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-flush",
+              "monday-mobility-1",
+              "monday-mobility-2"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-12T04:32:54.447Z",
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "tuesday": {},
-        "wednesday": {},
-        "thursday": {},
+        "tuesday": {
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-12T04:33:09.054Z",
+            "skippedReason": "in office work day lame",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": true,
+            "completedAt": "2026-02-12T04:33:14.267Z",
+            "exercisesCompleted": [
+              "wed-phase1",
+              "wed-phase2",
+              "wed-prehab-1"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-12T04:33:15.900Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-12T15:19:38.501Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
+        "thursday": {
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-15T15:00:18.957Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-15T15:00:22.932Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "friday": {},
         "saturday": {},
         "sunday": {
@@ -1090,8 +1163,27 @@
             "completed": true,
             "completedAt": "2026-02-08T15:10:39.568Z",
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-09T14:32:04.251Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         }
+      }
+    },
+    {
+      "weekNumber": 8,
+      "startDate": "2026-02-16T06:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
       }
     },
     {
@@ -1373,5 +1465,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-08T21:05:50.410Z"
+  "updatedAt": "2026-02-15T15:20:55.029Z"
 }

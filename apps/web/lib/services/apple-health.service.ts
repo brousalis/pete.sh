@@ -51,6 +51,15 @@ interface DbWorkout {
   pace_best: number | null
   stride_length_avg: number | null
   running_power_avg: number | null
+  ground_contact_time_avg: number | null
+  vertical_oscillation_avg: number | null
+  cycling_avg_speed: number | null
+  cycling_max_speed: number | null
+  cycling_avg_cadence: number | null
+  cycling_avg_power: number | null
+  cycling_max_power: number | null
+  effort_score: number | null
+  is_indoor: boolean | null
   source: string
   source_version: string | null
   device_name: string | null
@@ -63,6 +72,24 @@ interface DbWorkout {
   linked_year: number | null
   recorded_at: string
   created_at: string
+}
+
+interface DbRoute {
+  id: string
+  workout_id: string
+  total_distance_meters: number | null
+  total_elevation_gain: number | null
+  total_elevation_loss: number | null
+  samples: Array<{
+    timestamp: string
+    latitude: number
+    longitude: number
+    altitude?: number
+    speed?: number
+    course?: number
+    horizontalAccuracy?: number
+    verticalAccuracy?: number
+  }> | null
 }
 
 interface DbHrSample {
@@ -128,25 +155,29 @@ export class AppleHealthService {
     const weekNumber = this.getWeekNumber(startDate)
     const year = startDate.getFullYear()
 
+    // Helper to safely round values for INTEGER columns
+    const toInt = (val: number | undefined | null): number | null =>
+      val != null && isFinite(val) ? Math.round(val) : null
+
     // Insert workout - using type assertion for dynamic table
     const workoutInsert: AppleHealthWorkoutInsert = {
       healthkit_id: workout.id,
       workout_type: workout.workoutType,
-      workout_type_raw: workout.workoutTypeRaw || null,
+      workout_type_raw: toInt(workout.workoutTypeRaw),
       start_date: workout.startDate,
       end_date: workout.endDate,
-      duration: workout.duration,
+      duration: toInt(workout.duration) ?? 0,
       active_calories: workout.activeCalories,
       total_calories: workout.totalCalories,
       distance_meters: workout.distance || null,
       distance_miles: workout.distanceMiles || null,
       elevation_gain_meters: workout.elevationGain || null,
-      hr_average: workout.heartRate.average,
-      hr_min: workout.heartRate.min,
-      hr_max: workout.heartRate.max,
+      hr_average: toInt(workout.heartRate.average),
+      hr_min: toInt(workout.heartRate.min),
+      hr_max: toInt(workout.heartRate.max),
       hr_zones: hrZones,
       // Running metrics
-      cadence_average: workout.runningMetrics?.cadence.average || null,
+      cadence_average: toInt(workout.runningMetrics?.cadence.average),
       pace_average: workout.runningMetrics?.pace.average || null,
       pace_best: workout.runningMetrics?.pace.best || null,
       stride_length_avg: workout.runningMetrics?.strideLength?.average || null,
@@ -156,15 +187,17 @@ export class AppleHealthService {
       // Cycling metrics
       cycling_avg_speed: workout.cyclingMetrics?.avgSpeed || null,
       cycling_max_speed: workout.cyclingMetrics?.maxSpeed || null,
-      cycling_avg_cadence: workout.cyclingMetrics?.avgCadence || null,
-      cycling_avg_power: workout.cyclingMetrics?.avgPower || null,
-      cycling_max_power: workout.cyclingMetrics?.maxPower || null,
+      cycling_avg_cadence: toInt(workout.cyclingMetrics?.avgCadence),
+      cycling_avg_power: toInt(workout.cyclingMetrics?.avgPower),
+      cycling_max_power: toInt(workout.cyclingMetrics?.maxPower),
       // Walking metrics (for Maple walks)
       walking_avg_speed: workout.walkingMetrics?.avgSpeed || null,
       walking_avg_step_length: workout.walkingMetrics?.avgStepLength || null,
       walking_double_support_pct: workout.walkingMetrics?.doubleSupportPercentage || null,
       walking_asymmetry_pct: workout.walkingMetrics?.asymmetryPercentage || null,
-      walking_step_count: workout.walkingMetrics?.stepCount || null,
+      walking_step_count: toInt(workout.walkingMetrics?.stepCount),
+      // Indoor/outdoor flag
+      is_indoor: workout.isIndoor ?? null,
       // Effort score
       effort_score: workout.effortScore || null,
       // Metadata
@@ -173,7 +206,7 @@ export class AppleHealthService {
       device_name: workout.device?.name || null,
       device_model: workout.device?.model || null,
       weather_temp_celsius: workout.weather?.temperature || null,
-      weather_humidity: workout.weather?.humidity || null,
+      weather_humidity: toInt(workout.weather?.humidity),
       linked_workout_id: linkedWorkoutId || null,
       linked_day: linkedDay || null,
       linked_week: weekNumber,
@@ -293,7 +326,7 @@ export class AppleHealthService {
     const hrRecords: AppleHealthHrSampleInsert[] = samples.map(sample => ({
       workout_id: workoutId,
       timestamp: sample.timestamp,
-      bpm: sample.bpm,
+      bpm: Math.round(sample.bpm),
       motion_context: sample.motionContext || null,
     }))
 
@@ -329,7 +362,7 @@ export class AppleHealthService {
     const records: AppleHealthCadenceSampleInsert[] = samples.map(sample => ({
       workout_id: workoutId,
       timestamp: sample.timestamp,
-      steps_per_minute: sample.stepsPerMinute,
+      steps_per_minute: Math.round(sample.stepsPerMinute),
     }))
 
     const chunkSize = 1000
@@ -595,13 +628,13 @@ export class AppleHealthService {
 
     const records = splits.map(s => ({
       workout_id: workoutId,
-      split_number: s.splitNumber,
+      split_number: Math.round(s.splitNumber),
       split_type: s.splitType,
       distance_meters: s.distanceMeters,
       time_seconds: s.timeSeconds,
       avg_pace: s.avgPace,
-      avg_heart_rate: s.avgHeartRate || null,
-      avg_cadence: s.avgCadence || null,
+      avg_heart_rate: s.avgHeartRate != null ? Math.round(s.avgHeartRate) : null,
+      avg_cadence: s.avgCadence != null ? Math.round(s.avgCadence) : null,
       elevation_change: s.elevationChange || null,
     }))
 
@@ -665,7 +698,8 @@ export class AppleHealthService {
     cyclingCadenceSamples: { timestamp: string; rpm: number }[]
     cyclingPowerSamples: { timestamp: string; watts: number }[]
     workoutEvents: { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[]
-    splits: { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null }[]
+    splits: { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null; elevation_change: number | null }[]
+    route: DbRoute | null
   } | null> {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) return null
@@ -684,7 +718,7 @@ export class AppleHealthService {
       return null
     }
 
-    // Fetch all samples and events in parallel
+    // Fetch all samples, events, and route in parallel
     const [
       hrResult,
       cadenceResult,
@@ -693,7 +727,8 @@ export class AppleHealthService {
       cyclingCadenceResult,
       cyclingPowerResult,
       eventsResult,
-      splitsResult
+      splitsResult,
+      routeResult
     ] = await Promise.all([
       db
         .from('apple_health_hr_samples')
@@ -732,9 +767,14 @@ export class AppleHealthService {
         .order('timestamp', { ascending: true }),
       db
         .from('apple_health_splits')
-        .select('split_number, split_type, distance_meters, time_seconds, avg_pace, avg_heart_rate, avg_cadence')
+        .select('split_number, split_type, distance_meters, time_seconds, avg_pace, avg_heart_rate, avg_cadence, elevation_change')
         .eq('workout_id', workoutId)
         .order('split_number', { ascending: true }),
+      db
+        .from('apple_health_routes')
+        .select('*')
+        .eq('workout_id', workoutId)
+        .maybeSingle(),
     ])
 
     return {
@@ -746,7 +786,8 @@ export class AppleHealthService {
       cyclingCadenceSamples: (cyclingCadenceResult.data || []) as { timestamp: string; rpm: number }[],
       cyclingPowerSamples: (cyclingPowerResult.data || []) as { timestamp: string; watts: number }[],
       workoutEvents: (eventsResult.data || []) as { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[],
-      splits: (splitsResult.data || []) as { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null }[],
+      splits: (splitsResult.data || []) as { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null; elevation_change: number | null }[],
+      route: (routeResult.data as DbRoute) || null,
     }
   }
 
