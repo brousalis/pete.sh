@@ -190,7 +190,7 @@ export class AppleHealthService {
       cycling_avg_cadence: toInt(workout.cyclingMetrics?.avgCadence),
       cycling_avg_power: toInt(workout.cyclingMetrics?.avgPower),
       cycling_max_power: toInt(workout.cyclingMetrics?.maxPower),
-      // Walking metrics (for Maple walks)
+      // Walking metrics (for Maple walks - walking and 'other' workout types)
       walking_avg_speed: workout.walkingMetrics?.avgSpeed || null,
       walking_avg_step_length: workout.walkingMetrics?.avgStepLength || null,
       walking_double_support_pct: workout.walkingMetrics?.doubleSupportPercentage || null,
@@ -271,7 +271,7 @@ export class AppleHealthService {
       await this.saveSplits(workoutId, workout.runningMetrics.splits)
     }
 
-    // Save walking samples if available (for Maple walks)
+    // Save walking samples if available (for Maple walks - walking and 'other' types)
     if (workout.walkingMetrics?.speedSamples?.length) {
       await this.saveWalkingSpeedSamples(workoutId, workout.walkingMetrics.speedSamples)
     }

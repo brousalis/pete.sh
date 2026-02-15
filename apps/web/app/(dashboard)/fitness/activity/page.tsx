@@ -1,25 +1,24 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import { 
-  Activity, 
-  ChevronLeft, 
-  RefreshCw,
-} from "lucide-react"
+import { EnhancedWorkoutDetailView } from "@/components/dashboard/enhanced-workout-detail"
+import type { AppleWorkout, DailyMetrics, WeeklySummary } from "@/components/dashboard/fitness-dashboard"
+import { FitnessDashboard } from "@/components/dashboard/fitness-dashboard"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import Link from "next/link"
-import { EnhancedWorkoutDetailView } from "@/components/dashboard/enhanced-workout-detail"
-import { FitnessDashboard } from "@/components/dashboard/fitness-dashboard"
-import type { AppleWorkout, DailyMetrics, WeeklySummary } from "@/components/dashboard/fitness-dashboard"
 import { apiGet } from "@/lib/api/client"
+import {
+  Activity,
+  ChevronLeft,
+  RefreshCw,
+} from "lucide-react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
 
 export default function ActivityDashboardPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const workoutIdFromUrl = searchParams.get('workout')
-  
+
   const [workouts, setWorkouts] = useState<AppleWorkout[]>([])
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics[]>([])
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary[]>([])
@@ -32,7 +31,7 @@ export default function ActivityDashboardPage() {
     try {
       const [workoutsRes, dailyRes, summaryRes] = await Promise.all([
         apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=50'),
-        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=7'),
+        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=30'),
         apiGet<{ weeks: WeeklySummary[] }>('/api/apple-health/summary?weeks=4'),
       ])
 
@@ -59,12 +58,20 @@ export default function ActivityDashboardPage() {
     fetchData()
   }, [fetchData])
 
-  // Sync URL param with state
+  // Sync URL param → state (handles direct navigation & browser back/forward)
   useEffect(() => {
-    if (workoutIdFromUrl && workoutIdFromUrl !== selectedWorkoutId) {
-      setSelectedWorkoutId(workoutIdFromUrl)
+    setSelectedWorkoutId(workoutIdFromUrl)
+  }, [workoutIdFromUrl])
+
+  // Handle browser back/forward buttons (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      setSelectedWorkoutId(params.get('workout'))
     }
-  }, [workoutIdFromUrl, selectedWorkoutId])
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   const handleRefresh = () => {
     setRefreshing(true)
@@ -73,12 +80,12 @@ export default function ActivityDashboardPage() {
 
   const handleWorkoutSelect = (workoutId: string) => {
     setSelectedWorkoutId(workoutId)
-    router.push(`/fitness/activity?workout=${workoutId}`, { scroll: false })
+    window.history.pushState(null, '', `/fitness/activity?workout=${workoutId}`)
   }
 
   const handleBackFromDetail = () => {
     setSelectedWorkoutId(null)
-    router.push('/fitness/activity', { scroll: false })
+    window.history.pushState(null, '', '/fitness/activity')
   }
 
   // Workout detail view

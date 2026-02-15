@@ -147,7 +147,6 @@
   body {
     @apply bg-background text-foreground;
     height: 100%;
-    overflow: hidden;
   }
 }
 
@@ -472,7 +471,7 @@
   .animate-fade-in-up {
     animation: fadeInUp 0.25s ease-out both;
   }
-  
+
   /* Slide animations */
   .animate-slide-in-right {
     animation: slideInFromRight 0.25s ease-out both;
@@ -483,7 +482,7 @@
   .animate-slide-in-bottom {
     animation: slideInFromBottom 0.25s ease-out both;
   }
-  
+
   /* Spotify skip animations */
   .animate-slide-left {
     animation: slideLeft 0.3s ease-out both;
@@ -491,12 +490,12 @@
   .animate-slide-right {
     animation: slideRight 0.3s ease-out both;
   }
-  
+
   /* Scale animation */
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out both;
   }
-  
+
   /* Continuous animations */
   .animate-pulse-subtle {
     animation: pulse 2s ease-in-out infinite;
@@ -507,7 +506,7 @@
   .animate-spin-slow {
     animation: spin 3s linear infinite;
   }
-  
+
   /* Animation delays */
   .animation-delay-75 {
     animation-delay: 75ms;
@@ -527,7 +526,7 @@
   .animation-delay-500 {
     animation-delay: 500ms;
   }
-  
+
   /* Stagger animation utilities for lists */
   .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
   .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
@@ -539,7 +538,7 @@
   .stagger-children > *:nth-child(8) { animation-delay: 350ms; }
   .stagger-children > *:nth-child(9) { animation-delay: 400ms; }
   .stagger-children > *:nth-child(10) { animation-delay: 450ms; }
-  
+
   /* Hover lift effect - use with group */
   .hover-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
@@ -548,7 +547,7 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
-  
+
   /* Press effect - for buttons */
   .press-effect {
     transition: transform 0.1s ease-out;
@@ -556,7 +555,7 @@
   .press-effect:active {
     transform: scale(0.97);
   }
-  
+
   /* Smooth transition utilities */
   .transition-smooth {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

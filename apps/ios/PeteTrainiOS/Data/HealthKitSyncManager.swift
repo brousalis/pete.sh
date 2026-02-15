@@ -519,7 +519,7 @@ final class HealthKitSyncManager {
         // Query cycling metrics (only for cycling workouts)
         async let cyclingMetrics = queryCyclingMetrics(for: workout)
         
-        // Query walking metrics (only for walking workouts - Maple walks!)
+        // Query walking metrics (for walking and 'other' workouts - Maple walks use 'other' type)
         async let walkingMetrics = queryWalkingMetrics(for: workout)
         
         // Query effort score (available for all workout types)
@@ -606,8 +606,8 @@ final class HealthKitSyncManager {
         } else {
             // Fallback: infer from workout activity type and whether route exists
             switch workout.workoutActivityType {
-            case .running, .walking, .cycling:
-                isIndoor = routeResult == nil // No route likely means indoor
+            case .running, .walking, .cycling, .other:
+                isIndoor = routeResult == nil // No route likely means indoor (other = Maple walks)
             default:
                 isIndoor = true // Strength, HIIT, etc. are indoor
             }
@@ -1576,9 +1576,14 @@ final class HealthKitSyncManager {
 
     // MARK: - Walking Metrics (for Maple walks)
     
-    /// Query walking speed samples from HealthKit (only for walking workouts)
+    /// Whether a workout type is eligible for walking metrics (walking + other for Maple dog walks)
+    private func isWalkingOrMapleWorkout(_ workout: HKWorkout) -> Bool {
+        return workout.workoutActivityType == .walking || workout.workoutActivityType == .other
+    }
+    
+    /// Query walking speed samples from HealthKit (for walking and 'other' workouts)
     private func queryWalkingSpeed(for workout: HKWorkout) async throws -> (average: Double?, samples: [PetehomeWalkingSpeedSample])? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         let speedType = HKQuantityType(.walkingSpeed)
         let predicate = HKQuery.predicateForSamples(
@@ -1621,9 +1626,9 @@ final class HealthKitSyncManager {
         }
     }
     
-    /// Query walking step length samples from HealthKit (only for walking workouts)
+    /// Query walking step length samples from HealthKit (for walking and 'other' workouts)
     private func queryWalkingStepLength(for workout: HKWorkout) async throws -> (average: Double?, samples: [PetehomeWalkingStepLengthSample])? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         let stepLengthType = HKQuantityType(.walkingStepLength)
         let predicate = HKQuery.predicateForSamples(
@@ -1666,9 +1671,9 @@ final class HealthKitSyncManager {
         }
     }
     
-    /// Query walking double support percentage from HealthKit (only for walking workouts)
+    /// Query walking double support percentage from HealthKit (for walking and 'other' workouts)
     private func queryWalkingDoubleSupport(for workout: HKWorkout) async throws -> Double? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         let doubleSupportType = HKQuantityType(.walkingDoubleSupportPercentage)
         let predicate = HKQuery.predicateForSamples(
@@ -1704,9 +1709,9 @@ final class HealthKitSyncManager {
         }
     }
     
-    /// Query walking asymmetry percentage from HealthKit (only for walking workouts)
+    /// Query walking asymmetry percentage from HealthKit (for walking and 'other' workouts)
     private func queryWalkingAsymmetry(for workout: HKWorkout) async throws -> Double? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         let asymmetryType = HKQuantityType(.walkingAsymmetryPercentage)
         let predicate = HKQuery.predicateForSamples(
@@ -1742,9 +1747,9 @@ final class HealthKitSyncManager {
         }
     }
     
-    /// Query step count during a walking workout
+    /// Query step count during a walking or 'other' workout
     private func queryWalkingStepCount(for workout: HKWorkout) async throws -> Int? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         let stepType = HKQuantityType(.stepCount)
         let predicate = HKQuery.predicateForSamples(
@@ -1777,9 +1782,9 @@ final class HealthKitSyncManager {
         }
     }
     
-    /// Build walking metrics for a walking workout (for Maple walks)
+    /// Build walking metrics for a walking or 'other' workout (for Maple walks)
     private func queryWalkingMetrics(for workout: HKWorkout) async throws -> PetehomeWalkingMetrics? {
-        guard workout.workoutActivityType == .walking else { return nil }
+        guard isWalkingOrMapleWorkout(workout) else { return nil }
         
         // Query all walking metrics in parallel
         async let speedData = queryWalkingSpeed(for: workout)

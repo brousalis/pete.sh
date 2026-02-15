@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { MapleRouteMap } from '@/components/dashboard/maple/maple-route-map'
 import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import type {
@@ -910,7 +911,7 @@ function TimeSeriesChart({
             {/* Pace Line (inverted - lower is better) */}
             {activeMetrics.pace && stats.pace.avg > 0 && (
               <Line
-                yAxisId="hr"
+                yAxisId="left"
                 type="monotone"
                 dataKey="pace"
                 stroke="#34d399"
@@ -925,7 +926,7 @@ function TimeSeriesChart({
             {/* Cycling Speed */}
             {activeMetrics.cyclingSpeed && (
               <Line
-                yAxisId="hr"
+                yAxisId="left"
                 type="monotone"
                 dataKey="cyclingSpeed"
                 stroke="#22d3ee"
@@ -939,7 +940,7 @@ function TimeSeriesChart({
             {/* Cycling Power */}
             {activeMetrics.cyclingPower && (
               <Line
-                yAxisId="hr"
+                yAxisId="left"
                 type="monotone"
                 dataKey="cyclingPower"
                 stroke="#fbbf24"
@@ -1673,36 +1674,22 @@ function InsightRow({ insight }: { insight: PerformanceInsight }) {
 }
 
 // ============================================
-// ROUTE MAP (for outdoor workouts)
+// ROUTE MAP (for outdoor workouts) — uses Google Maps via MapleRouteMap
 // ============================================
 
 function WorkoutRouteMap({ route, hrSamples }: { route: RouteData; hrSamples: HrSample[] }) {
   const samples = route.samples
   if (!samples || samples.length < 2) return null
 
-  // Convert to the format MapleRouteMap expects
-  const locationSamples = samples.map(s => ({
-    timestamp: s.timestamp,
-    latitude: s.latitude,
-    longitude: s.longitude,
-    altitude: s.altitude,
-    speed: s.speed,
-    course: s.course,
-    horizontalAccuracy: s.horizontalAccuracy,
-    verticalAccuracy: s.verticalAccuracy,
-  }))
-
   return (
     <div className="space-y-2">
       <div className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">Route</div>
-      <div className="overflow-hidden rounded-lg border border-border/30">
-        <WorkoutRouteMapCanvas
-          locations={locationSamples}
-          hrSamples={hrSamples}
-          totalElevationGain={route.total_elevation_gain}
-          totalElevationLoss={route.total_elevation_loss}
-        />
-      </div>
+      <MapleRouteMap
+        samples={samples}
+        hrSamples={hrSamples}
+        className="h-[350px]"
+        colorByHeartRate
+      />
       {(route.total_elevation_gain != null || route.total_elevation_loss != null) && (
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {route.total_elevation_gain != null && (
@@ -1720,137 +1707,6 @@ function WorkoutRouteMap({ route, hrSamples }: { route: RouteData; hrSamples: Hr
         </div>
       )}
     </div>
-  )
-}
-
-// Canvas-based route map rendering (no Google Maps dependency)
-function WorkoutRouteMapCanvas({
-  locations,
-  hrSamples,
-  totalElevationGain,
-  totalElevationLoss,
-}: {
-  locations: RouteLocationSample[]
-  hrSamples: HrSample[]
-  totalElevationGain: number | null
-  totalElevationLoss: number | null
-}) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null)
-
-  React.useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || locations.length < 2) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    const width = canvas.clientWidth
-    const height = canvas.clientHeight
-    canvas.width = width * dpr
-    canvas.height = height * dpr
-    ctx.scale(dpr, dpr)
-
-    // Calculate bounds
-    const lats = locations.map(l => l.latitude)
-    const lngs = locations.map(l => l.longitude)
-    const minLat = Math.min(...lats)
-    const maxLat = Math.max(...lats)
-    const minLng = Math.min(...lngs)
-    const maxLng = Math.max(...lngs)
-
-    const padding = 24
-    const drawWidth = width - padding * 2
-    const drawHeight = height - padding * 2
-
-    // Maintain aspect ratio using Mercator-like projection
-    const latRange = maxLat - minLat || 0.001
-    const lngRange = maxLng - minLng || 0.001
-    const midLat = (minLat + maxLat) / 2
-    const lngScale = Math.cos((midLat * Math.PI) / 180)
-    const adjustedLngRange = lngRange * lngScale
-
-    const scaleX = drawWidth / adjustedLngRange
-    const scaleY = drawHeight / latRange
-    const scale = Math.min(scaleX, scaleY)
-
-    const toX = (lng: number) => padding + ((lng - minLng) * lngScale - (adjustedLngRange - adjustedLngRange * (scale / scaleX)) / 2) * scale
-    const toY = (lat: number) => height - padding - ((lat - minLat) - (latRange - latRange * (scale / scaleY)) / 2) * scale
-
-    // Clear
-    ctx.fillStyle = 'hsl(0 0% 7%)'
-    ctx.fillRect(0, 0, width, height)
-
-    // Build HR lookup for coloring
-    const hrByTime = new Map<number, number>()
-    for (const s of hrSamples) {
-      hrByTime.set(new Date(s.timestamp).getTime(), s.bpm)
-    }
-
-    // HR zone colors
-    const getHrColor = (bpm: number) => {
-      const maxHr = 185
-      const pct = bpm / maxHr
-      if (pct >= 0.85) return '#ef4444' // peak - red
-      if (pct >= 0.7) return '#f97316'  // cardio - orange
-      if (pct >= 0.6) return '#22c55e'  // fat burn - green
-      if (pct >= 0.5) return '#3b82f6'  // warmup - blue
-      return '#6b7280' // rest - gray
-    }
-
-    // Draw route segments colored by HR
-    for (let i = 0; i < locations.length - 1; i++) {
-      const from = locations[i]!
-      const to = locations[i + 1]!
-
-      // Find nearest HR sample
-      const ts = new Date(from.timestamp).getTime()
-      let nearestHr = 140 // default
-      let minDiff = Infinity
-      for (const [hrTs, bpm] of hrByTime) {
-        const diff = Math.abs(ts - hrTs)
-        if (diff < minDiff) {
-          minDiff = diff
-          nearestHr = bpm
-        }
-      }
-
-      ctx.beginPath()
-      ctx.moveTo(toX(from.longitude), toY(from.latitude))
-      ctx.lineTo(toX(to.longitude), toY(to.latitude))
-      ctx.strokeStyle = hrSamples.length > 0 ? getHrColor(nearestHr) : '#22c55e'
-      ctx.lineWidth = 3
-      ctx.lineCap = 'round'
-      ctx.stroke()
-    }
-
-    // Start marker (green)
-    const start = locations[0]!
-    ctx.beginPath()
-    ctx.arc(toX(start.longitude), toY(start.latitude), 6, 0, Math.PI * 2)
-    ctx.fillStyle = '#22c55e'
-    ctx.fill()
-    ctx.strokeStyle = '#fff'
-    ctx.lineWidth = 2
-    ctx.stroke()
-
-    // End marker (red)
-    const end = locations[locations.length - 1]!
-    ctx.beginPath()
-    ctx.arc(toX(end.longitude), toY(end.latitude), 6, 0, Math.PI * 2)
-    ctx.fillStyle = '#ef4444'
-    ctx.fill()
-    ctx.strokeStyle = '#fff'
-    ctx.lineWidth = 2
-    ctx.stroke()
-  }, [locations, hrSamples])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="h-56 w-full bg-background"
-      style={{ imageRendering: 'auto' }}
-    />
   )
 }
 

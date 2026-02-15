@@ -121,7 +121,7 @@ export function MapleAddWalkDialog({
             Add Maple Walk
           </DialogTitle>
           <DialogDescription>
-            Select a recent walking workout to track as a Maple walk.
+            Select a recent workout to track as a Maple walk.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,9 +138,9 @@ export function MapleAddWalkDialog({
               </div>
             ) : availableWorkouts.length === 0 ? (
               <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-muted-foreground">No walking workouts available to link.</p>
+                <p className="text-muted-foreground">No workouts available to link.</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Sync a walk from your Apple Watch first.
+                  Record a walk as &quot;Other&quot; on your Apple Watch and sync it first.
                 </p>
               </div>
             ) : (

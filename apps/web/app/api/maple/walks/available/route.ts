@@ -1,6 +1,7 @@
 /**
- * Available Walking Workouts API
- * GET - List walking workouts not yet linked to maple walks
+ * Available Workouts API for Maple Walks
+ * GET - List workouts (walking + other) not yet linked to maple walks
+ * Maple walks should be recorded as 'Other' on Apple Watch to preserve fitness calibration
  */
 
 import { mapleService } from '@/lib/services/maple.service'
@@ -8,7 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/maple/walks/available
- * List walking workouts that haven't been linked to a maple walk yet
+ * List workouts that haven't been linked to a maple walk yet
+ * Includes both 'walking' (legacy) and 'other' (preferred) workout types
  * Query params:
  *   - limit: Number of results (default 20)
  */

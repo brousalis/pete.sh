@@ -259,6 +259,21 @@ const WORKOUT_LABELS: Record<string, string> = {
   other: 'Workout',
 }
 
+// Hex colors for charts
+const WORKOUT_HEX_COLORS: Record<string, string> = {
+  running: '#22c55e',
+  walking: '#60a5fa',
+  cycling: '#f97316',
+  functionalStrengthTraining: '#a855f7',
+  traditionalStrengthTraining: '#a855f7',
+  coreTraining: '#ec4899',
+  hiit: '#ef4444',
+  rowing: '#06b6d4',
+  stairClimbing: '#f59e0b',
+  elliptical: '#14b8a6',
+  other: '#6b7280',
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -554,15 +569,15 @@ function SyncStatusIndicator({
 }
 
 // ============================================
-// WEEKLY RING SUMMARY
+// WEEKLY PROGRESS (Merged rings + streaks)
 // ============================================
 
-interface WeeklyRingSummaryProps {
+interface WeeklyProgressProps {
   dailyMetrics: DailyMetrics[]
   className?: string
 }
 
-function WeeklyRingSummary({ dailyMetrics, className }: WeeklyRingSummaryProps) {
+function WeeklyProgress({ dailyMetrics, className }: WeeklyProgressProps) {
   // Get last 7 days of data
   const last7Days = useMemo(() => {
     const days: Array<{
@@ -606,71 +621,125 @@ function WeeklyRingSummary({ dailyMetrics, className }: WeeklyRingSummaryProps) 
     return days
   }, [dailyMetrics])
 
-  const totalRingsClosed = last7Days.reduce((sum, day) => sum + day.ringsComplete, 0)
   const perfectDays = last7Days.filter(day => day.ringsComplete === 3).length
 
+  // Streak calculations
+  const streakData = useMemo(() => {
+    const sortedMetrics = [...dailyMetrics].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const calculateStreak = (
+      checkFn: (m: DailyMetrics) => boolean
+    ): { current: number; best: number } => {
+      let longestStreak = 0
+      let tempStreak = 0
+
+      sortedMetrics.forEach(m => {
+        const metricDate = new Date(m.date)
+        metricDate.setHours(0, 0, 0, 0)
+        if (metricDate > today) return
+        if (checkFn(m)) {
+          tempStreak++
+          longestStreak = Math.max(longestStreak, tempStreak)
+        } else {
+          tempStreak = 0
+        }
+      })
+
+      let currentStreak = 0
+      for (let i = sortedMetrics.length - 1; i >= 0; i--) {
+        const m = sortedMetrics[i]
+        if (!m) continue
+        const metricDate = new Date(m.date)
+        metricDate.setHours(0, 0, 0, 0)
+        if (metricDate > today) continue
+        if (checkFn(m)) currentStreak++
+        else break
+      }
+
+      return { current: currentStreak, best: longestStreak }
+    }
+
+    return {
+      move: calculateStreak(m => m.active_calories >= (m.move_goal || 500)),
+      exercise: calculateStreak(m => m.exercise_minutes >= (m.exercise_goal || 30)),
+      stand: calculateStreak(m => m.stand_hours >= (m.stand_goal || 12)),
+    }
+  }, [dailyMetrics])
+
+  const streaks = [
+    { name: 'Move', color: '#FF2D55', ...streakData.move },
+    { name: 'Exercise', color: '#92E82A', ...streakData.exercise },
+    { name: 'Stand', color: '#00D4FF', ...streakData.stand },
+  ]
+
   return (
-    <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
-          <Calendar className="size-4 text-muted-foreground" />
-          This Week
-        </h3>
-        <div className="text-xs text-muted-foreground">
-          {perfectDays}/7 perfect days
+    <div className={cn('rounded-xl border border-border/50 bg-card p-3', className)}>
+      <div className="flex items-center gap-4">
+        {/* 7-day ring row - compact */}
+        <div className="flex flex-1 justify-between gap-1">
+          {last7Days.map(day => (
+            <div
+              key={day.dateStr}
+              className="flex flex-col items-center gap-0.5"
+            >
+              <MiniActivityRings
+                move={day.metrics?.active_calories || 0}
+                moveGoal={day.metrics?.move_goal || 500}
+                exercise={day.metrics?.exercise_minutes || 0}
+                exerciseGoal={day.metrics?.exercise_goal || 30}
+                stand={day.metrics?.stand_hours || 0}
+                standGoal={day.metrics?.stand_goal || 12}
+                size={28}
+              />
+              <span className={cn(
+                'text-[9px]',
+                day.ringsComplete === 3
+                  ? 'font-medium text-green-500'
+                  : 'text-muted-foreground'
+              )}>
+                {day.dayLabel}
+              </span>
+            </div>
+          ))}
         </div>
-      </div>
 
-      {/* 7-day ring row */}
-      <div className="flex justify-between gap-1">
-        {last7Days.map(day => (
-          <div
-            key={day.dateStr}
-            className="flex flex-1 flex-col items-center gap-1"
-          >
-            {/* Mini activity rings */}
-            <MiniActivityRings
-              move={day.metrics?.active_calories || 0}
-              moveGoal={day.metrics?.move_goal || 500}
-              exercise={day.metrics?.exercise_minutes || 0}
-              exerciseGoal={day.metrics?.exercise_goal || 30}
-              stand={day.metrics?.stand_hours || 0}
-              standGoal={day.metrics?.stand_goal || 12}
-              size={32}
-            />
-            {/* Day label */}
-            <span className={cn(
-              'text-[10px]',
-              day.ringsComplete === 3
-                ? 'font-medium text-green-500'
-                : 'text-muted-foreground'
-            )}>
-              {day.dayLabel}
-            </span>
-          </div>
-        ))}
-      </div>
+        {/* Separator */}
+        <div className="h-8 w-px bg-border/30" />
 
-      {/* Summary */}
-      <div className="mt-3 flex items-center justify-center gap-4 border-t border-border/30 pt-3 text-xs">
-        <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-[#FF2D55]" />
-          <span className="text-muted-foreground">
-            {last7Days.filter(d => d.moveComplete).length}/7
-          </span>
+        {/* Streaks inline */}
+        <div className="flex items-center gap-3">
+          {streaks.map(streak => (
+            <div key={streak.name} className="flex items-center gap-1.5 text-[11px]">
+              <div
+                className="size-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: streak.color }}
+              />
+              <span className="font-bold tabular-nums" style={{ color: streak.color }}>
+                {streak.current}
+              </span>
+              <span className="text-muted-foreground">
+                / {streak.best}
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-[#92E82A]" />
-          <span className="text-muted-foreground">
-            {last7Days.filter(d => d.exerciseComplete).length}/7
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-[#00D4FF]" />
-          <span className="text-muted-foreground">
-            {last7Days.filter(d => d.standComplete).length}/7
-          </span>
-        </div>
+
+        {/* Perfect days badge */}
+        {perfectDays > 0 && (
+          <>
+            <div className="h-8 w-px bg-border/30" />
+            <div className="flex items-center gap-1 text-[11px]">
+              <Sparkles className="size-3 text-green-500" />
+              <span className="font-medium text-green-500">{perfectDays}</span>
+              <span className="text-muted-foreground hidden sm:inline">perfect</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -840,27 +909,27 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
   }
 
   return (
-    <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
+    <div className={cn('rounded-xl border border-border/50 bg-card p-3', className)}>
       {/* Header with month navigation */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between">
         <button
           onClick={goToPreviousMonth}
-          className="rounded-lg p-1 hover:bg-muted"
+          className="rounded-md p-0.5 hover:bg-muted"
         >
-          <ChevronDown className="size-5 rotate-90" />
+          <ChevronDown className="size-4 rotate-90" />
         </button>
-        <h3 className="text-sm font-medium">
+        <h3 className="text-xs font-semibold">
           {format(currentMonth, 'MMMM yyyy')}
         </h3>
         <button
           onClick={goToNextMonth}
           disabled={!canGoNext}
           className={cn(
-            'rounded-lg p-1',
+            'rounded-md p-0.5',
             canGoNext ? 'hover:bg-muted' : 'opacity-30 cursor-not-allowed'
           )}
         >
-          <ChevronDown className="size-5 -rotate-90" />
+          <ChevronDown className="size-4 -rotate-90" />
         </button>
       </div>
 
@@ -896,29 +965,260 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
       </div>
 
       {/* Legend and stats */}
-      <div className="mt-4 flex items-center justify-between border-t border-border/30 pt-3">
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="size-2.5 rounded bg-muted/30" />
+      <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-2">
+        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+          <div className="flex items-center gap-0.5">
+            <div className="size-2 rounded-sm bg-muted/30" />
             <span>0</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="size-2.5 rounded bg-amber-500/30" />
+          <div className="flex items-center gap-0.5">
+            <div className="size-2 rounded-sm bg-amber-500/30" />
             <span>1</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="size-2.5 rounded bg-lime-500/40" />
+          <div className="flex items-center gap-0.5">
+            <div className="size-2 rounded-sm bg-lime-500/40" />
             <span>2</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="size-2.5 rounded bg-green-500/50" />
+          <div className="flex items-center gap-0.5">
+            <div className="size-2 rounded-sm bg-green-500/50" />
             <span>3</span>
           </div>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {monthStats.perfectDays} perfect days
+        <div className="text-[10px] text-muted-foreground">
+          {monthStats.perfectDays} perfect
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// MONTH SNAPSHOT (Replaces plain calendar sidebar)
+// ============================================
+
+interface MonthSnapshotProps {
+  workouts: AppleWorkout[]
+  dailyMetrics: DailyMetrics[]
+  onWorkoutClick: (workoutId: string) => void
+}
+
+function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshotProps) {
+  const now = new Date()
+  const currentMonthNum = now.getMonth()
+  const currentYear = now.getFullYear()
+  const todayDate = now.getDate()
+
+  // Month workouts
+  const monthWorkouts = useMemo(() => {
+    return workouts.filter(w => {
+      const d = new Date(w.start_date)
+      return d.getMonth() === currentMonthNum && d.getFullYear() === currentYear
+    })
+  }, [workouts, currentMonthNum, currentYear])
+
+  // Month metrics
+  const monthMetrics = useMemo(() => {
+    return dailyMetrics.filter(m => {
+      const d = new Date(m.date)
+      return d.getMonth() === currentMonthNum && d.getFullYear() === currentYear
+    })
+  }, [dailyMetrics, currentMonthNum, currentYear])
+
+  // Type distribution
+  const typeDistribution = useMemo(() => {
+    const counts: Record<string, number> = {}
+    monthWorkouts.forEach(w => {
+      const label = WORKOUT_LABELS[w.workout_type] || w.workout_type
+      counts[label] = (counts[label] || 0) + 1
+    })
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+  }, [monthWorkouts])
+
+  const totalMonthWorkouts = monthWorkouts.length
+
+  // Month totals
+  const monthTotals = useMemo(() => {
+    const totalDuration = monthWorkouts.reduce((s, w) => s + w.duration, 0)
+    const totalCalories = monthWorkouts.reduce((s, w) => s + w.active_calories, 0)
+    const totalDistance = monthWorkouts.reduce((s, w) => s + (w.distance_miles || 0), 0)
+    return { totalDuration, totalCalories, totalDistance }
+  }, [monthWorkouts])
+
+  // Active days + consistency
+  const activeDays = useMemo(() => {
+    const days = new Set(monthWorkouts.map(w => format(new Date(w.start_date), 'yyyy-MM-dd')))
+    return days.size
+  }, [monthWorkouts])
+
+  // Ring stats this month
+  const monthRingStats = useMemo(() => {
+    let perfect = 0
+    monthMetrics.forEach(m => {
+      const mc = m.active_calories >= (m.move_goal || 500)
+      const ec = m.exercise_minutes >= (m.exercise_goal || 30)
+      const sc = m.stand_hours >= (m.stand_goal || 12)
+      if (mc && ec && sc) perfect++
+    })
+    return { perfect }
+  }, [monthMetrics])
+
+  // Day-by-day heatmap (compact GitHub-style grid)
+  const dayGrid = useMemo(() => {
+    const daysInMonth = new Date(currentYear, currentMonthNum + 1, 0).getDate()
+    const workoutsByDay = new Map<number, number>()
+    monthWorkouts.forEach(w => {
+      const day = new Date(w.start_date).getDate()
+      workoutsByDay.set(day, (workoutsByDay.get(day) || 0) + 1)
+    })
+    const grid: Array<{ day: number; count: number; isToday: boolean; isFuture: boolean }> = []
+    for (let d = 1; d <= daysInMonth; d++) {
+      grid.push({
+        day: d,
+        count: workoutsByDay.get(d) || 0,
+        isToday: d === todayDate,
+        isFuture: d > todayDate,
+      })
+    }
+    return grid
+  }, [currentYear, currentMonthNum, todayDate, monthWorkouts])
+
+  // Best day
+  const bestDay = useMemo(() => {
+    if (monthWorkouts.length === 0) return null
+    const dayMap = new Map<string, { date: string; count: number; calories: number; duration: number }>()
+    monthWorkouts.forEach(w => {
+      const dateStr = format(new Date(w.start_date), 'yyyy-MM-dd')
+      const existing = dayMap.get(dateStr) || { date: dateStr, count: 0, calories: 0, duration: 0 }
+      existing.count++
+      existing.calories += w.active_calories
+      existing.duration += w.duration
+      dayMap.set(dateStr, existing)
+    })
+    return Array.from(dayMap.values()).sort((a, b) => b.calories - a.calories)[0] || null
+  }, [monthWorkouts])
+
+  const consistencyPct = todayDate > 0 ? Math.round((activeDays / todayDate) * 100) : 0
+
+  return (
+    <div className="space-y-3">
+      {/* Month header */}
+      <div className="rounded-xl border border-border/50 bg-card p-3">
+        <div className="mb-2.5 flex items-center justify-between">
+          <h3 className="text-xs font-semibold">{format(now, 'MMMM yyyy')}</h3>
+          <span className="text-[10px] text-muted-foreground">{totalMonthWorkouts} workouts</span>
+        </div>
+
+        {/* Day heatmap grid - compact */}
+        <div className="mb-3 flex flex-wrap gap-[3px]">
+          {dayGrid.map(d => (
+            <div
+              key={d.day}
+              className={cn(
+                'flex size-[18px] items-center justify-center rounded-[3px] text-[8px] transition-colors',
+                d.isFuture && 'bg-muted/15 text-muted-foreground/30',
+                !d.isFuture && d.count === 0 && 'bg-muted/30 text-muted-foreground/50',
+                !d.isFuture && d.count === 1 && 'bg-green-500/30 text-green-300',
+                !d.isFuture && d.count === 2 && 'bg-green-500/50 text-green-200',
+                !d.isFuture && d.count >= 3 && 'bg-green-500/70 text-green-100 font-medium',
+                d.isToday && 'ring-1 ring-primary ring-offset-1 ring-offset-background',
+              )}
+              title={`${format(new Date(currentYear, currentMonthNum, d.day), 'MMM d')}: ${d.count} workout${d.count !== 1 ? 's' : ''}`}
+            >
+              {d.day}
+            </div>
+          ))}
+        </div>
+
+        {/* Consistency + Perfect days */}
+        <div className="flex items-center gap-3 text-[11px]">
+          <div className="flex items-center gap-1.5">
+            <div className="relative h-1.5 w-16 overflow-hidden rounded-full bg-muted/40">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-green-500 transition-all"
+                style={{ width: `${consistencyPct}%` }}
+              />
+            </div>
+            <span className="font-bold tabular-nums text-green-500">{consistencyPct}%</span>
+            <span className="text-muted-foreground text-[10px]">active</span>
+          </div>
+          {monthRingStats.perfect > 0 && (
+            <>
+              <div className="h-3 w-px bg-border/30" />
+              <span className="flex items-center gap-1">
+                <Sparkles className="size-3 text-amber-500" />
+                <span className="font-bold tabular-nums text-amber-500">{monthRingStats.perfect}</span>
+                <span className="text-muted-foreground text-[10px]">perfect</span>
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Month totals */}
+      <div className="rounded-xl border border-border/50 bg-card p-3">
+        <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">This Month</h4>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div className="text-sm font-bold tabular-nums">{formatDuration(monthTotals.totalDuration)}</div>
+            <div className="text-[9px] text-muted-foreground">Duration</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums text-orange-500">{Math.round(monthTotals.totalCalories).toLocaleString()}</div>
+            <div className="text-[9px] text-muted-foreground">Calories</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums text-green-500">{monthTotals.totalDistance.toFixed(1)}</div>
+            <div className="text-[9px] text-muted-foreground">Miles</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Workout type breakdown */}
+      {typeDistribution.length > 0 && (
+        <div className="rounded-xl border border-border/50 bg-card p-3">
+          <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Breakdown</h4>
+          <div className="space-y-1.5">
+            {typeDistribution.map(([type, count]) => {
+              const pct = totalMonthWorkouts > 0 ? (count / totalMonthWorkouts) * 100 : 0
+              // Find the original type key for color lookup
+              const typeKey = Object.entries(WORKOUT_LABELS).find(([, v]) => v === type)?.[0] || 'other'
+              const hexColor = WORKOUT_HEX_COLORS[typeKey] || WORKOUT_HEX_COLORS.other || '#6b7280'
+              return (
+                <div key={type} className="flex items-center gap-2">
+                  <span className="w-16 truncate text-[10px] text-muted-foreground">{type}</span>
+                  <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted/30">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: hexColor }}
+                    />
+                  </div>
+                  <span className="w-5 text-right text-[10px] font-medium tabular-nums">{count}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Best day callout */}
+      {bestDay && (
+        <div className="rounded-xl border border-border/50 bg-card p-3">
+          <h4 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Best Day</h4>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold">{format(new Date(bestDay.date), 'EEEE, MMM d')}</div>
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span>{bestDay.count} workout{bestDay.count !== 1 ? 's' : ''}</span>
+                <span className="text-orange-500 font-medium">{Math.round(bestDay.calories)} cal</span>
+                <span>{formatDuration(bestDay.duration)}</span>
+              </div>
+            </div>
+            <Zap className="size-4 text-amber-500" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1233,79 +1533,77 @@ function WorkoutRow({
   return (
     <div
       className={cn(
-        'group relative cursor-pointer rounded-lg transition-all',
+        'group flex cursor-pointer items-center gap-3 rounded-lg transition-all',
         'hover:bg-muted/40 active:bg-muted/60',
-        'border-l-4 pl-4 pr-3 py-3',
+        'border-l-[3px] pl-3 pr-2 py-2',
         borderColor
       )}
       onClick={onClick}
     >
-      <div className="flex items-center gap-4">
-        {/* Icon */}
-        <div className={cn('rounded-lg p-2.5', bgColor, textColor)}>
-          {icon}
-        </div>
-
-        {/* Main info */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className={cn('text-base font-semibold', textColor)}>
-              {label}
-            </span>
-            {showTimeOfDay && (
-              <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                {timeOfDay.icon}
-                {format(startTime, 'h:mm a')}
-              </span>
-            )}
-          </div>
-
-          {/* Stats row */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Timer className="text-muted-foreground size-3.5" />
-              {formatDuration(workout.duration)}
-            </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <Flame className="size-3.5 text-orange-500" />
-              {Math.round(workout.active_calories)} cal
-            </span>
-            {workout.hr_average && (
-              <span className="flex items-center gap-1.5 font-medium">
-                <Heart className="size-3.5 text-red-500" />
-                {workout.hr_average} bpm
-              </span>
-            )}
-            {isCardio && workout.distance_miles && (
-              <span className="flex items-center gap-1.5 font-medium">
-                <Route className="size-3.5 text-blue-500" />
-                {workout.distance_miles.toFixed(2)} mi
-              </span>
-            )}
-            {workout.workout_type === 'running' && workout.pace_average && (
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <Clock className="size-3.5" />
-                {formatPace(workout.pace_average)}/mi
-              </span>
-            )}
-            {workout.workout_type === 'running' && workout.cadence_average && (
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <Footprints className="size-3.5" />
-                {workout.cadence_average} spm
-              </span>
-            )}
-            {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
-              <span className="flex items-center gap-1.5 text-green-500">
-                <TrendingUp className="size-3.5" />
-                {Math.round(workout.elevation_gain_meters * 3.28084)} ft
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Arrow */}
-        <ChevronRight className="text-muted-foreground/50 size-5 shrink-0 transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" />
+      {/* Icon */}
+      <div className={cn('rounded-md p-1.5', bgColor, textColor)}>
+        {icon}
       </div>
+
+      {/* Main info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className={cn('text-sm font-semibold', textColor)}>
+            {label}
+          </span>
+          {showTimeOfDay && (
+            <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
+              {timeOfDay.icon}
+              {format(startTime, 'h:mm a')}
+            </span>
+          )}
+        </div>
+
+        {/* Stats row - tighter */}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+          <span className="flex items-center gap-1 font-medium">
+            <Timer className="text-muted-foreground size-3" />
+            {formatDuration(workout.duration)}
+          </span>
+          <span className="flex items-center gap-1 font-medium">
+            <Flame className="size-3 text-orange-500" />
+            {Math.round(workout.active_calories)} cal
+          </span>
+          {workout.hr_average && (
+            <span className="flex items-center gap-1 font-medium">
+              <Heart className="size-3 text-red-500" />
+              {workout.hr_average} bpm
+            </span>
+          )}
+          {isCardio && workout.distance_miles && (
+            <span className="flex items-center gap-1 font-medium">
+              <Route className="size-3 text-blue-500" />
+              {workout.distance_miles.toFixed(2)} mi
+            </span>
+          )}
+          {workout.workout_type === 'running' && workout.pace_average && (
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Clock className="size-3" />
+              {formatPace(workout.pace_average)}/mi
+            </span>
+          )}
+          {workout.workout_type === 'running' && workout.cadence_average && (
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Footprints className="size-3" />
+              {workout.cadence_average} spm
+            </span>
+          )}
+          {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
+            <span className="flex items-center gap-1 text-green-500">
+              <TrendingUp className="size-3" />
+              {Math.round(workout.elevation_gain_meters * 3.28084)} ft
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Arrow */}
+      <ChevronRight className="text-muted-foreground/40 size-4 shrink-0 transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" />
     </div>
   )
 }
@@ -1339,129 +1637,85 @@ function DayGroupSection({
   )
 
   return (
-    <div className={cn(
-      'rounded-xl transition-all',
-      isCurrentDay && 'bg-primary/5'
-    )}>
+    <div className="transition-all">
       {/* Day Header - Always visible */}
       <div
-        className="group cursor-pointer px-4 py-3 transition-colors md:px-5 md:py-4"
+        className="group flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/30"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-4">
-            {/* Date badge - cleaner circle design */}
-            <div
-              className={cn(
-                'flex size-12 flex-col items-center justify-center rounded-full md:size-14',
-                isCurrentDay
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/60'
-              )}
-            >
-              <span className="text-[10px] font-semibold tracking-wider uppercase md:text-[11px]">
-                {format(group.date, 'EEE')}
-              </span>
-              <span className="text-lg leading-none font-bold md:text-xl">
-                {format(group.date, 'd')}
-              </span>
-            </div>
+        {/* Date badge */}
+        <div
+          className={cn(
+            'flex size-9 shrink-0 flex-col items-center justify-center rounded-lg text-center',
+            isCurrentDay
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted/60'
+          )}
+        >
+          <span className="text-[8px] font-semibold tracking-wider uppercase leading-none">
+            {format(group.date, 'EEE')}
+          </span>
+          <span className="text-xs font-bold leading-tight">
+            {format(group.date, 'd')}
+          </span>
+        </div>
 
-            {/* Day info */}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold md:text-lg">
-                  {group.displayName}
+        {/* Day info - single line */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">{group.displayName}</span>
+            {/* Workout type pills */}
+            <div className="hidden items-center gap-1 sm:flex">
+              {Object.entries(typeBreakdown).map(([type, count]) => (
+                <span
+                  key={type}
+                  className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                >
+                  {type}{count > 1 ? ` ×${count}` : ''}
                 </span>
-              </div>
-              <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                <span>
-                  {group.workoutCount} session{group.workoutCount !== 1 ? 's' : ''}
-                </span>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline">
-                  {Object.entries(typeBreakdown)
-                    .map(([type, count]) => `${count} ${type}`)
-                    .join(', ')}
-                </span>
-              </div>
+              ))}
             </div>
           </div>
-
-          {/* Day totals + expand indicator */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Stats - desktop */}
-            <div className="hidden items-center gap-3 text-sm lg:flex lg:gap-5">
-              <span className="flex items-center gap-1.5">
-                <Timer className="text-muted-foreground size-4" />
-                <span className="font-medium tabular-nums">
-                  {formatDuration(group.totalDuration)}
-                </span>
+          <div className="flex items-center gap-x-3 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Timer className="size-2.5" />
+              {formatDuration(group.totalDuration)}
+            </span>
+            <span className="flex items-center gap-1">
+              <Flame className="size-2.5 text-orange-500" />
+              {Math.round(group.totalCalories)} cal
+            </span>
+            {group.totalDistance > 0 && (
+              <span className="flex items-center gap-1">
+                <Route className="size-2.5 text-blue-500" />
+                {group.totalDistance.toFixed(1)} mi
               </span>
-              <span className="flex items-center gap-1.5">
-                <Flame className="size-4 text-orange-500" />
-                <span className="font-medium tabular-nums">
-                  {Math.round(group.totalCalories)} cal
-                </span>
+            )}
+            {group.avgHr > 0 && (
+              <span className="hidden items-center gap-1 sm:flex">
+                <Heart className="size-2.5 text-red-500" />
+                {group.avgHr} avg
               </span>
-              {group.totalDistance > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <Route className="size-4 text-blue-500" />
-                  <span className="font-medium tabular-nums">
-                    {group.totalDistance.toFixed(1)} mi
-                  </span>
-                </span>
-              )}
-              {group.avgHr > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <Heart className="size-4 text-red-500" />
-                  <span className="font-medium tabular-nums">{group.avgHr} avg</span>
-                </span>
-              )}
-            </div>
-
-            {/* Expand indicator */}
-            <div className={cn(
-              'text-muted-foreground/60 transition-transform duration-200',
-              expanded && 'rotate-180'
-            )}>
-              <ChevronDown className="size-5" />
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Mobile totals - inline below header */}
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs lg:hidden">
-          <span className="flex items-center gap-1">
-            <Timer className="text-muted-foreground size-3.5" />
-            {formatDuration(group.totalDuration)}
-          </span>
-          <span className="flex items-center gap-1">
-            <Flame className="size-3.5 text-orange-500" />
-            {Math.round(group.totalCalories)} cal
-          </span>
-          {group.totalDistance > 0 && (
-            <span className="flex items-center gap-1">
-              <Route className="size-3.5 text-blue-500" />
-              {group.totalDistance.toFixed(1)} mi
-            </span>
-          )}
-          {group.avgHr > 0 && (
-            <span className="flex items-center gap-1">
-              <Heart className="size-3.5 text-red-500" />
-              {group.avgHr} avg
-            </span>
-          )}
+        {/* Expand */}
+        <div className={cn(
+          'text-muted-foreground/50 transition-transform duration-200',
+          expanded && 'rotate-180'
+        )}>
+          <ChevronDown className="size-3.5" />
         </div>
       </div>
 
-      {/* Expanded workout list - smooth animation */}
+      {/* Expanded workout list */}
       <div className={cn(
         'grid transition-all duration-200',
         expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       )}>
         <div className="overflow-hidden">
-          <div className="space-y-1 px-2 pb-3 md:px-3 md:pb-4">
+          <div className="space-y-0.5 px-2 pb-2">
             {group.workouts.map(workout => (
               <WorkoutRow
                 key={workout.id}
@@ -1483,11 +1737,12 @@ function DayGroupSection({
 interface TodayHeroProps {
   workouts: AppleWorkout[]
   metrics: DailyMetrics | null
+  dailyMetrics: DailyMetrics[]
   onWorkoutClick: (workoutId: string) => void
   lastSyncTimestamp?: string | null
 }
 
-function TodayHero({ workouts, metrics, onWorkoutClick, lastSyncTimestamp }: TodayHeroProps) {
+function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTimestamp }: TodayHeroProps) {
   const todayWorkouts = workouts.filter(w => isToday(new Date(w.start_date)))
   const totalDuration = todayWorkouts.reduce((sum, w) => sum + w.duration, 0)
   const totalCalories = todayWorkouts.reduce(
@@ -1499,7 +1754,6 @@ function TodayHero({ workouts, metrics, onWorkoutClick, lastSyncTimestamp }: Tod
     0
   )
 
-  // Get best stats from today
   const avgHr =
     todayWorkouts.filter(w => w.hr_average).length > 0
       ? Math.round(
@@ -1510,16 +1764,40 @@ function TodayHero({ workouts, metrics, onWorkoutClick, lastSyncTimestamp }: Tod
         )
       : 0
 
-  // Use metrics recorded_at if available, otherwise use prop
   const syncTimestamp = metrics?.recorded_at || lastSyncTimestamp || null
 
+  // Past 6 days (not including today) for the subtle history strip
+  const recentDays = useMemo(() => {
+    const days: Array<{
+      dateStr: string
+      dayLabel: string
+      metrics: DailyMetrics | null
+      ringsComplete: number
+    }> = []
+    for (let i = 6; i >= 1; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const dayLabel = i === 1 ? 'Y' : format(date, 'EEEEE')
+      const m = dailyMetrics.find(dm => dm.date === dateStr) || null
+      let ringsComplete = 0
+      if (m) {
+        if (m.active_calories >= (m.move_goal || 500)) ringsComplete++
+        if (m.exercise_minutes >= (m.exercise_goal || 30)) ringsComplete++
+        if (m.stand_hours >= (m.stand_goal || 12)) ringsComplete++
+      }
+      days.push({ dateStr, dayLabel, metrics: m, ringsComplete })
+    }
+    return days
+  }, [dailyMetrics])
+
   return (
-    <div className="from-primary/5 rounded-2xl bg-gradient-to-br to-transparent p-5 md:p-6">
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[auto_1fr]">
-        {/* Left: Activity Rings with Legend */}
-        <div className="flex items-start gap-5 md:gap-6">
-          {metrics && (
+    <div className="rounded-xl border border-border/50 bg-card p-4">
+      {/* Main row */}
+      <div className="flex items-center gap-4">
+        {/* Activity Rings - compact */}
+        {metrics && (
+          <div className="shrink-0">
             <ActivityRings
               move={metrics.active_calories}
               moveGoal={metrics.move_goal || 500}
@@ -1527,133 +1805,142 @@ function TodayHero({ workouts, metrics, onWorkoutClick, lastSyncTimestamp }: Tod
               exerciseGoal={metrics.exercise_goal || 30}
               stand={metrics.stand_hours}
               standGoal={metrics.stand_goal || 12}
-              size={130}
-              showLegend
+              size={80}
             />
-          )}
-
-          {/* Today header - positioned next to rings on mobile/tablet */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Today</h2>
-                <div className="text-muted-foreground mt-1 text-sm">
-                  {format(new Date(), 'EEEE, MMMM d')}
-                </div>
-              </div>
-            </div>
-
-            {/* Sync status indicator */}
-            <SyncStatusIndicator
-              lastSyncTimestamp={syncTimestamp}
-              className="mt-2"
-            />
-
-            {todayWorkouts.length > 0 ? (
-              <div className="mt-3">
-                <Badge
-                  variant="secondary"
-                  className="px-3 py-1 text-sm font-medium"
-                >
-                  {todayWorkouts.length} workout
-                  {todayWorkouts.length !== 1 ? 's' : ''} completed
-                </Badge>
-              </div>
-            ) : (
-              <div className="text-muted-foreground mt-4 text-sm">
-                No workouts yet today
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Today's workout summary stats */}
-        {todayWorkouts.length > 0 && (
-          <div className="md:border-l md:border-border/30 md:pl-6">
-            <div className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wider">
-              Today's Sessions
-            </div>
-            <div className="flex flex-wrap gap-6 md:gap-8">
-              <StatBlock
-                icon={<Timer className="size-4 text-blue-500" />}
-                label="Duration"
-                value={formatDuration(totalDuration)}
-              />
-              <StatBlock
-                icon={<Flame className="size-4 text-orange-500" />}
-                label="Calories"
-                value={Math.round(totalCalories).toString()}
-              />
-              {totalDistance > 0 && (
-                <StatBlock
-                  icon={<Route className="size-4 text-green-500" />}
-                  label="Miles"
-                  value={totalDistance.toFixed(2)}
-                />
-              )}
-              {avgHr > 0 && (
-                <StatBlock
-                  icon={<Heart className="size-4 text-red-500" />}
-                  label="Avg HR"
-                  value={avgHr.toString()}
-                  unit="bpm"
-                />
-              )}
-            </div>
           </div>
         )}
-      </div>
 
-      {/* Today's workouts - responsive grid */}
-      {todayWorkouts.length > 0 && (
-        <div className="mt-6 border-t border-border/30 pt-5">
-          <div className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
-            <Clock className="size-3.5" />
-            Today's Timeline
+        {/* Info column */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold">Today</h2>
+            <span className="text-muted-foreground text-xs">
+              {format(new Date(), 'EEEE, MMMM d')}
+            </span>
+            <SyncStatusIndicator
+              lastSyncTimestamp={syncTimestamp}
+              className="ml-auto hidden sm:flex"
+            />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {todayWorkouts.map(workout => (
-              <TodayWorkoutTile
-                key={workout.id}
-                workout={workout}
-                onClick={() => onWorkoutClick(workout.id)}
-              />
+
+          {/* Ring legend - horizontal inline */}
+          {metrics && (
+            <div className="mt-1 flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-[#FF2D55]" />
+                <span className="text-muted-foreground">Move</span>
+                <span className="font-medium tabular-nums" style={{ color: '#FF2D55' }}>{metrics.active_calories}</span>
+                <span className="text-muted-foreground">/{metrics.move_goal || 500}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-[#92E82A]" />
+                <span className="text-muted-foreground">Exercise</span>
+                <span className="font-medium tabular-nums" style={{ color: '#92E82A' }}>{metrics.exercise_minutes}</span>
+                <span className="text-muted-foreground">/{metrics.exercise_goal || 30}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-[#00D4FF]" />
+                <span className="text-muted-foreground">Stand</span>
+                <span className="font-medium tabular-nums" style={{ color: '#00D4FF' }}>{metrics.stand_hours}</span>
+                <span className="text-muted-foreground">/{metrics.stand_goal || 12}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Workout summary line */}
+          {todayWorkouts.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs">
+              {todayWorkouts.map(w => {
+                const tc = WORKOUT_TEXT_COLORS[w.workout_type] ?? WORKOUT_TEXT_COLORS.other
+                return (
+                  <span key={w.id} className={cn('flex items-center gap-1 font-medium', tc)}>
+                    {getWorkoutIcon(w.workout_type, 'sm')}
+                    {WORKOUT_LABELS[w.workout_type] || w.workout_type}
+                    <span className="text-muted-foreground font-normal">{formatDuration(w.duration)}</span>
+                  </span>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-muted-foreground mt-1.5 text-xs">
+              No workouts yet today
+            </div>
+          )}
+        </div>
+
+        {/* Right side: past 6 days as subtle mini rings - desktop */}
+        <div className="hidden shrink-0 items-center gap-3 border-l border-border/20 pl-4 md:flex">
+          {/* Stats when workouts exist */}
+          {todayWorkouts.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 text-xs">
+                <div className="text-center">
+                  <div className="text-sm font-bold tabular-nums">{formatDuration(totalDuration)}</div>
+                  <div className="text-muted-foreground text-[10px]">Duration</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-bold tabular-nums text-orange-500">{Math.round(totalCalories)}</div>
+                  <div className="text-muted-foreground text-[10px]">Calories</div>
+                </div>
+                {totalDistance > 0 && (
+                  <div className="text-center">
+                    <div className="text-sm font-bold tabular-nums text-green-500">{totalDistance.toFixed(1)}</div>
+                    <div className="text-muted-foreground text-[10px]">Miles</div>
+                  </div>
+                )}
+                {avgHr > 0 && (
+                  <div className="text-center">
+                    <div className="text-sm font-bold tabular-nums text-red-500">{avgHr}</div>
+                    <div className="text-muted-foreground text-[10px]">Avg HR</div>
+                  </div>
+                )}
+              </div>
+              <div className="h-8 w-px bg-border/20" />
+            </>
+          )}
+
+          {/* Past 6 days mini rings */}
+          <div className="flex items-center gap-1.5">
+            {recentDays.map(day => (
+              <div key={day.dateStr} className="flex flex-col items-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
+                <MiniActivityRings
+                  move={day.metrics?.active_calories || 0}
+                  moveGoal={day.metrics?.move_goal || 500}
+                  exercise={day.metrics?.exercise_minutes || 0}
+                  exerciseGoal={day.metrics?.exercise_goal || 30}
+                  stand={day.metrics?.stand_hours || 0}
+                  standGoal={day.metrics?.stand_goal || 12}
+                  size={22}
+                />
+                <span className={cn(
+                  'text-[8px] leading-none',
+                  day.ringsComplete === 3 ? 'text-green-500' : 'text-muted-foreground/60'
+                )}>
+                  {day.dayLabel}
+                </span>
+              </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Expanded workout tiles - only when workouts exist */}
+      {todayWorkouts.length > 0 && (
+        <div className="mt-3 grid grid-cols-1 gap-2 border-t border-border/20 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+          {todayWorkouts.map(workout => (
+            <TodayWorkoutTile
+              key={workout.id}
+              workout={workout}
+              onClick={() => onWorkoutClick(workout.id)}
+            />
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-// Stat block for Today section
-interface StatBlockProps {
-  icon: React.ReactNode
-  label: string
-  value: string
-  unit?: string
-}
-
-function StatBlock({ icon, label, value, unit }: StatBlockProps) {
-  return (
-    <div>
-      <div className="text-muted-foreground mb-1 flex items-center gap-1.5 text-xs">
-        {icon}
-        {label}
-      </div>
-      <div className="text-xl font-bold tabular-nums md:text-2xl">
-        {value}
-        {unit && (
-          <span className="text-muted-foreground ml-1 text-sm font-normal">
-            {unit}
-          </span>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Today's workout tile - cleaner design
+// Today's workout tile - compact inline design
 interface TodayWorkoutTileProps {
   workout: AppleWorkout
   onClick: () => void
@@ -1672,7 +1959,7 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
   const borderColor = isOutdoorRun
     ? 'border-cyan-500/30'
     : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
-  const icon = getWorkoutIcon(workout.workout_type, 'md')
+  const icon = getWorkoutIcon(workout.workout_type, 'sm')
   const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : (WORKOUT_LABELS[workout.workout_type] || workout.workout_type)
   const isCardio = [
     'running',
@@ -1686,58 +1973,53 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
   return (
     <div
       className={cn(
-        'group cursor-pointer rounded-xl p-4 transition-all',
-        'border-l-4 hover:bg-muted/40 active:scale-[0.98]',
+        'group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 transition-all',
+        'border-l-[3px] hover:bg-muted/40 active:scale-[0.99]',
         bgColor,
         borderColor
       )}
       onClick={onClick}
     >
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={cn('rounded-lg p-2', bgColor, textColor)}>
-            {icon}
-          </div>
-          <div>
-            <div className={cn('text-base font-semibold', textColor)}>{label}</div>
-            <div className="text-muted-foreground text-xs">
-              {format(new Date(workout.start_date), 'h:mm a')}
-            </div>
-          </div>
+      <div className={cn('rounded-md p-1.5', bgColor, textColor)}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className={cn('text-sm font-semibold', textColor)}>{label}</span>
+          <span className="text-muted-foreground text-[10px]">
+            {format(new Date(workout.start_date), 'h:mm a')}
+          </span>
         </div>
-        <ChevronRight className="text-muted-foreground/50 size-5 transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" />
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <span className="flex items-center gap-1.5">
-          <Timer className="text-muted-foreground size-3.5" />
-          <span className="font-medium">{formatDuration(workout.duration)}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Flame className="size-3.5 text-orange-500" />
-          <span className="font-medium">{Math.round(workout.active_calories)} cal</span>
-        </span>
-        {workout.hr_average && (
-          <span className="flex items-center gap-1.5">
-            <Heart className="size-3.5 text-red-500" />
-            <span className="font-medium">{workout.hr_average} bpm</span>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Timer className="size-3" />
+            <span className="font-medium text-foreground">{formatDuration(workout.duration)}</span>
           </span>
-        )}
-        {isCardio && workout.distance_miles && (
-          <span className="flex items-center gap-1.5">
-            <Route className="size-3.5 text-blue-500" />
-            <span className="font-medium">{workout.distance_miles.toFixed(2)} mi</span>
+          <span className="flex items-center gap-1">
+            <Flame className="size-3 text-orange-500" />
+            <span className="font-medium text-foreground">{Math.round(workout.active_calories)} cal</span>
           </span>
-        )}
+          {workout.hr_average && (
+            <span className="flex items-center gap-1">
+              <Heart className="size-3 text-red-500" />
+              <span className="font-medium text-foreground">{workout.hr_average} bpm</span>
+            </span>
+          )}
+          {isCardio && workout.distance_miles && (
+            <span className="flex items-center gap-1">
+              <Route className="size-3 text-blue-500" />
+              <span className="font-medium text-foreground">{workout.distance_miles.toFixed(2)} mi</span>
+            </span>
+          )}
+        </div>
       </div>
+      <ChevronRight className="text-muted-foreground/40 size-4 shrink-0 transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" />
     </div>
   )
 }
 
 // ============================================
-// WEEKLY STATS SECTION (Responsive: horizontal on mobile, vertical on sidebar)
+// WEEKLY SUMMARY BAR (Horizontal stat bar with trends)
 // ============================================
 
 interface WeeklyStatsSectionProps {
@@ -1772,105 +2054,73 @@ function WeeklyStatsSection({ summary, previousSummary }: WeeklyStatsSectionProp
       value: summary.totalWorkouts,
       unit: '',
       trend: workoutTrend,
-      icon: <Dumbbell className="size-5 text-purple-500" />,
+      icon: <Dumbbell className="size-4 text-purple-500" />,
     },
     {
       label: 'Duration',
       value: summary.totalDurationMin,
       unit: 'min',
-      icon: <Timer className="size-5 text-blue-500" />,
+      icon: <Timer className="size-4 text-blue-500" />,
     },
     {
       label: 'Calories',
       value: summary.totalCalories.toLocaleString(),
       unit: '',
       trend: calorieTrend,
-      icon: <Flame className="size-5 text-orange-500" />,
+      icon: <Flame className="size-4 text-orange-500" />,
     },
     {
       label: 'Distance',
       value: summary.totalDistanceMiles.toFixed(1),
       unit: 'mi',
       trend: distanceTrend,
-      icon: <Route className="size-5 text-green-500" />,
+      icon: <Route className="size-4 text-green-500" />,
     },
   ]
 
   return (
-    <div className="rounded-xl bg-muted/30 p-5">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="text-muted-foreground size-4" />
-          <span className="font-semibold">This Week</span>
-        </div>
-        <span className="text-muted-foreground text-sm">
-          Week of {format(new Date(summary.weekStart), 'MMM d')}
-        </span>
+    <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card px-4 py-2.5">
+      {/* Label */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Calendar className="text-muted-foreground size-3.5" />
+        <span className="text-xs font-semibold">This Week</span>
       </div>
 
-      {/* Stats - 4-col grid on mobile/tablet, 2x2 grid on lg sidebar */}
-      <div className="grid grid-cols-4 gap-3 lg:grid-cols-2 lg:gap-4">
+      {/* Stats inline */}
+      <div className="flex flex-1 items-center gap-4 sm:gap-6">
         {stats.map(stat => (
-          <div
-            key={stat.label}
-            className="text-center lg:flex lg:items-center lg:gap-3 lg:rounded-lg lg:bg-background/40 lg:p-3 lg:text-left"
-          >
-            <div className="mb-2 flex justify-center lg:mb-0 lg:shrink-0">
-              {stat.icon}
-            </div>
-            <div className="lg:min-w-0 lg:flex-1">
-              <div className="flex items-center justify-center gap-1 lg:justify-start">
-                <span className="text-xl font-bold tabular-nums lg:text-lg">
-                  {stat.value}
-                </span>
-                {stat.unit && (
-                  <span className="text-muted-foreground text-xs">
-                    {stat.unit}
-                  </span>
+          <div key={stat.label} className="flex items-center gap-1.5">
+            <div className="shrink-0 opacity-70">{stat.icon}</div>
+            <span className="text-sm font-bold tabular-nums">
+              {stat.value}
+            </span>
+            {stat.unit && (
+              <span className="text-muted-foreground text-[10px]">
+                {stat.unit}
+              </span>
+            )}
+            {stat.trend && (
+              <span
+                className={cn(
+                  'flex items-center text-[10px]',
+                  stat.trend > 0 ? 'text-green-500' : 'text-red-500'
                 )}
-                {stat.trend && (
-                  <span
-                    className={cn(
-                      'ml-0.5 flex items-center text-xs',
-                      stat.trend > 0 ? 'text-green-500' : 'text-red-500'
-                    )}
-                  >
-                    {stat.trend > 0 ? (
-                      <TrendingUp className="size-3.5" />
-                    ) : (
-                      <TrendingDown className="size-3.5" />
-                    )}
-                  </span>
+              >
+                {stat.trend > 0 ? (
+                  <TrendingUp className="size-2.5" />
+                ) : (
+                  <TrendingDown className="size-2.5" />
                 )}
-              </div>
-              <div className="text-muted-foreground mt-0.5 text-xs">
-                {stat.label}
-              </div>
-            </div>
+              </span>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Workout type breakdown - wrapping pills */}
-      {Object.keys(summary.workoutTypes).length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-border/30 pt-4">
-          {Object.entries(summary.workoutTypes).map(([type, count]) => {
-            const textColor = WORKOUT_TEXT_COLORS[type] ?? WORKOUT_TEXT_COLORS.other
-            return (
-              <span
-                key={type}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full bg-background/60 px-3 py-1 text-xs font-medium',
-                  textColor
-                )}
-              >
-                {WORKOUT_LABELS[type] || type}: {count}
-              </span>
-            )
-          })}
-        </div>
-      )}
+      {/* Week label - desktop only */}
+      <span className="text-muted-foreground hidden text-[10px] sm:block">
+        Week of {format(new Date(summary.weekStart), 'MMM d')}
+      </span>
     </div>
   )
 }
@@ -2139,11 +2389,254 @@ function HealthMetricRow({ icon, label, value, unit, trend, trendInverted }: Hea
 }
 
 // ============================================
-// WORKOUT INSIGHTS (Full-width historical analysis)
+// TRAINING OVERVIEW STRIP
+// ============================================
+
+interface TrainingOverviewProps {
+  workouts: AppleWorkout[]
+  dailyMetrics: DailyMetrics[]
+}
+
+function TrainingOverview({ workouts, dailyMetrics }: TrainingOverviewProps) {
+  // Workout streak (consecutive days)
+  const workoutStreak = useMemo(() => {
+    if (workouts.length === 0) return 0
+    const workoutDays = new Set(
+      workouts.map(w => format(new Date(w.start_date), 'yyyy-MM-dd'))
+    )
+    let streak = 0
+    const today = new Date()
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
+      const key = format(d, 'yyyy-MM-dd')
+      if (workoutDays.has(key)) {
+        streak++
+      } else if (i > 0) {
+        break
+      }
+    }
+    return streak
+  }, [workouts])
+
+  // Ring streaks (last 30 days)
+  const ringStreaks = useMemo(() => {
+    const sorted = [...dailyMetrics]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 30)
+
+    const calc = (fn: (m: DailyMetrics) => boolean) => {
+      let current = 0
+      for (const m of sorted) {
+        if (fn(m)) current++
+        else break
+      }
+      return current
+    }
+
+    return {
+      move: calc(m => m.active_calories >= (m.move_goal || 500)),
+      exercise: calc(m => m.exercise_minutes >= (m.exercise_goal || 30)),
+      stand: calc(m => m.stand_hours >= (m.stand_goal || 12)),
+    }
+  }, [dailyMetrics])
+
+  // Averages (last 7 days)
+  const weekAvg = useMemo(() => {
+    const last7 = dailyMetrics.slice(0, 7)
+    if (last7.length === 0) return null
+    const avgSteps = Math.round(last7.reduce((s, m) => s + m.steps, 0) / last7.length)
+    const avgCal = Math.round(last7.reduce((s, m) => s + m.active_calories, 0) / last7.length)
+    const avgExercise = Math.round(last7.reduce((s, m) => s + m.exercise_minutes, 0) / last7.length)
+    return { avgSteps, avgCal, avgExercise }
+  }, [dailyMetrics])
+
+  if (!weekAvg && workoutStreak === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-xs">
+      {/* Workout streak */}
+      {workoutStreak > 0 && (
+        <div className="flex items-center gap-1.5">
+          <Zap className="size-3.5 text-amber-500" />
+          <span className="font-bold tabular-nums text-amber-500">{workoutStreak}</span>
+          <span className="text-muted-foreground">day streak</span>
+        </div>
+      )}
+
+      {/* Ring streaks */}
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground text-[10px]">Rings:</span>
+        <span className="flex items-center gap-1">
+          <span className="size-1.5 rounded-full bg-[#FF2D55]" />
+          <span className="font-bold tabular-nums" style={{ color: '#FF2D55' }}>{ringStreaks.move}</span>
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="size-1.5 rounded-full bg-[#92E82A]" />
+          <span className="font-bold tabular-nums" style={{ color: '#92E82A' }}>{ringStreaks.exercise}</span>
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="size-1.5 rounded-full bg-[#00D4FF]" />
+          <span className="font-bold tabular-nums" style={{ color: '#00D4FF' }}>{ringStreaks.stand}</span>
+        </span>
+        <span className="text-muted-foreground text-[10px]">day streaks</span>
+      </div>
+
+      {/* Separator */}
+      <div className="hidden h-4 w-px bg-border/30 sm:block" />
+
+      {/* 7-day averages */}
+      {weekAvg && (
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground text-[10px]">7d avg:</span>
+          <span className="flex items-center gap-1">
+            <Footprints className="size-3 text-blue-500" />
+            <span className="font-medium tabular-nums">{weekAvg.avgSteps.toLocaleString()}</span>
+            <span className="text-muted-foreground text-[10px]">steps</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <Flame className="size-3 text-orange-500" />
+            <span className="font-medium tabular-nums">{weekAvg.avgCal}</span>
+            <span className="text-muted-foreground text-[10px]">cal</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <Timer className="size-3 text-green-500" />
+            <span className="font-medium tabular-nums">{weekAvg.avgExercise}</span>
+            <span className="text-muted-foreground text-[10px]">min</span>
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// HEALTH VITALS ROW (Promoted from sidebar)
+// ============================================
+
+interface HealthVitalsRowProps {
+  dailyMetrics: DailyMetrics[]
+}
+
+function HealthVitalsRow({ dailyMetrics }: HealthVitalsRowProps) {
+  const currentMetrics = dailyMetrics[0]
+  const previousMetrics = dailyMetrics[1]
+
+  const getMetricTrend = (current: number | null, previous: number | null) => {
+    if (!current || !previous) return null
+    const diff = current - previous
+    if (Math.abs(diff) < 0.5) return null
+    return diff
+  }
+
+  const hrTrend = getMetricTrend(
+    currentMetrics?.resting_heart_rate ?? null,
+    previousMetrics?.resting_heart_rate ?? null
+  )
+  const hrvTrend = getMetricTrend(
+    currentMetrics?.heart_rate_variability ?? null,
+    previousMetrics?.heart_rate_variability ?? null
+  )
+  const vo2Trend = getMetricTrend(
+    currentMetrics?.vo2_max ?? null,
+    previousMetrics?.vo2_max ?? null
+  )
+
+  const hasAnyData = currentMetrics?.resting_heart_rate || currentMetrics?.heart_rate_variability || currentMetrics?.vo2_max
+  if (!hasAnyData) return null
+
+  const vitals = [
+    currentMetrics?.resting_heart_rate ? {
+      icon: <Heart className="size-3.5 text-red-500" />,
+      label: 'Resting HR',
+      value: currentMetrics.resting_heart_rate,
+      unit: 'bpm',
+      trend: hrTrend,
+      trendInverted: true,
+      bgColor: 'bg-red-500/10',
+    } : null,
+    currentMetrics?.heart_rate_variability ? {
+      icon: <HeartPulse className="size-3.5 text-purple-500" />,
+      label: 'HRV',
+      value: Math.round(currentMetrics.heart_rate_variability),
+      unit: 'ms',
+      trend: hrvTrend,
+      trendInverted: false,
+      bgColor: 'bg-purple-500/10',
+    } : null,
+    currentMetrics?.vo2_max ? {
+      icon: <Wind className="size-3.5 text-cyan-500" />,
+      label: 'VO2 Max',
+      value: currentMetrics.vo2_max.toFixed(1),
+      unit: '',
+      trend: vo2Trend,
+      trendInverted: false,
+      bgColor: 'bg-cyan-500/10',
+    } : null,
+  ].filter(Boolean) as {
+    icon: React.ReactNode
+    label: string
+    value: number | string
+    unit: string
+    trend: number | null
+    trendInverted: boolean
+    bgColor: string
+  }[]
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-3 py-2.5">
+      {vitals.map((vital, i) => {
+        const isGood = vital.trendInverted ? (vital.trend && vital.trend < 0) : (vital.trend && vital.trend > 0)
+        const isBad = vital.trendInverted ? (vital.trend && vital.trend > 0) : (vital.trend && vital.trend < 0)
+
+        return (
+          <div key={vital.label} className="flex items-center gap-1.5">
+            {i > 0 && <div className="mx-1.5 h-5 w-px bg-border/30" />}
+            <div className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', vital.bgColor)}>
+              {vital.icon}
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-bold tabular-nums">{vital.value}</span>
+              {vital.unit && (
+                <span className="text-muted-foreground text-[10px]">{vital.unit}</span>
+              )}
+              {vital.trend && (
+                <span className={cn(
+                  'flex items-center text-[10px]',
+                  isGood && 'text-green-500',
+                  isBad && 'text-red-500',
+                  !isGood && !isBad && 'text-muted-foreground'
+                )}>
+                  {vital.trend > 0 ? (
+                    <TrendingUp className="size-2.5" />
+                  ) : (
+                    <TrendingDown className="size-2.5" />
+                  )}
+                </span>
+              )}
+            </div>
+            <span className="text-muted-foreground text-[10px] hidden sm:block">{vital.label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ============================================
+// UNIFIED ANALYTICS (Merged workout + daily metrics insights)
 // ============================================
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | '1y' | 'all'
+type AnalyticsTab = 'volume' | 'performance' | 'activity' | 'health'
 
+interface UnifiedAnalyticsProps {
+  workouts: AppleWorkout[]
+  dailyMetrics: DailyMetrics[]
+  onWorkoutClick: (workoutId: string) => void
+}
+
+// Keep old interface for backwards compat in case it's referenced
 interface WorkoutInsightsProps {
   workouts: AppleWorkout[]
   onWorkoutClick: (workoutId: string) => void
@@ -2159,22 +2652,8 @@ const TIME_RANGES: { value: TimeRange; label: string }[] = [
   { value: 'all', label: 'All' },
 ]
 
-// Get hex colors for charts
-const WORKOUT_HEX_COLORS: Record<string, string> = {
-  running: '#22c55e',
-  walking: '#60a5fa',
-  cycling: '#f97316',
-  functionalStrengthTraining: '#a855f7',
-  traditionalStrengthTraining: '#a855f7',
-  coreTraining: '#ec4899',
-  hiit: '#ef4444',
-  rowing: '#06b6d4',
-  stairClimbing: '#f59e0b',
-  elliptical: '#14b8a6',
-  other: '#6b7280',
-}
-
-function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
+// Old WorkoutInsights removed - replaced by UnifiedAnalytics
+function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d')
   const [selectedType, setSelectedType] = useState<string>('all')
   const [volumeMetric, setVolumeMetric] = useState<'duration' | 'distance'>('duration')
@@ -2770,15 +3249,878 @@ function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
 }
 
 // ============================================
-// DAILY METRICS INSIGHTS (Full-width historical analysis)
+// UNIFIED ANALYTICS COMPONENT
 // ============================================
 
+function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAnalyticsProps) {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>('volume')
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d')
+  const [selectedType, setSelectedType] = useState<string>('all')
+
+  // Get unique workout types from data
+  const workoutTypes = useMemo(() => {
+    const types = new Set(workouts.map(w => w.workout_type))
+    return Array.from(types)
+  }, [workouts])
+
+  // Filter workouts by time range
+  const filteredWorkouts = useMemo(() => {
+    const now = new Date()
+    let cutoffDate: Date
+    switch (timeRange) {
+      case '7d': cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break
+      case '30d': cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break
+      case '90d': cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); break
+      case '6m': cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000); break
+      case '1y': cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); break
+      case 'all': default: cutoffDate = new Date(0)
+    }
+    return workouts.filter(w => new Date(w.start_date) >= cutoffDate)
+  }, [workouts, timeRange])
+
+  // Filter daily metrics by time range
+  const filteredMetrics = useMemo(() => {
+    const now = new Date()
+    let cutoffDate: Date
+    switch (timeRange) {
+      case '7d': cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break
+      case '30d': cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break
+      case '90d': cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); break
+      case '6m': cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000); break
+      case '1y': cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); break
+      case 'all': default: cutoffDate = new Date(0)
+    }
+    return dailyMetrics
+      .filter(m => new Date(m.date) >= cutoffDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [dailyMetrics, timeRange])
+
+  const typeFilteredWorkouts = useMemo(() => {
+    if (selectedType === 'all') return filteredWorkouts
+    return filteredWorkouts.filter(w => w.workout_type === selectedType)
+  }, [filteredWorkouts, selectedType])
+
+  // === VOLUME DATA ===
+  const [volumeMetric, setVolumeMetric] = useState<'duration' | 'distance'>('distance')
+
+  const volumeChartData = useMemo(() => {
+    const grouped = new Map<string, Record<string, number>>()
+    const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
+    filteredWorkouts.forEach(w => {
+      const date = new Date(w.start_date)
+      let key: string
+      if (useWeekly) {
+        const weekStart = new Date(date)
+        weekStart.setDate(date.getDate() - date.getDay())
+        key = format(weekStart, 'MMM d')
+      } else {
+        key = format(date, 'MMM d')
+      }
+      if (!grouped.has(key)) grouped.set(key, {})
+      const dayData = grouped.get(key)!
+      const type = w.workout_type
+      const value = volumeMetric === 'duration' ? w.duration / 60 : (w.distance_miles || 0)
+      dayData[type] = (dayData[type] || 0) + value
+    })
+    return Array.from(grouped.entries())
+      .map(([date, data]) => ({ date, ...data }))
+      .slice(-20)
+  }, [filteredWorkouts, timeRange, volumeMetric])
+
+  const distributionData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    filteredWorkouts.forEach(w => { counts[w.workout_type] = (counts[w.workout_type] || 0) + 1 })
+    return Object.entries(counts).map(([type, count]) => ({
+      type,
+      label: WORKOUT_LABELS[type] || type,
+      count,
+      color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+    }))
+  }, [filteredWorkouts])
+
+  const volumeChartConfig: ChartConfig = useMemo(() => {
+    const config: ChartConfig = {}
+    workoutTypes.forEach(type => {
+      config[type] = {
+        label: WORKOUT_LABELS[type] || type,
+        color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+      }
+    })
+    return config
+  }, [workoutTypes])
+
+  // === PERFORMANCE DATA ===
+  const performanceData = useMemo(() => {
+    const grouped = new Map<string, { hr: number[]; pace: number[]; calories: number[]; effort: number[] }>()
+    const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
+    typeFilteredWorkouts.forEach(w => {
+      const date = new Date(w.start_date)
+      let key: string
+      if (useWeekly) {
+        const weekStart = new Date(date)
+        weekStart.setDate(date.getDate() - date.getDay())
+        key = format(weekStart, 'MMM d')
+      } else {
+        key = format(date, 'MMM d')
+      }
+      if (!grouped.has(key)) grouped.set(key, { hr: [], pace: [], calories: [], effort: [] })
+      const dayData = grouped.get(key)!
+      if (w.hr_average) dayData.hr.push(w.hr_average)
+      if (w.pace_average && w.pace_average > 0 && w.pace_average < 30) dayData.pace.push(w.pace_average)
+      dayData.calories.push(w.active_calories / (w.duration / 60))
+      if (w.effort_score && w.effort_score > 0) dayData.effort.push(w.effort_score)
+    })
+    return Array.from(grouped.entries())
+      .map(([date, data]) => ({
+        date,
+        avgHr: data.hr.length > 0 ? Math.round(data.hr.reduce((a, b) => a + b, 0) / data.hr.length) : null,
+        calPerMin: data.calories.length > 0 ? Math.round(data.calories.reduce((a, b) => a + b, 0) / data.calories.length * 10) / 10 : null,
+        effort: data.effort.length > 0 ? Math.round(data.effort.reduce((a, b) => a + b, 0) / data.effort.length) : null,
+      }))
+      .slice(-20)
+  }, [typeFilteredWorkouts, timeRange])
+
+  const performanceChartConfig: ChartConfig = {
+    avgHr: { label: 'Avg HR', color: '#ef4444' },
+    calPerMin: { label: 'Cal/min', color: '#f97316' },
+    effort: { label: 'Effort', color: '#a855f7' },
+  }
+
+  // === ACTIVITY DATA (from daily metrics) ===
+  const activityTrendData = useMemo(() => {
+    const useWeekly = timeRange === '6m' || timeRange === '1y' || timeRange === 'all'
+    if (!useWeekly) {
+      return filteredMetrics.map(m => ({
+        date: format(new Date(m.date), 'MMM d'),
+        steps: m.steps,
+        activeCalories: Math.round(m.active_calories),
+        exerciseMinutes: m.exercise_minutes,
+      }))
+    }
+    const weekGroups = new Map<string, DailyMetrics[]>()
+    filteredMetrics.forEach(m => {
+      const date = new Date(m.date)
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - date.getDay())
+      const key = format(weekStart, 'MMM d')
+      if (!weekGroups.has(key)) weekGroups.set(key, [])
+      weekGroups.get(key)!.push(m)
+    })
+    return Array.from(weekGroups.entries()).map(([date, metrics]) => ({
+      date,
+      steps: Math.round(metrics.reduce((sum, m) => sum + m.steps, 0) / metrics.length),
+      activeCalories: Math.round(metrics.reduce((sum, m) => sum + m.active_calories, 0) / metrics.length),
+      exerciseMinutes: Math.round(metrics.reduce((sum, m) => sum + m.exercise_minutes, 0) / metrics.length),
+    }))
+  }, [filteredMetrics, timeRange])
+
+  const activityChartConfig: ChartConfig = {
+    steps: { label: 'Steps', color: '#60a5fa' },
+    activeCalories: { label: 'Active Cal', color: '#f97316' },
+  }
+
+  // === RING COMPLETION DATA ===
+  const ringCompletionData = useMemo(() => {
+    return filteredMetrics.map(m => {
+      const moveGoal = m.move_goal || 500
+      const exerciseGoal = m.exercise_goal || 30
+      const standGoal = m.stand_goal || 12
+      return {
+        date: format(new Date(m.date), 'MMM d'),
+        move: Math.min(100, Math.round((m.active_calories / moveGoal) * 100)),
+        exercise: Math.min(100, Math.round((m.exercise_minutes / exerciseGoal) * 100)),
+        stand: Math.min(100, Math.round((m.stand_hours / standGoal) * 100)),
+      }
+    })
+  }, [filteredMetrics])
+
+  const ringChartConfig: ChartConfig = {
+    move: { label: 'Move', color: '#FF2D55' },
+    exercise: { label: 'Exercise', color: '#92E82A' },
+    stand: { label: 'Stand', color: '#00D4FF' },
+  }
+
+  // === RING SUMMARY STATS ===
+  const ringStats = useMemo(() => {
+    if (filteredMetrics.length === 0) return null
+    let moveClosed = 0
+    let exerciseClosed = 0
+    let standClosed = 0
+    let perfectDays = 0
+    filteredMetrics.forEach(m => {
+      const mc = m.active_calories >= (m.move_goal || 500)
+      const ec = m.exercise_minutes >= (m.exercise_goal || 30)
+      const sc = m.stand_hours >= (m.stand_goal || 12)
+      if (mc) moveClosed++
+      if (ec) exerciseClosed++
+      if (sc) standClosed++
+      if (mc && ec && sc) perfectDays++
+    })
+    const total = filteredMetrics.length
+    return {
+      movePct: Math.round((moveClosed / total) * 100),
+      exercisePct: Math.round((exerciseClosed / total) * 100),
+      standPct: Math.round((standClosed / total) * 100),
+      perfectDays,
+      total,
+    }
+  }, [filteredMetrics])
+
+  // === WORKOUT STREAK ===
+  const workoutStreak = useMemo(() => {
+    if (workouts.length === 0) return 0
+    const workoutDays = new Set(
+      workouts.map(w => format(new Date(w.start_date), 'yyyy-MM-dd'))
+    )
+    let streak = 0
+    const today = new Date()
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
+      const key = format(d, 'yyyy-MM-dd')
+      if (workoutDays.has(key)) {
+        streak++
+      } else if (i > 0) {
+        break
+      }
+    }
+    return streak
+  }, [workouts])
+
+  // === HEALTH DATA (from daily metrics) ===
+  const healthTrendData = useMemo(() => {
+    return filteredMetrics
+      .filter(m => m.resting_heart_rate || m.heart_rate_variability)
+      .map(m => ({
+        date: format(new Date(m.date), 'MMM d'),
+        restingHR: m.resting_heart_rate,
+        hrv: m.heart_rate_variability ? Math.round(m.heart_rate_variability) : null,
+        vo2Max: m.vo2_max,
+      }))
+  }, [filteredMetrics])
+
+  const healthChartConfig: ChartConfig = {
+    restingHR: { label: 'Resting HR', color: '#ef4444' },
+    hrv: { label: 'HRV', color: '#a855f7' },
+    vo2Max: { label: 'VO2 Max', color: '#06b6d4' },
+  }
+
+  // Health averages
+  const healthAvg = useMemo(() => {
+    const withHR = filteredMetrics.filter(m => m.resting_heart_rate && m.resting_heart_rate > 0)
+    const withHRV = filteredMetrics.filter(m => m.heart_rate_variability && m.heart_rate_variability > 0)
+    const withVO2 = filteredMetrics.filter(m => m.vo2_max && m.vo2_max > 0)
+    return {
+      avgHR: withHR.length > 0 ? Math.round(withHR.reduce((s, m) => s + m.resting_heart_rate!, 0) / withHR.length) : null,
+      avgHRV: withHRV.length > 0 ? Math.round(withHRV.reduce((s, m) => s + m.heart_rate_variability!, 0) / withHRV.length) : null,
+      avgVO2: withVO2.length > 0 ? (withVO2.reduce((s, m) => s + m.vo2_max!, 0) / withVO2.length).toFixed(1) : null,
+    }
+  }, [filteredMetrics])
+
+  // === PERSONAL RECORDS (merged workout + daily) ===
+  const personalRecords = useMemo(() => {
+    const records: {
+      id: string
+      label: string
+      value: string
+      date: string
+      workoutId?: string
+      icon: React.ReactNode
+    }[] = []
+
+    const relevantWorkouts = selectedType === 'all'
+      ? filteredWorkouts
+      : filteredWorkouts.filter(w => w.workout_type === selectedType)
+
+    if (relevantWorkouts.length > 0) {
+      // Fastest pace
+      const runningWorkouts = relevantWorkouts.filter(
+        w => (w.workout_type === 'running' || w.workout_type === 'walking') && w.pace_best
+      )
+      if (runningWorkouts.length > 0) {
+        const fastest = runningWorkouts.reduce((best, w) =>
+          (w.pace_best && (!best.pace_best || w.pace_best < best.pace_best)) ? w : best
+        )
+        if (fastest.pace_best) {
+          records.push({
+            id: 'fastest-pace',
+            label: 'Fastest Pace',
+            value: formatPace(fastest.pace_best) + '/mi',
+            date: format(new Date(fastest.start_date), 'MMM d'),
+            workoutId: fastest.id,
+            icon: <Zap className="size-4 text-amber-500" />,
+          })
+        }
+      }
+
+      // Longest distance
+      const distanceWorkouts = relevantWorkouts.filter(w => w.distance_miles && w.distance_miles > 0)
+      if (distanceWorkouts.length > 0) {
+        const longest = distanceWorkouts.reduce((best, w) =>
+          (w.distance_miles && w.distance_miles > (best.distance_miles || 0)) ? w : best
+        )
+        if (longest.distance_miles) {
+          records.push({
+            id: 'longest-distance',
+            label: 'Longest Distance',
+            value: longest.distance_miles.toFixed(2) + ' mi',
+            date: format(new Date(longest.start_date), 'MMM d'),
+            workoutId: longest.id,
+            icon: <Route className="size-4 text-blue-500" />,
+          })
+        }
+      }
+
+      // Most calories
+      const calorieWorkout = relevantWorkouts.reduce((best, w) =>
+        w.active_calories > best.active_calories ? w : best
+      )
+      records.push({
+        id: 'most-calories',
+        label: 'Most Calories',
+        value: Math.round(calorieWorkout.active_calories).toString() + ' cal',
+        date: format(new Date(calorieWorkout.start_date), 'MMM d'),
+        workoutId: calorieWorkout.id,
+        icon: <Flame className="size-4 text-orange-500" />,
+      })
+
+      // Longest duration
+      const longestDuration = relevantWorkouts.reduce((best, w) =>
+        w.duration > best.duration ? w : best
+      )
+      records.push({
+        id: 'longest-duration',
+        label: 'Longest Workout',
+        value: formatDuration(longestDuration.duration),
+        date: format(new Date(longestDuration.start_date), 'MMM d'),
+        workoutId: longestDuration.id,
+        icon: <Timer className="size-4 text-blue-500" />,
+      })
+    }
+
+    // Daily records
+    if (filteredMetrics.length > 0) {
+      const maxSteps = filteredMetrics.reduce((best, m) => m.steps > best.steps ? m : best)
+      records.push({
+        id: 'max-steps',
+        label: 'Most Steps',
+        value: maxSteps.steps.toLocaleString(),
+        date: format(new Date(maxSteps.date), 'MMM d'),
+        icon: <Footprints className="size-4 text-blue-500" />,
+      })
+
+      // Most exercise minutes
+      const maxExercise = filteredMetrics.reduce((best, m) => m.exercise_minutes > best.exercise_minutes ? m : best)
+      if (maxExercise.exercise_minutes > 0) {
+        records.push({
+          id: 'max-exercise',
+          label: 'Most Exercise',
+          value: maxExercise.exercise_minutes + ' min',
+          date: format(new Date(maxExercise.date), 'MMM d'),
+          icon: <Activity className="size-4 text-green-500" />,
+        })
+      }
+
+      // Lowest resting HR
+      const withHR = filteredMetrics.filter(m => m.resting_heart_rate && m.resting_heart_rate > 0)
+      if (withHR.length > 0) {
+        const lowestHR = withHR.reduce((best, m) => (m.resting_heart_rate! < best.resting_heart_rate!) ? m : best)
+        records.push({
+          id: 'lowest-rhr',
+          label: 'Lowest Resting HR',
+          value: lowestHR.resting_heart_rate + ' bpm',
+          date: format(new Date(lowestHR.date), 'MMM d'),
+          icon: <Heart className="size-4 text-red-500" />,
+        })
+      }
+
+      // Highest HRV
+      const withHRV = filteredMetrics.filter(m => m.heart_rate_variability && m.heart_rate_variability > 0)
+      if (withHRV.length > 0) {
+        const highestHRV = withHRV.reduce((best, m) => (m.heart_rate_variability! > best.heart_rate_variability!) ? m : best)
+        records.push({
+          id: 'highest-hrv',
+          label: 'Highest HRV',
+          value: Math.round(highestHRV.heart_rate_variability!) + ' ms',
+          date: format(new Date(highestHRV.date), 'MMM d'),
+          icon: <HeartPulse className="size-4 text-purple-500" />,
+        })
+      }
+    }
+
+    return records.slice(0, 8)
+  }, [filteredWorkouts, filteredMetrics, selectedType])
+
+  // Summary stats
+  const summaryStats = useMemo(() => {
+    if (filteredMetrics.length === 0 && filteredWorkouts.length === 0) return null
+    const totalSteps = filteredMetrics.reduce((sum, m) => sum + m.steps, 0)
+    const totalCalories = filteredMetrics.reduce((sum, m) => sum + m.active_calories, 0)
+    const totalExercise = filteredMetrics.reduce((sum, m) => sum + m.exercise_minutes, 0)
+    return {
+      totalWorkouts: filteredWorkouts.length,
+      totalSteps,
+      totalCalories: Math.round(totalCalories),
+      totalExercise,
+      avgSteps: filteredMetrics.length > 0 ? Math.round(totalSteps / filteredMetrics.length) : 0,
+    }
+  }, [filteredWorkouts, filteredMetrics])
+
+  const tabs: { value: AnalyticsTab; label: string; icon: React.ReactNode }[] = [
+    { value: 'volume', label: 'Volume', icon: <Dumbbell className="size-3.5" /> },
+    { value: 'performance', label: 'Performance', icon: <TrendingUp className="size-3.5" /> },
+    { value: 'activity', label: 'Activity', icon: <Footprints className="size-3.5" /> },
+    { value: 'health', label: 'Health', icon: <HeartPulse className="size-3.5" /> },
+  ]
+
+  if (workouts.length === 0 && dailyMetrics.length === 0) return null
+
+  // Inline filter components
+  const timeRangeFilter = (
+    <div className="flex rounded-md bg-muted/40 p-0.5">
+      {TIME_RANGES.map(range => (
+        <button
+          key={range.value}
+          onClick={() => setTimeRange(range.value)}
+          className={cn(
+            'rounded-sm px-1.5 py-0.5 text-[10px] font-medium transition-all',
+            timeRange === range.value
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          {range.label}
+        </button>
+      ))}
+    </div>
+  )
+
+  const workoutTypeFilter = workoutTypes.length > 1 ? (
+    <div className="flex flex-wrap items-center gap-1">
+      <button
+        onClick={() => setSelectedType('all')}
+        className={cn(
+          'rounded-full px-2 py-0.5 text-[10px] font-medium transition-all',
+          selectedType === 'all'
+            ? 'bg-foreground/10 text-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        All
+      </button>
+      {workoutTypes.map(type => {
+        const textColor = WORKOUT_TEXT_COLORS[type] ?? WORKOUT_TEXT_COLORS.other
+        const bgColor = WORKOUT_BG_COLORS[type] ?? WORKOUT_BG_COLORS.other
+        const isSelected = selectedType === type
+        return (
+          <button
+            key={type}
+            onClick={() => setSelectedType(type)}
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-medium transition-all',
+              isSelected
+                ? cn(bgColor, textColor)
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {WORKOUT_LABELS[type] || type}
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
+  return (
+    <div className="space-y-3">
+      {/* Header: just title + tab bar */}
+      <div className="flex items-center gap-2">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+          <Activity className="size-4 text-primary" />
+          Analytics
+        </h2>
+        <div className="flex rounded-md bg-muted/30 p-0.5">
+          {tabs.map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                'flex items-center gap-1 rounded-sm px-2.5 py-1 text-[11px] font-medium transition-all',
+                activeTab === tab.value
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab.icon}
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content grid: Chart + Records */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_260px]">
+        {/* Main chart area */}
+        <div className="rounded-xl border border-border/50 bg-card p-3">
+          {/* VOLUME TAB */}
+          {activeTab === 'volume' && (
+            <div>
+              {/* Card-level filters */}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold">Volume Over Time</h3>
+                <div className="flex rounded-md bg-muted/30 p-0.5">
+                  <button
+                    onClick={() => setVolumeMetric('duration')}
+                    className={cn(
+                      'rounded-sm px-2 py-0.5 text-[10px] font-medium',
+                      volumeMetric === 'duration' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+                    )}
+                  >
+                    Duration
+                  </button>
+                  <button
+                    onClick={() => setVolumeMetric('distance')}
+                    className={cn(
+                      'rounded-sm px-2 py-0.5 text-[10px] font-medium',
+                      volumeMetric === 'distance' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+                    )}
+                  >
+                    Distance
+                  </button>
+                </div>
+                <div className="flex-1" />
+                {timeRangeFilter}
+              </div>
+              {workoutTypeFilter && (
+                <div className="mb-3">{workoutTypeFilter}</div>
+              )}
+
+              {volumeChartData.length > 0 ? (
+                <div>
+                  <ChartContainer config={volumeChartConfig} className="h-[220px] w-full">
+                    <BarChart data={volumeChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} tickFormatter={(v) => volumeMetric === 'duration' ? `${v}m` : `${v}mi`} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      {workoutTypes.map(type => (
+                        <Bar key={type} dataKey={type} stackId="volume" fill={WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other} radius={[2, 2, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ChartContainer>
+
+                  {/* Inline distribution */}
+                  {distributionData.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/20 pt-3">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-1">Distribution:</span>
+                      {distributionData.map(item => (
+                        <button
+                          key={item.type}
+                          onClick={() => setSelectedType(item.type === selectedType ? 'all' : item.type)}
+                          className={cn(
+                            'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] transition-all',
+                            selectedType === item.type ? 'bg-background/80 ring-1 ring-border' : 'hover:bg-background/50'
+                          )}
+                        >
+                          <div className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span>{item.label}</span>
+                          <span className="text-muted-foreground">{item.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">No data for selected period</div>
+              )}
+            </div>
+          )}
+
+          {/* PERFORMANCE TAB */}
+          {activeTab === 'performance' && (
+            <div>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold">Performance Trends</h3>
+                <div className="flex-1" />
+                {timeRangeFilter}
+              </div>
+              {workoutTypeFilter && (
+                <div className="mb-3">{workoutTypeFilter}</div>
+              )}
+              {performanceData.length > 0 && performanceData.some(d => d.avgHr || d.calPerMin) ? (
+                <div>
+                  <ChartContainer config={performanceChartConfig} className="h-[220px] w-full">
+                    <LineChart data={performanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                      <YAxis yAxisId="hr" orientation="left" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} domain={['dataMin - 10', 'dataMax + 10']} />
+                      <YAxis yAxisId="cal" orientation="right" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line yAxisId="hr" type="monotone" dataKey="avgHr" stroke="#ef4444" strokeWidth={2} dot={false} connectNulls />
+                      <Line yAxisId="cal" type="monotone" dataKey="calPerMin" stroke="#f97316" strokeWidth={2} dot={false} connectNulls />
+                      {performanceData.some(d => d.effort) && (
+                        <Line yAxisId="cal" type="monotone" dataKey="effort" stroke="#a855f7" strokeWidth={2} dot={false} connectNulls strokeDasharray="4 2" />
+                      )}
+                    </LineChart>
+                  </ChartContainer>
+                  <div className="mt-2 flex items-center justify-center gap-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-0.5 w-4 rounded bg-red-500" />
+                      <span className="text-muted-foreground">Avg HR (bpm)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-0.5 w-4 rounded bg-orange-500" />
+                      <span className="text-muted-foreground">Cal/min</span>
+                    </div>
+                    {performanceData.some(d => d.effort) && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-0.5 w-4 rounded bg-purple-500" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #a855f7 0, #a855f7 4px, transparent 4px, transparent 6px)' }} />
+                        <span className="text-muted-foreground">Effort</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">No performance data for selected filters</div>
+              )}
+            </div>
+          )}
+
+          {/* ACTIVITY TAB */}
+          {activeTab === 'activity' && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Daily Activity</h3>
+                <div className="flex-1" />
+                {timeRangeFilter}
+              </div>
+
+              {/* Period summary strip */}
+              {summaryStats && (
+                <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Footprints className="size-3 text-blue-500" />
+                    <span className="font-bold tabular-nums text-blue-500">{summaryStats.avgSteps.toLocaleString()}</span>
+                    <span className="text-muted-foreground text-[10px]">avg steps/day</span>
+                  </div>
+                  <div className="h-3 w-px bg-border/30" />
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Flame className="size-3 text-orange-500" />
+                    <span className="font-bold tabular-nums text-orange-500">{summaryStats.totalCalories.toLocaleString()}</span>
+                    <span className="text-muted-foreground text-[10px]">total cal</span>
+                  </div>
+                  <div className="h-3 w-px bg-border/30" />
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Timer className="size-3 text-green-500" />
+                    <span className="font-bold tabular-nums text-green-500">{summaryStats.totalExercise}</span>
+                    <span className="text-muted-foreground text-[10px]">exercise min</span>
+                  </div>
+                  {workoutStreak > 0 && (
+                    <>
+                      <div className="h-3 w-px bg-border/30" />
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <Zap className="size-3 text-amber-500" />
+                        <span className="font-bold tabular-nums text-amber-500">{workoutStreak}</span>
+                        <span className="text-muted-foreground text-[10px]">day streak</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Steps + Calories chart */}
+              {activityTrendData.length > 0 ? (
+                <div>
+                  <ChartContainer config={activityChartConfig} className="h-[180px] w-full">
+                    <BarChart data={activityTrendData.slice(-20)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                      <YAxis yAxisId="left" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar yAxisId="left" dataKey="steps" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                      <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke="#f97316" strokeWidth={2} dot={false} />
+                    </BarChart>
+                  </ChartContainer>
+                  <div className="mt-1 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-sm bg-blue-500" /> Steps</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 rounded bg-orange-500" /> Active Cal</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[180px] items-center justify-center text-muted-foreground text-sm">No activity data</div>
+              )}
+
+              {/* Ring completion area chart */}
+              {ringCompletionData.length > 0 && (
+                <div className="mt-4 border-t border-border/20 pt-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Ring Completion %</h4>
+                    {ringStats && (
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span style={{ color: '#FF2D55' }}>{ringStats.movePct}%</span>
+                        <span style={{ color: '#92E82A' }}>{ringStats.exercisePct}%</span>
+                        <span style={{ color: '#00D4FF' }}>{ringStats.standPct}%</span>
+                        {ringStats.perfectDays > 0 && (
+                          <span className="flex items-center gap-0.5 text-green-500">
+                            <Sparkles className="size-2.5" />
+                            {ringStats.perfectDays} perfect
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <ChartContainer config={ringChartConfig} className="h-[120px] w-full">
+                    <AreaChart data={ringCompletionData.slice(-30)} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                      <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} width={30} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area type="monotone" dataKey="move" stroke="#FF2D55" fill="#FF2D55" fillOpacity={0.15} strokeWidth={1.5} dot={false} />
+                      <Area type="monotone" dataKey="exercise" stroke="#92E82A" fill="#92E82A" fillOpacity={0.1} strokeWidth={1.5} dot={false} />
+                      <Area type="monotone" dataKey="stand" stroke="#00D4FF" fill="#00D4FF" fillOpacity={0.08} strokeWidth={1.5} dot={false} />
+                    </AreaChart>
+                  </ChartContainer>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* HEALTH TAB */}
+          {activeTab === 'health' && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Health Metrics</h3>
+                <div className="flex-1" />
+                {timeRangeFilter}
+              </div>
+
+              {/* Health averages strip */}
+              {healthAvg && (healthAvg.avgHR || healthAvg.avgHRV || healthAvg.avgVO2) && (
+                <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
+                  {healthAvg.avgHR && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Heart className="size-3 text-red-500" />
+                      <span className="font-bold tabular-nums text-red-500">{healthAvg.avgHR}</span>
+                      <span className="text-muted-foreground text-[10px]">avg RHR</span>
+                    </div>
+                  )}
+                  {healthAvg.avgHRV && (
+                    <>
+                      <div className="h-3 w-px bg-border/30" />
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <HeartPulse className="size-3 text-purple-500" />
+                        <span className="font-bold tabular-nums text-purple-500">{healthAvg.avgHRV}</span>
+                        <span className="text-muted-foreground text-[10px]">avg HRV</span>
+                      </div>
+                    </>
+                  )}
+                  {healthAvg.avgVO2 && (
+                    <>
+                      <div className="h-3 w-px bg-border/30" />
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <Wind className="size-3 text-cyan-500" />
+                        <span className="font-bold tabular-nums text-cyan-500">{healthAvg.avgVO2}</span>
+                        <span className="text-muted-foreground text-[10px]">avg VO2</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {healthTrendData.length > 0 ? (
+                <div>
+                  <ChartContainer config={healthChartConfig} className="h-[220px] w-full">
+                    <LineChart data={healthTrendData.slice(-30)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="restingHR" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                      <Line type="monotone" dataKey="hrv" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                      <Line type="monotone" dataKey="vo2Max" stroke="#06b6d4" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    </LineChart>
+                  </ChartContainer>
+                  <div className="mt-2 flex items-center justify-center gap-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-0.5 w-4 rounded bg-red-500" />
+                      <span className="text-muted-foreground">Resting HR</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-0.5 w-4 rounded bg-purple-500" />
+                      <span className="text-muted-foreground">HRV (ms)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-0.5 w-4 rounded bg-cyan-500" />
+                      <span className="text-muted-foreground">VO2 Max</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">No health data for selected period</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Records sidebar */}
+        <div className="rounded-xl border border-border/50 bg-card p-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Sparkles className="size-3.5 text-amber-500" />
+            <h3 className="text-xs font-semibold">Records</h3>
+          </div>
+
+          {personalRecords.length > 0 ? (
+            <div className="space-y-1">
+              {personalRecords.map(record => (
+                <button
+                  key={record.id}
+                  onClick={() => record.workoutId && onWorkoutClick(record.workoutId)}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-md bg-muted/30 px-2 py-1.5 text-left transition-all',
+                    record.workoutId && 'hover:bg-muted/50 cursor-pointer'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {record.icon}
+                    <div>
+                      <div className="text-[11px] font-medium leading-tight">{record.label}</div>
+                      <div className="text-muted-foreground text-[9px]">{record.date}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-bold tabular-nums">{record.value}</div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-[100px] items-center justify-center text-muted-foreground text-xs">
+              No records yet
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Keep WorkoutInsights as a wrapper for backwards compatibility
+function WorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsProps) {
+  // This is now unused - UnifiedAnalytics replaces it
+  return null
+}
+
+// Keep DailyMetricsInsights interface
 interface DailyMetricsInsightsProps {
   dailyMetrics: DailyMetrics[]
   className?: string
 }
 
 function DailyMetricsInsights({ dailyMetrics, className }: DailyMetricsInsightsProps) {
+  // This is now unused - UnifiedAnalytics replaces it
+  return null
+}
+
+// Legacy code below kept for reference but unused
+function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsInsightsProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d')
   const [selectedMetric, setSelectedMetric] = useState<'rings' | 'steps' | 'calories' | 'health'>('rings')
 
@@ -3478,100 +4820,80 @@ export function FitnessDashboard({
   const otherGroups = dayGroups.filter(g => !isToday(g.date))
 
   return (
-    <div className={cn('', className)}>
-      {/* Mobile: stacked layout | Desktop: two columns */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* Main Column - Today + Recent Days */}
-        <div className="min-w-0 flex-1 space-y-6">
-          {/* Today Hero Section */}
-          <TodayHero
-            workouts={workouts}
-            metrics={todayMetrics}
-            onWorkoutClick={onWorkoutClick}
-            lastSyncTimestamp={syncMetadata?.lastSyncTimestamp}
-          />
-
-          {/* Weekly Ring Summary */}
-          <WeeklyRingSummary dailyMetrics={dailyMetrics} />
-
-          {/* Ring Streaks */}
-          <RingStreaks dailyMetrics={dailyMetrics} />
-
-          {/* Weekly Stats + Insights - visible on mobile only */}
-          <div className="space-y-4 lg:hidden">
-            {weeklySummary[0] && (
+    <div className={cn('space-y-3', className)}>
+      {/* ==================== TIER 1: AT A GLANCE ==================== */}
+      <div className="space-y-2">
+        <TodayHero
+          workouts={workouts}
+          metrics={todayMetrics}
+          dailyMetrics={dailyMetrics}
+          onWorkoutClick={onWorkoutClick}
+          lastSyncTimestamp={syncMetadata?.lastSyncTimestamp}
+        />
+        <div className="flex gap-2">
+          {weeklySummary[0] && (
+            <div className="flex-1">
               <WeeklyStatsSection
                 summary={weeklySummary[0]}
                 previousSummary={weeklySummary[1]}
               />
-            )}
-            <MonthlyRingCalendar dailyMetrics={dailyMetrics} />
-            <InsightsPanel
-              dailyMetrics={dailyMetrics}
-              workouts={workouts}
-            />
-          </div>
-
-          {/* Recent Days - scrollable container */}
-          {otherGroups.length > 0 && (
-            <div>
-              <h3 className="text-muted-foreground mb-3 flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider">
-                <Calendar className="size-4" />
-                Recent Days
-              </h3>
-              <div className="max-h-[500px] overflow-y-auto rounded-xl scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border">
-                <div className="divide-y divide-border/30 bg-muted/20">
-                  {otherGroups.map((group, idx) => (
-                    <DayGroupSection
-                      key={group.dateKey}
-                      group={group}
-                      onWorkoutClick={onWorkoutClick}
-                      defaultExpanded={idx === 0}
-                    />
-                  ))}
-                </div>
-              </div>
             </div>
           )}
+          <HealthVitalsRow dailyMetrics={dailyMetrics} />
         </div>
+        <TrainingOverview workouts={workouts} dailyMetrics={dailyMetrics} />
+      </div>
 
-        {/* Sidebar - Weekly Stats + Insights (desktop only, sticky) */}
-        <div className="hidden w-[340px] shrink-0 lg:block xl:w-[380px]">
-          <div className="sticky top-4 space-y-4">
-            {weeklySummary[0] && (
-              <WeeklyStatsSection
-                summary={weeklySummary[0]}
-                previousSummary={weeklySummary[1]}
+      {/* ==================== TIER 2: TRAINING LOG ==================== */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_260px]">
+        {/* Recent Days */}
+        {otherGroups.length > 0 && (
+          <div className="divide-y divide-border/20 rounded-xl border border-border/50 bg-card">
+            {otherGroups.slice(0, 7).map((group, idx) => (
+              <DayGroupSection
+                key={group.dateKey}
+                group={group}
+                onWorkoutClick={onWorkoutClick}
+                defaultExpanded={idx === 0}
               />
-            )}
-            <MonthlyRingCalendar dailyMetrics={dailyMetrics} />
-            <InsightsPanel
-              dailyMetrics={dailyMetrics}
-              workouts={workouts}
-            />
+            ))}
           </div>
+        )}
+
+        {/* Month Snapshot - desktop sidebar */}
+        <div className="hidden lg:block">
+          <MonthSnapshot
+            workouts={workouts}
+            dailyMetrics={dailyMetrics}
+            onWorkoutClick={onWorkoutClick}
+          />
         </div>
       </div>
 
-      {/* Historical Workout Insights - Full Width */}
-      {workouts.length > 0 && (
-        <WorkoutInsights
+      {/* Month Snapshot - mobile */}
+      <div className="lg:hidden">
+        <MonthSnapshot
           workouts={workouts}
+          dailyMetrics={dailyMetrics}
+          onWorkoutClick={onWorkoutClick}
+        />
+      </div>
+
+      {/* ==================== TIER 3: ANALYTICS ==================== */}
+      {(workouts.length > 0 || dailyMetrics.length > 0) && (
+        <UnifiedAnalytics
+          workouts={workouts}
+          dailyMetrics={dailyMetrics}
           onWorkoutClick={onWorkoutClick}
         />
       )}
 
-      {/* Daily Metrics Insights - Full Width */}
-      {dailyMetrics.length > 0 && (
-        <DailyMetricsInsights dailyMetrics={dailyMetrics} />
-      )}
-
-      {/* Empty state - cleaner design */}
-      {workouts.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-border/50 py-16 text-center">
-          <Watch className="text-muted-foreground/30 mx-auto mb-4 size-16" />
-          <h3 className="mb-2 text-lg font-semibold">No workouts yet</h3>
-          <p className="text-muted-foreground text-sm">
+      {/* Empty state */}
+      {workouts.length === 0 && dailyMetrics.length === 0 && (
+        <div className="rounded-xl border-2 border-dashed border-border/50 py-12 text-center">
+          <Watch className="text-muted-foreground/30 mx-auto mb-3 size-12" />
+          <h3 className="mb-1 text-sm font-semibold">No workouts yet</h3>
+          <p className="text-muted-foreground text-xs">
             Complete a workout with PeteWatch to see it here
           </p>
         </div>
@@ -3766,4 +5088,3 @@ export function TodayActivityBar({
     </div>
   )
 }
-
