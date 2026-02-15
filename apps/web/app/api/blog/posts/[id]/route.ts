@@ -19,7 +19,7 @@ interface RouteParams {
  */
 function isLocalhostRequest(request: NextRequest): boolean {
   const host = request.headers.get('host') || ''
-  const hostname = host.split(':')[0]
+  const hostname = host.split(':')[0] ?? ''
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')
 }
 
