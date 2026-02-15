@@ -1800,8 +1800,8 @@ function WorkoutRouteMapCanvas({
 
     // Draw route segments colored by HR
     for (let i = 0; i < locations.length - 1; i++) {
-      const from = locations[i]
-      const to = locations[i + 1]
+      const from = locations[i]!
+      const to = locations[i + 1]!
 
       // Find nearest HR sample
       const ts = new Date(from.timestamp).getTime()
@@ -1825,7 +1825,7 @@ function WorkoutRouteMapCanvas({
     }
 
     // Start marker (green)
-    const start = locations[0]
+    const start = locations[0]!
     ctx.beginPath()
     ctx.arc(toX(start.longitude), toY(start.latitude), 6, 0, Math.PI * 2)
     ctx.fillStyle = '#22c55e'
@@ -1835,7 +1835,7 @@ function WorkoutRouteMapCanvas({
     ctx.stroke()
 
     // End marker (red)
-    const end = locations[locations.length - 1]
+    const end = locations[locations.length - 1]!
     ctx.beginPath()
     ctx.arc(toX(end.longitude), toY(end.latitude), 6, 0, Math.PI * 2)
     ctx.fillStyle = '#ef4444'
@@ -1871,22 +1871,22 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
   let cumulativeDistance = 0
 
   for (let i = 0; i < altitudeSamples.length; i++) {
+    const sample = altitudeSamples[i]!
     if (i > 0) {
-      const prev = altitudeSamples[i - 1]
-      const curr = altitudeSamples[i]
+      const prev = altitudeSamples[i - 1]!
       // Haversine approximation for short distances
-      const dLat = (curr.latitude - prev.latitude) * Math.PI / 180
-      const dLng = (curr.longitude - prev.longitude) * Math.PI / 180
+      const dLat = (sample.latitude - prev.latitude) * Math.PI / 180
+      const dLng = (sample.longitude - prev.longitude) * Math.PI / 180
       const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(prev.latitude * Math.PI / 180) * Math.cos(curr.latitude * Math.PI / 180) *
+        Math.cos(prev.latitude * Math.PI / 180) * Math.cos(sample.latitude * Math.PI / 180) *
         Math.sin(dLng / 2) ** 2
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
       cumulativeDistance += 6371000 * c // meters
     }
     chartData.push({
       distance: cumulativeDistance / 1609.344, // miles
-      altitude: altitudeSamples[i].altitude!,
-      altitudeFt: altitudeSamples[i].altitude! * 3.28084,
+      altitude: sample.altitude!,
+      altitudeFt: sample.altitude! * 3.28084,
     })
   }
 

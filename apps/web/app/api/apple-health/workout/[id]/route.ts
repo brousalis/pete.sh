@@ -186,11 +186,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           const numSplits = enhancedAnalytics.splits.length
           const samplesPerSplit = Math.floor(altSamples.length / numSplits)
           for (let i = 0; i < numSplits; i++) {
+            const split = enhancedAnalytics.splits[i]
+            if (!split) continue
             const startIdx = i * samplesPerSplit
             const endIdx = i === numSplits - 1 ? altSamples.length - 1 : (i + 1) * samplesPerSplit
             const startAlt = altSamples[startIdx]?.altitude ?? 0
             const endAlt = altSamples[endIdx]?.altitude ?? 0
-            enhancedAnalytics.splits[i].elevationChange = endAlt - startAlt
+            split.elevationChange = endAlt - startAlt
           }
         }
       }
