@@ -1811,6 +1811,20 @@ final class HealthKitManager {
             softwareVersion: nil
         )
 
+        // Determine indoor/outdoor from workout metadata
+        let isIndoor: Bool?
+        if let indoorMetadata = workout.metadata?[HKMetadataKeyIndoorWorkout] as? Bool {
+            isIndoor = indoorMetadata
+        } else {
+            // Fallback: infer from workout activity type and whether route exists
+            switch workout.workoutActivityType {
+            case .running, .walking, .cycling:
+                isIndoor = routeResult == nil // No route likely means indoor
+            default:
+                isIndoor = true // Strength, HIIT, etc. are indoor
+            }
+        }
+
         let appleHealthWorkout = AppleHealthWorkout(
             id: workout.uuid.uuidString,
             workoutType: workout.workoutActivityType.petehomeType,
@@ -1823,6 +1837,7 @@ final class HealthKitManager {
             distance: distanceMeters,
             distanceMiles: distanceMeters.map { $0 / 1609.344 },
             elevationGain: routeResult?.totalElevationGain,
+            isIndoor: isIndoor,
             heartRate: heartRateSummary,
             heartRateSamples: hrSamplesResult,
             runningMetrics: runningMetrics,

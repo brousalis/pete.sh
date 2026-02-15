@@ -177,6 +177,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           cyclingPowerSamples: cyclingPowerSamplesForAnalytics
         }
       )
+
+      // Inject elevation data from route into splits (if route and splits exist)
+      if (enhancedAnalytics && enhancedAnalytics.splits.length > 0 && result.route?.samples?.length) {
+        const routeSamples = result.route.samples as Array<{ altitude?: number; latitude: number; longitude: number }>
+        const altSamples = routeSamples.filter(s => s.altitude != null)
+        if (altSamples.length > 0) {
+          const numSplits = enhancedAnalytics.splits.length
+          const samplesPerSplit = Math.floor(altSamples.length / numSplits)
+          for (let i = 0; i < numSplits; i++) {
+            const startIdx = i * samplesPerSplit
+            const endIdx = i === numSplits - 1 ? altSamples.length - 1 : (i + 1) * samplesPerSplit
+            const startAlt = altSamples[startIdx]?.altitude ?? 0
+            const endAlt = altSamples[endIdx]?.altitude ?? 0
+            enhancedAnalytics.splits[i].elevationChange = endAlt - startAlt
+          }
+        }
+      }
     }
 
     return NextResponse.json({
@@ -194,6 +211,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         // Events and splits
         workoutEvents: result.workoutEvents,
         splits: result.splits,
+        // Route/GPS data (for outdoor workouts)
+        route: result.route,
         // Analytics
         analytics: enhancedAnalytics,
         // User's HR zones config (for zone-colored charts)

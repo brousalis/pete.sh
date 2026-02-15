@@ -573,6 +573,8 @@ export interface AppleHealthWorkoutInsert {
   walking_double_support_pct?: number | null
   walking_asymmetry_pct?: number | null
   walking_step_count?: number | null
+  // Indoor/outdoor flag
+  is_indoor?: boolean | null
   // Effort score
   effort_score?: number | null
   // Metadata

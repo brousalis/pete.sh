@@ -74,6 +74,7 @@ export interface AppleWorkout {
   total_calories: number
   distance_meters: number | null
   distance_miles: number | null
+  elevation_gain_meters: number | null
   hr_average: number | null
   hr_min: number | null
   hr_max: number | null
@@ -94,6 +95,8 @@ export interface AppleWorkout {
   cycling_max_power: number | null
   // Effort score
   effort_score: number | null
+  // Indoor/outdoor flag
+  is_indoor: boolean | null
   source: string
 }
 
@@ -1204,11 +1207,20 @@ function WorkoutRow({
 }: WorkoutRowProps) {
   const startTime = new Date(workout.start_date)
   const timeOfDay = getTimeOfDay(startTime)
-  const textColor = WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500'
-  const bgColor = WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10'
-  const borderColor = WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40'
+  const isRunning = workout.workout_type === 'running'
+  const isOutdoorRun = isRunning && workout.is_indoor === false
+  const isIndoorRun = isRunning && workout.is_indoor === true
+  const textColor = isOutdoorRun
+    ? 'text-cyan-500'
+    : (WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500')
+  const bgColor = isOutdoorRun
+    ? 'bg-cyan-500/10'
+    : (WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10')
+  const borderColor = isOutdoorRun
+    ? 'border-cyan-500/30'
+    : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
   const icon = getWorkoutIcon(workout.workout_type, 'md')
-  const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : (WORKOUT_LABELS[workout.workout_type] || workout.workout_type)
   const isCardio = [
     'running',
     'walking',
@@ -1280,6 +1292,12 @@ function WorkoutRow({
               <span className="text-muted-foreground flex items-center gap-1.5">
                 <Footprints className="size-3.5" />
                 {workout.cadence_average} spm
+              </span>
+            )}
+            {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
+              <span className="flex items-center gap-1.5 text-green-500">
+                <TrendingUp className="size-3.5" />
+                {Math.round(workout.elevation_gain_meters * 3.28084)} ft
               </span>
             )}
           </div>
@@ -1642,11 +1660,20 @@ interface TodayWorkoutTileProps {
 }
 
 function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
-  const textColor = WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500'
-  const bgColor = WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10'
-  const borderColor = WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40'
+  const isRunning = workout.workout_type === 'running'
+  const isOutdoorRun = isRunning && workout.is_indoor === false
+  const isIndoorRun = isRunning && workout.is_indoor === true
+  const textColor = isOutdoorRun
+    ? 'text-cyan-500'
+    : (WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500')
+  const bgColor = isOutdoorRun
+    ? 'bg-cyan-500/10'
+    : (WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10')
+  const borderColor = isOutdoorRun
+    ? 'border-cyan-500/30'
+    : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
   const icon = getWorkoutIcon(workout.workout_type, 'md')
-  const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : (WORKOUT_LABELS[workout.workout_type] || workout.workout_type)
   const isCardio = [
     'running',
     'walking',

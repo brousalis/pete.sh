@@ -24,6 +24,8 @@ import {
   Heart,
   Info,
   Lightbulb,
+  MapPin,
+  Mountain,
   Pause,
   Play,
   RefreshCw,
@@ -72,6 +74,7 @@ interface AppleWorkout {
   total_calories: number
   distance_meters: number | null
   distance_miles: number | null
+  elevation_gain_meters: number | null
   hr_average: number | null
   hr_min: number | null
   hr_max: number | null
@@ -89,6 +92,7 @@ interface AppleWorkout {
   cycling_avg_power: number | null
   cycling_max_power: number | null
   effort_score: number | null
+  is_indoor: boolean | null
   source: string
 }
 
@@ -128,6 +132,27 @@ interface SplitData {
   avg_pace: number | null
   avg_heart_rate: number | null
   avg_cadence: number | null
+  elevation_change: number | null
+}
+
+interface RouteLocationSample {
+  timestamp: string
+  latitude: number
+  longitude: number
+  altitude?: number
+  speed?: number
+  course?: number
+  horizontalAccuracy?: number
+  verticalAccuracy?: number
+}
+
+interface RouteData {
+  id: string
+  workout_id: string
+  total_distance_meters: number | null
+  total_elevation_gain: number | null
+  total_elevation_loss: number | null
+  samples: RouteLocationSample[] | null
 }
 
 interface HrZoneConfig {
@@ -155,6 +180,7 @@ interface WorkoutDetailResponse {
   cyclingPowerSamples: CyclingPowerSample[]
   workoutEvents: WorkoutEventData[]
   splits: SplitData[]
+  route: RouteData | null
   analytics: EnhancedWorkoutAnalytics | null
   hrZonesConfig: HrZonesConfig | null
 }
@@ -1494,6 +1520,7 @@ function SplitsChart({ splits, className }: { splits: WorkoutSplit[]; className?
   const maxPace = Math.max(...paces)
   const range = maxPace - minPace || 1
   const avgPace = paces.reduce((a, b) => a + b, 0) / paces.length
+  const hasElevation = splits.some(s => s.elevationChange != null && s.elevationChange !== 0)
 
   return (
     <div className={className}>
@@ -1503,7 +1530,7 @@ function SplitsChart({ splits, className }: { splits: WorkoutSplit[]; className?
           const isFastest = split.avgPace === minPace
           const heightPercent = 30 + ((maxPace - split.avgPace) / range) * 70
           return (
-            <div key={idx} className="flex flex-1 flex-col items-center gap-1">
+            <div key={idx} className="group relative flex flex-1 flex-col items-center gap-1">
               <div
                 className={cn(
                   'w-full rounded-t transition-all',
@@ -1512,6 +1539,16 @@ function SplitsChart({ splits, className }: { splits: WorkoutSplit[]; className?
                 style={{ height: `${heightPercent}%` }}
               />
               <span className="text-muted-foreground text-[10px]">{split.splitNumber}</span>
+              {/* Tooltip on hover */}
+              <div className="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded border border-border/50 bg-popover px-2 py-1.5 text-xs shadow-lg group-hover:block">
+                <div className="font-medium">{formatPace(split.avgPace)}/mi</div>
+                {split.avgHr > 0 && <div className="text-muted-foreground">{split.avgHr} bpm</div>}
+                {hasElevation && split.elevationChange != null && (
+                  <div className={cn('text-muted-foreground', split.elevationChange > 0 ? 'text-green-400' : split.elevationChange < 0 ? 'text-red-400' : '')}>
+                    {split.elevationChange > 0 ? '+' : ''}{Math.round(split.elevationChange * 3.28084)} ft
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}
@@ -1526,6 +1563,26 @@ function SplitsChart({ splits, className }: { splits: WorkoutSplit[]; className?
           Avg: <span className="font-medium">{formatPace(avgPace)}/mi</span>
         </span>
       </div>
+
+      {/* Elevation per split (if available) */}
+      {hasElevation && (
+        <div className="mt-2 flex h-6 items-end gap-1">
+          {splits.map((split, idx) => {
+            const elev = split.elevationChange ?? 0
+            const elevFt = Math.round(elev * 3.28084)
+            return (
+              <div key={idx} className="flex flex-1 justify-center">
+                <span className={cn(
+                  'text-[9px] tabular-nums',
+                  elevFt > 0 ? 'text-green-400' : elevFt < 0 ? 'text-red-400' : 'text-muted-foreground'
+                )}>
+                  {elevFt > 0 ? '+' : ''}{elevFt}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -1616,6 +1673,372 @@ function InsightRow({ insight }: { insight: PerformanceInsight }) {
 }
 
 // ============================================
+// ROUTE MAP (for outdoor workouts)
+// ============================================
+
+function WorkoutRouteMap({ route, hrSamples }: { route: RouteData; hrSamples: HrSample[] }) {
+  const samples = route.samples
+  if (!samples || samples.length < 2) return null
+
+  // Convert to the format MapleRouteMap expects
+  const locationSamples = samples.map(s => ({
+    timestamp: s.timestamp,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    altitude: s.altitude,
+    speed: s.speed,
+    course: s.course,
+    horizontalAccuracy: s.horizontalAccuracy,
+    verticalAccuracy: s.verticalAccuracy,
+  }))
+
+  return (
+    <div className="space-y-2">
+      <div className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">Route</div>
+      <div className="overflow-hidden rounded-lg border border-border/30">
+        <WorkoutRouteMapCanvas
+          locations={locationSamples}
+          hrSamples={hrSamples}
+          totalElevationGain={route.total_elevation_gain}
+          totalElevationLoss={route.total_elevation_loss}
+        />
+      </div>
+      {(route.total_elevation_gain != null || route.total_elevation_loss != null) && (
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {route.total_elevation_gain != null && (
+            <span className="flex items-center gap-1">
+              <TrendingUp className="size-3 text-green-400" />
+              +{Math.round(route.total_elevation_gain * 3.28084)} ft gain
+            </span>
+          )}
+          {route.total_elevation_loss != null && (
+            <span className="flex items-center gap-1">
+              <TrendingDown className="size-3 text-red-400" />
+              -{Math.round(route.total_elevation_loss * 3.28084)} ft loss
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Canvas-based route map rendering (no Google Maps dependency)
+function WorkoutRouteMapCanvas({
+  locations,
+  hrSamples,
+  totalElevationGain,
+  totalElevationLoss,
+}: {
+  locations: RouteLocationSample[]
+  hrSamples: HrSample[]
+  totalElevationGain: number | null
+  totalElevationLoss: number | null
+}) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || locations.length < 2) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    ctx.scale(dpr, dpr)
+
+    // Calculate bounds
+    const lats = locations.map(l => l.latitude)
+    const lngs = locations.map(l => l.longitude)
+    const minLat = Math.min(...lats)
+    const maxLat = Math.max(...lats)
+    const minLng = Math.min(...lngs)
+    const maxLng = Math.max(...lngs)
+
+    const padding = 24
+    const drawWidth = width - padding * 2
+    const drawHeight = height - padding * 2
+
+    // Maintain aspect ratio using Mercator-like projection
+    const latRange = maxLat - minLat || 0.001
+    const lngRange = maxLng - minLng || 0.001
+    const midLat = (minLat + maxLat) / 2
+    const lngScale = Math.cos((midLat * Math.PI) / 180)
+    const adjustedLngRange = lngRange * lngScale
+
+    const scaleX = drawWidth / adjustedLngRange
+    const scaleY = drawHeight / latRange
+    const scale = Math.min(scaleX, scaleY)
+
+    const toX = (lng: number) => padding + ((lng - minLng) * lngScale - (adjustedLngRange - adjustedLngRange * (scale / scaleX)) / 2) * scale
+    const toY = (lat: number) => height - padding - ((lat - minLat) - (latRange - latRange * (scale / scaleY)) / 2) * scale
+
+    // Clear
+    ctx.fillStyle = 'hsl(0 0% 7%)'
+    ctx.fillRect(0, 0, width, height)
+
+    // Build HR lookup for coloring
+    const hrByTime = new Map<number, number>()
+    for (const s of hrSamples) {
+      hrByTime.set(new Date(s.timestamp).getTime(), s.bpm)
+    }
+
+    // HR zone colors
+    const getHrColor = (bpm: number) => {
+      const maxHr = 185
+      const pct = bpm / maxHr
+      if (pct >= 0.85) return '#ef4444' // peak - red
+      if (pct >= 0.7) return '#f97316'  // cardio - orange
+      if (pct >= 0.6) return '#22c55e'  // fat burn - green
+      if (pct >= 0.5) return '#3b82f6'  // warmup - blue
+      return '#6b7280' // rest - gray
+    }
+
+    // Draw route segments colored by HR
+    for (let i = 0; i < locations.length - 1; i++) {
+      const from = locations[i]
+      const to = locations[i + 1]
+
+      // Find nearest HR sample
+      const ts = new Date(from.timestamp).getTime()
+      let nearestHr = 140 // default
+      let minDiff = Infinity
+      for (const [hrTs, bpm] of hrByTime) {
+        const diff = Math.abs(ts - hrTs)
+        if (diff < minDiff) {
+          minDiff = diff
+          nearestHr = bpm
+        }
+      }
+
+      ctx.beginPath()
+      ctx.moveTo(toX(from.longitude), toY(from.latitude))
+      ctx.lineTo(toX(to.longitude), toY(to.latitude))
+      ctx.strokeStyle = hrSamples.length > 0 ? getHrColor(nearestHr) : '#22c55e'
+      ctx.lineWidth = 3
+      ctx.lineCap = 'round'
+      ctx.stroke()
+    }
+
+    // Start marker (green)
+    const start = locations[0]
+    ctx.beginPath()
+    ctx.arc(toX(start.longitude), toY(start.latitude), 6, 0, Math.PI * 2)
+    ctx.fillStyle = '#22c55e'
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // End marker (red)
+    const end = locations[locations.length - 1]
+    ctx.beginPath()
+    ctx.arc(toX(end.longitude), toY(end.latitude), 6, 0, Math.PI * 2)
+    ctx.fillStyle = '#ef4444'
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 2
+    ctx.stroke()
+  }, [locations, hrSamples])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="h-56 w-full bg-background"
+      style={{ imageRendering: 'auto' }}
+    />
+  )
+}
+
+// ============================================
+// ELEVATION PROFILE CHART
+// ============================================
+
+function ElevationProfileChart({ route }: { route: RouteData }) {
+  const samples = route.samples
+  if (!samples || samples.length < 2) return null
+
+  // Filter samples with altitude data
+  const altitudeSamples = samples.filter(s => s.altitude != null)
+  if (altitudeSamples.length < 2) return null
+
+  // Calculate cumulative distance for x-axis
+  const chartData: { distance: number; altitude: number; altitudeFt: number }[] = []
+  let cumulativeDistance = 0
+
+  for (let i = 0; i < altitudeSamples.length; i++) {
+    if (i > 0) {
+      const prev = altitudeSamples[i - 1]
+      const curr = altitudeSamples[i]
+      // Haversine approximation for short distances
+      const dLat = (curr.latitude - prev.latitude) * Math.PI / 180
+      const dLng = (curr.longitude - prev.longitude) * Math.PI / 180
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(prev.latitude * Math.PI / 180) * Math.cos(curr.latitude * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      cumulativeDistance += 6371000 * c // meters
+    }
+    chartData.push({
+      distance: cumulativeDistance / 1609.344, // miles
+      altitude: altitudeSamples[i].altitude!,
+      altitudeFt: altitudeSamples[i].altitude! * 3.28084,
+    })
+  }
+
+  // Downsample if too many points
+  const maxPoints = 200
+  const downsampleRate = Math.max(1, Math.floor(chartData.length / maxPoints))
+  const downsampled = chartData.filter((_, i) => i % downsampleRate === 0)
+
+  const minAlt = Math.min(...downsampled.map(d => d.altitudeFt))
+  const maxAlt = Math.max(...downsampled.map(d => d.altitudeFt))
+  const altRange = maxAlt - minAlt
+
+  return (
+    <div>
+      <div className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">Elevation Profile</div>
+      <div className="h-36 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={downsampled} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="distance"
+              tickFormatter={(v: number) => `${v.toFixed(1)}`}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[Math.floor(minAlt - altRange * 0.1), Math.ceil(maxAlt + altRange * 0.1)]}
+              tickFormatter={(v: number) => `${Math.round(v)}`}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false}
+              tickLine={false}
+              width={40}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.[0]) return null
+                const d = payload[0].payload
+                return (
+                  <div className="rounded-lg border border-border/50 bg-popover px-3 py-2 text-xs shadow-lg">
+                    <div className="font-medium">{d.altitudeFt.toFixed(0)} ft</div>
+                    <div className="text-muted-foreground">Mile {d.distance.toFixed(2)}</div>
+                  </div>
+                )
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="altitudeFt"
+              stroke="#22c55e"
+              strokeWidth={1.5}
+              fill="url(#elevGradient)"
+              dot={false}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+        <span>Distance (mi)</span>
+        <span>Elevation (ft)</span>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// RUNNING DYNAMICS CHARTS
+// ============================================
+
+function RunningDynamicsCharts({
+  strideLengthAvg,
+  runningPowerAvg,
+  groundContactTimeAvg,
+  verticalOscillationAvg,
+}: {
+  strideLengthAvg: number | null
+  runningPowerAvg: number | null
+  groundContactTimeAvg: number | null
+  verticalOscillationAvg: number | null
+}) {
+  // Build metrics array for display
+  const metrics: { label: string; value: string; unit: string; color: string; description: string }[] = []
+
+  if (strideLengthAvg != null) {
+    const cm = strideLengthAvg * 100
+    metrics.push({
+      label: 'Stride Length',
+      value: cm.toFixed(0),
+      unit: 'cm',
+      color: 'text-blue-400',
+      description: cm >= 110 ? 'Long stride' : cm >= 90 ? 'Good stride' : 'Short stride',
+    })
+  }
+
+  if (runningPowerAvg != null) {
+    metrics.push({
+      label: 'Running Power',
+      value: Math.round(runningPowerAvg).toString(),
+      unit: 'W',
+      color: 'text-amber-400',
+      description: runningPowerAvg >= 300 ? 'High power' : runningPowerAvg >= 200 ? 'Moderate power' : 'Low power',
+    })
+  }
+
+  if (groundContactTimeAvg != null) {
+    metrics.push({
+      label: 'Ground Contact',
+      value: Math.round(groundContactTimeAvg).toString(),
+      unit: 'ms',
+      color: 'text-purple-400',
+      description: groundContactTimeAvg <= 220 ? 'Elite' : groundContactTimeAvg <= 260 ? 'Good' : 'Needs work',
+    })
+  }
+
+  if (verticalOscillationAvg != null) {
+    metrics.push({
+      label: 'Vertical Oscillation',
+      value: verticalOscillationAvg.toFixed(1),
+      unit: 'cm',
+      color: 'text-cyan-400',
+      description: verticalOscillationAvg <= 7 ? 'Efficient' : verticalOscillationAvg <= 10 ? 'Normal' : 'High bounce',
+    })
+  }
+
+  if (metrics.length === 0) return null
+
+  return (
+    <div>
+      <div className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">Running Dynamics</div>
+      <div className="grid grid-cols-2 gap-3">
+        {metrics.map((m) => (
+          <div key={m.label} className="rounded-lg border border-border/30 bg-muted/20 p-3">
+            <div className="text-muted-foreground text-[10px] uppercase tracking-wider">{m.label}</div>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className={cn('text-xl font-bold tabular-nums', m.color)}>{m.value}</span>
+              <span className="text-muted-foreground text-xs">{m.unit}</span>
+            </div>
+            <div className="text-muted-foreground mt-0.5 text-[10px]">{m.description}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
 // SECTION LABEL
 // ============================================
 
@@ -1676,12 +2099,18 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
     )
   }
 
-  const { workout, analytics } = data
-  const workoutLabel = WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
+  const { workout, analytics, route } = data
   const isRunning = workout.workout_type === 'running'
   const isCycling = workout.workout_type === 'cycling'
+  const isOutdoor = workout.is_indoor === false || (workout.is_indoor == null && route != null)
+  const isIndoor = workout.is_indoor === true || (workout.is_indoor == null && isRunning && route == null)
+  const workoutLabel = isRunning
+    ? (isOutdoor ? 'Outdoor Run' : isIndoor ? 'Indoor Run' : 'Run')
+    : (WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type)
   const hasAnalytics = analytics !== null
   const hasEvents = data.workoutEvents && data.workoutEvents.length > 0
+  const hasRoute = route != null && route.samples != null && route.samples.length >= 2
+  const hasRunningDynamics = isRunning && (workout.stride_length_avg != null || workout.running_power_avg != null || workout.ground_contact_time_avg != null || workout.vertical_oscillation_avg != null)
 
   return (
     <div className={cn(' px-4 py-4', className)}>
@@ -1702,6 +2131,18 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
 
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold">{workoutLabel}</h1>
+          {isRunning && isOutdoor && (
+            <div className="flex items-center gap-1 rounded-full bg-cyan-500/20 px-2.5 py-1 text-xs font-medium text-cyan-400">
+              <MapPin className="size-3.5" />
+              Outdoor
+            </div>
+          )}
+          {isRunning && isIndoor && (
+            <div className="flex items-center gap-1 rounded-full bg-blue-500/20 px-2.5 py-1 text-xs font-medium text-blue-400">
+              <Dumbbell className="size-3.5" />
+              Indoor
+            </div>
+          )}
           {workout.effort_score && (
             <div className={cn(
               'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
@@ -1711,6 +2152,12 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
             )}>
               <Activity className="size-3.5" />
               {workout.effort_score.toFixed(1)}/10
+            </div>
+          )}
+          {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
+            <div className="flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-1 text-xs font-medium text-green-400">
+              <Mountain className="size-3.5" />
+              {Math.round(workout.elevation_gain_meters * 3.28084)} ft
             </div>
           )}
         </div>
@@ -1725,6 +2172,18 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
       {advice.keyTakeaways.length > 0 && (
         <section className="mb-8">
           <KeyTakeaways advice={advice} />
+        </section>
+      )}
+
+      {/* ============================================ */}
+      {/* ROUTE MAP & ELEVATION (Full Width, outdoor only) */}
+      {/* ============================================ */}
+      {hasRoute && (
+        <section className="mb-8">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <WorkoutRouteMap route={route!} hrSamples={data.hrSamples} />
+            <ElevationProfileChart route={route!} />
+          </div>
         </section>
       )}
 
@@ -1759,16 +2218,15 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
             </section>
           )}
 
-          {/* Running Form */}
-          {isRunning && (workout.stride_length_avg || workout.ground_contact_time_avg || workout.vertical_oscillation_avg || workout.running_power_avg) && (
+          {/* Running Dynamics (rich cards for outdoor runs) */}
+          {hasRunningDynamics && (
             <section>
-              <SectionLabel>Running Form</SectionLabel>
-              <div className="grid grid-cols-2 gap-6">
-                {workout.stride_length_avg && <Stat label="Stride" value={(workout.stride_length_avg * 100).toFixed(0)} unit="cm" />}
-                {workout.ground_contact_time_avg && <Stat label="Ground Contact" value={Math.round(workout.ground_contact_time_avg)} unit="ms" />}
-                {workout.vertical_oscillation_avg && <Stat label="Vertical Osc" value={workout.vertical_oscillation_avg.toFixed(1)} unit="cm" />}
-                {workout.running_power_avg && <Stat label="Power" value={Math.round(workout.running_power_avg)} unit="W" />}
-              </div>
+              <RunningDynamicsCharts
+                strideLengthAvg={workout.stride_length_avg}
+                runningPowerAvg={workout.running_power_avg}
+                groundContactTimeAvg={workout.ground_contact_time_avg}
+                verticalOscillationAvg={workout.vertical_oscillation_avg}
+              />
             </section>
           )}
 
