@@ -151,13 +151,20 @@
 			);
 			target = CBB3A45D2F0C2DCE00D10471 /* PeteTrainWidgetsExtension */;
 		};
+		CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CBCC38CA2F2D69350013DFC7 /*   */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CBB3A3C82F0C2CCB00D10471 /* petetrain */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = petetrain; sourceTree = "<group>"; };
 		CBB3A4442F0C2D2800D10471 /* PeteTrainWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PeteTrainWidgets; sourceTree = "<group>"; };
 		CBB3A4612F0C2DCE00D10471 /* PeteTrainWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBB3A46E2F0C2DD100D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PeteTrainWidgets; sourceTree = "<group>"; };
-		CBCC38CC2F2D69350013DFC7 /* PeteTrainiOS */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PeteTrainiOS; sourceTree = "<group>"; };
+		CBCC38CC2F2D69350013DFC7 /* PeteTrainiOS */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PeteTrainiOS; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
