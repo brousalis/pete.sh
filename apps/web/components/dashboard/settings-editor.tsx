@@ -1,6 +1,7 @@
 'use client'
 
 import { ColorThemePicker } from '@/components/color-theme'
+import { DiagnosticsCard } from '@/components/dashboard/diagnostics-card'
 import { useSettings } from '@/components/settings-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -512,6 +513,9 @@ export function SettingsEditor() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Ecosystem Diagnostics */}
+      <DiagnosticsCard />
     </div>
   )
 }
