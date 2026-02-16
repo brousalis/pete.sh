@@ -10,6 +10,13 @@
 	<array>
 		<string>fetch</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>petehome connects to your local server for real-time smart home control when you're on your home network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+		<string>_https._tcp</string>
+	</array>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Pete Train needs access to read your health data to sync your activity rings and workout data.</string>
 	<key>NSHealthUpdateUsageDescription</key>

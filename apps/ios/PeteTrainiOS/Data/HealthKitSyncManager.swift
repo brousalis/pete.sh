@@ -110,6 +110,10 @@ final class HealthKitSyncManager {
             HKQuantityType(.heartRate),
             HKQuantityType(.restingHeartRate),
             HKQuantityType(.heartRateVariabilitySDNN),
+            // Body Composition (from Fitindex ES-26M scale)
+            HKQuantityType(.bodyMass),
+            HKQuantityType(.bodyFatPercentage),
+            HKQuantityType(.leanBodyMass),
             // Cardio Fitness
             HKQuantityType(.vo2Max),
             // Running Metrics
@@ -1911,6 +1915,11 @@ final class HealthKitSyncManager {
         async let walkingSpeed = queryMostRecentSample(.walkingSpeed, start: startOfDay, end: endOfDay)
         async let walkingStepLength = queryMostRecentSample(.walkingStepLength, start: startOfDay, end: endOfDay)
 
+        // Body composition (from Fitindex ES-26M scale via HealthKit)
+        async let bodyMass = queryMostRecentSample(.bodyMass, start: startOfDay, end: endOfDay)
+        async let bodyFatPct = queryMostRecentSample(.bodyFatPercentage, start: startOfDay, end: endOfDay)
+        async let leanBodyMass = queryMostRecentSample(.leanBodyMass, start: startOfDay, end: endOfDay)
+
         // Fetch activity summary including stand hours AND activity ring goals
         let activitySummary = await queryActivitySummary(for: date)
 
@@ -1934,6 +1943,9 @@ final class HealthKitSyncManager {
             walkingAsymmetryPercentage: walkingAsymmetry,
             walkingSpeed: walkingSpeed,
             walkingStepLength: walkingStepLength,
+            bodyMassLbs: bodyMass,
+            bodyFatPercentage: bodyFatPct,
+            leanBodyMassLbs: leanBodyMass,
             source: "PeteTrain-iOS",
             recordedAt: Date().iso8601String
         )
@@ -2036,6 +2048,8 @@ final class HealthKitSyncManager {
         case .walkingDoubleSupportPercentage, .walkingAsymmetryPercentage: return .percent()
         case .walkingSpeed: return .meter().unitDivided(by: .second())
         case .walkingStepLength: return .meter()
+        case .bodyMass, .leanBodyMass: return .pound()
+        case .bodyFatPercentage: return .percent()
         default: return .count()
         }
     }

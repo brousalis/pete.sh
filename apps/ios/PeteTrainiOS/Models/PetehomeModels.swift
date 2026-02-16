@@ -296,6 +296,11 @@ struct PetehomeDailyMetrics: Codable {
     let walkingSpeed: Double?
     let walkingStepLength: Double?
 
+    // Body composition (from Fitindex ES-26M scale via HealthKit)
+    let bodyMassLbs: Double?
+    let bodyFatPercentage: Double?
+    let leanBodyMassLbs: Double?
+
     let source: String
     let recordedAt: String
 }
