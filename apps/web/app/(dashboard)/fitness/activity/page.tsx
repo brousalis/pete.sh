@@ -92,19 +92,11 @@ export default function ActivityDashboardPage() {
   if (selectedWorkoutId) {
     return (
       <div className="h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackFromDetail}
-          >
-            <ChevronLeft className="size-4 mr-1" />
-            Back
-          </Button>
-          <h1 className="text-lg font-semibold">Workout Details</h1>
-        </div>
         <ScrollArea className="flex-1">
-          <EnhancedWorkoutDetailView workoutId={selectedWorkoutId} />
+          <EnhancedWorkoutDetailView
+            workoutId={selectedWorkoutId}
+            onBack={handleBackFromDetail}
+          />
         </ScrollArea>
       </div>
     )

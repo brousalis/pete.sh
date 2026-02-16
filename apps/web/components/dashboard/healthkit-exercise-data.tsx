@@ -132,6 +132,7 @@ const ZONE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
 const WORKOUT_COLORS: Record<string, string> = {
   running: 'border-green-500/30 bg-green-500/5',
   walking: 'border-blue-400/30 bg-blue-400/5',
+  hiking: 'border-emerald-400/30 bg-emerald-400/5',
   cycling: 'border-orange-500/30 bg-orange-500/5',
   functionalStrengthTraining: 'border-purple-500/30 bg-purple-500/5',
   traditionalStrengthTraining: 'border-purple-500/30 bg-purple-500/5',
@@ -143,6 +144,7 @@ const WORKOUT_COLORS: Record<string, string> = {
 const WORKOUT_LABELS: Record<string, string> = {
   running: 'Run',
   walking: 'Walk',
+  hiking: 'Hike',
   cycling: 'Cycle',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
@@ -412,6 +414,7 @@ export function HealthKitExerciseData({
   const isCardio = [
     'running',
     'walking',
+    'hiking',
     'cycling',
     'rowing',
     'elliptical',
@@ -807,6 +810,7 @@ export function CompactWorkoutMetrics({
   const isCardio = [
     'running',
     'walking',
+    'hiking',
     'cycling',
     'rowing',
     'elliptical',

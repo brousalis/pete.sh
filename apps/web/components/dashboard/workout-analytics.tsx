@@ -113,6 +113,7 @@ const ZONE_LABELS: Record<HeartRateZone['name'], string> = {
 const WORKOUT_TYPE_LABELS: Record<string, string> = {
   running: 'Run',
   walking: 'Walk',
+  hiking: 'Hike',
   cycling: 'Cycle',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
@@ -290,7 +291,7 @@ interface WorkoutCardProps {
 
 export function WorkoutCard({ workout, onClick, compact = false }: WorkoutCardProps) {
   const workoutLabel = WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
-  const isCardio = ['running', 'walking', 'cycling', 'rowing', 'stairClimbing', 'elliptical'].includes(workout.workout_type)
+  const isCardio = ['running', 'walking', 'hiking', 'cycling', 'rowing', 'stairClimbing', 'elliptical'].includes(workout.workout_type)
 
   return (
     <Card 

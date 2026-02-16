@@ -172,6 +172,7 @@ export interface WorkoutEvent {
 export type AppleWorkoutType =
   | 'running'
   | 'walking'
+  | 'hiking'
   | 'cycling'
   | 'functionalStrengthTraining'
   | 'traditionalStrengthTraining'
@@ -186,6 +187,7 @@ export type AppleWorkoutType =
 export const APPLE_WORKOUT_TYPE_MAP: Record<number, AppleWorkoutType> = {
   37: 'running', // HKWorkoutActivityType.running
   52: 'walking', // HKWorkoutActivityType.walking
+  24: 'hiking', // HKWorkoutActivityType.hiking
   13: 'cycling', // HKWorkoutActivityType.cycling
   20: 'functionalStrengthTraining',
   50: 'traditionalStrengthTraining',

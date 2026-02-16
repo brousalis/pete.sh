@@ -51,6 +51,7 @@ const WORKOUT_TYPE_PATTERNS: Record<AppleWorkoutType, string[]> = {
   walking: ['walk', 'hike', 'incline'],
   cycling: ['bike', 'cycling', 'spin'],
   rowing: ['row', 'rower', 'erg'],
+  hiking: ['hike', 'trail', 'mountain', 'hiking'],
 
   // Other workout types
   coreTraining: ['core', 'ab', 'plank', 'crunch'],

@@ -140,7 +140,7 @@ export function MapleAddWalkDialog({
               <div className="rounded-lg border border-dashed p-6 text-center">
                 <p className="text-muted-foreground">No workouts available to link.</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Record a walk as &quot;Other&quot; on your Apple Watch and sync it first.
+                  Record a walk as &quot;Hiking&quot; on your Apple Watch and sync it first.
                 </p>
               </div>
             ) : (

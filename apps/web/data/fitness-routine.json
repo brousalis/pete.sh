@@ -1082,7 +1082,7 @@
           "workout": {
             "workoutId": "monday-density-strength",
             "completed": true,
-            "completedAt": "2026-02-12T04:32:52.360Z",
+            "completedAt": "2026-02-15T23:07:45.699Z",
             "exercisesCompleted": [
               "warmup-1",
               "warmup-2",
@@ -1245,7 +1245,20 @@
         "thursday": {},
         "friday": {},
         "saturday": {},
-        "sunday": {}
+        "sunday": {
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-16T14:10:54.833Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-16T14:10:58.408Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        }
       }
     },
     {
@@ -1527,5 +1540,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-15T17:37:13.951Z"
+  "updatedAt": "2026-02-16T14:18:17.748Z"
 }

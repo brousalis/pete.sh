@@ -1939,6 +1939,7 @@ const WORKOUT_LABELS: Record<string, string> = {
   running: 'Run',
   cycling: 'Cycle',
   walking: 'Walk',
+  hiking: 'Hike',
   swimming: 'Swim',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
@@ -2085,6 +2086,7 @@ function UnifiedActivitySummary({
                 const borderColorMap: Record<string, string> = {
                   running: 'border-l-green-500',
                   walking: 'border-l-teal-500',
+                  hiking: 'border-l-emerald-500',
                   cycling: 'border-l-blue-500',
                   swimming: 'border-l-cyan-500',
                   functionalStrengthTraining: 'border-l-purple-500',

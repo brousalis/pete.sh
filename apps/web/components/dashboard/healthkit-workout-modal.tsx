@@ -56,6 +56,7 @@ interface HealthKitWorkoutModalProps {
 const WORKOUT_TYPE_LABELS: Record<string, string> = {
   running: 'Run',
   walking: 'Walk',
+  hiking: 'Hike',
   cycling: 'Cycling',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Strength',
@@ -70,6 +71,7 @@ const WORKOUT_TYPE_LABELS: Record<string, string> = {
 const WORKOUT_TYPE_ICONS: Record<string, typeof Activity> = {
   running: Activity,
   walking: Activity,
+  hiking: Activity,
   cycling: Activity,
   functionalStrengthTraining: Activity,
   rowing: Activity,

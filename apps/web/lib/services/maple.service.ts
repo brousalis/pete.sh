@@ -280,8 +280,9 @@ class MapleService {
 
   /**
    * Get workouts not yet linked to maple walks
-   * Includes both 'walking' (legacy) and 'other' (preferred) workout types
-   * to avoid polluting Apple Watch calibration data with dog walk pace
+   * Includes 'hiking' (preferred), 'walking' (legacy), and 'other' workout types.
+   * Maple walks should be recorded as 'Hiking' on Apple Watch to get GPS route
+   * data while avoiding polluting walk/run calibration.
    */
   async getAvailableWorkouts(limit: number = 20): Promise<AvailableWalkingWorkout[]> {
     const supabase = getSupabaseClientForOperation('read')
@@ -290,12 +291,12 @@ class MapleService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
 
-    // Get walking and 'other' workouts (Maple walks should be recorded as 'Other' on Apple Watch
-    // to avoid affecting fitness calibration, but we still support legacy 'walking' links)
+    // Get hiking, walking, and 'other' workouts (Maple walks should be recorded as 'Hiking'
+    // on Apple Watch to get GPS while avoiding fitness calibration impact)
     const { data: workouts, error: workoutsError } = await db
       .from('apple_health_workouts')
       .select('id, healthkit_id, start_date, end_date, duration, distance_miles, active_calories, hr_average, hr_max')
-      .in('workout_type', ['walking', 'other'])
+      .in('workout_type', ['hiking', 'walking', 'other'])
       .order('start_date', { ascending: false })
       .limit(limit * 2) // Get more to filter out linked ones
 

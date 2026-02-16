@@ -475,6 +475,8 @@ extension HKWorkoutActivityType {
             return "running"
         case .walking:
             return "walking"
+        case .hiking:
+            return "hiking"
         case .cycling:
             return "cycling"
         case .functionalStrengthTraining:

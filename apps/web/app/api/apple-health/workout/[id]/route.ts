@@ -198,6 +198,69 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Derive GPS-based pace time-series from route speed data (far more granular than HealthKit pace)
+    let gpsPaceData: Array<{ elapsedSeconds: number; pace: number; speed: number }> | null = null
+    if (result.route?.samples?.length && result.route.samples.length >= 2) {
+      const routeSamples = result.route.samples as Array<{
+        timestamp: string; speed?: number; altitude?: number;
+        latitude: number; longitude: number
+      }>
+      const workoutStartMs = new Date(result.workout.start_date).getTime()
+      const duration = result.workout.duration
+
+      // Build raw pace data from GPS speed at each point
+      const rawGps: Array<{ elapsed: number; speed: number }> = []
+      for (const sample of routeSamples) {
+        if (sample.speed == null || sample.speed < 0.3) continue // filter standing still
+        if (sample.speed > 6.5) continue // filter unreasonable speeds (> ~14.5 mph)
+        const elapsed = (new Date(sample.timestamp).getTime() - workoutStartMs) / 1000
+        if (elapsed < 0 || elapsed > duration + 30) continue
+        rawGps.push({ elapsed, speed: sample.speed })
+      }
+
+      if (rawGps.length >= 10) {
+        // Sort by elapsed time
+        rawGps.sort((a, b) => a.elapsed - b.elapsed)
+
+        // Smooth with rolling average (window of ~5 seconds)
+        const smoothed: typeof rawGps = []
+        const windowSize = 5
+        for (let i = 0; i < rawGps.length; i++) {
+          const start = Math.max(0, i - Math.floor(windowSize / 2))
+          const end = Math.min(rawGps.length, i + Math.ceil(windowSize / 2))
+          let sumSpeed = 0
+          for (let j = start; j < end; j++) sumSpeed += rawGps[j]!.speed
+          smoothed.push({ elapsed: rawGps[i]!.elapsed, speed: sumSpeed / (end - start) })
+        }
+
+        // Downsample to 15-second grid (aligned with time-series data)
+        const interval = 15
+        const buckets = new Map<number, { total: number; count: number }>()
+        for (const pt of smoothed) {
+          const bucket = Math.round(pt.elapsed / interval) * interval
+          const existing = buckets.get(bucket)
+          if (existing) {
+            existing.total += pt.speed
+            existing.count++
+          } else {
+            buckets.set(bucket, { total: pt.speed, count: 1 })
+          }
+        }
+
+        gpsPaceData = []
+        for (const [elapsed, { total, count }] of buckets.entries()) {
+          const avgSpeed = total / count
+          const pace = 26.8224 / avgSpeed // Convert m/s to min/mi
+          if (pace >= 4 && pace <= 25) { // reasonable pace range
+            gpsPaceData.push({ elapsedSeconds: elapsed, pace: Math.round(pace * 100) / 100, speed: Math.round(avgSpeed * 100) / 100 })
+          }
+        }
+        gpsPaceData.sort((a, b) => a.elapsedSeconds - b.elapsedSeconds)
+
+        if (gpsPaceData.length < 5) gpsPaceData = null // not enough data points
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -215,6 +278,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         splits: result.splits,
         // Route/GPS data (for outdoor workouts)
         route: result.route,
+        // GPS-derived pace time-series (more granular than HealthKit pace for outdoor runs)
+        gpsPaceData,
         // Analytics
         analytics: enhancedAnalytics,
         // User's HR zones config (for zone-colored charts)

@@ -158,6 +158,7 @@ function getWorkoutIcon(type: string, size: 'sm' | 'md' | 'lg' = 'md') {
   const icons: Record<string, React.ReactNode> = {
     running: <Route className={sizeClass} />,
     walking: <Footprints className={sizeClass} />,
+    hiking: <Footprints className={sizeClass} />,
     cycling: <Bike className={sizeClass} />,
     functionalStrengthTraining: <Dumbbell className={sizeClass} />,
     traditionalStrengthTraining: <Dumbbell className={sizeClass} />,
@@ -174,6 +175,7 @@ function getWorkoutIcon(type: string, size: 'sm' | 'md' | 'lg' = 'md') {
 const WORKOUT_ICONS: Record<string, React.ReactNode> = {
   running: <Route className="size-5" />,
   walking: <Footprints className="size-5" />,
+  hiking: <Footprints className="size-5" />,
   cycling: <Bike className="size-5" />,
   functionalStrengthTraining: <Dumbbell className="size-5" />,
   traditionalStrengthTraining: <Dumbbell className="size-5" />,
@@ -189,6 +191,7 @@ const WORKOUT_ICONS: Record<string, React.ReactNode> = {
 const WORKOUT_TEXT_COLORS: Record<string, string> = {
   running: 'text-green-500',
   walking: 'text-blue-400',
+  hiking: 'text-emerald-400',
   cycling: 'text-orange-500',
   functionalStrengthTraining: 'text-purple-500',
   traditionalStrengthTraining: 'text-purple-500',
@@ -203,6 +206,7 @@ const WORKOUT_TEXT_COLORS: Record<string, string> = {
 const WORKOUT_BG_COLORS: Record<string, string> = {
   running: 'bg-green-500/10',
   walking: 'bg-blue-400/10',
+  hiking: 'bg-emerald-400/10',
   cycling: 'bg-orange-500/10',
   functionalStrengthTraining: 'bg-purple-500/10',
   traditionalStrengthTraining: 'bg-purple-500/10',
@@ -217,6 +221,7 @@ const WORKOUT_BG_COLORS: Record<string, string> = {
 const WORKOUT_BORDER_COLORS: Record<string, string> = {
   running: 'border-green-500/60',
   walking: 'border-blue-400/60',
+  hiking: 'border-emerald-400/60',
   cycling: 'border-orange-500/60',
   functionalStrengthTraining: 'border-purple-500/60',
   traditionalStrengthTraining: 'border-purple-500/60',
@@ -232,6 +237,7 @@ const WORKOUT_BORDER_COLORS: Record<string, string> = {
 const WORKOUT_COLORS: Record<string, string> = {
   running: 'text-green-500 bg-green-500/10 border-green-500/30',
   walking: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
+  hiking: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
   cycling: 'text-orange-500 bg-orange-500/10 border-orange-500/30',
   functionalStrengthTraining:
     'text-purple-500 bg-purple-500/10 border-purple-500/30',
@@ -248,6 +254,7 @@ const WORKOUT_COLORS: Record<string, string> = {
 const WORKOUT_LABELS: Record<string, string> = {
   running: 'Run',
   walking: 'Walk',
+  hiking: 'Hike',
   cycling: 'Cycle',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
@@ -263,6 +270,7 @@ const WORKOUT_LABELS: Record<string, string> = {
 const WORKOUT_HEX_COLORS: Record<string, string> = {
   running: '#22c55e',
   walking: '#60a5fa',
+  hiking: '#34d399',
   cycling: '#f97316',
   functionalStrengthTraining: '#a855f7',
   traditionalStrengthTraining: '#a855f7',
@@ -1524,6 +1532,7 @@ function WorkoutRow({
   const isCardio = [
     'running',
     'walking',
+    'hiking',
     'cycling',
     'rowing',
     'stairClimbing',
@@ -1964,6 +1973,7 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
   const isCardio = [
     'running',
     'walking',
+    'hiking',
     'cycling',
     'rowing',
     'stairClimbing',

@@ -921,9 +921,10 @@ final class HealthKitManager {
     
     // MARK: - Walking Metrics (for Maple walks)
     
-    /// Whether a workout type is eligible for walking metrics (walking + other for Maple dog walks)
+    /// Whether a workout type is eligible for walking metrics (walking, hiking, or other for Maple dog walks)
     private func isWalkingOrMapleWorkout(_ workout: HKWorkout) -> Bool {
-        return workout.workoutActivityType == .walking || workout.workoutActivityType == .other
+        let type = workout.workoutActivityType
+        return type == .walking || type == .hiking || type == .other
     }
     
     /// Query walking speed samples from HealthKit (for walking and 'other' workouts)
@@ -1827,8 +1828,8 @@ final class HealthKitManager {
         } else {
             // Fallback: infer from workout activity type and whether route exists
             switch workout.workoutActivityType {
-            case .running, .walking, .cycling, .other:
-                isIndoor = routeResult == nil // No route likely means indoor (other = Maple walks)
+            case .running, .walking, .hiking, .cycling, .other:
+                isIndoor = routeResult == nil // No route likely means indoor (hiking/other = Maple walks)
             default:
                 isIndoor = true // Strength, HIIT, etc. are indoor
             }
