@@ -39,6 +39,9 @@ const envSchema = z.object({
   // Desktop/Display control
   CONTROL_MY_MONITOR_PATH: z.string().optional(),
 
+  // AI Coach (Anthropic Claude)
+  ANTHROPIC_API_KEY: z.string().optional(),
+
 })
 
 // Parse and validate environment variables
@@ -114,6 +117,11 @@ export const config = {
     // Path to ControlMyMonitor.exe (NirSoft tool for DDC/CI monitor control)
     // Can be set via CONTROL_MY_MONITOR_PATH environment variable
     controlMyMonitorPath: env.CONTROL_MY_MONITOR_PATH || 'D:\\applications\\ControlMyMonitor.exe',
+  },
+  aiCoach: {
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    isConfigured: Boolean(env.ANTHROPIC_API_KEY),
+    defaultModel: 'claude-sonnet-4-20250514' as const,
   },
 } as const
 

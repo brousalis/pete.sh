@@ -13,7 +13,7 @@ export default function DashboardLayout({
   const isRounded = useRoundedLayout()
 
   return (
-    <div className="bg-background flex flex-col">
+    <div className="bg-background fixed inset-0 flex flex-col">
       {/* Outer container with padding (only when rounded) */}
       <div
         className={cn(

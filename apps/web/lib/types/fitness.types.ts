@@ -168,6 +168,26 @@ export interface RoutineCompletion {
   routineVersionId?: string
 }
 
+/**
+ * Exercise weight/rep log for progressive overload tracking.
+ * Recorded when a user completes exercises and logs what they actually did.
+ */
+export interface ExerciseWeightLog {
+  id?: string
+  routineVersionId?: string
+  exerciseId: string
+  exerciseName: string
+  dayOfWeek: DayOfWeek
+  weekNumber: number
+  year: number
+  weightLbs?: number
+  setsCompleted?: number
+  repsCompleted?: number
+  rpe?: number // Rate of Perceived Exertion (1-10)
+  notes?: string
+  loggedAt?: string
+}
+
 export interface FitnessProgress {
   week: number
   year: number

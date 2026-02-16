@@ -31,6 +31,7 @@ import {
     HeartPulse,
     Moon,
     Route,
+    Scale,
     Sparkles,
     Sun,
     Sunrise,
@@ -55,6 +56,7 @@ import {
     LineChart,
     Pie,
     PieChart,
+    ReferenceLine,
     XAxis,
     YAxis,
 } from 'recharts'
@@ -113,6 +115,9 @@ export interface DailyMetrics {
   move_goal: number | null
   exercise_goal: number | null
   stand_goal: number | null
+  body_mass_lbs: number | null
+  body_fat_percentage: number | null
+  lean_body_mass_lbs: number | null
   recorded_at?: string
 }
 
@@ -4805,6 +4810,352 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
 }
 
 // ============================================
+// BODY COMPOSITION SECTION
+// ============================================
+
+const WEIGHT_GOAL = 185
+
+type BodyCompTimeRange = '7d' | '30d' | '90d'
+
+interface BodyCompositionSectionProps {
+  dailyMetrics: DailyMetrics[]
+}
+
+function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
+  const [timeRange, setTimeRange] = useState<BodyCompTimeRange>('30d')
+
+  const filteredMetrics = useMemo(() => {
+    const now = new Date()
+    const cutoffDays = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
+    const cutoff = new Date(now.getTime() - cutoffDays * 24 * 60 * 60 * 1000)
+    return dailyMetrics.filter(m => {
+      const d = new Date(m.date)
+      return d >= cutoff && (m.body_mass_lbs || m.body_fat_percentage || m.lean_body_mass_lbs)
+    })
+  }, [dailyMetrics, timeRange])
+
+  const chartData = useMemo(() => {
+    return [...filteredMetrics]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(m => ({
+        date: format(new Date(m.date), 'M/d'),
+        fullDate: m.date,
+        weight: m.body_mass_lbs ?? undefined,
+        bodyFat: m.body_fat_percentage ?? undefined,
+        leanMass: m.lean_body_mass_lbs ?? undefined,
+        fatMass: m.body_mass_lbs && m.lean_body_mass_lbs
+          ? Math.round((m.body_mass_lbs - m.lean_body_mass_lbs) * 10) / 10
+          : undefined,
+      }))
+  }, [filteredMetrics])
+
+  const latestReading = useMemo(() => {
+    const withWeight = [...dailyMetrics]
+      .filter(m => m.body_mass_lbs)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    return withWeight[0] ?? null
+  }, [dailyMetrics])
+
+  const periodStats = useMemo(() => {
+    if (chartData.length < 2) return null
+    const first = chartData.find(d => d.weight !== undefined)
+    const last = [...chartData].reverse().find(d => d.weight !== undefined)
+    if (!first?.weight || !last?.weight) return null
+
+    const weightDelta = Math.round((last.weight - first.weight) * 10) / 10
+    const daySpan = differenceInDays(new Date(last.fullDate), new Date(first.fullDate)) || 1
+    const weeklyRate = Math.round((weightDelta / daySpan) * 7 * 10) / 10
+
+    const firstBf = chartData.find(d => d.bodyFat !== undefined)
+    const lastBf = [...chartData].reverse().find(d => d.bodyFat !== undefined)
+    const bfDelta = firstBf?.bodyFat && lastBf?.bodyFat
+      ? Math.round((lastBf.bodyFat - firstBf.bodyFat) * 10) / 10
+      : null
+
+    const firstLm = chartData.find(d => d.leanMass !== undefined)
+    const lastLm = [...chartData].reverse().find(d => d.leanMass !== undefined)
+    const lmDelta = firstLm?.leanMass && lastLm?.leanMass
+      ? Math.round((lastLm.leanMass - firstLm.leanMass) * 10) / 10
+      : null
+
+    return { weightDelta, weeklyRate, bfDelta, lmDelta }
+  }, [chartData])
+
+  const currentWeight = latestReading?.body_mass_lbs ?? null
+  const currentBf = latestReading?.body_fat_percentage ?? null
+  const currentLm = latestReading?.lean_body_mass_lbs ?? null
+
+  const goalProgress = useMemo(() => {
+    if (!currentWeight) return null
+    const allWithWeight = dailyMetrics
+      .filter(m => m.body_mass_lbs)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    const startWeight = allWithWeight[0]?.body_mass_lbs ?? currentWeight
+    const totalToLose = startWeight - WEIGHT_GOAL
+    const lost = startWeight - currentWeight
+    const remaining = currentWeight - WEIGHT_GOAL
+    const pct = totalToLose > 0 ? Math.min(Math.max((lost / totalToLose) * 100, 0), 100) : 0
+    return { startWeight, remaining: Math.round(remaining * 10) / 10, pct: Math.round(pct) }
+  }, [currentWeight, dailyMetrics])
+
+  const chartConfig: ChartConfig = {
+    weight: { label: 'Weight (lbs)', color: '#3b82f6' },
+    bodyFat: { label: 'Body Fat %', color: '#f59e0b' },
+    leanMass: { label: 'Lean Mass (lbs)', color: '#10b981' },
+  }
+
+  const yDomain = useMemo(() => {
+    const weights = chartData.filter(d => d.weight !== undefined).map(d => d.weight as number)
+    const leans = chartData.filter(d => d.leanMass !== undefined).map(d => d.leanMass as number)
+    const allVals = [...weights, ...leans, WEIGHT_GOAL]
+    if (allVals.length === 0) return [170, 210]
+    const min = Math.floor(Math.min(...allVals) - 3)
+    const max = Math.ceil(Math.max(...allVals) + 3)
+    return [min, max]
+  }, [chartData])
+
+  const timeRangeButtons: { value: BodyCompTimeRange; label: string }[] = [
+    { value: '7d', label: '7D' },
+    { value: '30d', label: '30D' },
+    { value: '90d', label: '90D' },
+  ]
+
+  if (chartData.length === 0 && !currentWeight) return null
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card p-4">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-2">
+        <Scale className="size-4 text-blue-500" />
+        <h2 className="text-sm font-bold">Body Composition</h2>
+        <div className="flex-1" />
+        <div className="flex gap-0.5 rounded-lg bg-muted/30 p-0.5">
+          {timeRangeButtons.map(btn => (
+            <button
+              key={btn.value}
+              onClick={() => setTimeRange(btn.value)}
+              className={cn(
+                'rounded-md px-2 py-0.5 text-[10px] font-medium transition-all',
+                timeRange === btn.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        {/* Weight */}
+        <div className="rounded-lg bg-muted/30 p-3">
+          <div className="mb-1 flex items-center gap-1.5">
+            <div className="size-2 rounded-full bg-blue-500" />
+            <span className="text-muted-foreground text-[10px] font-medium">Weight</span>
+          </div>
+          {currentWeight ? (
+            <>
+              <div className="text-lg font-bold tabular-nums text-blue-500">
+                {currentWeight}<span className="text-[10px] font-normal text-muted-foreground"> lbs</span>
+              </div>
+              {periodStats?.weightDelta !== undefined && periodStats.weightDelta !== 0 && (
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.weightDelta < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                  {periodStats.weightDelta < 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
+                  {periodStats.weightDelta > 0 ? '+' : ''}{periodStats.weightDelta} lbs
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-muted-foreground text-xs">No data</div>
+          )}
+        </div>
+
+        {/* Body Fat */}
+        <div className="rounded-lg bg-muted/30 p-3">
+          <div className="mb-1 flex items-center gap-1.5">
+            <div className="size-2 rounded-full bg-amber-500" />
+            <span className="text-muted-foreground text-[10px] font-medium">Body Fat</span>
+          </div>
+          {currentBf ? (
+            <>
+              <div className="text-lg font-bold tabular-nums text-amber-500">
+                {currentBf}<span className="text-[10px] font-normal text-muted-foreground"> %</span>
+              </div>
+              {periodStats?.bfDelta !== undefined && periodStats.bfDelta !== null && periodStats.bfDelta !== 0 && (
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.bfDelta < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                  {periodStats.bfDelta < 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
+                  {periodStats.bfDelta > 0 ? '+' : ''}{periodStats.bfDelta}%
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-muted-foreground text-xs">No data</div>
+          )}
+        </div>
+
+        {/* Lean Mass */}
+        <div className="rounded-lg bg-muted/30 p-3">
+          <div className="mb-1 flex items-center gap-1.5">
+            <div className="size-2 rounded-full bg-emerald-500" />
+            <span className="text-muted-foreground text-[10px] font-medium">Lean Mass</span>
+          </div>
+          {currentLm ? (
+            <>
+              <div className="text-lg font-bold tabular-nums text-emerald-500">
+                {currentLm}<span className="text-[10px] font-normal text-muted-foreground"> lbs</span>
+              </div>
+              {periodStats?.lmDelta !== undefined && periodStats.lmDelta !== null && periodStats.lmDelta !== 0 && (
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.lmDelta > 0 ? 'text-emerald-500' : 'text-red-400')}>
+                  {periodStats.lmDelta > 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                  {periodStats.lmDelta > 0 ? '+' : ''}{periodStats.lmDelta} lbs
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-muted-foreground text-xs">No data</div>
+          )}
+        </div>
+      </div>
+
+      {/* Chart */}
+      {chartData.length > 0 ? (
+        <div>
+          <ChartContainer config={chartConfig} className="h-[260px] w-full">
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+              <YAxis
+                yAxisId="left"
+                domain={yDomain}
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => `${v}`}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => `${v}%`}
+              />
+              <ChartTooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const data = payload[0]?.payload
+                  return (
+                    <div className="rounded-lg border border-border/50 bg-card p-2.5 shadow-lg">
+                      <div className="mb-1.5 text-[10px] font-medium text-muted-foreground">{label}</div>
+                      {data?.weight && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className="size-2 rounded-full bg-blue-500" />
+                          <span className="text-muted-foreground">Weight:</span>
+                          <span className="font-bold tabular-nums">{data.weight} lbs</span>
+                        </div>
+                      )}
+                      {data?.bodyFat && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className="size-2 rounded-full bg-amber-500" />
+                          <span className="text-muted-foreground">Body Fat:</span>
+                          <span className="font-bold tabular-nums">{data.bodyFat}%</span>
+                        </div>
+                      )}
+                      {data?.leanMass && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className="size-2 rounded-full bg-emerald-500" />
+                          <span className="text-muted-foreground">Lean Mass:</span>
+                          <span className="font-bold tabular-nums">{data.leanMass} lbs</span>
+                        </div>
+                      )}
+                      {data?.fatMass && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className="size-1.5 rounded-full bg-red-400/60" />
+                          <span className="text-muted-foreground">Fat Mass:</span>
+                          <span className="font-bold tabular-nums">{data.fatMass} lbs</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }}
+              />
+              <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} connectNulls activeDot={{ r: 5 }} />
+              <Line yAxisId="right" type="monotone" dataKey="bodyFat" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+              <Line yAxisId="left" type="monotone" dataKey="leanMass" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+              <ReferenceLine yAxisId="left" y={WEIGHT_GOAL} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" strokeOpacity={0.5} />
+            </LineChart>
+          </ChartContainer>
+
+          {/* Legend */}
+          <div className="mt-2 flex items-center justify-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="h-0.5 w-4 rounded bg-blue-500" />
+              <span className="text-muted-foreground">Weight</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-0.5 w-4 rounded bg-amber-500" />
+              <span className="text-muted-foreground">Body Fat %</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-0.5 w-4 rounded bg-emerald-500" />
+              <span className="text-muted-foreground">Lean Mass</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-0.5 w-4 rounded border border-muted-foreground/50 border-dashed" />
+              <span className="text-muted-foreground">Goal ({WEIGHT_GOAL} lbs)</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-[260px] items-center justify-center text-muted-foreground text-sm">
+          No body composition data for selected period
+        </div>
+      )}
+
+      {/* Progress to Goal */}
+      {goalProgress && currentWeight && (
+        <div className="mt-4 rounded-lg bg-muted/30 px-3 py-2.5">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Target className="size-3 text-blue-500" />
+              <span className="text-[10px] font-semibold">Progress to Goal</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {currentWeight} → {WEIGHT_GOAL} lbs
+            </span>
+          </div>
+          <div className="mb-1.5 h-2 w-full overflow-hidden rounded-full bg-muted/50">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500"
+              style={{ width: `${goalProgress.pct}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>
+              Started at {goalProgress.startWeight} lbs
+            </span>
+            <div className="flex items-center gap-3">
+              {goalProgress.remaining > 0 ? (
+                <span className="font-medium text-foreground">{goalProgress.remaining} lbs to go</span>
+              ) : (
+                <span className="font-medium text-emerald-500">Goal reached!</span>
+              )}
+              {periodStats?.weeklyRate !== undefined && periodStats.weeklyRate !== 0 && (
+                <span className={cn(periodStats.weeklyRate < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                  {periodStats.weeklyRate > 0 ? '+' : ''}{periodStats.weeklyRate} lbs/wk
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -4896,6 +5247,11 @@ export function FitnessDashboard({
           dailyMetrics={dailyMetrics}
           onWorkoutClick={onWorkoutClick}
         />
+      )}
+
+      {/* ==================== TIER 4: BODY COMPOSITION ==================== */}
+      {dailyMetrics.some(m => m.body_mass_lbs || m.body_fat_percentage || m.lean_body_mass_lbs) && (
+        <BodyCompositionSection dailyMetrics={dailyMetrics} />
       )}
 
       {/* Empty state */}

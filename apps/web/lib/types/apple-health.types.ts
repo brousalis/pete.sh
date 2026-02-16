@@ -321,6 +321,11 @@ export interface DailyHealthMetrics {
   walkingAsymmetryPercentage?: number
   walkingSpeed?: number // m/s
   walkingStepLength?: number // meters
+
+  // Body composition (from Fitindex ES-26M scale via HealthKit)
+  bodyMassLbs?: number
+  bodyFatPercentage?: number
+  leanBodyMassLbs?: number
   
   source: string
   recordedAt: string // ISO 8601

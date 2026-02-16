@@ -25,6 +25,11 @@ export interface Recipe {
   instructions: RecipeStep[]
   notes?: string
   is_favorite: boolean
+  // Nutrition per serving (optional, for AI coach TDEE calculations)
+  calories_per_serving?: number
+  protein_g?: number
+  fat_g?: number
+  carbs_g?: number
   created_at: string
   updated_at: string
 }

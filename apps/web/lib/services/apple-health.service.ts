@@ -124,6 +124,9 @@ interface DbDailyMetrics {
   walking_asymmetry_pct: number | null
   walking_speed: number | null
   walking_step_length: number | null
+  body_mass_lbs: number | null
+  body_fat_percentage: number | null
+  lean_body_mass_lbs: number | null
   source: string
   recorded_at: string
 }
@@ -302,6 +305,11 @@ export class AppleHealthService {
         console.error('[AppleHealth] Autocomplete failed (non-fatal):', error)
       }
     }
+
+    // Fire-and-forget AI Coach post-workout analysis
+    this.triggerAiCoachAnalysis(workoutId, linkedDay, weekNumber, year).catch(
+      (error) => console.error('[AppleHealth] AI Coach trigger failed (non-fatal):', error)
+    )
 
     return { id: workoutId, success: true }
   }
@@ -855,6 +863,9 @@ export class AppleHealthService {
       walking_asymmetry_pct: metrics.walkingAsymmetryPercentage || null,
       walking_speed: metrics.walkingSpeed || null,
       walking_step_length: metrics.walkingStepLength || null,
+      body_mass_lbs: metrics.bodyMassLbs || null,
+      body_fat_percentage: metrics.bodyFatPercentage || null,
+      lean_body_mass_lbs: metrics.leanBodyMassLbs || null,
       source: metrics.source,
     }
 
@@ -1135,6 +1146,46 @@ export class AppleHealthService {
     const day = d.getDay()
     const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust for Sunday
     return new Date(d.setDate(diff))
+  }
+
+  /**
+   * Trigger AI Coach post-workout analysis (fire-and-forget)
+   * Only triggers if ANTHROPIC_API_KEY is configured
+   */
+  private async triggerAiCoachAnalysis(
+    workoutId: string,
+    linkedDay?: string,
+    weekNumber?: number,
+    year?: number
+  ): Promise<void> {
+    // Only trigger if AI coach is configured
+    if (!process.env.ANTHROPIC_API_KEY) return
+
+    try {
+      const { runPostWorkoutAnalysis, saveInsight } = await import(
+        '@/lib/services/ai-coach.service'
+      )
+      const { config } = await import('@/lib/config')
+
+      const workoutContext = `Workout ID: ${workoutId}, Day: ${linkedDay || 'unknown'}, Week: ${weekNumber || '?'}/${year || '?'}`
+
+      const { analysis, inputTokens, outputTokens } =
+        await runPostWorkoutAnalysis(workoutContext)
+
+      await saveInsight(
+        'climber-physique',
+        'post_workout',
+        analysis,
+        config.aiCoach.defaultModel,
+        inputTokens,
+        outputTokens,
+        { workoutId, day: linkedDay, week: weekNumber, year }
+      )
+
+      console.log('[AppleHealth] AI Coach post-workout analysis saved')
+    } catch (error) {
+      console.error('[AppleHealth] AI Coach analysis failed:', error)
+    }
   }
 }
 

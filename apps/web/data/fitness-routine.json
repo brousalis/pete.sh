@@ -1239,7 +1239,28 @@
       "weekNumber": 8,
       "startDate": "2026-02-16T06:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-02-16T20:20:10.991Z",
+            "exercisesCompleted": [
+              "warmup-1",
+              "warmup-2",
+              "warmup-3",
+              "monday-a1",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "monday-d",
+              "monday-flush",
+              "monday-mobility-1",
+              "monday-mobility-2"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -1540,5 +1561,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-16T14:18:17.748Z"
+  "updatedAt": "2026-02-16T21:07:21.699Z"
 }

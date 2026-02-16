@@ -31,7 +31,7 @@ export default function ActivityDashboardPage() {
     try {
       const [workoutsRes, dailyRes, summaryRes] = await Promise.all([
         apiGet<AppleWorkout[]>('/api/apple-health/workout?limit=50'),
-        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=30'),
+        apiGet<DailyMetrics | DailyMetrics[]>('/api/apple-health/daily?days=90'),
         apiGet<{ weeks: WeeklySummary[] }>('/api/apple-health/summary?weeks=4'),
       ])
 

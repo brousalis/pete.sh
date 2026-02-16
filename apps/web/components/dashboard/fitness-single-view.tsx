@@ -1,74 +1,75 @@
 'use client'
 
 import type {
-    AppleWorkout,
-    DailyMetrics,
+  AppleWorkout,
+  DailyMetrics,
 } from '@/components/dashboard/fitness-dashboard'
+import { AiCoachPanel, AiCoachButton } from '@/components/dashboard/ai-coach-panel'
 import { StretchPanel } from '@/components/dashboard/stretch-panel'
 import { WorkoutCenter } from '@/components/dashboard/workout-center'
 import { Button } from '@/components/ui/button'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from '@/components/ui/popover'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import type {
-    ConsistencyStats,
-    DayOfWeek,
-    WeeklyRoutine,
-    Workout,
+  ConsistencyStats,
+  DayOfWeek,
+  WeeklyRoutine,
+  Workout,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-    addDays,
-    addMonths,
-    eachDayOfInterval,
-    endOfMonth,
-    endOfWeek,
-    format,
-    isToday as isDateToday,
-    isSameDay,
-    isSameMonth,
-    startOfDay,
-    startOfMonth,
-    startOfWeek,
-    subDays,
-    subMonths,
+  addDays,
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isToday as isDateToday,
+  isSameDay,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
 } from 'date-fns'
 import {
-    Activity,
-    ArrowLeft,
-    Ban,
-    Calendar,
-    Check,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Dumbbell,
-    Flame,
-    Moon,
-    Settings,
-    Sun,
-    Target,
-    Zap
+  Activity,
+  ArrowLeft,
+  Ban,
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Flame,
+  Moon,
+  Settings,
+  Sun,
+  Target,
+  Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -684,6 +685,8 @@ export function FitnessSingleView({
   const [skipDayDialogOpen, setSkipDayDialogOpen] = useState(false)
   const [skipDayReason, setSkipDayReason] = useState('')
   const [activeVersionNumber, setActiveVersionNumber] = useState<number | null>(null)
+  const [aiCoachOpen, setAiCoachOpen] = useState(false)
+  const [aiCoachReadiness, setAiCoachReadiness] = useState<number | undefined>(undefined)
 
   // Derive initial day from initial date
   const getInitialDay = (): DayOfWeek | null => {
@@ -701,6 +704,19 @@ export function FitnessSingleView({
     initialDate || null
   )
   const [dayPickerOpen, setDayPickerOpen] = useState(false)
+
+  // Track viewport size to prevent dual-Popover portal conflicts
+  // Both desktop (hidden sm:flex) and mobile (sm:hidden) headers have a Popover
+  // sharing the same open state. Without this guard, both Portals mount when open=true
+  // and Radix focus management causes them to cancel each other out.
+  const [isSmScreen, setIsSmScreen] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 640px)')
+    setIsSmScreen(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsSmScreen(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
 
   const getCurrentDay = (): DayOfWeek => {
     return new Date()
@@ -773,6 +789,18 @@ export function FitnessSingleView({
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  // Fetch AI Coach readiness score (background, non-blocking)
+  useEffect(() => {
+    fetch('/api/fitness/ai-coach/readiness')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.data?.score != null) {
+          setAiCoachReadiness(data.data.score)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   // Fetch workout for selected day
@@ -1182,13 +1210,12 @@ export function FitnessSingleView({
       <div className="flex h-full min-h-0 flex-col">
         {/* Unified Header - Single cohesive section */}
         <header className="mb-2 sm:mb-3 shrink-0 px-1 sm:px-0">
-          <div className="bg-card/40 rounded-lg sm:rounded-xl border border-border/50 overflow-hidden">
+          <div className="bg-card/40 rounded-lg sm:rounded-xl border border-border/50">
             {/* Standard Header - Tablet and Desktop only (≥640px) */}
             <div className="hidden sm:flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3">
               {/* Date Picker */}
               <Popover open={dayPickerOpen} onOpenChange={(open) => {
                 if (open) {
-                  // Refresh data when opening the date picker to ensure calendar shows current state
                   fetchData()
                 }
                 setDayPickerOpen(open)
@@ -1231,15 +1258,17 @@ export function FitnessSingleView({
                     </div>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="start">
-                  <FitnessDatePicker
-                    currentDate={new Date()}
-                    selectedDate={viewingDate}
-                    routine={routine}
-                    onSelectDate={navigateToDate}
-                    onClose={() => setDayPickerOpen(false)}
-                  />
-                </PopoverContent>
+                {isSmScreen && (
+                  <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
+                    <FitnessDatePicker
+                      currentDate={new Date()}
+                      selectedDate={viewingDate}
+                      routine={routine}
+                      onSelectDate={navigateToDate}
+                      onClose={() => setDayPickerOpen(false)}
+                    />
+                  </PopoverContent>
+                )}
               </Popover>
 
               {/* Navigation - 40px+ touch targets */}
@@ -1504,6 +1533,17 @@ export function FitnessSingleView({
                   </DialogContent>
                 </Dialog>
 
+                {/* AI Coach button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AiCoachButton
+                      onClick={() => setAiCoachOpen(true)}
+                      readinessScore={aiCoachReadiness}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>AI Fitness Coach</TooltipContent>
+                </Tooltip>
+
                 {/* Activity Dashboard link */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1592,15 +1632,17 @@ export function FitnessSingleView({
                         </div>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-3" align="start">
-                      <FitnessDatePicker
-                        currentDate={new Date()}
-                        selectedDate={viewingDate}
-                        routine={routine}
-                        onSelectDate={navigateToDate}
-                        onClose={() => setDayPickerOpen(false)}
-                      />
-                    </PopoverContent>
+                    {!isSmScreen && (
+                      <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
+                        <FitnessDatePicker
+                          currentDate={new Date()}
+                          selectedDate={viewingDate}
+                          routine={routine}
+                          onSelectDate={navigateToDate}
+                          onClose={() => setDayPickerOpen(false)}
+                        />
+                      </PopoverContent>
+                    )}
                   </Popover>
 
                   {/* Next button */}
@@ -1754,7 +1796,7 @@ export function FitnessSingleView({
         </header>
 
         {/* Main 3-Panel Layout - Stacks vertically on mobile, workout first */}
-        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[200px_1fr_200px] xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px] md:overflow-hidden">
+        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[230px_1fr_230px] xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px] md:overflow-hidden">
           {/* Morning Panel - Shows viewed day's data (order-2 on mobile to show after workout) */}
           <StretchPanel
             routine={routine.dailyRoutines.morning}
@@ -1833,6 +1875,9 @@ export function FitnessSingleView({
         </div>
 
       </div>
+
+      {/* AI Coach Panel */}
+      <AiCoachPanel open={aiCoachOpen} onOpenChange={setAiCoachOpen} />
     </TooltipProvider>
   )
 }

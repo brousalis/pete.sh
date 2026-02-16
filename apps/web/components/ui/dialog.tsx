@@ -1,12 +1,12 @@
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { motion } from 'framer-motion'
 import { XIcon } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import * as React from 'react'
 
-import { cn } from '@/lib/utils'
 import { overlayVariants, scaleFadeVariants, transitions } from '@/lib/animations'
+import { cn } from '@/lib/utils'
 
 function Dialog({
   ...props
@@ -161,5 +161,5 @@ export {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 }

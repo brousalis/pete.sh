@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const metrics: DailyHealthMetrics = body.metrics || body
 
+    // Debug: log body composition fields arriving from iOS
+    console.log(`[Daily Metrics] ${metrics.date} | bodyMassLbs=${metrics.bodyMassLbs} bodyFatPct=${metrics.bodyFatPercentage} leanMassLbs=${metrics.leanBodyMassLbs}`)
+
     // Validate required fields
     if (!metrics.date) {
       return NextResponse.json(

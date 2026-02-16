@@ -4,27 +4,27 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { ExerciseTimer } from "@/components/ui/exercise-timer"
 import { FullscreenTimer } from "@/components/ui/fullscreen-timer"
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import type { DailyRoutine, RoutineCompletion } from "@/lib/types/fitness.types"
 import { cn } from "@/lib/utils"
-import { Ban, Check, ChevronDown, ChevronUp, Clock, ExternalLink, Expand, Info, Moon, Play, Sun, Timer, Undo2 } from "lucide-react"
+import { Ban, Check, ChevronDown, ChevronUp, Clock, Expand, ExternalLink, Info, Moon, Play, Sun, Timer, Undo2 } from "lucide-react"
 import { useState } from "react"
 
 interface StretchPanelProps {
@@ -412,7 +412,7 @@ export function StretchPanel({
   const handleFullscreenTimerComplete = () => {
     if (fullscreenTimerExercise) {
       setCompletedExercises((prev) => new Set(prev).add(fullscreenTimerExercise.idx))
-      
+
       // Auto-advance to next exercise
       const nextIdx = fullscreenTimerExercise.idx + 1
       const nextExercise = routine.exercises[nextIdx]
@@ -609,15 +609,15 @@ export function StretchPanel({
                           size="sm"
                           className={cn(
                             "h-7 sm:h-6 px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation",
-                            type === "morning" 
-                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10" 
+                            type === "morning"
+                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
                               : "text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10"
                           )}
                           onClick={() => openFullscreenTimer(idx)}
                           disabled={isExerciseCompleted}
                         >
                           <Expand className="size-3.5 sm:size-3" />
-                          <span className="hidden sm:inline">Focus</span>
+                          <span className="hidden sm:inline"></span>
                         </Button>
                       </>
                     )}
@@ -662,11 +662,12 @@ export function StretchPanel({
               {/* Start Routine in Fullscreen Timer */}
               <Button
                 size="sm"
+                variant="outline"
                 className={cn(
                   "flex-1 h-10 sm:h-8 text-sm sm:text-xs touch-manipulation gap-1.5",
-                  type === "morning"
-                    ? "bg-amber-500 hover:bg-amber-600 text-white"
-                    : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                  // type === "morning"
+                  //   ? "border-amber-500 hover:border-amber-600 text-white"
+                  //   : "border-indigo-500 hover:border-indigo-600 text-white"
                 )}
                 onClick={() => openFullscreenTimer(0)}
               >

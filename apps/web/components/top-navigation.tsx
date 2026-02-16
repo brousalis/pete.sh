@@ -19,7 +19,6 @@ import {
   Bus,
   Calendar,
   ChefHat,
-  Coffee,
   Dog,
   Dumbbell,
   Grid3x3,
@@ -57,7 +56,8 @@ const navItems: NavItem[] = [
   { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '4' },
   { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '5' },
   { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
-  { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
+  // Coffee sunset – hidden from nav, code kept
+  // { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
   { href: '/maple', label: 'Maple', icon: Dog, shortcut: '9' },
   { href: '/me', label: 'Me', icon: User, shortcut: '0' },
@@ -71,7 +71,8 @@ const mobileBottomItems: NavItem[] = [
   { href: '/transit', label: 'CTA', icon: Bus },
   { href: '/lights', label: 'Lights', icon: Lightbulb },
   { href: '/music', label: 'Music', icon: Music },
-  { href: '/coffee', label: 'Coffee', icon: Coffee },
+  // Coffee sunset – hidden from nav
+  // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]
 
 export function TopNavigation() {

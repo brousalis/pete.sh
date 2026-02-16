@@ -1,3 +1,7 @@
+> **DEPRECATED**: This static context file is no longer maintained. Use the live auto-generated
+> context instead: `GET /api/fitness/ai-coach/context` — it pulls real-time data from all sources
+> (HealthKit, Supabase, routine versions, body composition) and is always up to date.
+
 Here is a comprehensive summary block designed to be "plug-and-play" for any LLM (including future Gemini sessions).
 
 You can copy and paste the text below into your "Instructions for Gemini" or as the very first message in a new chat to instantly restore our context.

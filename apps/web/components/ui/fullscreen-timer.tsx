@@ -1,7 +1,5 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { Play, Pause, RotateCcw, Volume2, VolumeX, X, SkipForward } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,6 +8,8 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import { Pause, Play, RotateCcw, SkipForward, Volume2, VolumeX, X } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 interface FullscreenTimerProps {
   /** Whether the timer modal is open */
@@ -36,7 +36,7 @@ interface FullscreenTimerProps {
 
 /**
  * FullscreenTimer - A beautiful, immersive modal timer for exercises.
- * 
+ *
  * Features:
  * - Large circular progress indicator with glow effect
  * - Audio cues: start beep, 10s warning, countdown beeps, completion chime
@@ -61,7 +61,7 @@ export function FullscreenTimer({
   const [isMuted, setIsMuted] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
-  
+
   const audioContextRef = useRef<AudioContext | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -103,25 +103,25 @@ export function FullscreenTimer({
   // Play a beep sound with configurable parameters
   const playBeep = useCallback((frequency: number, beepDuration: number, type: OscillatorType = "sine", volume: number = 0.3) => {
     if (isMuted) return
-    
+
     try {
       const ctx = initAudio()
       if (ctx.state === "suspended") {
         ctx.resume()
       }
-      
+
       const oscillator = ctx.createOscillator()
       const gainNode = ctx.createGain()
-      
+
       oscillator.connect(gainNode)
       gainNode.connect(ctx.destination)
-      
+
       oscillator.frequency.value = frequency
       oscillator.type = type
-      
+
       gainNode.gain.setValueAtTime(volume, ctx.currentTime)
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + beepDuration)
-      
+
       oscillator.start(ctx.currentTime)
       oscillator.stop(ctx.currentTime + beepDuration)
     } catch {
@@ -168,7 +168,7 @@ export function FullscreenTimer({
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           const newTime = prev - 1
-          
+
           // Play warning sound at 10 seconds
           if (newTime === 10) {
             playWarningSound()
@@ -177,7 +177,7 @@ export function FullscreenTimer({
           if (newTime <= 5 && newTime > 0) {
             playTickSound()
           }
-          
+
           return newTime
         })
       }, 1000)
@@ -250,7 +250,7 @@ export function FullscreenTimer({
 
   // Calculate progress percentage
   const progress = ((duration - timeRemaining) / duration) * 100
-  
+
   // SVG dimensions for large ring
   const size = 280
   const strokeWidth = 12
@@ -275,7 +275,7 @@ export function FullscreenTimer({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent 
+      <DialogContent
         className={cn(
           "max-w-full h-[100dvh] sm:max-w-full sm:h-[100dvh] p-0 border-0 gap-0",
           "bg-gradient-to-b from-background via-background to-background/95",
@@ -285,6 +285,7 @@ export function FullscreenTimer({
         )}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={handleClose}
+        showCloseButton={false}
       >
         {/* Accessibility */}
         <VisuallyHidden>
@@ -338,12 +339,12 @@ export function FullscreenTimer({
 
           {/* Large circular progress */}
           <div className="relative mb-10">
-            <svg 
+            <svg
               className={cn(
                 "transform -rotate-90 transition-all duration-300",
                 getGlowEffect()
-              )} 
-              width={size} 
+              )}
+              width={size}
               height={size}
             >
               {/* Background ring */}
@@ -373,7 +374,7 @@ export function FullscreenTimer({
                 )}
               />
             </svg>
-            
+
             {/* Time display in center */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className={cn(
@@ -413,8 +414,8 @@ export function FullscreenTimer({
               size="icon"
               className={cn(
                 "h-20 w-20 rounded-full text-white shadow-lg transition-all",
-                isCompleted 
-                  ? "bg-emerald-500 hover:bg-emerald-600" 
+                isCompleted
+                  ? "bg-emerald-500 hover:bg-emerald-600"
                   : isRunning
                     ? "bg-muted hover:bg-muted/80 text-foreground"
                     : theme.accent,

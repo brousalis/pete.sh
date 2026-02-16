@@ -1,7 +1,8 @@
 'use client'
 
 import { CalendarCard } from '@/components/dashboard/calendar-card'
-import { CoffeeCard } from '@/components/dashboard/coffee-card'
+// Coffee sunset – hidden from dashboard
+// import { CoffeeCard } from '@/components/dashboard/coffee-card'
 import { CookingWidget } from '@/components/dashboard/cooking-widget'
 import { FitnessWidget } from '@/components/dashboard/fitness-widget'
 import { HomeEnvironmentCard } from '@/components/dashboard/home-environment-card'
@@ -81,10 +82,8 @@ export function MainDashboard() {
         <DashboardCard index={2}>
           <FitnessWidget />
         </DashboardCard>
-        {/* Coffee */}
-        <DashboardCard index={5}>
-          <CoffeeCard />
-        </DashboardCard>
+        {/* Coffee sunset – hidden from dashboard */}
+        {/* <DashboardCard index={5}><CoffeeCard /></DashboardCard> */}
 
         {/* Cooking */}
         <DashboardCard index={6}>

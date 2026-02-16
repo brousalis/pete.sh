@@ -7,7 +7,6 @@ import {
   Calendar,
   ChevronFirst,
   ChevronLast,
-  Coffee,
   Dumbbell,
   Grid3x3,
   Home,
@@ -33,7 +32,8 @@ const items: Item[] = [
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/transit', label: 'CTA', icon: Bus },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
-  { href: '/coffee', label: 'Coffee', icon: Coffee },
+  // Coffee sunset – hidden from nav
+  // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]
 
 interface SidebarProps {

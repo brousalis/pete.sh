@@ -1,12 +1,11 @@
 "use client"
 
-import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
 import { motion } from "framer-motion"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { overlayVariants, transitions } from "@/lib/animations"
+import { cn } from "@/lib/utils"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -106,7 +105,7 @@ function SheetContent({
           variants={slideVariants[side]}
         >
           {children}
-          <SheetPrimitive.Close
+          {/* <SheetPrimitive.Close
             className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
             asChild
           >
@@ -118,7 +117,7 @@ function SheetContent({
               <XIcon className="size-4" />
               <span className="sr-only">Close</span>
             </motion.button>
-          </SheetPrimitive.Close>
+          </SheetPrimitive.Close> */}
         </motion.div>
       </SheetPrimitive.Content>
     </SheetPortal>
@@ -172,12 +171,6 @@ function SheetDescription({
 }
 
 export {
-  Sheet,
-  SheetTrigger,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
+  Sheet, SheetClose,
+  SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger
 }

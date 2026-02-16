@@ -16,7 +16,6 @@ import {
   Bus,
   Calendar,
   ChefHat,
-  Coffee,
   Dog,
   Dumbbell,
   Grid3x3,
@@ -80,7 +79,8 @@ export const navCategories: NavCategory[] = [
     label: 'Home',
     items: [
       { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '5', keywords: ['hue', 'philips', 'lamps'] },
-      { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '8', keywords: ['espresso', 'brew'] },
+      // Coffee sunset – hidden from nav
+      // { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '8', keywords: ['espresso', 'brew'] },
       { href: '/cooking', label: 'Cooking', icon: ChefHat, keywords: ['recipes', 'food', 'kitchen'] },
     ],
   },

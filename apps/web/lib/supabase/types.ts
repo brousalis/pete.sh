@@ -709,6 +709,9 @@ export interface AppleHealthDailyMetricsInsert {
   walking_asymmetry_pct?: number | null
   walking_speed?: number | null
   walking_step_length?: number | null
+  body_mass_lbs?: number | null
+  body_fat_percentage?: number | null
+  lean_body_mass_lbs?: number | null
   source: string
   recorded_at?: string
   created_at?: string
