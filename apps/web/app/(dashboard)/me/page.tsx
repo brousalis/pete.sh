@@ -21,15 +21,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useIsMobile } from '@/components/ui/use-mobile'
+import { VaultView } from '@/components/vault'
 import { useToast } from '@/hooks/use-toast'
 import { apiDelete, apiGet, apiPut } from '@/lib/api/client'
 import type { BlogPostStatus, BlogPostSummary } from '@/lib/types/blog.types'
-import { FileText, Filter, Github, Linkedin, Plus, User } from 'lucide-react'
+import {
+  FileText,
+  Filter,
+  Github,
+  Linkedin,
+  NotebookPen,
+  Plus,
+  User,
+} from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 export default function MePage() {
+  return (
+    <Suspense>
+      <MePageContent />
+    </Suspense>
+  )
+}
+
+function MePageContent() {
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const isMobile = useIsMobile()
+
+  // Tab state from URL
+  const activeTab = searchParams.get('tab') || 'blog'
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (value === 'blog') {
+        params.delete('tab')
+      } else {
+        params.set('tab', value)
+      }
+      const query = params.toString()
+      router.replace(`/me${query ? `?${query}` : ''}`, { scroll: false })
+    },
+    [router, searchParams]
+  )
+
+  // Blog state
   const [posts, setPosts] = useState<BlogPostSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -146,11 +188,6 @@ export default function MePage() {
     }
   }, [deletePostId, toast, fetchPosts])
 
-  // Stats
-  const totalPosts = posts.length
-  const publishedPosts = posts.filter(p => p.status === 'published').length
-  const draftPosts = posts.filter(p => p.status === 'draft').length
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -161,20 +198,21 @@ export default function MePage() {
         onRefresh={() => fetchPosts(true)}
         refreshing={refreshing}
         rightExtra={
-          <Button asChild>
-            <Link href="/posts/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Post
-            </Link>
-          </Button>
+          activeTab === 'blog' ? (
+            <Button asChild>
+              <Link href="/posts/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Post
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 
       {/* About Section */}
-      <div className="bg-card/50 backdrop-blur-sm rounded-xl border p-4">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-          {/* Avatar */}
-          <Avatar className="size-16 ring-2 ring-brand/20">
+      <div className="bg-card/50 rounded-xl border p-4 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+          <Avatar className="ring-brand/20 size-16 ring-2">
             <AvatarImage
               src="https://avatars.githubusercontent.com/brousalis"
               alt="Pete Brousalis"
@@ -184,18 +222,17 @@ export default function MePage() {
             </AvatarFallback>
           </Avatar>
 
-          {/* Bio */}
           <div className="flex-1 text-center sm:text-left">
             <h2 className="font-semibold">Pete Brousalis</h2>
             <p className="text-muted-foreground text-sm">
-              i built this site for personal use on an iPad mini mounted in my kitchen
+              i built this site for personal use on an iPad mini mounted in my
+              kitchen
             </p>
             <p className="text-muted-foreground text-sm">
               then took it too far, and now you can creep on my life
             </p>
           </div>
 
-          {/* Social Links */}
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" asChild>
               <a
@@ -219,70 +256,95 @@ export default function MePage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Filter className="text-muted-foreground h-4 w-4" />
-          <Select
-            value={statusFilter}
-            onValueChange={value =>
-              setStatusFilter(value as BlogPostStatus | 'all')
-            }
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Posts</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Drafts</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      {/* Tabs: Blog | Vault */}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="blog" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" />
+            Blog
+          </TabsTrigger>
+          <TabsTrigger value="vault" className="gap-1.5">
+            <NotebookPen className="h-3.5 w-3.5" />
+            Vault
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Posts Grid */}
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-card animate-pulse rounded-xl border">
-              <div className="bg-muted aspect-video" />
-              <div className="space-y-3 p-4">
-                <div className="bg-muted h-4 w-16 rounded" />
-                <div className="bg-muted h-6 w-3/4 rounded" />
-                <div className="bg-muted h-4 w-full rounded" />
-              </div>
+        {/* Blog Tab */}
+        <TabsContent value="blog" className="mt-4 space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="text-muted-foreground h-4 w-4" />
+              <Select
+                value={statusFilter}
+                onValueChange={value =>
+                  setStatusFilter(value as BlogPostStatus | 'all')
+                }
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Posts</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Drafts</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ))}
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="bg-card rounded-xl border p-12 text-center">
-          <FileText className="text-muted-foreground/50 mx-auto h-12 w-12" />
-          <h3 className="mt-4 text-lg font-semibold">No posts yet</h3>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Create your first blog post to get started.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/posts/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Post
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map(post => (
-            <BlogPostCard
-              key={post.id}
-              post={post}
-              showActions
-              onPublish={handlePublish}
-              onUnpublish={handleUnpublish}
-              onDelete={setDeletePostId}
-            />
-          ))}
-        </div>
-      )}
+          </div>
+
+          {/* Posts Grid */}
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className="bg-card animate-pulse rounded-xl border"
+                >
+                  <div className="bg-muted aspect-video" />
+                  <div className="space-y-3 p-4">
+                    <div className="bg-muted h-4 w-16 rounded" />
+                    <div className="bg-muted h-6 w-3/4 rounded" />
+                    <div className="bg-muted h-4 w-full rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="bg-card rounded-xl border p-12 text-center">
+              <FileText className="text-muted-foreground/50 mx-auto h-12 w-12" />
+              <h3 className="mt-4 text-lg font-semibold">No posts yet</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Create your first blog post to get started.
+              </p>
+              <Button asChild className="mt-4">
+                <Link href="/posts/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Post
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {posts.map(post => (
+                <BlogPostCard
+                  key={post.id}
+                  post={post}
+                  showActions
+                  onPublish={handlePublish}
+                  onUnpublish={handleUnpublish}
+                  onDelete={setDeletePostId}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Vault Tab */}
+        <TabsContent value="vault" className="mt-4">
+          <VaultView isMobile={isMobile} />
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation */}
       <AlertDialog

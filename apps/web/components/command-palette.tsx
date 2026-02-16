@@ -22,6 +22,7 @@ import {
   Home,
   Lightbulb,
   Music,
+  NotebookPen,
   Settings,
   Ticket,
   User,
@@ -96,6 +97,7 @@ export const navCategories: NavCategory[] = [
     label: 'Personal',
     items: [
       { href: '/me', label: 'Me', icon: User, shortcut: '1', keywords: ['profile', 'account'] },
+      { href: '/me?tab=vault', label: 'Vault', icon: NotebookPen, keywords: ['vault', 'notes', 'notebook', 'writing'] },
       { href: '/deck', label: 'Deck', icon: Grid3x3, shortcut: '9', keywords: ['grid', 'overview'] },
     ],
   },

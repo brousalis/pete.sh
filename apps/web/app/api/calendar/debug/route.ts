@@ -1,7 +1,7 @@
+import { calendar_v3 } from '@googleapis/calendar'
 import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
 import { config } from '@/lib/config'
 import { CalendarService } from '@/lib/services/calendar.service'
-import { google } from 'googleapis'
 import { cookies } from 'next/headers'
 
 /**
@@ -25,22 +25,16 @@ export async function GET() {
       return errorResponse('Not authenticated', 401)
     }
 
-    // Set credentials
+    // Set credentials and use the service's calendar client
     calendarService.setCredentials({
       access_token: accessToken,
       refresh_token: refreshToken,
     })
 
-    const oauth2Client = new google.auth.OAuth2(
-      config.google.clientId,
-      config.google.clientSecret
-    )
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    })
-
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+    const calendar = calendarService.getCalendar()
+    if (!calendar) {
+      return errorResponse('Calendar client not available', 500)
+    }
 
     // Get calendar list
     const calendarList = await calendar.calendarList.list()
@@ -78,7 +72,7 @@ export async function GET() {
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!refreshToken,
       },
-      calendars: calendars.map(cal => ({
+      calendars: calendars.map((cal: calendar_v3.Schema$CalendarListEntry) => ({
         id: cal.id,
         summary: cal.summary,
         description: cal.description,
@@ -89,7 +83,7 @@ export async function GET() {
       events: {
         nextWeek: {
           count: allEventsResponse.data.items?.length || 0,
-          events: (allEventsResponse.data.items || []).slice(0, 5).map(e => ({
+          events: (allEventsResponse.data.items || []).slice(0, 5).map((e: calendar_v3.Schema$Event) => ({
             id: e.id,
             summary: e.summary,
             start: e.start?.dateTime || e.start?.date,
@@ -98,7 +92,7 @@ export async function GET() {
         },
         upcoming: {
           count: upcomingEventsResponse.data.items?.length || 0,
-          events: (upcomingEventsResponse.data.items || []).map(e => ({
+          events: (upcomingEventsResponse.data.items || []).map((e: calendar_v3.Schema$Event) => ({
             id: e.id,
             summary: e.summary,
             start: e.start?.dateTime || e.start?.date,

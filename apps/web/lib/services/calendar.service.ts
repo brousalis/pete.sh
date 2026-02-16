@@ -3,7 +3,8 @@
  * Handles communication with Google Calendar API
  */
 
-import { google } from "googleapis"
+import { OAuth2Client } from "google-auth-library"
+import { calendar as googleCalendar } from "@googleapis/calendar"
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
 import type { CalendarEvent, CalendarEventsResponse } from "@/lib/types/calendar.types"
@@ -181,17 +182,22 @@ export class CalendarService {
         || process.env.GOOGLE_REDIRECT_URI
         || "http://localhost:3000/api/calendar/callback"
 
-      this.oauth2Client = new google.auth.OAuth2(
+      this.oauth2Client = new OAuth2Client(
         config.google.clientId,
         config.google.clientSecret,
         finalRedirectUri
       )
-      this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client })
+      this.calendar = googleCalendar({ version: "v3", auth: this.oauth2Client })
     }
   }
 
   isConfigured(): boolean {
     return config.google.isConfigured
+  }
+
+  /** Get the Calendar API instance (after setCredentials). Used by debug and other callers that need direct API access. */
+  getCalendar(): typeof this.calendar {
+    return this.calendar
   }
 
   /**
@@ -248,7 +254,7 @@ export class CalendarService {
     // Ensure calendar client uses the updated credentials
     // The calendar client should automatically use the oauth2Client, but let's verify
     if (this.calendar) {
-      this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client })
+      this.calendar = googleCalendar({ version: "v3", auth: this.oauth2Client })
     }
   }
 
