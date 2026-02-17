@@ -8,6 +8,7 @@ import { RecipeEditor } from '@/components/cooking/recipe-editor'
 import { RecipeList } from '@/components/cooking/recipe-list'
 import { ShoppingList } from '@/components/cooking/shopping-list'
 import { TraderJoesDetailSheet } from '@/components/cooking/trader-joes-detail'
+import { Button } from '@/components/ui/button'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import { fadeUpVariants } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
     CalendarDays,
     ChefHat,
+    Plus,
     ShoppingCart,
     UtensilsCrossed,
 } from 'lucide-react'
@@ -199,23 +201,16 @@ function CookingPageContent() {
         variants={fadeUpVariants}
         className="space-y-5"
       >
-        {/* Page header + navigation */}
-        <div className="space-y-4">
-          {/* Header row */}
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-orange-500/15">
-              <ChefHat className="size-5 text-orange-500" />
+        {/* Compact header with inline tab navigation */}
+        <div className="flex items-end border-b border-border/40">
+          <div className="flex items-center gap-2.5 pb-3">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500/15">
+              <ChefHat className="size-4 text-orange-500" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold tracking-tight">Cooking</h1>
-              <p className="text-xs text-muted-foreground">
-                {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} &middot; {tjRecipes.length} from Trader Joe&apos;s
-              </p>
-            </div>
+            <h1 className="text-lg font-semibold tracking-tight">Cooking</h1>
           </div>
 
-          {/* Main navigation — large, visible, easy to tap */}
-          <nav className="flex gap-1.5 rounded-2xl bg-muted/50 p-1.5">
+          <nav className="ml-4 flex items-end">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.value
@@ -224,17 +219,17 @@ function CookingPageContent() {
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
                   className={cn(
-                    'relative flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-medium transition-all',
+                    'relative flex items-center gap-1.5 px-3 pb-2.5 text-sm font-medium transition-colors -mb-px border-b-2',
                     isActive
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Icon className="size-4" />
                   <span className="hidden xs:inline sm:inline">{tab.label}</span>
                   {tab.badge != null && tab.badge > 0 && (
                     <span className={cn(
-                      'flex items-center justify-center rounded-full text-[10px] font-semibold tabular-nums min-w-[18px] h-[18px] px-1',
+                      'ml-0.5 flex items-center justify-center rounded-full text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-0.5',
                       isActive
                         ? 'bg-primary/10 text-primary'
                         : 'bg-muted-foreground/15 text-muted-foreground'
@@ -246,6 +241,14 @@ function CookingPageContent() {
               )
             })}
           </nav>
+
+          {activeTab === 'recipes' && (
+            <div className="ml-auto pb-2">
+              <Button onClick={handleNewRecipe} size="icon" className="size-8 rounded-lg">
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Tab content */}

@@ -68,6 +68,10 @@ interface CookingContextValue {
   fridgeFilterActive: boolean
   setFridgeFilterActive: (active: boolean) => void
   latestScan: FridgeScan | null
+  addFridgeItem: (item: string) => Promise<void>
+  removeFridgeItem: (item: string) => Promise<void>
+  clearFridge: () => Promise<void>
+  saveFridgeItems: (items: string[]) => Promise<void>
 }
 
 const CookingContext = createContext<CookingContextValue | null>(null)
@@ -250,6 +254,53 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     loadLatestScan()
   }, [])
 
+  const saveFridgeItems = useCallback(async (items: string[]) => {
+    try {
+      if (latestScan) {
+        const response = await apiPut<FridgeScan>(
+          `/api/cooking/fridge-scan/${latestScan.id}`,
+          { confirmed_items: items, recipes_matched: 0 }
+        )
+        if (response.success && response.data) {
+          setLatestScan(response.data)
+        }
+      } else {
+        const response = await apiPost<FridgeScan>(
+          '/api/cooking/fridge-scan',
+          { type: 'manual', items }
+        )
+        if (response.success && response.data) {
+          setLatestScan(response.data)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to persist fridge items:', error)
+    }
+  }, [latestScan])
+
+  const addFridgeItem = useCallback(async (item: string) => {
+    const normalized = item.trim().toLowerCase()
+    if (!normalized) return
+    const updated = [...new Set([...fridgeIngredients, normalized])]
+    setFridgeIngredients(updated)
+    await saveFridgeItems(updated)
+  }, [fridgeIngredients, saveFridgeItems])
+
+  const removeFridgeItem = useCallback(async (item: string) => {
+    const updated = fridgeIngredients.filter((i) => i !== item)
+    setFridgeIngredients(updated)
+    if (updated.length === 0) {
+      setFridgeFilterActive(false)
+    }
+    await saveFridgeItems(updated)
+  }, [fridgeIngredients, saveFridgeItems])
+
+  const clearFridge = useCallback(async () => {
+    setFridgeIngredients([])
+    setFridgeFilterActive(false)
+    await saveFridgeItems([])
+  }, [saveFridgeItems])
+
   useEffect(() => {
     refreshMealPlan()
   }, [refreshMealPlan])
@@ -302,6 +353,10 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       fridgeFilterActive,
       setFridgeFilterActive,
       latestScan,
+      addFridgeItem,
+      removeFridgeItem,
+      clearFridge,
+      saveFridgeItems,
     }),
     [
       recipes,
@@ -330,6 +385,10 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       fridgeIngredients,
       fridgeFilterActive,
       latestScan,
+      addFridgeItem,
+      removeFridgeItem,
+      clearFridge,
+      saveFridgeItems,
     ]
   )
 

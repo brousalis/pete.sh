@@ -564,7 +564,7 @@ export function FridgeScanButton({ onClick }: { onClick: () => void }) {
     <Button
       variant="outline"
       size="icon"
-      className="size-9 shrink-0"
+      className="size-11 shrink-0 rounded-xl"
       onClick={() => {
         if (nativeBridge) {
           // Open native scanner

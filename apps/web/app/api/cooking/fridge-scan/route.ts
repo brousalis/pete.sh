@@ -9,6 +9,7 @@ import {
   analyzeImage,
   parseVoiceTranscript,
   saveScan,
+  saveManualScan,
   getLatestScan,
   getScanHistory,
 } from '@/lib/services/fridge-scan.service'
@@ -22,50 +23,65 @@ import { withCors, corsOptionsResponse } from '@/lib/api/cors'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, transcript, image } = body as {
-      type: 'voice' | 'photo'
+    const { type, transcript, image, items } = body as {
+      type: 'voice' | 'photo' | 'manual'
       transcript?: string
       image?: string
+      items?: string[]
     }
 
-    if (!type || !['voice', 'photo'].includes(type)) {
+    if (!type || !['voice', 'photo', 'manual'].includes(type)) {
       return withCors(
         NextResponse.json(
-          { success: false, error: 'Invalid scan type. Must be "voice" or "photo".' },
+          { success: false, error: 'Invalid scan type. Must be "voice", "photo", or "manual".' },
           { status: 400 }
         )
       )
     }
 
-    let identifiedItems: string[] = []
+    let scan
 
-    if (type === 'photo') {
-      if (!image) {
+    if (type === 'manual') {
+      if (!items || !Array.isArray(items) || items.length === 0) {
         return withCors(
           NextResponse.json(
-            { success: false, error: 'Image data is required for photo scans.' },
+            { success: false, error: 'Items array is required for manual scans.' },
             { status: 400 }
           )
         )
       }
-      identifiedItems = await analyzeImage(image)
+      scan = await saveManualScan(items)
     } else {
-      if (!transcript) {
-        return withCors(
-          NextResponse.json(
-            { success: false, error: 'Transcript is required for voice scans.' },
-            { status: 400 }
-          )
-        )
-      }
-      identifiedItems = await parseVoiceTranscript(transcript)
-    }
+      let identifiedItems: string[] = []
 
-    const scan = await saveScan({
-      scan_type: type,
-      raw_transcript: transcript || undefined,
-      identified_items: identifiedItems,
-    })
+      if (type === 'photo') {
+        if (!image) {
+          return withCors(
+            NextResponse.json(
+              { success: false, error: 'Image data is required for photo scans.' },
+              { status: 400 }
+            )
+          )
+        }
+        identifiedItems = await analyzeImage(image)
+      } else {
+        if (!transcript) {
+          return withCors(
+            NextResponse.json(
+              { success: false, error: 'Transcript is required for voice scans.' },
+              { status: 400 }
+            )
+          )
+        }
+        identifiedItems = await parseVoiceTranscript(transcript)
+      }
+
+      scan = await saveScan({
+        scan_type: type,
+        raw_transcript: transcript || undefined,
+        identified_items: identifiedItems,
+      })
+    }
 
     return withCors(
       NextResponse.json({

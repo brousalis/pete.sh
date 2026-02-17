@@ -13,12 +13,13 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { useCooking } from '@/hooks/use-cooking-data'
-import { staggerContainerVariants, staggerItemVariants, transitions } from '@/lib/animations'
+import { transitions } from '@/lib/animations'
 import type { Recipe, TraderJoesRecipe } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
     ChefHat,
+    ChevronDown,
     Clock,
     Download,
     ExternalLink,
@@ -27,10 +28,12 @@ import {
     Shuffle,
     SlidersHorizontal,
     Snowflake,
+    Star,
     Users,
     X,
 } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FridgeManager } from './fridge-manager'
 import { FridgeScanButton, FridgeScanner } from './fridge-scanner'
 import { RecipeCard, RecipeCardSkeleton } from './recipe-card'
 
@@ -70,6 +73,8 @@ export function RecipeList({
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
   const [showFridgeScanner, setShowFridgeScanner] = useState(false)
+  const [showFridgeManager, setShowFridgeManager] = useState(false)
+  const [displayCount, setDisplayCount] = useState(30)
 
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
   const handleSearch = useCallback(
@@ -156,7 +161,6 @@ export function RecipeList({
     const scores = new Map<string, number>()
     const fridgeTokens = fridgeIngredients.map((item) => tokenizeIngredient(item))
 
-    // Score TJ recipes
     for (const recipe of filteredTjRecipes) {
       const ingredients = recipe.recipe_data.ingredients || []
       if (ingredients.length === 0) continue
@@ -170,7 +174,6 @@ export function RecipeList({
       scores.set(`tj-${recipe.id}`, score)
     }
 
-    // Score own recipes by name matching (no ingredients loaded in list view)
     for (const recipe of filteredRecipes) {
       const nameLower = recipe.name.toLowerCase()
       let matchCount = 0
@@ -216,516 +219,587 @@ export function RecipeList({
   const hasActiveFilters =
     debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || fridgeFilterActive
 
+  const visibleTjRecipes = useMemo(
+    () => filteredTjRecipes.slice(0, displayCount),
+    [filteredTjRecipes, displayCount]
+  )
+  const hasMoreRecipes = filteredTjRecipes.length > displayCount
+
+  useEffect(() => {
+    setDisplayCount(30)
+  }, [debouncedSearch, sourceFilter, selectedCategory, difficultyFilter, favoritesOnly, fridgeFilterActive])
+
   const showDiscovery =
     sourceFilter !== 'my-recipes' && !debouncedSearch && !selectedCategory
 
   return (
-    <div className={className}>
-      {/* Source toggle + Search */}
-      <div className="space-y-3">
-        {/* Source toggle - pill style */}
-        <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-1">
-          {(
-            [
-              { value: 'all', label: 'All', count: recipes.length + tjRecipes.length },
-              { value: 'my-recipes', label: 'My Recipes', count: recipes.length },
-              { value: 'trader-joes', label: "Trader Joe's", count: tjRecipes.length },
-            ] as const
-          ).map((source) => (
-            <button
-              key={source.value}
-              onClick={() => {
-                setSourceFilter(source.value)
-                setSelectedCategory('')
-              }}
-              className={cn(
-                'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                sourceFilter === source.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {source.label}
-              <span className={cn(
-                'ml-1.5 text-xs tabular-nums',
-                sourceFilter === source.value
-                  ? 'text-muted-foreground'
-                  : 'text-muted-foreground/60'
-              )}>
-                {source.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Search + actions */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+    <div className={cn('space-y-3', className)}>
+      {/* ── Unified Toolbar ── */}
+      <div className="sticky top-0 z-10 pt-1 pb-3 bg-muted/95 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search recipes, ingredients, tags..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9 h-9"
+              className="h-9 pl-9 text-sm rounded-lg bg-background/60 border-border/50 focus-visible:bg-background"
             />
           </div>
+
+          <div className="flex items-center rounded-lg border border-border/50 p-0.5 shrink-0">
+            {([
+              { value: 'all' as const, label: 'All' },
+              { value: 'my-recipes' as const, label: 'Mine' },
+              { value: 'trader-joes' as const, label: "TJ's" },
+            ]).map((source) => (
+              <button
+                key={source.value}
+                onClick={() => { setSourceFilter(source.value); setSelectedCategory('') }}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-medium transition-all',
+                  sourceFilter === source.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {source.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+            className={cn(
+              'flex items-center justify-center size-9 rounded-lg border transition-all shrink-0',
+              favoritesOnly
+                ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border'
+            )}
+            title="Favorites"
+          >
+            <Star className={cn('size-3.5', favoritesOnly && 'fill-amber-500')} />
+          </button>
+
+          {fridgeIngredients.length > 0 && (
+            <button
+              onClick={() => setShowFridgeManager(true)}
+              className={cn(
+                'flex items-center justify-center size-9 rounded-lg border transition-all shrink-0',
+                fridgeFilterActive
+                  ? 'bg-green-500/15 text-green-500 border-green-500/30'
+                  : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border'
+              )}
+              title="Manage fridge items"
+            >
+              <Snowflake className="size-3.5" />
+            </button>
+          )}
+
           <FridgeScanButton onClick={() => setShowFridgeScanner(true)} />
+
           <Button
             variant="outline"
             size="icon"
-            className={cn('size-9 shrink-0', showFilters && 'bg-muted border-muted-foreground/30')}
+            className={cn(
+              'size-9 shrink-0 rounded-lg',
+              showFilters && 'bg-primary/10 border-primary/30 text-primary'
+            )}
             onClick={() => setShowFilters(!showFilters)}
           >
             <SlidersHorizontal className="size-4" />
           </Button>
-          {onNewRecipe && (
-            <Button onClick={onNewRecipe} size="icon" className="size-9 shrink-0">
-              <Plus className="size-4" />
-            </Button>
-          )}
         </div>
-
-        {/* My Fridge toggle */}
-        {latestScan && fridgeIngredients.length > 0 && (
-          <button
-            onClick={() => setFridgeFilterActive(!fridgeFilterActive)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all border',
-              fridgeFilterActive
-                ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                : 'bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
-            )}
-          >
-            <Snowflake className="size-3.5" />
-            My Fridge ({fridgeIngredients.length})
-            {fridgeFilterActive && (
-              <X className="size-3 ml-0.5" />
-            )}
-          </button>
-        )}
-
-        {/* Filter panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={transitions.smooth}
-              className="overflow-hidden"
-            >
-              <div className="rounded-lg border bg-card/50 p-3 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1.5 block">
-                      Difficulty
-                    </label>
-                    <Select
-                      value={difficultyFilter}
-                      onValueChange={setDifficultyFilter}
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Levels</SelectItem>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      variant={favoritesOnly ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFavoritesOnly(!favoritesOnly)}
-                      className="h-8 text-xs w-full"
-                    >
-                      Favorites Only
-                    </Button>
-                  </div>
-                </div>
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSearch('')
-                      setDebouncedSearch('')
-                      setDifficultyFilter('all')
-                      setFavoritesOnly(false)
-                      setSelectedCategory('')
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    Clear all filters
-                  </Button>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Active filter pills */}
-        {hasActiveFilters && (
-          <div className="flex flex-wrap gap-1.5">
-            {debouncedSearch && (
-              <Badge variant="secondary" className="text-xs gap-1 pr-1">
-                &ldquo;{debouncedSearch}&rdquo;
-                <button
-                  onClick={() => { setSearch(''); setDebouncedSearch('') }}
-                  className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {difficultyFilter !== 'all' && (
-              <Badge variant="secondary" className="text-xs gap-1 pr-1">
-                {difficultyFilter}
-                <button
-                  onClick={() => setDifficultyFilter('all')}
-                  className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {favoritesOnly && (
-              <Badge variant="secondary" className="text-xs gap-1 pr-1">
-                Favorites
-                <button
-                  onClick={() => setFavoritesOnly(false)}
-                  className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {selectedCategory && (
-              <Badge variant="secondary" className="text-xs gap-1 pr-1">
-                {selectedCategory}
-                <button
-                  onClick={() => setSelectedCategory('')}
-                  className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {fridgeFilterActive && (
-              <Badge variant="secondary" className="text-xs gap-1 pr-1 bg-green-500/10 text-green-600 border-green-500/20">
-                <Snowflake className="size-3" />
-                Fridge filter
-                <button
-                  onClick={() => setFridgeFilterActive(false)}
-                  className="rounded-full p-0.5 hover:bg-green-500/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Discovery section */}
-      {showDiscovery && tjCategories.length > 0 && (
-        <div className="mt-4 space-y-3">
-          {/* Category pills */}
-          <ScrollArea className="w-full">
-            <div className="flex gap-1.5 pb-2">
-              {tjCategories.map(([cat, count]) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className="shrink-0 rounded-full border bg-card px-3 py-1.5 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary"
+      {/* Filter panel (expanded) */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={transitions.smooth}
+            className="overflow-hidden"
+          >
+            <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-2 block font-medium">
+                  Difficulty
+                </label>
+                <Select
+                  value={difficultyFilter}
+                  onValueChange={setDifficultyFilter}
                 >
-                  {cat}
-                  <span className="ml-1 text-muted-foreground text-[10px]">
-                    {count}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-
-          {/* Try Something New */}
-          {randomTjRecipe && (
-            <div
-              className="group relative overflow-hidden rounded-xl border bg-card cursor-pointer transition-all hover:shadow-md hover:border-border"
-              onClick={() => onTjRecipeClick?.(randomTjRecipe)}
-            >
-              <div className="flex gap-0">
-                {/* Image side */}
-                <div className="relative w-28 shrink-0 overflow-hidden">
-                  {resolveRecipeImageUrl(randomTjRecipe.image_url) ? (
-                    <img
-                      src={resolveRecipeImageUrl(randomTjRecipe.image_url)}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-red-500/10 to-orange-500/10 flex items-center justify-center">
-                      <ChefHat className="size-6 text-muted-foreground/30" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Content side */}
-                <div className="flex-1 p-3 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Shuffle className="size-3 text-primary" />
-                    <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
-                      Try Something New
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-semibold line-clamp-1">
-                    {randomTjRecipe.name}
-                  </h4>
-                  {randomTjRecipe.recipe_data.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                      {randomTjRecipe.recipe_data.description}
-                    </p>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] px-2 mt-1.5 -ml-2"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setRandomSeed((s) => s + 1)
-                    }}
-                  >
-                    <Shuffle className="size-3 mr-1" />
-                    Shuffle
-                  </Button>
-                </div>
+                  <SelectTrigger className="h-10 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch('')
+                    setDebouncedSearch('')
+                    setDifficultyFilter('all')
+                    setFavoritesOnly(false)
+                    setSelectedCategory('')
+                    setFridgeFilterActive(false)
+                  }}
+                  className="h-8 text-xs"
+                >
+                  Clear all filters
+                </Button>
+              )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stats summary bar */}
+      {!isLoading && (
+        <div className="flex items-center gap-3 rounded-lg bg-card/50 border border-border/50 px-3 py-2">
+          <button
+            onClick={() => { setSourceFilter('all'); setSelectedCategory('') }}
+            className={cn(
+              'flex items-center gap-1.5 text-xs transition-colors',
+              sourceFilter === 'all' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <ChefHat className="size-3.5" />
+            <span>Total</span>
+            <span className="font-bold tabular-nums">{recipes.length + tjRecipes.length}</span>
+          </button>
+          <div className="h-5 w-px bg-border/30" />
+          <button
+            onClick={() => { setSourceFilter('my-recipes'); setSelectedCategory('') }}
+            className={cn(
+              'flex items-center gap-1.5 text-xs transition-colors',
+              sourceFilter === 'my-recipes' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>Mine</span>
+            <span className="font-bold tabular-nums text-blue-500">{recipes.length}</span>
+          </button>
+          <div className="h-5 w-px bg-border/30" />
+          <button
+            onClick={() => { setSourceFilter('trader-joes'); setSelectedCategory('') }}
+            className={cn(
+              'flex items-center gap-1.5 text-xs transition-colors',
+              sourceFilter === 'trader-joes' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>TJ&apos;s</span>
+            <span className="font-bold tabular-nums text-red-500">{tjRecipes.length}</span>
+          </button>
+          <div className="h-5 w-px bg-border/30" />
+          <button
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Star className={cn('size-3.5', favoritesOnly ? 'fill-amber-500 text-amber-500' : '')} />
+            <span className="font-bold tabular-nums text-amber-500">
+              {recipes.filter((r) => r.is_favorite).length}
+            </span>
+          </button>
+          {hasActiveFilters && (
+            <>
+              <div className="h-5 w-px bg-border/30" />
+              <span className="text-[10px] text-muted-foreground tabular-nums ml-auto">
+                {totalResults} result{totalResults !== 1 ? 's' : ''}
+              </span>
+            </>
           )}
         </div>
       )}
 
-      {/* Results count */}
-      {!isLoading && (
-        <p className="text-xs text-muted-foreground mt-3 mb-1">
-          {totalResults} recipe{totalResults !== 1 ? 's' : ''}
-          {selectedCategory && ` in ${selectedCategory}`}
-        </p>
+      {/* Active filter pills */}
+      {(debouncedSearch || difficultyFilter !== 'all' || selectedCategory || fridgeFilterActive) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {debouncedSearch && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6">
+              &ldquo;{debouncedSearch}&rdquo;
+              <button
+                onClick={() => { setSearch(''); setDebouncedSearch('') }}
+                className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {difficultyFilter !== 'all' && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6">
+              {difficultyFilter}
+              <button
+                onClick={() => setDifficultyFilter('all')}
+                className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {selectedCategory && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6">
+              {selectedCategory}
+              <button
+                onClick={() => setSelectedCategory('')}
+                className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {fridgeFilterActive && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6 bg-green-500/10 text-green-500 border-green-500/20">
+              <Snowflake className="size-3" />
+              Fridge
+              <button
+                onClick={() => setFridgeFilterActive(false)}
+                className="rounded-full p-0.5 hover:bg-green-500/20"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Fridge contents summary when filter is active */}
+      {fridgeFilterActive && fridgeIngredients.length > 0 && (
+        <button
+          onClick={() => setShowFridgeManager(true)}
+          className="flex items-center gap-1.5 flex-wrap rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2 w-full text-left transition-colors hover:bg-green-500/10"
+        >
+          <Snowflake className="size-3.5 text-green-500 shrink-0" />
+          <span className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">
+            Filtering with:
+          </span>
+          {fridgeIngredients.slice(0, 8).map((item) => (
+            <span
+              key={item}
+              className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] text-green-700 dark:text-green-300"
+            >
+              {item}
+            </span>
+          ))}
+          {fridgeIngredients.length > 8 && (
+            <span className="text-[11px] text-green-600/70 dark:text-green-400/70">
+              +{fridgeIngredients.length - 8} more
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* ── Category chips ── */}
+      {showDiscovery && tjCategories.length > 0 && (
+        <ScrollArea className="w-full">
+          <div className="flex gap-1.5 pb-1">
+            {tjCategories.map(([cat, count]) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
+                className={cn(
+                  'shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
+                  selectedCategory === cat
+                    ? 'bg-primary/15 text-primary border-primary/30'
+                    : 'bg-card border-border/60 hover:bg-muted hover:border-muted-foreground/30'
+                )}
+              >
+                {cat}
+                <span className={cn(
+                  'ml-1.5 text-[10px] tabular-nums',
+                  selectedCategory === cat ? 'text-primary/70' : 'text-muted-foreground/60'
+                )}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      )}
+
+      {/* Try Something New — discovery card */}
+      {showDiscovery && randomTjRecipe && (
+        <div
+          className="group relative overflow-hidden rounded-xl border border-primary/10 border-l-[3px] border-l-primary bg-gradient-to-r from-primary/5 to-orange-500/5 cursor-pointer transition-all hover:shadow-md hover:border-primary/20 hover:border-l-primary"
+          onClick={() => onTjRecipeClick?.(randomTjRecipe)}
+        >
+          <div className="flex">
+            <div className="relative w-28 shrink-0 overflow-hidden">
+              {resolveRecipeImageUrl(randomTjRecipe.image_url) ? (
+                <img
+                  src={resolveRecipeImageUrl(randomTjRecipe.image_url)}
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-br from-primary/10 to-orange-500/10 flex items-center justify-center">
+                  <ChefHat className="size-5 text-muted-foreground/30" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 p-3 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1.5">
+                  <Shuffle className="size-3 text-primary" />
+                  <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+                    Try Something New
+                  </span>
+                </div>
+                <button
+                  className="flex items-center justify-center size-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setRandomSeed((s) => s + 1)
+                  }}
+                  title="Shuffle"
+                >
+                  <Shuffle className="size-3" />
+                </button>
+              </div>
+              <h4 className="text-sm font-semibold line-clamp-1">
+                {randomTjRecipe.name}
+              </h4>
+              {randomTjRecipe.recipe_data.description && (
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                  {randomTjRecipe.recipe_data.description}
+                </p>
+              )}
+              <div className="flex items-center gap-3 mt-1.5">
+                {randomTjRecipe.recipe_data.prep_time && (
+                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="size-3" />
+                    <span className="font-bold tabular-nums">{randomTjRecipe.recipe_data.prep_time}m</span>
+                  </span>
+                )}
+                {randomTjRecipe.recipe_data.servings && (
+                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Users className="size-3" />
+                    <span className="font-bold tabular-nums">{randomTjRecipe.recipe_data.servings}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Recipe grid */}
-      <div className="mt-2">
-        {isLoading ? (
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <RecipeCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : fridgeFilterActive && (readyToCook.length > 0 || almostThere.length > 0) ? (
+        <div className="space-y-6">
+          {readyToCook.length > 0 && (
+            <FridgeTierSection
+              title="Ready to Cook"
+              subtitle="80%+ ingredients matched"
+              dotColor="bg-green-500"
+              titleColor="text-green-500"
+              items={readyToCook}
+              onRecipeClick={onRecipeClick}
+              onTjRecipeClick={onTjRecipeClick}
+              onImportTj={onImportTj}
+              fridgeFilterActive={fridgeFilterActive}
+            />
+          )}
+          {almostThere.length > 0 && (
+            <FridgeTierSection
+              title="Almost There"
+              subtitle="50-79% ingredients matched"
+              dotColor="bg-amber-500"
+              titleColor="text-amber-500"
+              items={almostThere}
+              onRecipeClick={onRecipeClick}
+              onTjRecipeClick={onTjRecipeClick}
+              onImportTj={onImportTj}
+              fridgeFilterActive={fridgeFilterActive}
+            />
+          )}
+          {otherRecipes.length > 0 && (
+            <FridgeTierSection
+              title="Other Matches"
+              dotColor="bg-muted-foreground/30"
+              titleColor="text-muted-foreground"
+              items={otherRecipes}
+              onRecipeClick={onRecipeClick}
+              onTjRecipeClick={onTjRecipeClick}
+              onImportTj={onImportTj}
+              fridgeFilterActive={fridgeFilterActive}
+            />
+          )}
+          {readyToCook.length === 0 && almostThere.length === 0 && otherRecipes.length === 0 && (
+            <EmptyState
+              icon={<Snowflake className="size-10" />}
+              message="No recipes match your fridge items"
+              action={{ label: 'Clear fridge filter', onClick: () => setFridgeFilterActive(false) }}
+            />
+          )}
+        </div>
+      ) : totalResults === 0 ? (
+        <EmptyState
+          icon={<ChefHat className="size-10" />}
+          message={hasActiveFilters ? 'No recipes match your filters' : 'No recipes yet'}
+          action={onNewRecipe && !hasActiveFilters && sourceFilter !== 'trader-joes'
+            ? { label: 'Create your first recipe', onClick: onNewRecipe, icon: <Plus className="size-4 mr-2" /> }
+            : undefined
+          }
+        />
+      ) : (
+        <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <RecipeCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : fridgeFilterActive && (readyToCook.length > 0 || almostThere.length > 0) ? (
-          /* Tiered fridge results */
-          <div className="space-y-6">
-            {readyToCook.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="size-2 rounded-full bg-green-500" />
-                  <h3 className="text-sm font-semibold text-green-600">
-                    Ready to Cook
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    80%+ ingredients matched
-                  </span>
-                </div>
-                <motion.div
-                  variants={staggerContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                >
-                  {readyToCook.map((item) => (
-                    <motion.div key={`${item.type}-${item.recipe.id}`} variants={staggerItemVariants}>
-                      {item.type === 'own' ? (
-                        <RecipeCard
-                          recipe={item.recipe}
-                          onClick={() => onRecipeClick?.(item.recipe as Recipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      ) : (
-                        <TjRecipeCard
-                          recipe={item.recipe as TraderJoesRecipe}
-                          onClick={() => onTjRecipeClick?.(item.recipe as TraderJoesRecipe)}
-                          onImport={() => onImportTj?.(item.recipe as TraderJoesRecipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            )}
-
-            {almostThere.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="size-2 rounded-full bg-amber-500" />
-                  <h3 className="text-sm font-semibold text-amber-600">
-                    Almost There
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    50-79% ingredients matched
-                  </span>
-                </div>
-                <motion.div
-                  variants={staggerContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                >
-                  {almostThere.map((item) => (
-                    <motion.div key={`${item.type}-${item.recipe.id}`} variants={staggerItemVariants}>
-                      {item.type === 'own' ? (
-                        <RecipeCard
-                          recipe={item.recipe}
-                          onClick={() => onRecipeClick?.(item.recipe as Recipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      ) : (
-                        <TjRecipeCard
-                          recipe={item.recipe as TraderJoesRecipe}
-                          onClick={() => onTjRecipeClick?.(item.recipe as TraderJoesRecipe)}
-                          onImport={() => onImportTj?.(item.recipe as TraderJoesRecipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            )}
-
-            {otherRecipes.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="size-2 rounded-full bg-muted-foreground/30" />
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Other Matches
-                  </h3>
-                </div>
-                <motion.div
-                  variants={staggerContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                >
-                  {otherRecipes.map((item) => (
-                    <motion.div key={`${item.type}-${item.recipe.id}`} variants={staggerItemVariants}>
-                      {item.type === 'own' ? (
-                        <RecipeCard
-                          recipe={item.recipe}
-                          onClick={() => onRecipeClick?.(item.recipe as Recipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      ) : (
-                        <TjRecipeCard
-                          recipe={item.recipe as TraderJoesRecipe}
-                          onClick={() => onTjRecipeClick?.(item.recipe as TraderJoesRecipe)}
-                          onImport={() => onImportTj?.(item.recipe as TraderJoesRecipe)}
-                          fridgeScore={item.score}
-                          fridgeFilterActive={fridgeFilterActive}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            )}
-
-            {readyToCook.length === 0 && almostThere.length === 0 && otherRecipes.length === 0 && (
-              <div className="py-16 text-center">
-                <Snowflake className="size-10 mx-auto mb-3 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">
-                  No recipes match your fridge items
-                </p>
-                <Button
-                  onClick={() => setFridgeFilterActive(false)}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                >
-                  Clear fridge filter
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : totalResults === 0 ? (
-          <div className="py-16 text-center">
-            <ChefHat className="size-10 mx-auto mb-3 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">
-              {hasActiveFilters
-                ? 'No recipes match your filters'
-                : 'No recipes yet'}
-            </p>
-            {onNewRecipe && !hasActiveFilters && sourceFilter !== 'trader-joes' && (
-              <Button
-                onClick={onNewRecipe}
-                variant="outline"
-                size="sm"
-                className="mt-4"
-              >
-                <Plus className="size-4 mr-2" />
-                Create your first recipe
-              </Button>
-            )}
-          </div>
-        ) : (
-          <motion.div
-            variants={staggerContainerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          >
-            {/* Own recipes first */}
             {filteredRecipes.map((recipe) => (
-              <motion.div key={`own-${recipe.id}`} variants={staggerItemVariants}>
+              <div key={`own-${recipe.id}`}>
                 <RecipeCard
                   recipe={recipe}
                   onClick={() => onRecipeClick?.(recipe)}
                 />
-              </motion.div>
+              </div>
             ))}
-
-            {/* TJ recipes */}
-            {filteredTjRecipes.map((recipe) => (
-              <motion.div key={`tj-${recipe.id}`} variants={staggerItemVariants}>
+            {visibleTjRecipes.map((recipe) => (
+              <div key={`tj-${recipe.id}`}>
                 <TjRecipeCard
                   recipe={recipe}
                   onClick={() => onTjRecipeClick?.(recipe)}
                   onImport={() => onImportTj?.(recipe)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
-        )}
-      </div>
+          </div>
+          {hasMoreRecipes && (
+            <button
+              onClick={() => setDisplayCount((c) => c + 30)}
+              className="flex items-center justify-center gap-2 w-full rounded-xl border border-border/50 bg-card/50 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card hover:border-border transition-all"
+            >
+              <ChevronDown className="size-4" />
+              Show more
+              <span className="text-xs tabular-nums text-muted-foreground/70">
+                ({filteredTjRecipes.length - displayCount} remaining)
+              </span>
+            </button>
+          )}
+        </>
+      )}
 
-      {/* Fridge Scanner Sheet */}
       <FridgeScanner
         open={showFridgeScanner}
         onOpenChange={setShowFridgeScanner}
+      />
+
+      <FridgeManager
+        open={showFridgeManager}
+        onOpenChange={setShowFridgeManager}
+        onOpenScanner={() => setShowFridgeScanner(true)}
       />
     </div>
   )
 }
 
-// Ingredient matching utilities
+// ── Extracted sub-components ──
+
+function EmptyState({
+  icon,
+  message,
+  action,
+}: {
+  icon: React.ReactNode
+  message: string
+  action?: { label: string; onClick: () => void; icon?: React.ReactNode }
+}) {
+  return (
+    <div className="py-16 text-center">
+      <div className="mx-auto mb-3 text-muted-foreground/30">{icon}</div>
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {action && (
+        <Button onClick={action.onClick} variant="outline" size="sm" className="mt-4">
+          {action.icon}
+          {action.label}
+        </Button>
+      )}
+    </div>
+  )
+}
+
+function FridgeTierSection({
+  title,
+  subtitle,
+  dotColor,
+  titleColor,
+  items,
+  onRecipeClick,
+  onTjRecipeClick,
+  onImportTj,
+  fridgeFilterActive,
+}: {
+  title: string
+  subtitle?: string
+  dotColor: string
+  titleColor: string
+  items: Array<{ type: 'own'; recipe: Recipe; score: number } | { type: 'tj'; recipe: TraderJoesRecipe; score: number }>
+  onRecipeClick?: (recipe: Recipe) => void
+  onTjRecipeClick?: (recipe: TraderJoesRecipe) => void
+  onImportTj?: (recipe: TraderJoesRecipe) => void
+  fridgeFilterActive: boolean
+}) {
+  const iconBgMap: Record<string, string> = {
+    'text-green-500': 'bg-green-500/10',
+    'text-amber-500': 'bg-amber-500/10',
+    'text-muted-foreground': 'bg-muted-foreground/10',
+  }
+  const iconBg = iconBgMap[titleColor] || 'bg-muted/30'
+
+  return (
+    <div>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className={cn('flex items-center justify-center rounded-md p-1.5', iconBg)}>
+          <Snowflake className={cn('size-3.5', titleColor)} />
+        </div>
+        <div>
+          <h3 className={cn('text-xs font-semibold uppercase tracking-wider', titleColor)}>{title}</h3>
+          {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
+        </div>
+        <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{items.length} recipe{items.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {items.map((item) => (
+          <div key={`${item.type}-${item.recipe.id}`}>
+            {item.type === 'own' ? (
+              <RecipeCard
+                recipe={item.recipe}
+                onClick={() => onRecipeClick?.(item.recipe as Recipe)}
+                fridgeScore={item.score}
+                fridgeFilterActive={fridgeFilterActive}
+              />
+            ) : (
+              <TjRecipeCard
+                recipe={item.recipe as TraderJoesRecipe}
+                onClick={() => onTjRecipeClick?.(item.recipe as TraderJoesRecipe)}
+                onImport={() => onImportTj?.(item.recipe as TraderJoesRecipe)}
+                fridgeScore={item.score}
+                fridgeFilterActive={fridgeFilterActive}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Ingredient matching utilities ──
+
 const SKIP_WORDS = new Set([
   'cup', 'cups', 'tbsp', 'tsp', 'oz', 'lb', 'lbs', 'g', 'ml', 'kg',
   'box', 'jar', 'can', 'package', 'bag', 'bunch', 'head', 'piece', 'pieces',
@@ -751,6 +825,8 @@ function ingredientMatches(fridgeTokens: string[], recipeTokens: string[]): bool
   )
 }
 
+// ── TJ Recipe Card ──
+
 function TjRecipeCard({
   recipe,
   onClick,
@@ -772,7 +848,7 @@ function TjRecipeCard({
       transition={transitions.springGentle}
     >
       <Card
-        className="group cursor-pointer overflow-hidden border-border/50 transition-all hover:shadow-lg hover:border-border"
+        className="group cursor-pointer overflow-hidden border-border/50 transition-all hover:shadow-lg hover:border-border hover:bg-card/80"
         onClick={onClick}
       >
         <CardContent className="p-0">
@@ -784,7 +860,7 @@ function TjRecipeCard({
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-red-500/10 to-orange-500/10">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
                 <ChefHat className="size-8 text-muted-foreground/30" />
               </div>
             )}
@@ -798,7 +874,6 @@ function TjRecipeCard({
               )}
             </div>
 
-            {/* Bottom info */}
             <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-2.5 pb-2">
               <div className="flex items-center gap-1.5">
                 {recipe.recipe_data.prep_time && (
@@ -882,7 +957,6 @@ function FridgeMatchBadge({ score }: { score: number }) {
 
   return (
     <div className={cn('flex items-center gap-1 rounded-full px-1.5 py-0.5 backdrop-blur-sm shadow-sm', bgColor)}>
-      {/* Mini circular progress */}
       <svg className="size-3.5" viewBox="0 0 16 16">
         <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20" />
         <circle

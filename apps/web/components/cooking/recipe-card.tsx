@@ -42,7 +42,7 @@ export function RecipeCard({
     >
       <Card
         className={cn(
-          'group cursor-pointer overflow-hidden border-border/50 transition-all hover:shadow-lg hover:border-border',
+          'group cursor-pointer overflow-hidden border-border/50 transition-all hover:shadow-lg hover:border-border hover:bg-card/80',
           className
         )}
         onClick={onClick}
@@ -57,7 +57,7 @@ export function RecipeCard({
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/60">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
                 <ChefHat className="size-8 text-muted-foreground/30" />
               </div>
             )}

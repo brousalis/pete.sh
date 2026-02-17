@@ -117,6 +117,32 @@ Example output: ["chicken breast", "rice", "milk", "cheddar cheese"]`,
 /**
  * Save a new fridge scan record.
  */
+export async function saveManualScan(items: string[]): Promise<FridgeScan> {
+  const supabase = getSupabaseClientForOperation('write')
+  if (!supabase) {
+    throw new Error('Supabase not configured')
+  }
+
+  const { data, error } = await supabase
+    .from('fridge_scans')
+    .insert({
+      scan_type: 'manual',
+      raw_transcript: null,
+      identified_items: items,
+      confirmed_items: items,
+      recipes_matched: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[Fridge Scan] Error saving manual scan:', error)
+    throw new Error(`Failed to save manual scan: ${error.message}`)
+  }
+
+  return data as unknown as FridgeScan
+}
+
 export async function saveScan(input: {
   scan_type: 'voice' | 'photo'
   raw_transcript?: string
