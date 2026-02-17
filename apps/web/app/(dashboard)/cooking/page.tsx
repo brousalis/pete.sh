@@ -8,10 +8,9 @@ import { RecipeEditor } from '@/components/cooking/recipe-editor'
 import { RecipeList } from '@/components/cooking/recipe-list'
 import { ShoppingList } from '@/components/cooking/shopping-list'
 import { TraderJoesDetailSheet } from '@/components/cooking/trader-joes-detail'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import { fadeUpVariants } from '@/lib/animations'
+import { cn } from '@/lib/utils'
 import type {
     Recipe,
     RecipeWithIngredients,
@@ -22,6 +21,7 @@ import {
     CalendarDays,
     ChefHat,
     ShoppingCart,
+    UtensilsCrossed,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
@@ -32,6 +32,8 @@ export default function CookingPage() {
     </CookingProvider>
   )
 }
+
+type CookingTab = 'recipes' | 'meal-plan' | 'shopping-list'
 
 function CookingPageContent() {
   const {
@@ -183,96 +185,115 @@ function CookingPageContent() {
     )
   }
 
+  const tabs: { value: CookingTab; label: string; icon: React.ElementType; badge?: number }[] = [
+    { value: 'recipes', label: 'Recipes', icon: UtensilsCrossed },
+    { value: 'meal-plan', label: 'Meal Plan', icon: CalendarDays, badge: plannedMealsCount || undefined },
+    { value: 'shopping-list', label: 'Shopping', icon: ShoppingCart, badge: shoppingItemCount || undefined },
+  ]
+
   return (
     <>
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeUpVariants}
-        className="space-y-4"
+        className="space-y-5"
       >
-        {/* Page header */}
-        <div className="flex items-baseline justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Cooking</h1>
-            <p className="text-sm text-muted-foreground">
-              {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} &middot; {tjRecipes.length} from Trader Joe&apos;s
-            </p>
+        {/* Page header + navigation */}
+        <div className="space-y-4">
+          {/* Header row */}
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-orange-500/15">
+              <ChefHat className="size-5 text-orange-500" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold tracking-tight">Cooking</h1>
+              <p className="text-xs text-muted-foreground">
+                {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} &middot; {tjRecipes.length} from Trader Joe&apos;s
+              </p>
+            </div>
           </div>
+
+          {/* Main navigation — large, visible, easy to tap */}
+          <nav className="flex gap-1.5 rounded-2xl bg-muted/50 p-1.5">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.value
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={cn(
+                    'relative flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-medium transition-all',
+                    isActive
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Icon className="size-4" />
+                  <span className="hidden xs:inline sm:inline">{tab.label}</span>
+                  {tab.badge != null && tab.badge > 0 && (
+                    <span className={cn(
+                      'flex items-center justify-center rounded-full text-[10px] font-semibold tabular-nums min-w-[18px] h-[18px] px-1',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted-foreground/15 text-muted-foreground'
+                    )}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
         </div>
 
-        {/* Tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-4"
-        >
-          <TabsList
-            layoutId="cooking-tabs"
-            className="w-full sm:w-auto"
-          >
-            <TabsTrigger
-              value="recipes"
-              layoutId="cooking-tabs"
-              className="gap-1.5"
+        {/* Tab content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'recipes' && (
+            <motion.div
+              key="recipes"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
             >
-              <ChefHat className="size-4" />
-              Recipes
-            </TabsTrigger>
-            <TabsTrigger
-              value="meal-plan"
-              layoutId="cooking-tabs"
-              className="gap-1.5"
+              <RecipeList
+                onRecipeClick={handleRecipeClick}
+                onTjRecipeClick={handleTjRecipeClick}
+                onNewRecipe={handleNewRecipe}
+                onImportTj={handleImportTj}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'meal-plan' && (
+            <motion.div
+              key="meal-plan"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
             >
-              <CalendarDays className="size-4" />
-              Meal Plan
-              {plannedMealsCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-1 h-4 px-1 text-[10px]"
-                >
-                  {plannedMealsCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="shopping-list"
-              layoutId="cooking-tabs"
-              className="gap-1.5"
+              <MealPlanCalendar
+                onRecipeClick={handleMealPlanRecipeClick}
+                onGenerateShoppingList={handleGenerateShoppingList}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'shopping-list' && (
+            <motion.div
+              key="shopping-list"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
             >
-              <ShoppingCart className="size-4" />
-              Shopping
-              {shoppingItemCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-1 h-4 px-1 text-[10px]"
-                >
-                  {shoppingItemCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="recipes" className="mt-4">
-            <RecipeList
-              onRecipeClick={handleRecipeClick}
-              onTjRecipeClick={handleTjRecipeClick}
-              onNewRecipe={handleNewRecipe}
-              onImportTj={handleImportTj}
-            />
-          </TabsContent>
-
-          <TabsContent value="meal-plan" className="mt-4">
-            <MealPlanCalendar
-              onRecipeClick={handleMealPlanRecipeClick}
-              onGenerateShoppingList={handleGenerateShoppingList}
-            />
-          </TabsContent>
-
-          <TabsContent value="shopping-list" className="mt-4">
-            <ShoppingList />
-          </TabsContent>
-        </Tabs>
+              <ShoppingList />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Recipe detail sheet (own recipes) */}

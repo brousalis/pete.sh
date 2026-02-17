@@ -163,8 +163,8 @@ struct PetehomeWebView: UIViewRepresentable {
                 return
             }
 
-            // Allow pete.sh URLs to load in the WebView
-            if url.host?.contains("pete.sh") == true {
+            // Allow pete.sh and local server URLs to load in the WebView
+            if url.host?.contains("pete.sh") == true || url.host?.hasSuffix(".local") == true {
                 decisionHandler(.allow)
                 return
             }
@@ -179,6 +179,19 @@ struct PetehomeWebView: UIViewRepresentable {
             }
 
             decisionHandler(.allow)
+        }
+
+        // MARK: - SSL Trust for Local Server
+
+        /// Trust .local TLS certificates so the WKWebView can load the local dev server
+        func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+               challenge.protectionSpace.host.hasSuffix(".local"),
+               let trust = challenge.protectionSpace.serverTrust {
+                completionHandler(.useCredential, URLCredential(trust: trust))
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
         }
 
         // MARK: - WKUIDelegate
