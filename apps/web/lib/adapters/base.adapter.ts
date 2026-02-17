@@ -46,6 +46,7 @@ const DEFAULT_MIN_WRITE_INTERVALS: Record<ServiceName, number> = {
   cta: 5 * 60 * 1000,      // 5 minutes
   calendar: 5 * 60 * 1000, // 5 minutes
   fitness: 5 * 60 * 1000,  // 5 minutes
+  concerts: 10 * 60 * 1000, // 10 minutes
 }
 
 /**
@@ -64,7 +65,7 @@ function isAvailabilityCacheValid(serviceName: ServiceName): boolean {
  */
 export function getServiceAvailabilityStatus(): Record<ServiceName, ServiceAvailability | null> {
   const result: Record<string, ServiceAvailability | null> = {}
-  const services: ServiceName[] = ['hue', 'spotify', 'cta', 'calendar', 'fitness']
+  const services: ServiceName[] = ['hue', 'spotify', 'cta', 'calendar', 'fitness', 'concerts']
   
   for (const service of services) {
     result[service] = serviceAvailabilityCache.get(service) ?? null

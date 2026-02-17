@@ -3,8 +3,17 @@
  * Initializes and exports Supabase clients for the application
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+
+/**
+ * Typed Supabase client alias.
+ * Note: We use `any` as the Database generic for createClient() because
+ * supabase-js v2.91+ conditional type resolution fails with complex Database
+ * types (36+ tables). Table/row typing is handled at the service layer.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any>
 
 // Environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -46,22 +55,22 @@ export function hasServiceRoleKey(): boolean {
 }
 
 // Singleton instances
-let anonClient: SupabaseClient<Database> | null = null
-let serviceClient: SupabaseClient<Database> | null = null
+let anonClient: AnySupabaseClient | null = null
+let serviceClient: AnySupabaseClient | null = null
 
 /**
  * Get the public Supabase client (anon key)
  * Use this for read operations and client-side queries
  * Returns null if not configured (call isSupabaseConfigured() first)
  */
-export function getSupabaseClient(): SupabaseClient<Database> | null {
+export function getSupabaseClient(): AnySupabaseClient | null {
   if (!isSupabaseConfigured()) {
     return null
   }
 
   if (!anonClient) {
     try {
-      anonClient = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+      anonClient = createClient(supabaseUrl!, supabaseAnonKey!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -81,7 +90,7 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
  * Returns null if not configured
  * WARNING: Never expose this in client-side code
  */
-export function getSupabaseServiceClient(): SupabaseClient<Database> | null {
+export function getSupabaseServiceClient(): AnySupabaseClient | null {
   if (!isSupabaseConfigured()) {
     return null
   }
@@ -92,7 +101,7 @@ export function getSupabaseServiceClient(): SupabaseClient<Database> | null {
 
   if (!serviceClient) {
     try {
-      serviceClient = createClient<Database>(supabaseUrl!, supabaseServiceKey!, {
+      serviceClient = createClient(supabaseUrl!, supabaseServiceKey!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -112,7 +121,7 @@ export function getSupabaseServiceClient(): SupabaseClient<Database> | null {
  * - For writes: use service client (if available) or anon client
  * Returns null if Supabase is not configured
  */
-export function getSupabaseClientForOperation(operation: 'read' | 'write'): SupabaseClient<Database> | null {
+export function getSupabaseClientForOperation(operation: 'read' | 'write'): AnySupabaseClient | null {
   if (operation === 'write' && hasServiceRoleKey()) {
     return getSupabaseServiceClient()
   }

@@ -1,0 +1,347 @@
+'use client'
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react'
+import type { ReactNode } from 'react'
+import { apiGet, apiPost, apiPut } from '@/lib/api/client'
+import { useToast } from '@/hooks/use-toast'
+import { startOfWeek } from 'date-fns'
+import type {
+  Recipe,
+  RecipeWithIngredients,
+  TraderJoesRecipe,
+  MealPlan,
+  ShoppingList,
+  DayOfWeek,
+  FridgeScan,
+} from '@/lib/types/cooking.types'
+
+interface CookingContextValue {
+  recipes: Recipe[]
+  tjRecipes: TraderJoesRecipe[]
+  recipesLoading: boolean
+  tjRecipesLoading: boolean
+  refreshRecipes: () => Promise<void>
+  refreshTjRecipes: () => Promise<void>
+
+  currentWeek: Date
+  setCurrentWeek: (date: Date) => void
+  mealPlan: MealPlan | null
+  mealPlanLoading: boolean
+  updateMealSlot: (
+    day: DayOfWeek,
+    mealType: string,
+    recipeId: string | null
+  ) => Promise<void>
+  refreshMealPlan: () => Promise<void>
+
+  shoppingList: ShoppingList | null
+  shoppingListLoading: boolean
+  refreshShoppingList: () => Promise<void>
+
+  getRecipeById: (id: string) => Recipe | undefined
+  getRecipeName: (id: string) => string
+
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  selectedRecipeId: string | null
+  setSelectedRecipeId: (id: string | null) => void
+  selectedTjRecipe: TraderJoesRecipe | null
+  setSelectedTjRecipe: (recipe: TraderJoesRecipe | null) => void
+  showEditor: boolean
+  setShowEditor: (show: boolean) => void
+  editingRecipe: RecipeWithIngredients | null
+  setEditingRecipe: (recipe: RecipeWithIngredients | null) => void
+  showCookingMode: boolean
+  setShowCookingMode: (show: boolean) => void
+  cookingRecipe: RecipeWithIngredients | null
+  setCookingRecipe: (recipe: RecipeWithIngredients | null) => void
+
+  fridgeIngredients: string[]
+  setFridgeIngredients: (items: string[]) => void
+  fridgeFilterActive: boolean
+  setFridgeFilterActive: (active: boolean) => void
+  latestScan: FridgeScan | null
+}
+
+const CookingContext = createContext<CookingContextValue | null>(null)
+
+export function CookingProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast()
+
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [tjRecipes, setTjRecipes] = useState<TraderJoesRecipe[]>([])
+  const [recipesLoading, setRecipesLoading] = useState(true)
+  const [tjRecipesLoading, setTjRecipesLoading] = useState(true)
+
+  const [currentWeek, setCurrentWeek] = useState(() =>
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  )
+  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
+  const [mealPlanLoading, setMealPlanLoading] = useState(true)
+
+  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null)
+  const [shoppingListLoading, setShoppingListLoading] = useState(false)
+
+  const [activeTab, setActiveTab] = useState('recipes')
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null)
+  const [selectedTjRecipe, setSelectedTjRecipe] =
+    useState<TraderJoesRecipe | null>(null)
+  const [showEditor, setShowEditor] = useState(false)
+  const [editingRecipe, setEditingRecipe] =
+    useState<RecipeWithIngredients | null>(null)
+  const [showCookingMode, setShowCookingMode] = useState(false)
+  const [cookingRecipe, setCookingRecipe] =
+    useState<RecipeWithIngredients | null>(null)
+
+  const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([])
+  const [fridgeFilterActive, setFridgeFilterActive] = useState(false)
+  const [latestScan, setLatestScan] = useState<FridgeScan | null>(null)
+
+  const refreshRecipes = useCallback(async () => {
+    setRecipesLoading(true)
+    try {
+      const response = await apiGet<Recipe[]>('/api/cooking/recipes')
+      if (response.success && response.data) {
+        setRecipes(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch recipes:', error)
+    } finally {
+      setRecipesLoading(false)
+    }
+  }, [])
+
+  const refreshTjRecipes = useCallback(async () => {
+    setTjRecipesLoading(true)
+    try {
+      const response = await apiGet<TraderJoesRecipe[]>(
+        '/api/cooking/trader-joes/search'
+      )
+      if (response.success && response.data) {
+        setTjRecipes(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch TJ recipes:', error)
+    } finally {
+      setTjRecipesLoading(false)
+    }
+  }, [])
+
+  const refreshMealPlan = useCallback(async () => {
+    setMealPlanLoading(true)
+    try {
+      const response = await apiGet<MealPlan>(
+        `/api/cooking/meal-plans?week_start=${currentWeek.toISOString()}`
+      )
+      if (response.success && response.data) {
+        setMealPlan(response.data)
+      } else {
+        setMealPlan(null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch meal plan:', error)
+    } finally {
+      setMealPlanLoading(false)
+    }
+  }, [currentWeek])
+
+  const refreshShoppingList = useCallback(async () => {
+    if (!mealPlan?.id) {
+      setShoppingList(null)
+      return
+    }
+    setShoppingListLoading(true)
+    try {
+      const response = await apiGet<ShoppingList>(
+        `/api/cooking/meal-plans/${mealPlan.id}/shopping-list`
+      )
+      if (response.success && response.data) {
+        setShoppingList(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch shopping list:', error)
+    } finally {
+      setShoppingListLoading(false)
+    }
+  }, [mealPlan?.id])
+
+  const updateMealSlot = useCallback(
+    async (day: DayOfWeek, mealType: string, recipeId: string | null) => {
+      if (!mealPlan) {
+        try {
+          const response = await apiPost<MealPlan>('/api/cooking/meal-plans', {
+            week_start_date: currentWeek.toISOString(),
+            meals: { [day]: { [mealType]: recipeId || undefined } },
+          })
+          if (response.success && response.data) {
+            setMealPlan(response.data)
+            toast({ title: 'Meal plan created' })
+          }
+        } catch {
+          toast({
+            title: 'Error',
+            description: 'Failed to save meal plan',
+            variant: 'destructive',
+          })
+        }
+      } else {
+        const updatedMeals = {
+          ...mealPlan.meals,
+          [day]: {
+            ...mealPlan.meals[day],
+            [mealType]: recipeId || undefined,
+          },
+        }
+        try {
+          const response = await apiPut<MealPlan>(
+            `/api/cooking/meal-plans/${mealPlan.id}`,
+            { meals: updatedMeals }
+          )
+          if (response.success && response.data) {
+            setMealPlan(response.data)
+          }
+        } catch {
+          toast({
+            title: 'Error',
+            description: 'Failed to update meal plan',
+            variant: 'destructive',
+          })
+        }
+      }
+    },
+    [mealPlan, currentWeek, toast]
+  )
+
+  useEffect(() => {
+    refreshRecipes()
+    refreshTjRecipes()
+  }, [refreshRecipes, refreshTjRecipes])
+
+  // Load latest fridge scan on mount
+  useEffect(() => {
+    async function loadLatestScan() {
+      try {
+        const response = await apiGet<FridgeScan>('/api/cooking/fridge-scan?latest=true')
+        if (response.success && response.data) {
+          const scan = response.data
+          // Only use scans from the last 7 days
+          const scanDate = new Date(scan.created_at)
+          const sevenDaysAgo = new Date()
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          if (scanDate >= sevenDaysAgo) {
+            setLatestScan(scan)
+            const items = scan.confirmed_items.length > 0 ? scan.confirmed_items : scan.identified_items
+            if (items.length > 0) {
+              setFridgeIngredients(items)
+            }
+          }
+        }
+      } catch {
+        // Silently fail — scan history is non-critical
+      }
+    }
+    loadLatestScan()
+  }, [])
+
+  useEffect(() => {
+    refreshMealPlan()
+  }, [refreshMealPlan])
+
+  const getRecipeById = useCallback(
+    (id: string) => recipes.find((r) => r.id === id),
+    [recipes]
+  )
+
+  const getRecipeName = useCallback(
+    (id: string) => recipes.find((r) => r.id === id)?.name || '',
+    [recipes]
+  )
+
+  const value = useMemo(
+    () => ({
+      recipes,
+      tjRecipes,
+      recipesLoading,
+      tjRecipesLoading,
+      refreshRecipes,
+      refreshTjRecipes,
+      currentWeek,
+      setCurrentWeek,
+      mealPlan,
+      mealPlanLoading,
+      updateMealSlot,
+      refreshMealPlan,
+      shoppingList,
+      shoppingListLoading,
+      refreshShoppingList,
+      getRecipeById,
+      getRecipeName,
+      activeTab,
+      setActiveTab,
+      selectedRecipeId,
+      setSelectedRecipeId,
+      selectedTjRecipe,
+      setSelectedTjRecipe,
+      showEditor,
+      setShowEditor,
+      editingRecipe,
+      setEditingRecipe,
+      showCookingMode,
+      setShowCookingMode,
+      cookingRecipe,
+      setCookingRecipe,
+      fridgeIngredients,
+      setFridgeIngredients,
+      fridgeFilterActive,
+      setFridgeFilterActive,
+      latestScan,
+    }),
+    [
+      recipes,
+      tjRecipes,
+      recipesLoading,
+      tjRecipesLoading,
+      refreshRecipes,
+      refreshTjRecipes,
+      currentWeek,
+      mealPlan,
+      mealPlanLoading,
+      updateMealSlot,
+      refreshMealPlan,
+      shoppingList,
+      shoppingListLoading,
+      refreshShoppingList,
+      getRecipeById,
+      getRecipeName,
+      activeTab,
+      selectedRecipeId,
+      selectedTjRecipe,
+      showEditor,
+      editingRecipe,
+      showCookingMode,
+      cookingRecipe,
+      fridgeIngredients,
+      fridgeFilterActive,
+      latestScan,
+    ]
+  )
+
+  return (
+    <CookingContext.Provider value={value}>{children}</CookingContext.Provider>
+  )
+}
+
+export function useCooking() {
+  const context = useContext(CookingContext)
+  if (!context) {
+    throw new Error('useCooking must be used within a CookingProvider')
+  }
+  return context
+}

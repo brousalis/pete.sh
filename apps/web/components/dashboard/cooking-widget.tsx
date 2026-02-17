@@ -1,13 +1,16 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { apiGet } from '@/lib/api/client'
-import type { MealPlan, Recipe } from '@/lib/types/cooking.types'
+import type { MealPlan, Recipe, ShoppingList } from '@/lib/types/cooking.types'
 import { format } from 'date-fns'
-import { ChefHat, UtensilsCrossed } from 'lucide-react'
+import { ChefHat, UtensilsCrossed, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 
 export function CookingWidget() {
   const [todayMeals, setTodayMeals] = useState<{
@@ -15,30 +18,36 @@ export function CookingWidget() {
     lunch?: string
     dinner?: string
   }>({})
-  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
   const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [shoppingProgress, setShoppingProgress] = useState<{
+    total: number
+    checked: number
+  } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchTodayMeals()
+    fetchData()
   }, [])
 
-  const fetchTodayMeals = async () => {
+  const fetchData = async () => {
     setLoading(true)
     try {
       const today = new Date()
       const weekStart = new Date(today)
-      weekStart.setDate(today.getDate() - today.getDay() + 1) // Monday
+      weekStart.setDate(today.getDate() - today.getDay() + 1)
 
       const [mealPlanRes, recipesRes] = await Promise.all([
         apiGet<MealPlan>(
           `/api/cooking/meal-plans?week_start=${weekStart.toISOString()}`
         ),
-        apiGet<Recipe[]>('/api/cooking/recipes?is_favorite=true'),
+        apiGet<Recipe[]>('/api/cooking/recipes'),
       ])
 
+      if (recipesRes.success && recipesRes.data) {
+        setRecipes(recipesRes.data)
+      }
+
       if (mealPlanRes.success && mealPlanRes.data) {
-        setMealPlan(mealPlanRes.data)
         const dayName = format(
           today,
           'EEEE'
@@ -51,10 +60,33 @@ export function CookingWidget() {
             dinner: dayMeals.dinner,
           })
         }
-      }
 
-      if (recipesRes.success && recipesRes.data) {
-        setRecipes(recipesRes.data)
+        // Fetch shopping list progress
+        try {
+          const shopRes = await apiGet<ShoppingList>(
+            `/api/cooking/meal-plans/${mealPlanRes.data.id}/shopping-list`
+          )
+          if (shopRes.success && shopRes.data) {
+            const stored = localStorage.getItem(
+              `shopping-list-${shopRes.data.id}`
+            )
+            let checkedCount = 0
+            if (stored) {
+              try {
+                const parsed = JSON.parse(stored)
+                checkedCount = (parsed.checked || []).length
+              } catch {
+                // Ignore
+              }
+            }
+            setShoppingProgress({
+              total: shopRes.data.items.length,
+              checked: checkedCount,
+            })
+          }
+        } catch {
+          // Shopping list may not exist
+        }
       }
     } catch (error) {
       console.error('Failed to fetch cooking data:', error)
@@ -65,21 +97,22 @@ export function CookingWidget() {
 
   const getRecipeName = (recipeId: string | undefined): string => {
     if (!recipeId) return ''
-    const recipe = recipes.find(r => r.id === recipeId)
-    return recipe?.name || 'No recipe'
+    return recipes.find((r) => r.id === recipeId)?.name || ''
   }
 
-  const hasMeals = todayMeals.breakfast || todayMeals.lunch || todayMeals.dinner
+  const hasMeals =
+    todayMeals.breakfast || todayMeals.lunch || todayMeals.dinner
 
   if (loading) {
     return (
-      <div className="animate-pulse">
+      <div>
         <div className="mb-4 flex items-center gap-2">
-          <div className="bg-muted size-5 rounded" />
-          <div className="bg-muted h-5 w-20 rounded" />
+          <Skeleton className="size-9 rounded-lg" />
+          <Skeleton className="h-5 w-20" />
         </div>
         <div className="space-y-2">
-          <div className="bg-muted h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
         </div>
       </div>
     )
@@ -99,43 +132,28 @@ export function CookingWidget() {
       {hasMeals ? (
         <div className="space-y-2">
           {todayMeals.breakfast && (
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5">
-              <UtensilsCrossed className="size-4 shrink-0 text-amber-500" />
-              <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground mb-0.5 text-xs">
-                  Breakfast
-                </div>
-                <div className="truncate text-sm font-medium">
-                  {getRecipeName(todayMeals.breakfast)}
-                </div>
-              </div>
-            </div>
+            <MealRow
+              label="Breakfast"
+              name={getRecipeName(todayMeals.breakfast)}
+              colorClass="border-amber-500/20 bg-amber-500/5"
+              iconColor="text-amber-500"
+            />
           )}
           {todayMeals.lunch && (
-            <div className="flex items-center gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5">
-              <UtensilsCrossed className="size-4 shrink-0 text-blue-500" />
-              <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground mb-0.5 text-xs">
-                  Lunch
-                </div>
-                <div className="truncate text-sm font-medium">
-                  {getRecipeName(todayMeals.lunch)}
-                </div>
-              </div>
-            </div>
+            <MealRow
+              label="Lunch"
+              name={getRecipeName(todayMeals.lunch)}
+              colorClass="border-blue-500/20 bg-blue-500/5"
+              iconColor="text-blue-500"
+            />
           )}
           {todayMeals.dinner && (
-            <div className="flex items-center gap-3 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
-              <UtensilsCrossed className="size-4 shrink-0 text-purple-500" />
-              <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground mb-0.5 text-xs">
-                  Dinner
-                </div>
-                <div className="truncate text-sm font-medium">
-                  {getRecipeName(todayMeals.dinner)}
-                </div>
-              </div>
-            </div>
+            <MealRow
+              label="Dinner"
+              name={getRecipeName(todayMeals.dinner)}
+              colorClass="border-purple-500/20 bg-purple-500/5"
+              iconColor="text-purple-500"
+            />
           )}
         </div>
       ) : (
@@ -151,15 +169,62 @@ export function CookingWidget() {
         </div>
       )}
 
-      {/* Quick stats */}
-      <div className="text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs">
-        <span>Favorites: {recipes.length}</span>
+      {/* Shopping list progress */}
+      {shoppingProgress && shoppingProgress.total > 0 && (
+        <Link href="/cooking" className="block">
+          <div className="mt-3 rounded-lg border p-2.5 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <ShoppingCart className="size-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium">Shopping List</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {shoppingProgress.checked}/{shoppingProgress.total}
+              </span>
+            </div>
+            <Progress
+              value={
+                (shoppingProgress.checked / shoppingProgress.total) * 100
+              }
+              className="h-1.5"
+            />
+          </div>
+        </Link>
+      )}
+
+      {/* Footer */}
+      <div className="text-muted-foreground mt-3 flex items-center justify-between border-t pt-3 text-xs">
+        <span>{recipes.filter((r) => r.is_favorite).length} favorites</span>
         <Link
           href="/cooking"
           className="hover:text-foreground transition-colors"
         >
           Meal Plan →
         </Link>
+      </div>
+    </div>
+  )
+}
+
+function MealRow({
+  label,
+  name,
+  colorClass,
+  iconColor,
+}: {
+  label: string
+  name: string
+  colorClass: string
+  iconColor: string
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-lg border p-2.5 ${colorClass}`}
+    >
+      <UtensilsCrossed className={`size-4 shrink-0 ${iconColor}`} />
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground mb-0.5 text-xs">{label}</div>
+        <div className="truncate text-sm font-medium">{name}</div>
       </div>
     </div>
   )

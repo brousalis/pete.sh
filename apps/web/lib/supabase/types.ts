@@ -7,35 +7,36 @@
  */
 
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { ConcertStatus, SetlistData } from '@/lib/types/concerts.types'
 import type {
-  RecipeDifficulty,
-  RecipeSource,
-  RecipeStep,
-  ShoppingListItem,
-  ShoppingListStatus,
-  WeeklyMeals,
+    RecipeDifficulty,
+    RecipeSource,
+    RecipeStep,
+    ShoppingListItem,
+    ShoppingListStatus,
+    WeeklyMeals,
 } from '@/lib/types/cooking.types'
 import type {
-  CTABusPrediction,
-  CTATrainPrediction,
+    CTABusPrediction,
+    CTATrainPrediction,
 } from '@/lib/types/cta.types'
 import type {
-  DailyRoutine,
-  DayOfWeek,
-  InjuryProtocol,
-  UserProfile,
-  WeeklySchedule,
-  Workout,
+    DailyRoutine,
+    DayOfWeek,
+    InjuryProtocol,
+    UserProfile,
+    WeeklySchedule,
+    Workout,
 } from '@/lib/types/fitness.types'
 import type { HueLight, HueZone } from '@/lib/types/hue.types'
 import type {
-  SpotifyDevice,
-  SpotifyPlaybackState,
-  SpotifyUser,
+    SpotifyDevice,
+    SpotifyPlaybackState,
+    SpotifyUser,
 } from '@/lib/types/spotify.types'
 
 // Service name type
-export type ServiceName = 'spotify' | 'hue' | 'cta' | 'calendar' | 'fitness'
+export type ServiceName = 'spotify' | 'hue' | 'cta' | 'calendar' | 'fitness' | 'concerts'
 
 // Row types for each table
 export interface SpotifyStateRow {
@@ -1028,189 +1029,357 @@ export interface BlogPostInsert {
   updated_at?: string
 }
 
-// Database interface for Supabase client
-export interface Database {
+// Concert types
+export interface ConcertRow {
+  id: string
+  artist_name: string
+  supporting_artists: string[]
+  tour_name: string | null
+  musicbrainz_id: string | null
+  spotify_artist_id: string | null
+  venue_name: string
+  venue_address: string | null
+  venue_lat: number | null
+  venue_lng: number | null
+  venue_place_id: string | null
+  event_date: string
+  event_start: string | null
+  event_end: string | null
+  calendar_event_id: string | null
+  setlist_fm_id: string | null
+  setlist_data: SetlistData | null
+  cover_image: string | null
+  notes: string | null
+  rating: number | null
+  tags: string[]
+  companions: string[]
+  ticket_cost: number | null
+  status: ConcertStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface ConcertInsert {
+  id?: string
+  artist_name: string
+  supporting_artists?: string[]
+  tour_name?: string | null
+  musicbrainz_id?: string | null
+  spotify_artist_id?: string | null
+  venue_name: string
+  venue_address?: string | null
+  venue_lat?: number | null
+  venue_lng?: number | null
+  venue_place_id?: string | null
+  event_date: string
+  event_start?: string | null
+  event_end?: string | null
+  calendar_event_id?: string | null
+  setlist_fm_id?: string | null
+  setlist_data?: SetlistData | null
+  cover_image?: string | null
+  notes?: string | null
+  rating?: number | null
+  tags?: string[]
+  companions?: string[]
+  ticket_cost?: number | null
+  status?: ConcertStatus
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ConcertPhotoRow {
+  id: string
+  concert_id: string
+  storage_url: string
+  thumbnail_url: string | null
+  original_filename: string | null
+  mime_type: string | null
+  file_size_bytes: number | null
+  capture_time: string | null
+  capture_lat: number | null
+  capture_lng: number | null
+  caption: string | null
+  is_cover: boolean
+  sort_order: number
+  uploaded_via: string
+  created_at: string
+}
+
+export interface ConcertPhotoInsert {
+  id?: string
+  concert_id: string
+  storage_url: string
+  thumbnail_url?: string | null
+  original_filename?: string | null
+  mime_type?: string | null
+  file_size_bytes?: number | null
+  capture_time?: string | null
+  capture_lat?: number | null
+  capture_lng?: number | null
+  caption?: string | null
+  is_cover?: boolean
+  sort_order?: number
+  uploaded_via?: string
+  created_at?: string
+}
+
+// Fridge Scan types
+export interface FridgeScanRow {
+  id: string
+  scan_type: string
+  raw_transcript: string | null
+  identified_items: string[]
+  confirmed_items: string[]
+  recipes_matched: number
+  created_at: string
+}
+
+export interface FridgeScanInsert {
+  id?: string
+  scan_type: string
+  raw_transcript?: string | null
+  identified_items: string[]
+  confirmed_items?: string[]
+  recipes_matched?: number
+  created_at?: string
+}
+
+// Database type for Supabase client
+export type Database = {
   public: {
     Tables: {
       spotify_state: {
         Row: SpotifyStateRow
         Insert: SpotifyStateInsert
         Update: Partial<SpotifyStateInsert>
+        Relationships: []
       }
       hue_lights: {
         Row: HueLightRow
         Insert: HueLightInsert
         Update: Partial<HueLightInsert>
+        Relationships: []
       }
       hue_zones: {
         Row: HueZoneRow
         Insert: HueZoneInsert
         Update: Partial<HueZoneInsert>
+        Relationships: []
       }
       hue_scenes: {
         Row: HueSceneRow
         Insert: HueSceneInsert
         Update: Partial<HueSceneInsert>
+        Relationships: []
       }
       hue_status: {
         Row: HueStatusRow
         Insert: HueStatusInsert
         Update: Partial<HueStatusInsert>
+        Relationships: []
       }
       fitness_routines: {
         Row: FitnessRoutineRow
         Insert: FitnessRoutineInsert
         Update: Partial<FitnessRoutineInsert>
+        Relationships: []
       }
       fitness_weeks: {
         Row: FitnessWeekRow
         Insert: FitnessWeekInsert
         Update: Partial<FitnessWeekInsert>
+        Relationships: []
       }
       fitness_progress: {
         Row: FitnessProgressRow
         Insert: FitnessProgressInsert
         Update: Partial<FitnessProgressInsert>
+        Relationships: []
       }
       fitness_routine_versions: {
         Row: FitnessRoutineVersionRow
         Insert: FitnessRoutineVersionInsert
         Update: Partial<FitnessRoutineVersionInsert>
+        Relationships: []
       }
       workout_definitions: {
         Row: WorkoutDefinitionRow
         Insert: WorkoutDefinitionInsert
         Update: Partial<WorkoutDefinitionInsert>
+        Relationships: []
       }
       cta_history: {
         Row: CTAHistoryRow
         Insert: CTAHistoryInsert
         Update: Partial<CTAHistoryInsert>
+        Relationships: []
       }
       calendar_events: {
         Row: CalendarEventRow
         Insert: CalendarEventInsert
         Update: Partial<CalendarEventInsert>
+        Relationships: []
       }
       sync_log: {
         Row: SyncLogRow
         Insert: SyncLogInsert
         Update: Partial<SyncLogInsert>
+        Relationships: []
       }
       apple_health_workouts: {
         Row: AppleHealthWorkoutRow
         Insert: AppleHealthWorkoutInsert
         Update: Partial<AppleHealthWorkoutInsert>
+        Relationships: []
       }
       apple_health_hr_samples: {
         Row: AppleHealthHrSampleRow
         Insert: AppleHealthHrSampleInsert
         Update: Partial<AppleHealthHrSampleInsert>
+        Relationships: []
       }
       apple_health_cadence_samples: {
         Row: AppleHealthCadenceSampleRow
         Insert: AppleHealthCadenceSampleInsert
         Update: Partial<AppleHealthCadenceSampleInsert>
+        Relationships: []
       }
       apple_health_pace_samples: {
         Row: AppleHealthPaceSampleRow
         Insert: AppleHealthPaceSampleInsert
         Update: Partial<AppleHealthPaceSampleInsert>
+        Relationships: []
       }
       apple_health_routes: {
         Row: AppleHealthRouteRow
         Insert: AppleHealthRouteInsert
         Update: Partial<AppleHealthRouteInsert>
+        Relationships: []
       }
       apple_health_daily_metrics: {
         Row: AppleHealthDailyMetricsRow
         Insert: AppleHealthDailyMetricsInsert
         Update: Partial<AppleHealthDailyMetricsInsert>
+        Relationships: []
       }
       // Cooking tables
       recipes: {
         Row: RecipeRow
         Insert: RecipeInsert
         Update: Partial<RecipeInsert>
+        Relationships: []
       }
       recipe_ingredients: {
         Row: RecipeIngredientRow
         Insert: RecipeIngredientInsert
         Update: Partial<RecipeIngredientInsert>
+        Relationships: []
       }
       recipe_versions: {
         Row: RecipeVersionRow
         Insert: RecipeVersionInsert
         Update: Partial<RecipeVersionInsert>
+        Relationships: []
       }
       meal_plans: {
         Row: MealPlanRow
         Insert: MealPlanInsert
         Update: Partial<MealPlanInsert>
+        Relationships: []
       }
       shopping_lists: {
         Row: ShoppingListRow
         Insert: ShoppingListInsert
         Update: Partial<ShoppingListInsert>
+        Relationships: []
       }
       trader_joes_recipes: {
         Row: TraderJoesRecipeRow
         Insert: TraderJoesRecipeInsert
         Update: Partial<TraderJoesRecipeInsert>
+        Relationships: []
       }
       // Coffee config tables
       coffee_roast_strategies: {
         Row: CoffeeRoastStrategyRow
         Insert: CoffeeRoastStrategyInsert
         Update: Partial<CoffeeRoastStrategyInsert>
+        Relationships: []
       }
       coffee_recipes: {
         Row: CoffeeRecipeRow
         Insert: CoffeeRecipeInsert
         Update: Partial<CoffeeRecipeInsert>
+        Relationships: []
       }
       coffee_quick_doses: {
         Row: CoffeeQuickDoseRow
         Insert: CoffeeQuickDoseInsert
         Update: Partial<CoffeeQuickDoseInsert>
+        Relationships: []
       }
       coffee_golden_rules: {
         Row: CoffeeGoldenRuleRow
         Insert: CoffeeGoldenRuleInsert
         Update: Partial<CoffeeGoldenRuleInsert>
+        Relationships: []
       }
       coffee_recommendations: {
         Row: CoffeeRecommendationRow
         Insert: CoffeeRecommendationInsert
         Update: Partial<CoffeeRecommendationInsert>
+        Relationships: []
       }
       // Blog tables
       blog_posts: {
         Row: BlogPostRow
         Insert: BlogPostInsert
         Update: Partial<BlogPostInsert>
+        Relationships: []
       }
       // Spotify listening history tables
       spotify_listening_history: {
         Row: SpotifyListeningHistoryRow
         Insert: SpotifyListeningHistoryInsert
         Update: Partial<SpotifyListeningHistoryInsert>
+        Relationships: []
       }
       spotify_sync_cursor: {
         Row: SpotifySyncCursorRow
         Insert: SpotifySyncCursorInsert
         Update: Partial<SpotifySyncCursorInsert>
+        Relationships: []
       }
       // App settings table
       app_settings: {
         Row: AppSettingsRow
         Insert: AppSettingsInsert
         Update: Partial<AppSettingsInsert>
+        Relationships: []
+      }
+      // Concert tables
+      concerts: {
+        Row: ConcertRow
+        Insert: ConcertInsert
+        Update: Partial<ConcertInsert>
+        Relationships: []
+      }
+      concert_photos: {
+        Row: ConcertPhotoRow
+        Insert: ConcertPhotoInsert
+        Update: Partial<ConcertPhotoInsert>
+        Relationships: []
+      }
+      // Fridge scan table
+      fridge_scans: {
+        Row: FridgeScanRow
+        Insert: FridgeScanInsert
+        Update: Partial<FridgeScanInsert>
+        Relationships: []
       }
     }
-    Views: {
-      [_ in never]: never
-    }
+    Views: Record<string, never>
     Functions: {
       get_latest_spotify_state: {
         Args: Record<string, never>
@@ -1256,6 +1425,32 @@ export interface Database {
           top_artist_count: number | null
         }[]
       }
+      get_concert_stats: {
+        Args: {
+          p_year?: number | null
+        }
+        Returns: {
+          total_concerts: number
+          total_attended: number
+          total_upcoming: number
+          unique_artists: number
+          unique_venues: number
+          total_spent: number
+          avg_rating: number
+          concerts_this_year: number
+          top_venue: string | null
+          top_venue_count: number
+          top_artist: string | null
+          top_artist_count: number
+        }[]
+      }
+      get_concert_streak: {
+        Args: Record<string, never>
+        Returns: {
+          current_streak: number
+          longest_streak: number
+        }[]
+      }
       get_active_routine_version: {
         Args: {
           p_routine_id: string
@@ -1274,12 +1469,6 @@ export interface Database {
         }
         Returns: WorkoutDefinitionRow[]
       }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
     }
   }
 }

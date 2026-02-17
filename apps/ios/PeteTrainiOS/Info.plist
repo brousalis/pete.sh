@@ -21,5 +21,11 @@
 	<string>Pete Train needs access to read your health data to sync your activity rings and workout data.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Pete Train needs access to write workout data to HealthKit.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>petehome uses your camera to scan what's in your refrigerator.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>petehome uses your microphone to hear you list ingredients.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>petehome uses speech recognition to transcribe your ingredient list.</string>
 </dict>
 </plist>

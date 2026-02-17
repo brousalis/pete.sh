@@ -58,8 +58,8 @@ declare namespace google.maps {
 
 declare global {
   interface Window {
-    google: { maps: typeof google.maps }
-    initMap: () => void
+    google?: { maps: typeof google.maps }
+    initMap?: () => void
   }
 }
 

@@ -1,11 +1,16 @@
 import SwiftUI
 import WebKit
 
+extension Notification.Name {
+    static let fridgeScanCompleted = Notification.Name("fridgeScanCompleted")
+}
+
 /// WKWebView wrapper for displaying pete.sh
 struct PetehomeWebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
     var onOpenSyncSheet: (() -> Void)?
+    var onOpenFridgeScanner: (() -> Void)?
     var onRefresh: (() -> Void)?
 
     func makeUIView(context: Context) -> WKWebView {
@@ -55,6 +60,8 @@ struct PetehomeWebView: UIViewRepresentable {
     func updateUIView(_ webView: WKWebView, context: Context) {
         // Update coordinator callbacks
         context.coordinator.onOpenSyncSheet = onOpenSyncSheet
+        context.coordinator.onOpenFridgeScanner = onOpenFridgeScanner
+        context.coordinator.webView = webView
     }
 
     func makeCoordinator() -> Coordinator {
@@ -66,10 +73,48 @@ struct PetehomeWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: PetehomeWebView
         var onOpenSyncSheet: (() -> Void)?
+        var onOpenFridgeScanner: (() -> Void)?
+        weak var webView: WKWebView?
 
         init(_ parent: PetehomeWebView) {
             self.parent = parent
             self.onOpenSyncSheet = parent.onOpenSyncSheet
+            self.onOpenFridgeScanner = parent.onOpenFridgeScanner
+            super.init()
+
+            // Observe fridge scan completion notifications from native scanner sheet
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleFridgeScanNotification(_:)),
+                name: .fridgeScanCompleted,
+                object: nil
+            )
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self, name: .fridgeScanCompleted, object: nil)
+        }
+
+        @objc private func handleFridgeScanNotification(_ notification: Notification) {
+            guard let userInfo = notification.userInfo,
+                  let items = userInfo["items"] as? [String],
+                  let scanId = userInfo["scanId"] as? String else { return }
+            Task { @MainActor in
+                self.sendFridgeScanResults(items: items, scanId: scanId)
+            }
+        }
+
+        /// Send fridge scan results back to the WebView
+        func sendFridgeScanResults(items: [String], scanId: String) {
+            guard let webView = webView else { return }
+            let itemsJson = (try? JSONSerialization.data(withJSONObject: items))
+                .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+            let js = "window.__onFridgeScanComplete && window.__onFridgeScanComplete({items: \(itemsJson), scanId: \"\(scanId)\"})"
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("[JS Bridge] Error sending fridge scan results: \(error)")
+                }
+            }
         }
 
         // MARK: - Pull to Refresh
@@ -191,6 +236,10 @@ struct PetehomeWebView: UIViewRepresentable {
             case "openSyncSheet":
                 // Open the native sync sheet
                 onOpenSyncSheet?()
+
+            case "openFridgeScanner":
+                // Open the native fridge scanner sheet
+                onOpenFridgeScanner?()
 
             case "syncNow":
                 // Trigger a sync from the web

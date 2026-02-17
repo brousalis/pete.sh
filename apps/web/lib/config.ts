@@ -42,6 +42,11 @@ const envSchema = z.object({
   // AI Coach (Anthropic Claude)
   ANTHROPIC_API_KEY: z.string().optional(),
 
+  // Concerts / setlist.fm
+  SETLISTFM_API_KEY: z.string().optional(),
+  CONCERTS_CALENDAR_ID: z.string().optional(),
+  CONCERTS_API_KEY: z.string().optional(),
+
 })
 
 // Parse and validate environment variables
@@ -122,6 +127,12 @@ export const config = {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     isConfigured: Boolean(env.ANTHROPIC_API_KEY),
     defaultModel: 'claude-sonnet-4-20250514' as const,
+  },
+  concerts: {
+    setlistfmApiKey: env.SETLISTFM_API_KEY,
+    calendarId: env.CONCERTS_CALENDAR_ID,
+    apiKey: env.CONCERTS_API_KEY,
+    isSetlistfmConfigured: Boolean(env.SETLISTFM_API_KEY),
   },
 } as const
 

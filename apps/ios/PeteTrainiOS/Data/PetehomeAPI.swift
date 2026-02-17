@@ -214,6 +214,52 @@ final class PetehomeAPI {
         return true
     }
 
+    // MARK: - Fridge Scan
+
+    /// Analyze a fridge scan (voice transcript or photo) via the cooking API
+    func analyzeFridgeScan(type: String, transcript: String?, imageBase64: String?) async throws -> FridgeScanResult {
+        let url = baseURL.appendingPathComponent("api/cooking/fridge-scan")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        var payload: [String: Any] = ["type": type]
+        if let transcript = transcript {
+            payload["transcript"] = transcript
+        }
+        if let imageBase64 = imageBase64 {
+            payload["image"] = imageBase64
+        }
+
+        do {
+            let body = try JSONSerialization.data(withJSONObject: payload)
+            request.httpBody = body
+
+            if debugLoggingEnabled {
+                // Don't log the full image data
+                let logBody = imageBase64 != nil ? "(image payload, \(body.count) bytes)" : String(data: body, encoding: .utf8) ?? "(binary)"
+                print("REQUEST: POST \(url.absoluteString)")
+                print("Body: \(logBody)")
+            }
+        } catch {
+            throw PetehomeAPIError.encodingFailed
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled {
+            logResponse(response, data: data)
+        }
+
+        try handleResponse(response, data: data)
+
+        let result = try decoder.decode(FridgeScanResult.self, from: data)
+        print("[Fridge Scan] Analysis complete: \(result.data?.identified_items.count ?? 0) items identified")
+        return result
+    }
+
     // MARK: - Sync with Retry
 
     /// Sync workout with exponential backoff retry

@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var isLoading = true
     @State private var showSyncSheet = false
+    @State private var showFridgeScanner = false
     @State private var hasPerformedInitialSync = false
     @State private var lastActiveDate: Date?
 
@@ -19,6 +20,9 @@ struct ContentView: View {
                 isLoading: $isLoading,
                 onOpenSyncSheet: {
                     showSyncSheet = true
+                },
+                onOpenFridgeScanner: {
+                    showFridgeScanner = true
                 },
                 onRefresh: { }
             )
@@ -46,6 +50,26 @@ struct ContentView: View {
             SyncSheetView(syncManager: HealthKitSyncManager.shared)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showFridgeScanner) {
+            FridgeScannerSheet(
+                scanManager: FridgeScanManager.shared,
+                onScanComplete: { items, scanId in
+                    // The web view coordinator will send results back via JS bridge
+                    // This is handled after the sheet dismisses
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        // Find the webview coordinator and send results
+                        // The coordinator reference is updated in updateUIView
+                        NotificationCenter.default.post(
+                            name: .fridgeScanCompleted,
+                            object: nil,
+                            userInfo: ["items": items, "scanId": scanId]
+                        )
+                    }
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .task {
             _ = await HealthKitSyncManager.shared.requestHealthKitAuthorization()

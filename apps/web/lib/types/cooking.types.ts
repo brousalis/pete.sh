@@ -167,3 +167,14 @@ export interface CreateMealPlanInput {
 }
 
 export interface UpdateMealPlanInput extends Partial<CreateMealPlanInput> {}
+
+// Fridge Scanner types
+export interface FridgeScan {
+  id: string
+  scan_type: 'voice' | 'photo'
+  raw_transcript?: string
+  identified_items: string[]
+  confirmed_items: string[]
+  recipes_matched: number
+  created_at: string
+}

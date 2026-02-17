@@ -57,6 +57,53 @@ export class CookingService {
   }
 
   /**
+   * Get all recipes with their ingredients joined.
+   * Used for fridge-matching against own recipes.
+   */
+  async getRecipesWithIngredients(): Promise<RecipeWithIngredients[]> {
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { data: recipesData, error: recipesError } = await supabase
+      .from('recipes')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (recipesError) {
+      console.error('Error fetching recipes with ingredients:', recipesError)
+      throw new Error(`Failed to fetch recipes: ${recipesError.message}`)
+    }
+
+    const recipes = (recipesData || []) as Recipe[]
+    if (recipes.length === 0) return []
+
+    const { data: ingredientsData, error: ingredientsError } = await supabase
+      .from('recipe_ingredients')
+      .select('*')
+      .in('recipe_id', recipes.map((r) => r.id))
+      .order('order_index', { ascending: true })
+
+    if (ingredientsError) {
+      console.error('Error fetching ingredients:', ingredientsError)
+      return recipes.map((r) => ({ ...r, ingredients: [] }))
+    }
+
+    const ingredientsByRecipe = new Map<string, RecipeIngredient[]>()
+    for (const ing of (ingredientsData || []) as RecipeIngredient[]) {
+      const list = ingredientsByRecipe.get(ing.recipe_id) || []
+      list.push(ing)
+      ingredientsByRecipe.set(ing.recipe_id, list)
+    }
+
+    return recipes.map((r) => ({
+      ...r,
+      ingredients: ingredientsByRecipe.get(r.id) || [],
+    }))
+  }
+
+  /**
    * Get a single recipe with ingredients
    */
   async getRecipe(id: string): Promise<RecipeWithIngredients | null> {
