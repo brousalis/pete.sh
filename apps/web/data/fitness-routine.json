@@ -1259,6 +1259,18 @@
               "monday-mobility-2"
             ],
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-17T14:10:22.733Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-17T14:10:23.553Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
         "tuesday": {},
@@ -1561,5 +1573,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-17T14:05:51.163Z"
+  "updatedAt": "2026-02-17T14:19:52.403Z"
 }

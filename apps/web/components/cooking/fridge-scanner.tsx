@@ -10,29 +10,52 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
 import { useCooking } from '@/hooks/use-cooking-data'
 import { apiPost, apiPut } from '@/lib/api/client'
 import type { FridgeScan } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+    Bug,
     Camera,
+    Check,
     ChefHat,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    Cpu,
     Loader2,
     Mic,
     MicOff,
     Plus,
     ScanLine,
+    Snowflake,
     Sparkles,
     X,
+    Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// Detect native iOS bridge
 function hasNativeBridge(): boolean {
   if (typeof window === 'undefined') return false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return !!(window as any).webkit?.messageHandlers?.petehome
+}
+
+interface ScanDebugInfo {
+  scanId: string | null
+  scanType: 'voice' | 'photo'
+  rawTranscript?: string
+  model?: string
+  rawResponse?: string
+  inputTokens?: number
+  outputTokens?: number
+  apiLatencyMs?: number
+  clientLatencyMs: number
+  identifiedCount: number
+  timestamp: string
+  imageSize?: string
 }
 
 interface FridgeScannerProps {
@@ -41,11 +64,16 @@ interface FridgeScannerProps {
 }
 
 type ScanTab = 'voice' | 'photo'
+type ScanPhase = 'input' | 'results' | 'saved'
 
 export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
-  const { setFridgeIngredients, setFridgeFilterActive } = useCooking()
+  const {
+    setFridgeIngredients,
+    setFridgeFilterActive,
+  } = useCooking()
 
   const [activeTab, setActiveTab] = useState<ScanTab>('voice')
+  const [phase, setPhase] = useState<ScanPhase>('input')
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -53,13 +81,13 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
   const [scanId, setScanId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [newItem, setNewItem] = useState('')
-  const [showResults, setShowResults] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<ScanDebugInfo | null>(null)
+  const [enableFilter, setEnableFilter] = useState(true)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Register native bridge callback
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -67,7 +95,7 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     ;(window as any).__onFridgeScanComplete = (result: { items: string[]; scanId: string }) => {
       setItems(result.items)
       setScanId(result.scanId)
-      setShowResults(true)
+      setPhase('results')
       setIsAnalyzing(false)
       onOpenChange(true)
     }
@@ -78,7 +106,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     }
   }, [onOpenChange])
 
-  // Open native scanner if bridge exists
   const openNativeScanner = useCallback(() => {
     if (hasNativeBridge()) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,7 +117,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     return false
   }, [])
 
-  // Reset state
   const resetState = useCallback(() => {
     setIsRecording(false)
     setTranscript('')
@@ -99,20 +125,23 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     setScanId(null)
     setError(null)
     setNewItem('')
-    setShowResults(false)
+    setDebugInfo(null)
+    setPhase('input')
+    setEnableFilter(true)
     if (recognitionRef.current) {
       recognitionRef.current.stop()
       recognitionRef.current = null
     }
   }, [])
 
-  // Voice recording (Web Speech API fallback for desktop)
+  // Voice recording
   const startRecording = useCallback(() => {
     setError(null)
     setTranscript('')
     setItems([])
     setScanId(null)
-    setShowResults(false)
+    setDebugInfo(null)
+    setPhase('input')
 
     const SpeechRecognition =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,41 +196,79 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     setIsAnalyzing(true)
     setError(null)
 
+    const clientStart = Date.now()
     const response = await apiPost<FridgeScan>('/api/cooking/fridge-scan', {
       type: 'voice',
       transcript,
     })
+    const clientLatencyMs = Date.now() - clientStart
 
     if (response.success && response.data) {
-      setItems(response.data.identified_items)
-      setScanId(response.data.id)
-      setShowResults(true)
+      const data = response.data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawResponse = (response as any).debug
+      setItems(data.identified_items)
+      setScanId(data.id)
+      setDebugInfo({
+        scanId: data.id,
+        scanType: 'voice',
+        rawTranscript: transcript,
+        model: rawResponse?.model,
+        rawResponse: rawResponse?.rawResponse,
+        inputTokens: rawResponse?.inputTokens,
+        outputTokens: rawResponse?.outputTokens,
+        apiLatencyMs: rawResponse?.latencyMs,
+        clientLatencyMs,
+        identifiedCount: data.identified_items.length,
+        timestamp: data.created_at,
+      })
+      setPhase('results')
     } else {
       setError(response.error || 'Failed to analyze transcript')
     }
     setIsAnalyzing(false)
   }, [transcript])
 
-  // Photo handling (desktop fallback with canvas compression)
+  // Photo handling
   const handlePhotoCapture = useCallback(async (file: File) => {
     setIsAnalyzing(true)
     setError(null)
     setItems([])
     setScanId(null)
-    setShowResults(false)
+    setDebugInfo(null)
+    setPhase('input')
 
     try {
+      const imageSize = `${(file.size / 1024).toFixed(1)}KB`
       const base64 = await compressImageFile(file, 1024, 0.7)
 
+      const clientStart = Date.now()
       const response = await apiPost<FridgeScan>('/api/cooking/fridge-scan', {
         type: 'photo',
         image: base64,
       })
+      const clientLatencyMs = Date.now() - clientStart
 
       if (response.success && response.data) {
-        setItems(response.data.identified_items)
-        setScanId(response.data.id)
-        setShowResults(true)
+        const data = response.data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawResponse = (response as any).debug
+        setItems(data.identified_items)
+        setScanId(data.id)
+        setDebugInfo({
+          scanId: data.id,
+          scanType: 'photo',
+          model: rawResponse?.model,
+          rawResponse: rawResponse?.rawResponse,
+          inputTokens: rawResponse?.inputTokens,
+          outputTokens: rawResponse?.outputTokens,
+          apiLatencyMs: rawResponse?.latencyMs,
+          clientLatencyMs,
+          identifiedCount: data.identified_items.length,
+          timestamp: data.created_at,
+          imageSize,
+        })
+        setPhase('results')
       } else {
         setError(response.error || 'Failed to analyze photo')
       }
@@ -212,12 +279,10 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     setIsAnalyzing(false)
   }, [])
 
-  // Remove item
   const removeItem = useCallback((item: string) => {
     setItems((prev) => prev.filter((i) => i !== item))
   }, [])
 
-  // Add custom item
   const addItem = useCallback(() => {
     const trimmed = newItem.trim().toLowerCase()
     if (trimmed && !items.includes(trimmed)) {
@@ -226,8 +291,8 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
     }
   }, [newItem, items])
 
-  // Confirm and find recipes
-  const confirmAndFindRecipes = useCallback(async () => {
+  // Save to fridge (does NOT close or auto-filter)
+  const saveToFridge = useCallback(async () => {
     if (scanId) {
       await apiPut(`/api/cooking/fridge-scan/${scanId}`, {
         confirmed_items: items,
@@ -235,16 +300,22 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
       })
     }
     setFridgeIngredients(items)
-    setFridgeFilterActive(true)
+    if (enableFilter) {
+      setFridgeFilterActive(true)
+    }
+    setPhase('saved')
+  }, [scanId, items, enableFilter, setFridgeIngredients, setFridgeFilterActive])
+
+  const handleClose = useCallback(() => {
     onOpenChange(false)
     resetState()
-  }, [scanId, items, setFridgeIngredients, setFridgeFilterActive, onOpenChange, resetState])
+  }, [onOpenChange, resetState])
 
-  // If native bridge detected, just trigger native scanner
-  if (hasNativeBridge() && !showResults) {
-    // The scanner UI is native — only show results in web
+  // Native bridge path — only show results sheet when native scan completes
+  if (hasNativeBridge()) {
+    const showNativeResults = phase === 'results' || phase === 'saved'
     return (
-      <Sheet open={open && showResults} onOpenChange={onOpenChange}>
+      <Sheet open={open && showNativeResults} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
           <SheetHeader>
             <SheetTitle>Fridge Scan Results</SheetTitle>
@@ -252,14 +323,26 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
               Review and confirm the items found in your fridge
             </SheetDescription>
           </SheetHeader>
-          <ResultsView
-            items={items}
-            onRemoveItem={removeItem}
-            newItem={newItem}
-            onNewItemChange={setNewItem}
-            onAddItem={addItem}
-            onConfirm={confirmAndFindRecipes}
-          />
+          {phase === 'saved' ? (
+            <SavedConfirmation
+              itemCount={items.length}
+              filterEnabled={enableFilter}
+              onClose={handleClose}
+              onScanAgain={() => resetState()}
+            />
+          ) : (
+            <ResultsView
+              items={items}
+              onRemoveItem={removeItem}
+              newItem={newItem}
+              onNewItemChange={setNewItem}
+              onAddItem={addItem}
+              onSave={saveToFridge}
+              debugInfo={debugInfo}
+              enableFilter={enableFilter}
+              onEnableFilterChange={setEnableFilter}
+            />
+          )}
         </SheetContent>
       </Sheet>
     )
@@ -284,14 +367,26 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
           </SheetDescription>
         </SheetHeader>
 
-        {showResults ? (
+        {phase === 'saved' ? (
+          <SavedConfirmation
+            itemCount={items.length}
+            filterEnabled={enableFilter}
+            onClose={handleClose}
+            onScanAgain={() => {
+              resetState()
+            }}
+          />
+        ) : phase === 'results' ? (
           <ResultsView
             items={items}
             onRemoveItem={removeItem}
             newItem={newItem}
             onNewItemChange={setNewItem}
             onAddItem={addItem}
-            onConfirm={confirmAndFindRecipes}
+            onSave={saveToFridge}
+            debugInfo={debugInfo}
+            enableFilter={enableFilter}
+            onEnableFilterChange={setEnableFilter}
           />
         ) : (
           <div className="mt-4 space-y-4">
@@ -321,7 +416,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
             {/* Voice tab */}
             {activeTab === 'voice' && (
               <div className="flex flex-col items-center space-y-4 py-4">
-                {/* Mic button */}
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   className={cn(
@@ -351,7 +445,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
                     : 'Tap to start listing ingredients'}
                 </p>
 
-                {/* Live transcript */}
                 {transcript && (
                   <div className="w-full rounded-lg bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
@@ -361,7 +454,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
                   </div>
                 )}
 
-                {/* Analyze button */}
                 {!isRecording && transcript && (
                   <Button
                     onClick={analyzeVoice}
@@ -383,7 +475,6 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
                   </Button>
                 )}
 
-                {/* Manual text fallback */}
                 {!isRecording && !transcript && (
                   <div className="w-full space-y-2">
                     <p className="text-xs text-muted-foreground text-center">
@@ -438,25 +529,22 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
                     </p>
                   </div>
                 ) : (
-                  <>
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 transition-colors hover:border-primary/40 hover:bg-muted/30"
-                    >
-                      <Camera className="size-10 text-muted-foreground/50" />
-                      <p className="text-sm text-muted-foreground">
-                        Take a photo of your fridge
-                      </p>
-                      <p className="text-xs text-muted-foreground/70">
-                        or tap to select an image
-                      </p>
-                    </div>
-                  </>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 transition-colors hover:border-primary/40 hover:bg-muted/30"
+                  >
+                    <Camera className="size-10 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">
+                      Take a photo of your fridge
+                    </p>
+                    <p className="text-xs text-muted-foreground/70">
+                      or tap to select an image
+                    </p>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>
             )}
@@ -467,28 +555,43 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
   )
 }
 
-// Shared results/confirmation view
+// Results/confirmation view with debug panel
 function ResultsView({
   items,
   onRemoveItem,
   newItem,
   onNewItemChange,
   onAddItem,
-  onConfirm,
+  onSave,
+  debugInfo,
+  enableFilter,
+  onEnableFilterChange,
 }: {
   items: string[]
   onRemoveItem: (item: string) => void
   newItem: string
   onNewItemChange: (value: string) => void
   onAddItem: () => void
-  onConfirm: () => void
+  onSave: () => void
+  debugInfo: ScanDebugInfo | null
+  enableFilter: boolean
+  onEnableFilterChange: (enabled: boolean) => void
 }) {
+  const [showDebug, setShowDebug] = useState(false)
+
   return (
     <div className="mt-4 space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">
           Found {items.length} item{items.length !== 1 ? 's' : ''}
         </p>
+        {debugInfo && (
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {debugInfo.clientLatencyMs >= 1000
+              ? `${(debugInfo.clientLatencyMs / 1000).toFixed(1)}s`
+              : `${debugInfo.clientLatencyMs}ms`}
+          </span>
+        )}
       </div>
 
       {/* Ingredient chips */}
@@ -542,17 +645,215 @@ function ResultsView({
         </Button>
       </div>
 
-      {/* Find Recipes CTA */}
+      {/* Filter toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <Snowflake className={cn(
+            'size-4',
+            enableFilter ? 'text-green-500' : 'text-muted-foreground'
+          )} />
+          <span className="text-sm font-medium">Apply as recipe filter</span>
+        </div>
+        <Switch
+          checked={enableFilter}
+          onCheckedChange={onEnableFilterChange}
+        />
+      </div>
+
+      {/* Save CTA */}
       <Button
-        onClick={onConfirm}
+        onClick={onSave}
         size="lg"
         className="w-full bg-green-600 hover:bg-green-700 text-white"
         disabled={items.length === 0}
       >
         <ChefHat className="size-4 mr-2" />
-        Find Recipes ({items.length} ingredient{items.length !== 1 ? 's' : ''})
+        Save to Fridge ({items.length} ingredient{items.length !== 1 ? 's' : ''})
       </Button>
+
+      {/* Debug panel */}
+      {debugInfo && (
+        <DebugPanel debugInfo={debugInfo} open={showDebug} onToggle={() => setShowDebug(!showDebug)} />
+      )}
     </div>
+  )
+}
+
+// Saved confirmation view
+function SavedConfirmation({
+  itemCount,
+  filterEnabled,
+  onClose,
+  onScanAgain,
+}: {
+  itemCount: number
+  filterEnabled: boolean
+  onClose: () => void
+  onScanAgain: () => void
+}) {
+  return (
+    <div className="mt-4 flex flex-col items-center space-y-4 py-6">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        className="flex size-16 items-center justify-center rounded-full bg-green-500/15"
+      >
+        <Check className="size-8 text-green-500" />
+      </motion.div>
+
+      <div className="text-center space-y-1">
+        <p className="text-base font-semibold">
+          {itemCount} item{itemCount !== 1 ? 's' : ''} saved to fridge
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {filterEnabled
+            ? 'Recipe filter is active — matching recipes are highlighted'
+            : 'Items saved but recipe filter is not active'}
+        </p>
+      </div>
+
+      <div className="flex w-full gap-2">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={onScanAgain}
+        >
+          <ScanLine className="size-4 mr-2" />
+          Scan Again
+        </Button>
+        <Button
+          className="flex-1"
+          onClick={onClose}
+        >
+          Done
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Collapsible debug panel for scan diagnostics
+function DebugPanel({
+  debugInfo,
+  open,
+  onToggle,
+}: {
+  debugInfo: ScanDebugInfo
+  open: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/30 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Bug className="size-3.5" />
+        <span className="font-medium">Scan Debug Info</span>
+        <span className="ml-auto">
+          {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border/30 px-3 py-2.5 space-y-2.5 text-xs">
+              {/* Overview row */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <DebugField icon={<Zap className="size-3" />} label="Type" value={debugInfo.scanType} />
+                <DebugField icon={<Cpu className="size-3" />} label="Model" value={debugInfo.model || 'n/a'} />
+                <DebugField
+                  icon={<Clock className="size-3" />}
+                  label="Client"
+                  value={`${debugInfo.clientLatencyMs}ms`}
+                />
+                {debugInfo.apiLatencyMs != null && (
+                  <DebugField
+                    icon={<Clock className="size-3" />}
+                    label="API"
+                    value={`${debugInfo.apiLatencyMs}ms`}
+                  />
+                )}
+              </div>
+
+              {/* Token usage */}
+              {(debugInfo.inputTokens != null || debugInfo.outputTokens != null) && (
+                <div className="flex gap-x-4">
+                  {debugInfo.inputTokens != null && (
+                    <DebugField label="Input tokens" value={debugInfo.inputTokens.toLocaleString()} />
+                  )}
+                  {debugInfo.outputTokens != null && (
+                    <DebugField label="Output tokens" value={debugInfo.outputTokens.toLocaleString()} />
+                  )}
+                </div>
+              )}
+
+              {/* Scan metadata */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <DebugField label="Scan ID" value={debugInfo.scanId || 'n/a'} mono />
+                <DebugField label="Items" value={String(debugInfo.identifiedCount)} />
+                {debugInfo.imageSize && (
+                  <DebugField label="Image" value={debugInfo.imageSize} />
+                )}
+                <DebugField label="Time" value={new Date(debugInfo.timestamp).toLocaleTimeString()} />
+              </div>
+
+              {/* Raw transcript */}
+              {debugInfo.rawTranscript && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wider mb-0.5">
+                    Raw Transcript
+                  </p>
+                  <pre className="rounded-md bg-background/80 border border-border/30 px-2 py-1.5 text-[11px] font-mono whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
+                    {debugInfo.rawTranscript}
+                  </pre>
+                </div>
+              )}
+
+              {/* Raw AI response */}
+              {debugInfo.rawResponse && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wider mb-0.5">
+                    Raw AI Response
+                  </p>
+                  <pre className="rounded-md bg-background/80 border border-border/30 px-2 py-1.5 text-[11px] font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                    {debugInfo.rawResponse}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function DebugField({
+  icon,
+  label,
+  value,
+  mono = false,
+}: {
+  icon?: React.ReactNode
+  label: string
+  value: string
+  mono?: boolean
+}) {
+  return (
+    <span className="flex items-center gap-1 text-muted-foreground">
+      {icon}
+      <span className="text-muted-foreground/70">{label}:</span>
+      <span className={cn('text-foreground', mono && 'font-mono text-[10px]')}>{value}</span>
+    </span>
   )
 }
 
@@ -564,10 +865,9 @@ export function FridgeScanButton({ onClick }: { onClick: () => void }) {
     <Button
       variant="outline"
       size="icon"
-      className="size-11 shrink-0 rounded-xl"
+      className="size-9 shrink-0 rounded-lg"
       onClick={() => {
         if (nativeBridge) {
-          // Open native scanner
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(window as any).webkit.messageHandlers.petehome.postMessage({
             action: 'openFridgeScanner',
@@ -615,7 +915,6 @@ async function compressImageFile(
 
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Get base64 without the data:image/jpeg;base64, prefix
         const dataUrl = canvas.toDataURL('image/jpeg', quality)
         const base64 = dataUrl.split(',')[1] ?? ''
         resolve(base64)

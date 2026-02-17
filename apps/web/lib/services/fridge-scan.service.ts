@@ -30,10 +30,23 @@ function getAnthropicClient() {
  * Analyze a refrigerator photo using Claude Vision.
  * Returns canonical ingredient names (e.g. "chicken breast" not "2 lbs frozen chicken").
  */
-export async function analyzeImage(base64: string): Promise<string[]> {
-  const anthropic = getAnthropicClient()
-  const model = anthropic('claude-sonnet-4-20250514')
+export interface ScanAnalysisResult {
+  items: string[]
+  debug: {
+    model: string
+    rawResponse: string
+    inputTokens: number
+    outputTokens: number
+    latencyMs: number
+  }
+}
 
+export async function analyzeImage(base64: string): Promise<ScanAnalysisResult> {
+  const anthropic = getAnthropicClient()
+  const modelId = 'claude-sonnet-4-20250514'
+  const model = anthropic(modelId)
+
+  const startTime = Date.now()
   const result = await generateText({
     model,
     messages: [
@@ -54,17 +67,29 @@ export async function analyzeImage(base64: string): Promise<string[]> {
     temperature: 0.3,
     maxOutputTokens: 1024,
   })
+  const latencyMs = Date.now() - startTime
+
+  const rawText = result.text.trim()
+  const debug = {
+    model: modelId,
+    rawResponse: rawText,
+    inputTokens: result.usage?.inputTokens ?? 0,
+    outputTokens: result.usage?.outputTokens ?? 0,
+    latencyMs,
+  }
 
   try {
-    const text = result.text.trim()
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return { items: [], debug }
     const items = JSON.parse(jsonMatch[0])
-    if (!Array.isArray(items)) return []
-    return items.filter((item: unknown) => typeof item === 'string' && item.length > 0)
+    if (!Array.isArray(items)) return { items: [], debug }
+    return {
+      items: items.filter((item: unknown) => typeof item === 'string' && item.length > 0),
+      debug,
+    }
   } catch (err) {
     console.error('[Fridge Scan] Failed to parse image analysis response:', err)
-    return []
+    return { items: [], debug }
   }
 }
 
@@ -76,10 +101,12 @@ export async function analyzeImage(base64: string): Promise<string[]> {
  * Parse messy voice transcript into clean canonical ingredient names.
  * Handles filler words, quantities, and conversational speech.
  */
-export async function parseVoiceTranscript(transcript: string): Promise<string[]> {
+export async function parseVoiceTranscript(transcript: string): Promise<ScanAnalysisResult> {
   const anthropic = getAnthropicClient()
-  const model = anthropic('claude-sonnet-4-20250514')
+  const modelId = 'claude-sonnet-4-20250514'
+  const model = anthropic(modelId)
 
+  const startTime = Date.now()
   const result = await generateText({
     model,
     messages: [
@@ -96,17 +123,29 @@ Example output: ["chicken breast", "rice", "milk", "cheddar cheese"]`,
     temperature: 0.3,
     maxOutputTokens: 1024,
   })
+  const latencyMs = Date.now() - startTime
+
+  const rawText = result.text.trim()
+  const debug = {
+    model: modelId,
+    rawResponse: rawText,
+    inputTokens: result.usage?.inputTokens ?? 0,
+    outputTokens: result.usage?.outputTokens ?? 0,
+    latencyMs,
+  }
 
   try {
-    const text = result.text.trim()
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return { items: [], debug }
     const items = JSON.parse(jsonMatch[0])
-    if (!Array.isArray(items)) return []
-    return items.filter((item: unknown) => typeof item === 'string' && item.length > 0)
+    if (!Array.isArray(items)) return { items: [], debug }
+    return {
+      items: items.filter((item: unknown) => typeof item === 'string' && item.length > 0),
+      debug,
+    }
   } catch (err) {
     console.error('[Fridge Scan] Failed to parse voice transcript response:', err)
-    return []
+    return { items: [], debug }
   }
 }
 

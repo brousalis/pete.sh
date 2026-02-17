@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       }
       scan = await saveManualScan(items)
     } else {
-      let identifiedItems: string[] = []
+      let analysisResult
 
       if (type === 'photo') {
         if (!image) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
             )
           )
         }
-        identifiedItems = await analyzeImage(image)
+        analysisResult = await analyzeImage(image)
       } else {
         if (!transcript) {
           return withCors(
@@ -73,14 +73,22 @@ export async function POST(request: NextRequest) {
             )
           )
         }
-        identifiedItems = await parseVoiceTranscript(transcript)
+        analysisResult = await parseVoiceTranscript(transcript)
       }
 
       scan = await saveScan({
         scan_type: type,
         raw_transcript: transcript || undefined,
-        identified_items: identifiedItems,
+        identified_items: analysisResult.items,
       })
+
+      return withCors(
+        NextResponse.json({
+          success: true,
+          data: scan,
+          debug: analysisResult.debug,
+        })
+      )
     }
 
     return withCors(
