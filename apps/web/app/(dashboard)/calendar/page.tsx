@@ -6,6 +6,7 @@ import {
     CalendarEventDetail,
     CalendarFitnessSidebar,
     CalendarHeader,
+    CalendarMealPlanSidebar,
     CalendarMini,
     CalendarMobileInfo,
     CalendarMonthGrid,
@@ -18,14 +19,16 @@ import { useSwipe } from '@/hooks/use-swipe'
 import { apiGet } from '@/lib/api/client'
 import type { CalendarViewMode } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { MealPlan, Recipe } from '@/lib/types/cooking.types'
 import type { ConsistencyStats, WeeklyRoutine } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
     filterEvents,
     generateFitnessEvents,
+    generateMealPlanEvents,
     navigateDate,
 } from '@/lib/utils/calendar-utils'
-import { format, isSameDay } from 'date-fns'
+import { format, isSameDay, startOfWeek } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertCircle, Calendar, Database, RefreshCw } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
@@ -66,6 +69,11 @@ export default function CalendarPage() {
   const [consistencyStats, setConsistencyStats] =
     useState<ConsistencyStats | null>(null)
   const [fitnessLoading, setFitnessLoading] = useState(true)
+
+  // Meal plan state
+  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [mealPlanLoading, setMealPlanLoading] = useState(true)
 
   const searchParams = useSearchParams()
   const hasTriedRetry = useRef(false)
@@ -130,6 +138,34 @@ export default function CalendarPage() {
     }
   }, [])
 
+  // Fetch meal plan data for the current week
+  const fetchMealPlanData = useCallback(async (date: Date) => {
+    try {
+      setMealPlanLoading(true)
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd')
+
+      const [mealPlanRes, recipesRes] = await Promise.all([
+        apiGet<MealPlan>(`/api/cooking/meal-plans?week_start=${weekStartStr}`),
+        apiGet<Recipe[]>('/api/cooking/recipes'),
+      ])
+
+      if (mealPlanRes.success && mealPlanRes.data) {
+        setMealPlan(mealPlanRes.data)
+      } else {
+        setMealPlan(null)
+      }
+
+      if (recipesRes.success && recipesRes.data) {
+        setRecipes(recipesRes.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch meal plan data:', err)
+    } finally {
+      setMealPlanLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     // Wait for connectivity check to complete before fetching
     // This ensures we use the correct API base URL (local vs prod)
@@ -140,10 +176,11 @@ export default function CalendarPage() {
     const init = async () => {
       const isAuthSuccess = searchParams.get('auth') === 'success'
 
-      // Fetch calendar and fitness data in parallel
+      // Fetch calendar, fitness, and meal plan data in parallel
       const [gotAuthData] = await Promise.all([
         fetchEvents(),
         fetchFitnessData(),
+        fetchMealPlanData(currentDate),
       ])
 
       // If this is a fresh OAuth redirect and we didn't get auth data,
@@ -161,9 +198,10 @@ export default function CalendarPage() {
     const interval = setInterval(() => {
       fetchEvents()
       fetchFitnessData()
+      fetchMealPlanData(currentDate)
     }, 300000)
     return () => clearInterval(interval)
-  }, [fetchEvents, fetchFitnessData, searchParams, isConnectivityInitialized])
+  }, [fetchEvents, fetchFitnessData, fetchMealPlanData, searchParams, isConnectivityInitialized])
 
   // Keyboard navigation
   useEffect(() => {
@@ -284,10 +322,21 @@ export default function CalendarPage() {
     return generateFitnessEvents(fitnessRoutine, startDate, endDate)
   }, [fitnessRoutine, currentDate])
 
-  // Merge calendar events with fitness events
+  // Generate meal plan events for the current week
+  const mealPlanEvents = useMemo(() => {
+    if (!mealPlan) return []
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+
+    return generateMealPlanEvents(mealPlan, recipes, weekStart, weekEnd)
+  }, [mealPlan, recipes, currentDate])
+
+  // Merge calendar events with fitness and meal plan events
   const allEvents = useMemo(() => {
-    return [...events, ...fitnessEvents]
-  }, [events, fitnessEvents])
+    return [...events, ...fitnessEvents, ...mealPlanEvents]
+  }, [events, fitnessEvents, mealPlanEvents])
 
   // Filter events based on search
   const filteredEvents = filterEvents(allEvents, searchQuery)
@@ -407,6 +456,7 @@ export default function CalendarPage() {
             selectedDate={selectedDate}
             events={events}
             fitnessRoutine={fitnessRoutine}
+            mealPlan={mealPlan}
             onSelectDate={date => {
               handleSelectDate(date)
               handleDateChange(date)
@@ -419,6 +469,14 @@ export default function CalendarPage() {
             consistencyStats={consistencyStats}
             selectedDate={selectedDate}
             loading={fitnessLoading}
+          />
+
+          {/* Meal Plan Sidebar */}
+          <CalendarMealPlanSidebar
+            mealPlan={mealPlan}
+            recipes={recipes}
+            selectedDate={selectedDate}
+            loading={mealPlanLoading}
           />
 
           {/* Today's Events Quick View */}
@@ -453,6 +511,9 @@ export default function CalendarPage() {
                 loading={fitnessLoading}
                 todayEvents={selectedDateEvents}
                 onSelectEvent={handleSelectEvent}
+                mealPlan={mealPlan}
+                recipes={recipes}
+                mealPlanLoading={mealPlanLoading}
               />
             </div>
           )}

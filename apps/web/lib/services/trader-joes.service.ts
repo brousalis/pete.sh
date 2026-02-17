@@ -20,14 +20,16 @@ export class TraderJoesService {
     let dbQuery = supabase.from('trader_joes_recipes_cache').select('*').order('name', { ascending: true })
 
     if (query) {
-      dbQuery = dbQuery.ilike('name', `%${query}%`)
+      const q = `%${query}%`
+      dbQuery = dbQuery.or(
+        `name.ilike.${q},category.ilike.${q},url.ilike.${q},recipe_data->>description.ilike.${q},recipe_data->>categories.ilike.${q},recipe_data->>tags.ilike.${q},recipe_data->>ingredients.ilike.${q}`
+      )
     }
 
     if (category) {
       dbQuery = dbQuery.eq('category', category)
     }
 
-    // Return all matching recipes (we have ~535 total)
     const { data, error } = await dbQuery
 
     if (error) {
@@ -60,6 +62,52 @@ export class TraderJoesService {
     }))
 
     return recipes
+  }
+
+  /**
+   * Get a Trader Joe's recipe by its UUID
+   */
+  async getRecipeById(id: string): Promise<TraderJoesRecipe | null> {
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { data, error } = await supabase
+      .from('trader_joes_recipes_cache')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      return null
+    }
+
+    type TJRow = {
+      id: string
+      tj_recipe_id: string | null
+      name: string
+      url: string
+      category: string | null
+      image_url: string | null
+      recipe_data: Record<string, unknown>
+      last_scraped_at: string | null
+      created_at: string
+    }
+    const row = data as TJRow
+
+    return {
+      id: row.id,
+      tj_recipe_id: row.tj_recipe_id || undefined,
+      name: row.name,
+      url: row.url,
+      category: row.category || undefined,
+      image_url: row.image_url || undefined,
+      recipe_data: row.recipe_data as TraderJoesRecipe['recipe_data'],
+      last_scraped_at: row.last_scraped_at || undefined,
+      created_at: row.created_at,
+    }
   }
 
   /**

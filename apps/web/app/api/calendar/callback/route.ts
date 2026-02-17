@@ -1,6 +1,6 @@
 import { config } from '@/lib/config'
 import { setGoogleCalendarTokens } from '@/lib/services/token-storage'
-import { OAuth2Client } from 'google-auth-library'
+import { auth } from '@googleapis/calendar'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[Calendar Callback] Using redirect URI derived from request:', redirectUri)
 
-    const oauth2Client = new OAuth2Client(
+    const oauth2Client = new auth.OAuth2(
       config.google.clientId,
       config.google.clientSecret,
       redirectUri

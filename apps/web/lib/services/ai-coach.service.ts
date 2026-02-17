@@ -6,35 +6,36 @@
 
 import { createAnthropic } from '@ai-sdk/anthropic'
 import {
-  generateText,
-  streamText,
-  smoothStream,
-  tool,
-  Output,
-  wrapLanguageModel,
-  extractJsonMiddleware,
-  defaultSettingsMiddleware,
-  type UIMessage,
-  type LanguageModelMiddleware,
+    convertToModelMessages,
+    defaultSettingsMiddleware,
+    extractJsonMiddleware,
+    generateText,
+    Output,
+    smoothStream,
+    stepCountIs,
+    streamText,
+    tool,
+    wrapLanguageModel,
+    type LanguageModelMiddleware,
+    type UIMessage,
 } from 'ai'
-import { convertToModelMessages } from 'ai'
-import { z } from 'zod'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { z } from 'zod'
 
 import { config } from '@/lib/config'
 import { appleHealthService } from '@/lib/services/apple-health.service'
 import { exerciseWeightLogService } from '@/lib/services/exercise-weight-log.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
-  FullAnalysisSchema,
-  PostWorkoutAnalysisSchema,
-  type FullAnalysis,
-  type PostWorkoutAnalysis,
-  type AiCoachInsight,
-  type AnalysisTrigger,
-  type TrainingReadinessInput,
-  type TrainingReadiness,
+    FullAnalysisSchema,
+    PostWorkoutAnalysisSchema,
+    type AiCoachInsight,
+    type AnalysisTrigger,
+    type FullAnalysis,
+    type PostWorkoutAnalysis,
+    type TrainingReadiness,
+    type TrainingReadinessInput,
 } from '@/lib/types/ai-coach.types'
 
 // ============================================
@@ -698,6 +699,7 @@ Today's date: ${getLocalDateString()}
 
 ${systemContext}`,
     messages: modelMessages,
+    stopWhen: stepCountIs(5),
     experimental_transform: smoothStream({ delayInMs: 20, chunking: 'word' }),
     tools: {
       getExerciseHistory: tool({
@@ -890,16 +892,39 @@ export async function saveChatMessages(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any
 
+  // Auto-generate title from the first user message
+  const firstUserMsg = messages.find((m) => m.role === 'user')
+  const firstText = firstUserMsg?.parts
+    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join(' ')
+  const title = firstText
+    ? firstText.length > 60
+      ? firstText.slice(0, 57) + '...'
+      : firstText
+    : null
+
+  // Check if conversation already has a title (only set on first save)
+  const { data: existing } = await db
+    .from('ai_coach_conversations')
+    .select('title')
+    .eq('id', chatId)
+    .single()
+
+  const upsertData: Record<string, unknown> = {
+    id: chatId,
+    messages: JSON.parse(JSON.stringify(messages)),
+    updated_at: new Date().toISOString(),
+  }
+
+  // Only set title if there isn't one already
+  if (!existing?.title && title) {
+    upsertData.title = title
+  }
+
   const { error } = await db
     .from('ai_coach_conversations')
-    .upsert(
-      {
-        id: chatId,
-        messages: JSON.parse(JSON.stringify(messages)),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    )
+    .upsert(upsertData, { onConflict: 'id' })
 
   if (error) {
     console.error('[AI Coach] Error saving chat:', error)
@@ -940,6 +965,72 @@ export async function getLatestChatId(): Promise<string | null> {
     .single()
 
   return data?.id || null
+}
+
+export interface ConversationSummary {
+  id: string
+  title: string
+  messageCount: number
+  updatedAt: string
+  createdAt: string
+}
+
+export async function listConversations(): Promise<ConversationSummary[]> {
+  const supabase = getSupabaseClientForOperation('read')
+  if (!supabase) return []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any
+
+  const { data, error } = await db
+    .from('ai_coach_conversations')
+    .select('id, title, messages, created_at, updated_at')
+    .order('updated_at', { ascending: false })
+    .limit(50)
+
+  if (error || !data) return []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => {
+    const msgs = (row.messages as UIMessage[]) || []
+    const firstUserMsg = msgs.find((m) => m.role === 'user')
+    const firstText = firstUserMsg?.parts
+      ?.filter((p: { type: string }) => p.type === 'text')
+      .map((p: { type: string; text?: string }) => p.text || '')
+      .join(' ')
+
+    let title = row.title
+    if (!title && firstText) {
+      title = firstText.length > 60 ? firstText.slice(0, 57) + '...' : firstText
+    }
+
+    return {
+      id: row.id,
+      title: title || 'Untitled conversation',
+      messageCount: msgs.length,
+      updatedAt: row.updated_at,
+      createdAt: row.created_at,
+    }
+  })
+}
+
+export async function deleteConversation(chatId: string): Promise<boolean> {
+  const supabase = getSupabaseClientForOperation('write')
+  if (!supabase) return false
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any
+
+  const { error } = await db
+    .from('ai_coach_conversations')
+    .delete()
+    .eq('id', chatId)
+
+  if (error) {
+    console.error('[AI Coach] Error deleting conversation:', error)
+    return false
+  }
+  return true
 }
 
 // ============================================

@@ -1,26 +1,27 @@
 'use client'
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-} from 'react'
-import type { ReactNode } from 'react'
-import { apiGet, apiPost, apiPut } from '@/lib/api/client'
 import { useToast } from '@/hooks/use-toast'
-import { startOfWeek } from 'date-fns'
+import { apiGet, apiPost, apiPut } from '@/lib/api/client'
 import type {
-  Recipe,
-  RecipeWithIngredients,
-  TraderJoesRecipe,
-  MealPlan,
-  ShoppingList,
-  DayOfWeek,
-  FridgeScan,
+    DayOfWeek,
+    FridgeScan,
+    MealPlan,
+    MealPlanMode,
+    Recipe,
+    RecipeWithIngredients,
+    ShoppingList,
+    TraderJoesRecipe,
 } from '@/lib/types/cooking.types'
+import { startOfWeek } from 'date-fns'
+import type { ReactNode } from 'react'
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react'
 
 interface CookingContextValue {
   recipes: Recipe[]
@@ -43,13 +44,13 @@ interface CookingContextValue {
 
   shoppingList: ShoppingList | null
   shoppingListLoading: boolean
-  refreshShoppingList: () => Promise<void>
+  refreshShoppingList: (regenerate?: boolean) => Promise<void>
 
   getRecipeById: (id: string) => Recipe | undefined
   getRecipeName: (id: string) => string
 
-  activeTab: string
-  setActiveTab: (tab: string) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
   selectedRecipeId: string | null
   setSelectedRecipeId: (id: string | null) => void
   selectedTjRecipe: TraderJoesRecipe | null
@@ -72,6 +73,12 @@ interface CookingContextValue {
   removeFridgeItem: (item: string) => Promise<void>
   clearFridge: () => Promise<void>
   saveFridgeItems: (items: string[]) => Promise<void>
+
+  mealPlanMode: MealPlanMode
+  setMealPlanMode: (mode: MealPlanMode) => void
+  skipDay: (day: DayOfWeek, note?: string) => Promise<void>
+  unskipDay: (day: DayOfWeek) => Promise<void>
+  randomFillDinner: (day: DayOfWeek) => Promise<void>
 }
 
 const CookingContext = createContext<CookingContextValue | null>(null)
@@ -92,8 +99,23 @@ export function CookingProvider({ children }: { children: ReactNode }) {
 
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null)
   const [shoppingListLoading, setShoppingListLoading] = useState(false)
+  const [mealPlanVersion, setMealPlanVersion] = useState(0)
 
-  const [activeTab, setActiveTab] = useState('recipes')
+  const [sidebarOpen, setSidebarOpenState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cookingSidebarOpen')
+      return stored !== null ? stored === 'true' : true
+    }
+    return true
+  })
+
+  const setSidebarOpen = useCallback((open: boolean) => {
+    setSidebarOpenState(open)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cookingSidebarOpen', String(open))
+    }
+  }, [])
+
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null)
   const [selectedTjRecipe, setSelectedTjRecipe] =
     useState<TraderJoesRecipe | null>(null)
@@ -107,6 +129,20 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([])
   const [fridgeFilterActive, setFridgeFilterActive] = useState(false)
   const [latestScan, setLatestScan] = useState<FridgeScan | null>(null)
+
+  const [mealPlanMode, setMealPlanModeState] = useState<MealPlanMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('mealPlanMode') as MealPlanMode) || 'dinner-only'
+    }
+    return 'dinner-only'
+  })
+
+  const setMealPlanMode = useCallback((mode: MealPlanMode) => {
+    setMealPlanModeState(mode)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mealPlanMode', mode)
+    }
+  }, [])
 
   const refreshRecipes = useCallback(async () => {
     setRecipesLoading(true)
@@ -156,16 +192,15 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     }
   }, [currentWeek])
 
-  const refreshShoppingList = useCallback(async () => {
+  const refreshShoppingList = useCallback(async (regenerate?: boolean) => {
     if (!mealPlan?.id) {
       setShoppingList(null)
       return
     }
     setShoppingListLoading(true)
     try {
-      const response = await apiGet<ShoppingList>(
-        `/api/cooking/meal-plans/${mealPlan.id}/shopping-list`
-      )
+      const url = `/api/cooking/meal-plans/${mealPlan.id}/shopping-list${regenerate ? '?regenerate=true' : ''}`
+      const response = await apiGet<ShoppingList>(url)
       if (response.success && response.data) {
         setShoppingList(response.data)
       }
@@ -186,6 +221,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
           })
           if (response.success && response.data) {
             setMealPlan(response.data)
+            setMealPlanVersion((v) => v + 1)
             toast({ title: 'Meal plan created' })
           }
         } catch {
@@ -210,6 +246,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
           )
           if (response.success && response.data) {
             setMealPlan(response.data)
+            setMealPlanVersion((v) => v + 1)
           }
         } catch {
           toast({
@@ -301,9 +338,128 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     await saveFridgeItems([])
   }, [saveFridgeItems])
 
+  const skipDay = useCallback(async (day: DayOfWeek, note?: string) => {
+    const skipData = {
+      skipped: true,
+      skip_note: note || undefined,
+      dinner: undefined,
+      breakfast: undefined,
+      lunch: undefined,
+      snack: undefined,
+    }
+    try {
+      if (!mealPlan) {
+        const response = await apiPost<MealPlan>('/api/cooking/meal-plans', {
+          week_start_date: currentWeek.toISOString(),
+          meals: { [day]: skipData },
+        })
+        if (response.success && response.data) {
+          setMealPlan(response.data)
+          setMealPlanVersion((v) => v + 1)
+        }
+      } else {
+        const updatedMeals = {
+          ...mealPlan.meals,
+          [day]: skipData,
+        }
+        const response = await apiPut<MealPlan>(
+          `/api/cooking/meal-plans/${mealPlan.id}`,
+          { meals: updatedMeals }
+        )
+        if (response.success && response.data) {
+          setMealPlan(response.data)
+          setMealPlanVersion((v) => v + 1)
+        }
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to skip day',
+        variant: 'destructive',
+      })
+    }
+  }, [mealPlan, currentWeek, toast])
+
+  const unskipDay = useCallback(async (day: DayOfWeek) => {
+    if (!mealPlan) return
+    const dayMeals = { ...(mealPlan.meals[day] || {}) }
+    delete dayMeals.skipped
+    delete dayMeals.skip_note
+    const updatedMeals = {
+      ...mealPlan.meals,
+      [day]: Object.keys(dayMeals).length > 0 ? dayMeals : undefined,
+    }
+    try {
+      const response = await apiPut<MealPlan>(
+        `/api/cooking/meal-plans/${mealPlan.id}`,
+        { meals: updatedMeals }
+      )
+      if (response.success && response.data) {
+        setMealPlan(response.data)
+        setMealPlanVersion((v) => v + 1)
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to unskip day',
+        variant: 'destructive',
+      })
+    }
+  }, [mealPlan, toast])
+
+  const randomFillDinner = useCallback(async (day: DayOfWeek) => {
+    if (recipes.length === 0) {
+      toast({ title: 'No recipes available', variant: 'destructive' })
+      return
+    }
+
+    try {
+      const recentRes = await apiGet<MealPlan[]>('/api/cooking/meal-plans?recent_weeks=3')
+      const recentPlans = recentRes.success && recentRes.data ? recentRes.data : []
+
+      const recentRecipeIds = new Set<string>()
+      for (const plan of recentPlans) {
+        const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        for (const d of days) {
+          const dayMeals = plan.meals[d]
+          if (dayMeals) {
+            if (dayMeals.dinner) recentRecipeIds.add(dayMeals.dinner)
+            if (dayMeals.breakfast) recentRecipeIds.add(dayMeals.breakfast)
+            if (dayMeals.lunch) recentRecipeIds.add(dayMeals.lunch)
+            if (dayMeals.snack) recentRecipeIds.add(dayMeals.snack)
+          }
+        }
+      }
+
+      let eligible = recipes.filter((r) => !recentRecipeIds.has(r.id))
+      if (eligible.length === 0) {
+        eligible = [...recipes]
+        toast({ title: 'All recipes used recently — picking from full list' })
+      }
+
+      const randomRecipe = eligible[Math.floor(Math.random() * eligible.length)]
+      if (!randomRecipe) throw new Error('No eligible recipes')
+      await updateMealSlot(day, 'dinner', randomRecipe.id)
+      toast({ title: `Set ${randomRecipe.name} for ${day} dinner` })
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to randomly fill dinner',
+        variant: 'destructive',
+      })
+    }
+  }, [recipes, updateMealSlot, toast])
+
   useEffect(() => {
     refreshMealPlan()
   }, [refreshMealPlan])
+
+  // Auto-regenerate shopping list when meal plan mutates
+  useEffect(() => {
+    if (mealPlanVersion > 0) {
+      refreshShoppingList(true)
+    }
+  }, [mealPlanVersion, refreshShoppingList])
 
   const getRecipeById = useCallback(
     (id: string) => recipes.find((r) => r.id === id),
@@ -334,8 +490,8 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       refreshShoppingList,
       getRecipeById,
       getRecipeName,
-      activeTab,
-      setActiveTab,
+      sidebarOpen,
+      setSidebarOpen,
       selectedRecipeId,
       setSelectedRecipeId,
       selectedTjRecipe,
@@ -357,6 +513,11 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       removeFridgeItem,
       clearFridge,
       saveFridgeItems,
+      mealPlanMode,
+      setMealPlanMode,
+      skipDay,
+      unskipDay,
+      randomFillDinner,
     }),
     [
       recipes,
@@ -375,7 +536,8 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       refreshShoppingList,
       getRecipeById,
       getRecipeName,
-      activeTab,
+      sidebarOpen,
+      setSidebarOpen,
       selectedRecipeId,
       selectedTjRecipe,
       showEditor,
@@ -389,6 +551,11 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       removeFridgeItem,
       clearFridge,
       saveFridgeItems,
+      mealPlanMode,
+      setMealPlanMode,
+      skipDay,
+      unskipDay,
+      randomFillDinner,
     ]
   )
 

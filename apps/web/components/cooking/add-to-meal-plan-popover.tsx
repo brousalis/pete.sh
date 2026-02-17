@@ -60,7 +60,8 @@ export function AddToMealPlanPopover({
   const getMealForSlot = (day: DayOfWeek, mealType: string): string | undefined => {
     const dayMeals = mealPlan?.meals[day]
     if (!dayMeals) return undefined
-    return dayMeals[mealType as keyof typeof dayMeals]
+    const val = dayMeals[mealType as keyof typeof dayMeals]
+    return typeof val === 'string' ? val : undefined
   }
 
   return (

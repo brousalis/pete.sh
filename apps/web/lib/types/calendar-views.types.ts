@@ -126,6 +126,17 @@ export const EVENT_COLORS: Record<
     text: 'text-emerald-700 dark:text-emerald-300',
     border: 'border-emerald-400 border-l-emerald-500',
   },
+  // Meal plan event colors - uses UtensilsCrossed icon indicator
+  'meal-plan': {
+    bg: 'bg-teal-500/25 dark:bg-teal-500/30',
+    text: 'text-teal-700 dark:text-teal-300',
+    border: 'border-teal-400 border-l-teal-500',
+  },
+  'meal-plan-skipped': {
+    bg: 'bg-slate-500/20 dark:bg-slate-500/25',
+    text: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-400 border-l-slate-500',
+  },
   default: { bg: 'bg-brand/30', text: 'text-brand', border: 'border-brand' },
 }
 

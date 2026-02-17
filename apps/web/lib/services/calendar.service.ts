@@ -3,12 +3,11 @@
  * Handles communication with Google Calendar API
  */
 
-import { OAuth2Client } from "google-auth-library"
-import { calendar as googleCalendar } from "@googleapis/calendar"
-import { cookies } from "next/headers"
 import { config } from "@/lib/config"
-import type { CalendarEvent, CalendarEventsResponse } from "@/lib/types/calendar.types"
-import { getGoogleCalendarTokens, setGoogleCalendarTokens, clearGoogleCalendarTokens } from "./token-storage"
+import type { CalendarEvent } from "@/lib/types/calendar.types"
+import { auth, calendar as googleCalendar } from "@googleapis/calendar"
+import { cookies } from "next/headers"
+import { clearGoogleCalendarTokens, getGoogleCalendarTokens, setGoogleCalendarTokens } from "./token-storage"
 
 /**
  * Helper function to load tokens and set them on the calendar service
@@ -21,12 +20,12 @@ export async function loadCalendarTokensFromCookies(
 ): Promise<{ accessToken: string | null; refreshToken: string | null }> {
   // First try file-based storage (works for cross-origin requests)
   const fileTokens = getGoogleCalendarTokens()
-  
+
   // Fall back to cookies if file storage is empty
   const cookieStore = await cookies()
   const cookieAccessToken = cookieStore.get("google_calendar_access_token")?.value || null
   const cookieRefreshToken = cookieStore.get("google_calendar_refresh_token")?.value || null
-  
+
   // Use file tokens if available, otherwise use cookies
   let accessToken = fileTokens.accessToken || cookieAccessToken
   const refreshToken = fileTokens.refreshToken || cookieRefreshToken
@@ -182,7 +181,7 @@ export class CalendarService {
         || process.env.GOOGLE_REDIRECT_URI
         || "http://localhost:3000/api/calendar/callback"
 
-      this.oauth2Client = new OAuth2Client(
+      this.oauth2Client = new auth.OAuth2(
         config.google.clientId,
         config.google.clientSecret,
         finalRedirectUri

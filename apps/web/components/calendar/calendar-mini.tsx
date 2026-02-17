@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { DayOfWeek as CookingDayOfWeek, MealPlan } from '@/lib/types/cooking.types'
 import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import { getEventsForDay } from '@/lib/utils/calendar-utils'
@@ -24,6 +25,7 @@ interface CalendarMiniProps {
   selectedDate: Date | null
   events: CalendarEvent[]
   fitnessRoutine?: WeeklyRoutine | null
+  mealPlan?: MealPlan | null
   onSelectDate: (date: Date) => void
 }
 
@@ -77,6 +79,34 @@ function getFitnessStatusForDay(
   return 'none'
 }
 
+type MealPlanStatus = 'planned' | 'skipped' | 'none'
+
+function getMealPlanStatusForDay(
+  date: Date,
+  mealPlan: MealPlan | null | undefined
+): MealPlanStatus {
+  if (!mealPlan?.meals) return 'none'
+
+  const dayMap: Record<number, CookingDayOfWeek> = {
+    0: 'sunday',
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    5: 'friday',
+    6: 'saturday',
+  }
+  const dayOfWeek = dayMap[date.getDay()] as CookingDayOfWeek
+  const dayMeals = mealPlan.meals[dayOfWeek]
+
+  if (!dayMeals) return 'none'
+  if (dayMeals.skipped) return 'skipped'
+
+  const hasMeals =
+    dayMeals.breakfast || dayMeals.lunch || dayMeals.dinner || dayMeals.snack
+  return hasMeals ? 'planned' : 'none'
+}
+
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 export function CalendarMini({
@@ -84,6 +114,7 @@ export function CalendarMini({
   selectedDate,
   events,
   fitnessRoutine,
+  mealPlan,
   onSelectDate,
 }: CalendarMiniProps) {
   // Get all days in the current month that have events
@@ -174,6 +205,11 @@ export function CalendarMini({
                 ? getFitnessStatusForDay(day, fitnessRoutine)
                 : 'none'
 
+              // Get meal plan status for the day
+              const mealPlanStatus = isCurrentMonth
+                ? getMealPlanStatusForDay(day, mealPlan)
+                : 'none'
+
               return (
                 <button
                   key={dateKey}
@@ -208,6 +244,18 @@ export function CalendarMini({
                             fitnessStatus === 'complete' && 'bg-green-500',
                             fitnessStatus === 'partial' && 'bg-amber-400',
                             fitnessStatus === 'rest' && 'bg-slate-400'
+                          )}
+                        />
+                      )}
+                    {/* Meal plan status dot */}
+                    {!isSelected &&
+                      isCurrentMonth &&
+                      mealPlanStatus !== 'none' && (
+                        <span
+                          className={cn(
+                            'size-1 rounded-full',
+                            mealPlanStatus === 'planned' && 'bg-teal-500',
+                            mealPlanStatus === 'skipped' && 'bg-slate-400'
                           )}
                         />
                       )}

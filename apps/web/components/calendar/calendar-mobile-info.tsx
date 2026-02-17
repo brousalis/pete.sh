@@ -10,6 +10,7 @@ import type {
   WeeklyRoutine,
 } from '@/lib/types/fitness.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { DayOfWeek as CookingDayOfWeek, MealPlan, Recipe } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import {
@@ -18,15 +19,20 @@ import {
   Check,
   ChevronRight,
   Clock,
+  Coffee,
+  CookingPot,
   Dumbbell,
   Flame,
   MapPin,
   Moon,
+  Sandwich,
   Sun,
   Target,
+  UtensilsCrossed,
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { getEventColor } from '@/lib/types/calendar-views.types'
 
 interface CalendarMobileInfoProps {
@@ -36,6 +42,9 @@ interface CalendarMobileInfoProps {
   loading?: boolean
   todayEvents: CalendarEvent[]
   onSelectEvent: (event: CalendarEvent) => void
+  mealPlan?: MealPlan | null
+  recipes?: Recipe[]
+  mealPlanLoading?: boolean
 }
 
 const DAYS_OF_WEEK: DayOfWeek[] = [
@@ -126,6 +135,13 @@ function getWeekNumber(date: Date): number {
   return Math.ceil((days + startOfYear.getDay() + 1) / 7)
 }
 
+const MEAL_SLOTS = [
+  { key: 'breakfast' as const, label: 'Breakfast', icon: Coffee },
+  { key: 'lunch' as const, label: 'Lunch', icon: Sandwich },
+  { key: 'dinner' as const, label: 'Dinner', icon: CookingPot },
+  { key: 'snack' as const, label: 'Snack', icon: Coffee },
+]
+
 export function CalendarMobileInfo({
   routine,
   consistencyStats,
@@ -133,11 +149,36 @@ export function CalendarMobileInfo({
   loading = false,
   todayEvents,
   onSelectEvent,
+  mealPlan,
+  recipes = [],
+  mealPlanLoading = false,
 }: CalendarMobileInfoProps) {
   const viewDate = selectedDate || new Date()
   const dayOfWeek = getDayOfWeekFromDate(viewDate)
   const weekNumber = getWeekNumber(viewDate)
   const isToday = isSameDay(viewDate, new Date())
+
+  // Meal plan data for selected day
+  const cookingDayMap: Record<number, CookingDayOfWeek> = {
+    0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
+    4: 'thursday', 5: 'friday', 6: 'saturday',
+  }
+  const cookingDayOfWeek = cookingDayMap[viewDate.getDay()] as CookingDayOfWeek
+  const dayMeals = mealPlan?.meals[cookingDayOfWeek]
+
+  const recipeMap = useMemo(() => {
+    const map = new Map<string, Recipe>()
+    recipes.forEach(r => map.set(r.id, r))
+    return map
+  }, [recipes])
+
+  const filledMealSlots = useMemo(() => {
+    if (!dayMeals || dayMeals.skipped) return []
+    return MEAL_SLOTS.filter(slot => dayMeals[slot.key]).map(slot => ({
+      ...slot,
+      recipe: recipeMap.get(dayMeals[slot.key]!),
+    }))
+  }, [dayMeals, recipeMap])
 
   const daySchedule = routine?.schedule[dayOfWeek]
   const week = routine?.weeks.find(w => w.weekNumber === weekNumber)
@@ -396,6 +437,77 @@ export function CalendarMobileInfo({
                 unit="total"
                 icon={<Dumbbell className="size-3 text-green-500" />}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Meal Plan */}
+        {!mealPlanLoading && (
+          <div className="rounded-xl border border-border/50 bg-card">
+            <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex size-6 items-center justify-center rounded-md bg-teal-500/10">
+                  <UtensilsCrossed className="size-3.5 text-teal-500" />
+                </div>
+                <h3 className="text-xs font-semibold">
+                  {isToday ? "Today's Meals" : 'Meals'}
+                </h3>
+              </div>
+              <Link href="/cooking">
+                <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+                  View
+                  <ChevronRight className="size-3" />
+                </Button>
+              </Link>
+            </div>
+            <div className="p-2">
+              {!mealPlan ? (
+                <div className="flex flex-col items-center gap-2 py-4 text-center">
+                  <UtensilsCrossed className="size-6 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No meal plan this week</p>
+                </div>
+              ) : dayMeals?.skipped ? (
+                <div className="flex items-center gap-3 rounded-lg px-3 py-3">
+                  <Ban className="size-4 text-slate-500" />
+                  <div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Skipped</span>
+                    {dayMeals.skip_note && (
+                      <p className="text-[11px] text-muted-foreground">{dayMeals.skip_note}</p>
+                    )}
+                  </div>
+                </div>
+              ) : filledMealSlots.length > 0 ? (
+                <div className="space-y-1.5">
+                  {filledMealSlots.map(slot => {
+                    const SlotIcon = slot.icon
+                    return (
+                      <div
+                        key={slot.key}
+                        className="flex items-center gap-3 rounded-lg bg-teal-500/5 px-3 py-2.5 dark:bg-teal-500/10"
+                      >
+                        <SlotIcon className="size-4 text-teal-600 dark:text-teal-400" />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {slot.label}
+                          </span>
+                          <p className="truncate text-sm font-medium">
+                            {slot.recipe?.name || 'Unknown recipe'}
+                          </p>
+                        </div>
+                        {slot.recipe?.calories_per_serving && (
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {slot.recipe.calories_per_serving} cal
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-4 text-center">
+                  <p className="text-xs text-muted-foreground">No meals planned</p>
+                </div>
+              )}
             </div>
           </div>
         )}

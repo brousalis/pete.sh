@@ -14,6 +14,7 @@ import {
   getEventStartDate,
   isAllDayEvent,
   isFitnessEvent,
+  isMealPlanEvent,
 } from '@/lib/utils/calendar-utils'
 import { differenceInDays, format } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -28,6 +29,7 @@ import {
   ExternalLink,
   MapPin,
   Users,
+  UtensilsCrossed,
   X,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -328,19 +330,31 @@ export function CalendarEventDetail({
               </Button>
             )}
 
-            {/* Open in Google Calendar */}
-            {event.htmlLink && !isFitnessEvent(event) && (
-              <Button variant="outline" className="w-full" asChild>
-                <a
-                  href={event.htmlLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="mr-2 size-4" />
-                  Open in Google Calendar
-                </a>
+            {/* View Meal Plan button for meal plan events */}
+            {isMealPlanEvent(event) && (
+              <Button className="w-full" asChild>
+                <Link href="/cooking">
+                  <UtensilsCrossed className="mr-2 size-4" />
+                  View Meal Plan
+                </Link>
               </Button>
             )}
+
+            {/* Open in Google Calendar */}
+            {event.htmlLink &&
+              !isFitnessEvent(event) &&
+              !isMealPlanEvent(event) && (
+                <Button variant="outline" className="w-full" asChild>
+                  <a
+                    href={event.htmlLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="mr-2 size-4" />
+                    Open in Google Calendar
+                  </a>
+                </Button>
+              )}
           </div>
         </ScrollArea>
       </motion.div>

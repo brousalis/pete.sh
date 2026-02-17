@@ -1,34 +1,40 @@
 'use client'
 
 /**
- * Dedicated AI Coach page — full-screen chat with history sidebar,
- * readiness bar, quick actions, and message rendering.
+ * Dedicated AI Chef page — full-screen chat with preferences panel,
+ * history sidebar, context-aware quick actions, and WeekPlanPreview cards.
  */
 
 import { Button } from '@/components/ui/button'
-import type { TrainingReadiness } from '@/lib/types/ai-coach.types'
+import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
+import type { CookingPreferences } from '@/lib/types/ai-chef.types'
+import type { WeekPlanSuggestion } from '@/lib/types/ai-chef.types'
 import { cn } from '@/lib/utils'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Brain,
-    CheckCircle2,
-    Clock,
-    Hash,
-    Loader2,
-    MessageSquare,
-    PanelLeft,
-    Plus,
-    Send,
-    Sparkles,
-    Trash2,
-    Wrench,
-    Zap,
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ChefHat,
+  Clock,
+  Hash,
+  Loader2,
+  MessageSquare,
+  Minus,
+  PanelLeft,
+  Plus,
+  Send,
+  Sparkles,
+  Trash2,
+  UtensilsCrossed,
+  Wrench,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 // ============================================
@@ -48,10 +54,13 @@ interface ConversationSummary {
 // ============================================
 
 const TOOL_LABELS: Record<string, { label: string }> = {
-  getExerciseHistory: { label: 'Exercise History' },
-  getBodyCompositionTrend: { label: 'Body Composition' },
-  getDailyMetrics: { label: 'Daily Metrics' },
-  getTrainingReadiness: { label: 'Training Readiness' },
+  searchRecipes: { label: 'Searching Recipes' },
+  getCurrentMealPlan: { label: "Checking This Week's Plan" },
+  getRecentMealPlans: { label: 'Reviewing Recent Weeks' },
+  getFoodPreferences: { label: 'Checking Your Preferences' },
+  getFridgeContents: { label: 'Checking the Fridge' },
+  suggestWeekPlan: { label: 'Planning Your Week' },
+  setMealSlot: { label: 'Updating Meal Plan' },
 }
 
 // ============================================
@@ -70,42 +79,170 @@ function ToolInvocationBadge({
   result?: unknown
 }) {
   const meta = TOOL_LABELS[toolName] || { label: toolName }
-  const isRunning = state === 'call' || state === 'partial-call'
+  const isRunning = state === 'call' || state === 'partial-call' || state === 'input-streaming' || state === 'input-available'
+  const isComplete = state === 'result' || state === 'output-available'
+
+  // Special rendering for setMealSlot results
+  if (toolName === 'setMealSlot' && isComplete && result) {
+    const r = result as { success: boolean; message: string }
+    return (
+      <div className="my-1.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs">
+        <div className="flex items-center gap-2">
+          {r.success ? (
+            <Check className="h-3 w-3 text-green-400" />
+          ) : (
+            <X className="h-3 w-3 text-red-400" />
+          )}
+          <span className="font-medium text-white/80">{r.message}</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Special rendering for suggestWeekPlan results
+  if (toolName === 'suggestWeekPlan' && isComplete && result) {
+    return <WeekPlanPreview plan={(args.plan || result) as WeekPlanSuggestion} />
+  }
 
   return (
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
         ) : (
           <Wrench className="h-3 w-3 text-green-400" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
-        {Object.keys(args).length > 0 && (
+        {Object.keys(args).length > 0 && toolName !== 'suggestWeekPlan' && (
           <span className="text-white/30">
             ({Object.entries(args)
+              .filter(([k]) => k !== 'plan')
               .map(([k, v]) => `${k}: ${v}`)
               .join(', ')})
           </span>
         )}
         {isRunning ? (
-          <span className="ml-auto text-purple-400/70">querying...</span>
+          <span className="ml-auto text-amber-400/70">working...</span>
         ) : (
           <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
         )}
       </div>
-      {(state === 'result' && result && (
-        <div className="mt-1.5 max-h-20 overflow-y-auto text-[10px] text-white/40 font-mono leading-relaxed">
-          {Array.isArray(result)
-            ? result.slice(0, 5).map((r, i) => <div key={i}>{String(r)}</div>)
-            : typeof result === 'object'
-              ? JSON.stringify(result, null, 1).slice(0, 200)
-              : String(result).slice(0, 200)}
-          {Array.isArray(result) && result.length > 5 && (
-            <div className="text-white/20">...and {result.length - 5} more</div>
-          )}
+    </div>
+  )
+}
+
+// ============================================
+// WEEK PLAN PREVIEW CARD
+// ============================================
+
+function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
+  const { updateMealSlot } = useCooking()
+  const [applying, setApplying] = useState(false)
+  const [applied, setApplied] = useState(false)
+
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+  const dayLabels: Record<string, string> = {
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
+    friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
+  }
+
+  const dayMap = useMemo(() => {
+    const map = new Map<string, typeof plan.days[0][]>()
+    for (const d of plan.days) {
+      const existing = map.get(d.day) || []
+      existing.push(d)
+      map.set(d.day, existing)
+    }
+    return map
+  }, [plan.days])
+
+  const handleApplyAll = useCallback(async () => {
+    setApplying(true)
+    try {
+      for (const suggestion of plan.days) {
+        await updateMealSlot(suggestion.day, suggestion.mealType, suggestion.recipeId)
+      }
+      setApplied(true)
+    } catch (err) {
+      console.error('Failed to apply meal plan:', err)
+    } finally {
+      setApplying(false)
+    }
+  }, [plan.days, updateMealSlot])
+
+  return (
+    <div className="my-3 rounded-lg border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <div>
+          <div className="flex items-center gap-2">
+            <UtensilsCrossed className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-semibold text-white/90">
+              {plan.weekTheme || 'Suggested Meal Plan'}
+            </span>
+          </div>
+          <span className="text-xs text-white/40 mt-0.5">{plan.estimatedPrepTime}</span>
         </div>
-      )) as React.ReactNode}
+        {applied ? (
+          <div className="flex items-center gap-1.5 text-xs text-green-400">
+            <Check className="h-3.5 w-3.5" />
+            Applied
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            className="h-7 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+            onClick={handleApplyAll}
+            disabled={applying}
+          >
+            {applying ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3" />
+            )}
+            Apply All
+          </Button>
+        )}
+      </div>
+
+      {/* Day grid */}
+      <div className="grid grid-cols-7 divide-x divide-white/5">
+        {dayOrder.map((day) => {
+          const meals = dayMap.get(day)
+          return (
+            <div key={day} className="p-2 min-w-0">
+              <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1.5 text-center">
+                {dayLabels[day]}
+              </div>
+              {meals && meals.length > 0 ? (
+                <div className="space-y-1">
+                  {meals.map((m, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md bg-white/5 px-1.5 py-1.5 group relative"
+                      title={m.reasoning}
+                    >
+                      <div className="text-[11px] font-medium text-white/80 leading-tight line-clamp-2">
+                        {m.recipeName}
+                      </div>
+                      {m.prepTime && (
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <Clock className="h-2.5 w-2.5 text-white/25" />
+                          <span className="text-[9px] text-white/25">{m.prepTime}m</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-10 flex items-center justify-center">
+                  <span className="text-[10px] text-white/15">—</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -127,7 +264,7 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
     <div className="flex items-center gap-3 mt-1 text-[10px] text-white/20">
       {model && (
         <span className="flex items-center gap-0.5">
-          <Brain className="h-2.5 w-2.5" />
+          <ChefHat className="h-2.5 w-2.5" />
           {model.replace('claude-', '').replace('-latest', '')}
         </span>
       )}
@@ -151,76 +288,274 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
 }
 
 // ============================================
-// READINESS BAR (compact)
+// PREFERENCES PANEL
 // ============================================
 
-function ReadinessBar({ readiness }: { readiness: TrainingReadiness }) {
-  const color =
-    readiness.score >= 80
-      ? 'text-green-400'
-      : readiness.score >= 60
-        ? 'text-yellow-400'
-        : readiness.score >= 40
-          ? 'text-orange-400'
-          : 'text-red-400'
-  const bg =
-    readiness.score >= 80
-      ? 'bg-green-400'
-      : readiness.score >= 60
-        ? 'bg-yellow-400'
-        : readiness.score >= 40
-          ? 'bg-orange-400'
-          : 'bg-red-400'
+const DIETARY_OPTIONS = [
+  'vegetarian', 'vegan', 'low-carb', 'gluten-free', 'dairy-free',
+  'keto', 'paleo', 'high-protein',
+]
+
+const CUISINE_OPTIONS = [
+  'Italian', 'Mexican', 'Asian', 'Mediterranean', 'American',
+  'Indian', 'Thai', 'Japanese', 'Korean', 'French',
+]
+
+const TIME_OPTIONS = [
+  { value: '15-min', label: '15 min' },
+  { value: '30-min', label: '30 min' },
+  { value: '45-min', label: '45 min' },
+  { value: 'no-limit', label: 'No limit' },
+] as const
+
+function PreferencesPanel({
+  preferences,
+  onUpdate,
+}: {
+  preferences: CookingPreferences
+  onUpdate: (prefs: CookingPreferences) => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [newDislike, setNewDislike] = useState('')
+  const [newAllergy, setNewAllergy] = useState('')
+
+  const addChip = useCallback(
+    (field: 'dislikes' | 'allergies', value: string) => {
+      const trimmed = value.trim().toLowerCase()
+      if (!trimmed || preferences[field].includes(trimmed)) return
+      onUpdate({ ...preferences, [field]: [...preferences[field], trimmed] })
+    },
+    [preferences, onUpdate]
+  )
+
+  const removeChip = useCallback(
+    (field: 'dislikes' | 'allergies' | 'dietary' | 'cuisinePreferences', value: string) => {
+      onUpdate({ ...preferences, [field]: preferences[field].filter((v) => v !== value) })
+    },
+    [preferences, onUpdate]
+  )
+
+  const toggleChip = useCallback(
+    (field: 'dietary' | 'cuisinePreferences', value: string) => {
+      const arr = preferences[field]
+      if (arr.includes(value)) {
+        onUpdate({ ...preferences, [field]: arr.filter((v) => v !== value) })
+      } else {
+        onUpdate({ ...preferences, [field]: [...arr, value] })
+      }
+    },
+    [preferences, onUpdate]
+  )
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1.5">
-        <Zap className={`h-4 w-4 ${color}`} />
-        <span className={`text-lg font-bold tabular-nums ${color}`}>
-          {readiness.score}
+    <div className="border-b border-white/10">
+      <button
+        className="flex items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-white/60 hover:text-white/80 transition-colors"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span className="flex items-center gap-1.5">
+          <UtensilsCrossed className="h-3.5 w-3.5" />
+          Preferences
         </span>
-        <span className="text-xs text-white/40 capitalize">
-          {readiness.level}
-        </span>
-      </div>
-      <div className="h-2 w-32 rounded-full bg-white/10">
-        <div
-          className={`h-full rounded-full ${bg}`}
-          style={{ width: `${readiness.score}%` }}
-        />
-      </div>
-      <span className="text-xs text-white/40 max-w-xs truncate">
-        {readiness.todayRecommendation}
-      </span>
+        <span className="text-[10px] text-white/30">{collapsed ? '+' : '−'}</span>
+      </button>
+
+      {!collapsed && (
+        <div className="px-3 pb-3 space-y-3">
+          {/* Dislikes */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Dislikes
+            </label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {preferences.dislikes.map((d) => (
+                <span
+                  key={d}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-red-500/10 text-red-300 px-2 py-0.5 text-[10px]"
+                >
+                  {d}
+                  <button onClick={() => removeChip('dislikes', d)} className="hover:text-red-200">
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <form
+              className="mt-1"
+              onSubmit={(e) => {
+                e.preventDefault()
+                addChip('dislikes', newDislike)
+                setNewDislike('')
+              }}
+            >
+              <input
+                value={newDislike}
+                onChange={(e) => setNewDislike(e.target.value)}
+                placeholder="Add dislike..."
+                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+              />
+            </form>
+          </div>
+
+          {/* Allergies */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Allergies
+            </label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {preferences.allergies.map((a) => (
+                <span
+                  key={a}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-orange-500/10 text-orange-300 px-2 py-0.5 text-[10px]"
+                >
+                  {a}
+                  <button onClick={() => removeChip('allergies', a)} className="hover:text-orange-200">
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <form
+              className="mt-1"
+              onSubmit={(e) => {
+                e.preventDefault()
+                addChip('allergies', newAllergy)
+                setNewAllergy('')
+              }}
+            >
+              <input
+                value={newAllergy}
+                onChange={(e) => setNewAllergy(e.target.value)}
+                placeholder="Add allergy..."
+                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+              />
+            </form>
+          </div>
+
+          {/* Dietary */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Dietary
+            </label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {DIETARY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
+                    preferences.dietary.includes(d)
+                      ? 'bg-green-500/15 text-green-300 border-green-500/30'
+                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                  )}
+                  onClick={() => toggleChip('dietary', d)}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cuisine Preferences */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Cuisines
+            </label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {CUISINE_OPTIONS.map((c) => (
+                <button
+                  key={c}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
+                    preferences.cuisinePreferences.includes(c)
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                  )}
+                  onClick={() => toggleChip('cuisinePreferences', c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Household Size */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Household
+            </label>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                className="h-5 w-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors"
+                onClick={() =>
+                  onUpdate({
+                    ...preferences,
+                    householdSize: Math.max(1, preferences.householdSize - 1),
+                  })
+                }
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="text-xs font-medium text-white/70 tabular-nums w-4 text-center">
+                {preferences.householdSize}
+              </span>
+              <button
+                className="h-5 w-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors"
+                onClick={() =>
+                  onUpdate({
+                    ...preferences,
+                    householdSize: Math.min(12, preferences.householdSize + 1),
+                  })
+                }
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+              <span className="text-[10px] text-white/30">people</span>
+            </div>
+          </div>
+
+          {/* Cooking Time */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Weeknight Time
+            </label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {TIME_OPTIONS.map((t) => (
+                <button
+                  key={t.value}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
+                    preferences.cookingTimePreference === t.value
+                      ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                  )}
+                  onClick={() =>
+                    onUpdate({ ...preferences, cookingTimePreference: t.value as CookingPreferences['cookingTimePreference'] })
+                  }
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+              Notes
+            </label>
+            <textarea
+              value={preferences.notes}
+              onChange={(e) => onUpdate({ ...preferences, notes: e.target.value })}
+              placeholder="Any other preferences..."
+              rows={2}
+              className="mt-1 w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30 resize-none"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-// ============================================
-// QUICK ACTIONS
-// ============================================
-
-const QUICK_ACTIONS = [
-  {
-    label: 'How was my week?',
-    prompt: 'Give me a summary of my training this week. How did I do?',
-  },
-  {
-    label: 'Should I deload?',
-    prompt:
-      'Based on my recent HRV, sleep, and training data, should I take a deload this week?',
-  },
-  {
-    label: 'Progress to 185?',
-    prompt:
-      "How am I progressing toward my 185 lb goal? What's my projected timeline?",
-  },
-  {
-    label: 'Next workout tips',
-    prompt:
-      'What should I focus on in my next workout based on recent performance?',
-  },
-]
 
 // ============================================
 // TIME GROUPING HELPERS
@@ -263,6 +598,8 @@ function ChatHistorySidebar({
   onNewChat,
   onDelete,
   isOpen,
+  preferences,
+  onUpdatePreferences,
 }: {
   conversations: ConversationSummary[]
   activeChatId: string
@@ -270,6 +607,8 @@ function ChatHistorySidebar({
   onNewChat: () => void
   onDelete: (id: string) => void
   isOpen: boolean
+  preferences: CookingPreferences
+  onUpdatePreferences: (prefs: CookingPreferences) => void
 }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
@@ -289,10 +628,16 @@ function ChatHistorySidebar({
 
   return (
     <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-zinc-900/50">
+      {/* Preferences */}
+      <PreferencesPanel
+        preferences={preferences}
+        onUpdate={onUpdatePreferences}
+      />
+
       {/* Sidebar header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-white/50" />
+          <MessageSquare className="h-3.5 w-3.5 text-white/50" />
           <span className="text-xs font-semibold text-white/70">History</span>
         </div>
         <Button
@@ -336,7 +681,7 @@ function ChatHistorySidebar({
                           className={cn(
                             'group relative flex items-center rounded-md px-2 py-2 cursor-pointer transition-all',
                             isActive
-                              ? 'bg-white/10 border-l-2 border-purple-500 pl-1.5'
+                              ? 'bg-white/10 border-l-2 border-amber-500 pl-1.5'
                               : 'hover:bg-white/5 border-l-2 border-transparent'
                           )}
                           onClick={() => onSelect(conv.id)}
@@ -354,7 +699,6 @@ function ChatHistorySidebar({
                               </span>
                             </div>
                           </div>
-                          {/* Delete button */}
                           {isConfirming ? (
                             <div className="flex items-center gap-1 ml-1">
                               <button
@@ -404,23 +748,49 @@ function ChatHistorySidebar({
 }
 
 // ============================================
+// PAGE WRAPPER
+// ============================================
+
+export default function AiChefPage() {
+  return (
+    <CookingProvider>
+      <Suspense>
+        <AiChefPageContent />
+      </Suspense>
+    </CookingProvider>
+  )
+}
+
+// ============================================
 // PAGE COMPONENT
 // ============================================
 
-export default function AiCoachPage() {
-  const [readiness, setReadiness] = useState<TrainingReadiness | null>(null)
+function AiChefPageContent() {
+  const { mealPlan, fridgeIngredients } = useCooking()
+  const searchParams = useSearchParams()
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID())
   const [chatError, setChatError] = useState<string | null>(null)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
+  const [preferences, setPreferences] = useState<CookingPreferences>({
+    dislikes: [],
+    allergies: [],
+    dietary: [],
+    cuisinePreferences: [],
+    householdSize: 2,
+    cookingTimePreference: '30-min',
+    notes: '',
+  })
   const scrollRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
+  const prefsTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const initialPromptSent = useRef(false)
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: '/api/fitness/ai-coach/chat',
+        api: '/api/cooking/ai-chef/chat',
         body: { chatId },
       }),
     [chatId]
@@ -430,8 +800,8 @@ export default function AiCoachPage() {
     transport,
     experimental_throttle: 50,
     onError: (err) => {
-      console.error('[AI Coach] useChat error:', err)
-      setChatError(err.message || 'Something went wrong with the AI coach.')
+      console.error('[AI Chef] useChat error:', err)
+      setChatError(err.message || 'Something went wrong with the AI Chef.')
     },
   })
 
@@ -442,19 +812,32 @@ export default function AiCoachPage() {
     if (input.length > 0 && chatError) setChatError(null)
   }, [input, chatError])
 
-  // Load readiness
+  // Load preferences
   useEffect(() => {
-    fetch('/api/fitness/ai-coach/readiness')
+    fetch('/api/cooking/ai-chef/preferences')
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setReadiness(data.data)
+        if (data.success && data.data) setPreferences(data.data)
       })
       .catch(console.error)
   }, [])
 
+  // Save preferences (debounced)
+  const handleUpdatePreferences = useCallback((prefs: CookingPreferences) => {
+    setPreferences(prefs)
+    if (prefsTimerRef.current) clearTimeout(prefsTimerRef.current)
+    prefsTimerRef.current = setTimeout(() => {
+      fetch('/api/cooking/ai-chef/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      }).catch(console.error)
+    }, 1000)
+  }, [])
+
   // Load conversation list
   const refreshConversations = useCallback(() => {
-    fetch('/api/fitness/ai-coach/history/list')
+    fetch('/api/cooking/ai-chef/history/list')
       .then((r) => r.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
@@ -473,7 +856,7 @@ export default function AiCoachPage() {
     if (historyLoaded) return
     setHistoryLoaded(true)
 
-    fetch('/api/fitness/ai-coach/history')
+    fetch('/api/cooking/ai-chef/history')
       .then((r) => r.json())
       .then((data) => {
         if (
@@ -488,6 +871,23 @@ export default function AiCoachPage() {
       .catch(console.error)
   }, [historyLoaded, setMessages])
 
+  // Handle pre-filled prompt from URL
+  useEffect(() => {
+    if (initialPromptSent.current) return
+    const promptParam = searchParams.get('prompt')
+    if (promptParam && historyLoaded && status === 'ready') {
+      initialPromptSent.current = true
+      // Start a new chat for the URL prompt
+      const newId = crypto.randomUUID()
+      setChatId(newId)
+      setMessages([])
+      // Small delay to let the transport update
+      setTimeout(() => {
+        sendMessage({ text: promptParam })
+      }, 100)
+    }
+  }, [searchParams, historyLoaded, status, sendMessage, setMessages])
+
   // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
@@ -495,17 +895,63 @@ export default function AiCoachPage() {
     }
   }, [messages])
 
-  // Refresh sidebar when messages change (new messages saved = new/updated conversation)
+  // Refresh sidebar when messages change
   const prevMessageCountRef = useRef(0)
   useEffect(() => {
     if (messages.length > 0 && messages.length !== prevMessageCountRef.current) {
-      // Debounce the refresh slightly to let the server persist first
       const timer = setTimeout(refreshConversations, 2000)
       prevMessageCountRef.current = messages.length
       return () => clearTimeout(timer)
     }
     return undefined
   }, [messages.length, refreshConversations])
+
+  // Context-aware quick actions
+  const quickActions = useMemo(() => {
+    const actions: { label: string; prompt: string }[] = []
+
+    // Check meal plan state
+    const hasMealPlan = mealPlan && mealPlan.meals
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+    const filledDays = hasMealPlan
+      ? days.filter((d) => {
+          const m = mealPlan.meals[d]
+          return m && (m.dinner || m.lunch || m.breakfast) && !m.skipped
+        })
+      : []
+    const emptyDays = days.length - filledDays.length
+
+    if (emptyDays === 7 || !hasMealPlan) {
+      actions.push({
+        label: "Plan this week's dinners",
+        prompt: "Plan this week's dinners for me. Pick from our recipe catalog and make sure they're different from recent weeks.",
+      })
+    } else if (emptyDays > 0) {
+      actions.push({
+        label: `Fill remaining ${emptyDays} days`,
+        prompt: `I have ${filledDays.length} days planned already. Can you suggest dinners for the remaining ${emptyDays} empty days?`,
+      })
+    }
+
+    actions.push({
+      label: 'Suggest something new',
+      prompt: "Suggest a recipe we haven't had recently — something new and interesting that matches our preferences.",
+    })
+
+    if (fridgeIngredients.length > 0) {
+      actions.push({
+        label: 'Use what\'s in the fridge',
+        prompt: "What can I make with what's currently in our fridge? Check the fridge contents and suggest meals.",
+      })
+    }
+
+    actions.push({
+      label: 'Quick weeknight meal',
+      prompt: 'Suggest a quick and easy weeknight dinner that takes 30 minutes or less.',
+    })
+
+    return actions.slice(0, 4)
+  }, [mealPlan, fridgeIngredients])
 
   const handleQuickAction = useCallback(
     (prompt: string) => {
@@ -528,7 +974,7 @@ export default function AiCoachPage() {
       setChatError(null)
       setMessages([])
 
-      fetch(`/api/fitness/ai-coach/history?chatId=${id}`)
+      fetch(`/api/cooking/ai-chef/history?chatId=${id}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.success && data.data?.messages) {
@@ -542,7 +988,7 @@ export default function AiCoachPage() {
 
   const handleDeleteConversation = useCallback(
     (id: string) => {
-      fetch(`/api/fitness/ai-coach/history/${id}`, { method: 'DELETE' })
+      fetch(`/api/cooking/ai-chef/history/${id}`, { method: 'DELETE' })
         .then((r) => r.json())
         .then((data) => {
           if (data.success) {
@@ -567,6 +1013,8 @@ export default function AiCoachPage() {
         onNewChat={handleNewChat}
         onDelete={handleDeleteConversation}
         isOpen={sidebarOpen}
+        preferences={preferences}
+        onUpdatePreferences={handleUpdatePreferences}
       />
 
       {/* Main content */}
@@ -582,26 +1030,20 @@ export default function AiCoachPage() {
           >
             <PanelLeft className="h-4 w-4" />
           </Button>
-          <Link href="/fitness">
+          <Link href="/cooking">
             <Button
               variant="ghost"
               size="sm"
               className="gap-1.5 text-white/60 hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
-              Fitness
+              Cooking
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-purple-400" />
-            <h1 className="text-lg font-semibold text-white">AI Coach</h1>
+            <ChefHat className="h-5 w-5 text-amber-400" />
+            <h1 className="text-lg font-semibold text-white">AI Chef</h1>
           </div>
-          <div className="flex-1" />
-          {readiness && (
-            <div className="hidden lg:flex">
-              <ReadinessBar readiness={readiness} />
-            </div>
-          )}
           <div className="flex-1" />
           {messages.length > 0 && (
             <Button
@@ -625,17 +1067,16 @@ export default function AiCoachPage() {
           {messages.length === 0 && (
             <div className="mx-auto max-w-2xl mt-8">
               <div className="text-center mb-8">
-                <Brain className="h-12 w-12 text-purple-400/50 mx-auto mb-3" />
+                <ChefHat className="h-12 w-12 text-amber-400/50 mx-auto mb-3" />
                 <h2 className="text-xl font-medium text-white/70 mb-1">
-                  What would you like to know?
+                  What should we cook?
                 </h2>
                 <p className="text-sm text-white/30">
-                  Ask about your training, body composition, readiness, or get
-                  coaching advice.
+                  Plan meals, get recipe suggestions, or ask about what to cook tonight.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                {QUICK_ACTIONS.map((action) => (
+                {quickActions.map((action) => (
                   <Button
                     key={action.label}
                     variant="outline"
@@ -643,7 +1084,7 @@ export default function AiCoachPage() {
                     className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
                     onClick={() => handleQuickAction(action.prompt)}
                   >
-                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-purple-400/70" />
+                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-amber-400/70" />
                     {action.label}
                   </Button>
                 ))}
@@ -664,7 +1105,7 @@ export default function AiCoachPage() {
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-3 text-sm ${
                       message.role === 'user'
-                        ? 'bg-purple-600/30 text-white'
+                        ? 'bg-amber-600/30 text-white'
                         : 'bg-white/5 text-white/80 border border-white/10'
                     }`}
                   >
@@ -674,7 +1115,7 @@ export default function AiCoachPage() {
                           return message.role === 'user' ? (
                             <span key={index}>{part.text}</span>
                           ) : (
-                            <div key={index} className="ai-coach-markdown">
+                            <div key={index} className="ai-chef-markdown">
                               <ReactMarkdown
                                 components={{
                                   h1: ({ children }) => (
@@ -703,7 +1144,7 @@ export default function AiCoachPage() {
                                     </strong>
                                   ),
                                   em: ({ children }) => (
-                                    <em className="text-purple-300">
+                                    <em className="text-amber-300">
                                       {children}
                                     </em>
                                   ),
@@ -723,7 +1164,7 @@ export default function AiCoachPage() {
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-purple-300">
+                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-amber-300">
                                       {children}
                                     </code>
                                   ),
@@ -808,7 +1249,7 @@ export default function AiCoachPage() {
                 ) && (
                   <div className="flex justify-start">
                     <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
                     </div>
                   </div>
                 )}
@@ -844,14 +1285,14 @@ export default function AiCoachPage() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask your AI coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              placeholder="Ask your AI chef..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               disabled={status !== 'ready'}
             />
             <Button
               type="submit"
               disabled={status !== 'ready' || !input.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6"
+              className="bg-amber-600 hover:bg-amber-700 text-white px-6"
             >
               <Send className="h-4 w-4" />
             </Button>

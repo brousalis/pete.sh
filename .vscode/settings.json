@@ -146,7 +146,6 @@
 
   // Terminal Settings
   "terminal.integrated.defaultProfile.windows": "PowerShell",
-  "terminal.integrated.fontSize": 14,
   "terminal.integrated.cursorBlinking": true,
 
   // Cursor/LLM Specific Settings

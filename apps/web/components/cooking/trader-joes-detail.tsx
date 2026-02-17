@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import {
     Sheet,
@@ -96,7 +95,7 @@ export function TraderJoesDetailSheet({
           </SheetHeader>
 
           {/* Content */}
-          <ScrollArea className="flex-1">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="p-4 space-y-5">
               {/* Image */}
               {resolveRecipeImageUrl(recipe.image_url) && (
@@ -196,7 +195,7 @@ export function TraderJoesDetailSheet({
                   </div>
                 )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

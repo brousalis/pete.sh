@@ -24,6 +24,7 @@ import {
   Music,
   NotebookPen,
   Settings,
+  Sparkles,
   Ticket,
   User,
 } from 'lucide-react'
@@ -83,6 +84,7 @@ export const navCategories: NavCategory[] = [
       // Coffee sunset – hidden from nav
       // { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '8', keywords: ['espresso', 'brew'] },
       { href: '/cooking', label: 'Cooking', icon: ChefHat, keywords: ['recipes', 'food', 'kitchen'] },
+      { href: '/cooking/chef', label: 'AI Chef', icon: Sparkles, keywords: ['ai chef', 'meal plan ai', 'cooking assistant', 'suggest meals'] },
     ],
   },
   {

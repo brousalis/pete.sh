@@ -11,6 +11,8 @@ import { withCors, corsOptionsResponse } from '@/lib/api/cors'
 /**
  * GET /api/cooking/meal-plans/[id]/shopping-list
  * Generate or get shopping list for a meal plan
+ * Query params:
+ *   - regenerate: if "true", force-regenerate from current meal plan recipes
  */
 export async function GET(
   request: NextRequest,
@@ -18,11 +20,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const forceRegenerate = searchParams.get('regenerate') === 'true'
 
-    // Check if shopping list exists
-    let shoppingList = await mealPlanningService.getShoppingList(id)
+    let shoppingList = forceRegenerate
+      ? null
+      : await mealPlanningService.getShoppingList(id)
 
-    // If it doesn't exist, generate it
+    // Generate if it doesn't exist or regeneration was requested
     if (!shoppingList) {
       shoppingList = await mealPlanningService.generateShoppingList(id)
     }

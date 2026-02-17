@@ -7,7 +7,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { mealPlanningService } from '@/lib/services/meal-planning.service'
-import type { UpdateMealPlanInput } from '@/lib/types/cooking.types'
 import { withCors, corsOptionsResponse } from '@/lib/api/cors'
 
 /**
@@ -56,7 +55,7 @@ export async function GET(
 
 /**
  * PUT /api/cooking/meal-plans/[id]
- * Update a meal plan
+ * Update a meal plan directly by ID (avoids date round-trip issues)
  */
 export async function PUT(
   request: NextRequest,
@@ -65,25 +64,10 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const input: UpdateMealPlanInput = body
 
-    // Get existing meal plan to preserve week_start_date
-    const existing = await mealPlanningService.getMealPlanById(id)
-    if (!existing) {
-      return withCors(
-        NextResponse.json(
-          {
-            success: false,
-            error: 'Meal plan not found',
-          },
-          { status: 404 }
-        )
-      )
-    }
-
-    const mealPlan = await mealPlanningService.saveMealPlan({
-      ...input,
-      week_start_date: existing.week_start_date,
+    const mealPlan = await mealPlanningService.updateMealPlanById(id, {
+      meals: body.meals,
+      notes: body.notes,
     })
 
     return withCors(

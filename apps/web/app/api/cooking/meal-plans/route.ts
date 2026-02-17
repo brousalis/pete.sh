@@ -4,10 +4,10 @@
  * POST - Create/update meal plan
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { withCors } from '@/lib/api/cors'
 import { mealPlanningService } from '@/lib/services/meal-planning.service'
 import type { CreateMealPlanInput } from '@/lib/types/cooking.types'
-import { withCors, corsOptionsResponse } from '@/lib/api/cors'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/cooking/meal-plans
@@ -19,6 +19,16 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const weekStartParam = searchParams.get('week_start')
+    const recentWeeks = searchParams.get('recent_weeks')
+
+    if (recentWeeks) {
+      const plans = await mealPlanningService.getRecentMealPlans(
+        parseInt(recentWeeks, 10) || 2
+      )
+      return withCors(
+        NextResponse.json({ success: true, data: plans })
+      )
+    }
 
     const weekStart = weekStartParam ? new Date(weekStartParam) : undefined
     const mealPlan = await mealPlanningService.getMealPlan(weekStart)

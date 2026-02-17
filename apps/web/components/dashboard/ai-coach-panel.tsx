@@ -13,34 +13,32 @@
  * - Error handling surfaced from stream
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
-import ReactMarkdown from "react-markdown"
-import {
-  Brain,
-  Send,
-  Sparkles,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  AlertTriangle,
-  CheckCircle2,
-  X,
-  Loader2,
-  ChevronDown,
-  Zap,
-  ArrowRight,
-  Wrench,
-  Clock,
-  Hash,
-  RotateCcw,
-} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TrainingReadiness } from "@/lib/types/ai-coach.types"
-import type { FullAnalysis } from "@/lib/types/ai-coach.types"
+import type { FullAnalysis, TrainingReadiness } from "@/lib/types/ai-coach.types"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
+import {
+    AlertTriangle,
+    ArrowRight,
+    Brain,
+    CheckCircle2,
+    ChevronDown,
+    Clock,
+    Hash,
+    Loader2,
+    Minus,
+    RotateCcw,
+    Send,
+    Sparkles,
+    TrendingDown,
+    TrendingUp,
+    Wrench,
+    X,
+    Zap,
+} from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 
 // ============================================
 // TOOL CALL LABELS (human-readable names)
@@ -604,7 +602,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4" ref={scrollRef}>
           <div className="py-4 space-y-4">
             {/* Training Readiness */}
             {loadingReadiness ? (
@@ -782,7 +780,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Chat Input */}
         <form

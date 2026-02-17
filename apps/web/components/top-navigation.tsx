@@ -52,15 +52,15 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
-  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '3' },
-  { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '4' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '5' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '6' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
+  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
+  { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
+  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '7' },
   // Coffee sunset – hidden from nav, code kept
   // { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
-  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '8' },
-  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '9' },
-  { href: '/me', label: 'Me', icon: User, shortcut: '0' },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '8' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '9' },
 ]
 
 // Mobile bottom nav items
@@ -68,9 +68,9 @@ const mobileBottomItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat },
   { href: '/transit', label: 'CTA', icon: Bus },
   { href: '/lights', label: 'Lights', icon: Lightbulb },
-  { href: '/music', label: 'Music', icon: Music },
   // Coffee sunset – hidden from nav
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]

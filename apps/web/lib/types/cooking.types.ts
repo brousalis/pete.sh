@@ -91,7 +91,11 @@ export interface DayMeals {
   lunch?: string // recipe_id
   dinner?: string // recipe_id
   snack?: string // recipe_id
+  skipped?: boolean
+  skip_note?: string
 }
+
+export type MealPlanMode = 'dinner-only' | 'all-meals'
 
 export interface ShoppingList {
   id: string

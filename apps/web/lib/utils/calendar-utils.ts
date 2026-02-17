@@ -10,6 +10,7 @@ import type {
     WeekDay,
 } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
+import type { DayOfWeek as CookingDayOfWeek, MealPlan, Recipe } from '@/lib/types/cooking.types'
 import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import {
     addDays,
@@ -526,5 +527,109 @@ export function isFitnessEvent(event: CalendarEvent): boolean {
     event.colorId === 'fitness' ||
     event.colorId === 'fitness-complete' ||
     event.colorId === 'fitness-skipped'
+  )
+}
+
+/**
+ * Generate virtual all-day calendar events from a meal plan for a date range.
+ * Creates one all-day event per day that has any meals planned.
+ */
+export function generateMealPlanEvents(
+  mealPlan: MealPlan | null | undefined,
+  recipes: Recipe[],
+  startDate: Date,
+  endDate: Date
+): CalendarEvent[] {
+  if (!mealPlan?.meals) return []
+
+  const recipeMap = new Map<string, Recipe>()
+  recipes.forEach(r => recipeMap.set(r.id, r))
+
+  const events: CalendarEvent[] = []
+  const days = eachDayOfInterval({ start: startDate, end: endDate })
+
+  const DAYS_MAP: Record<number, CookingDayOfWeek> = {
+    0: 'sunday',
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    5: 'friday',
+    6: 'saturday',
+  }
+
+  days.forEach(day => {
+    const dayOfWeek = DAYS_MAP[day.getDay()] as CookingDayOfWeek
+    const dayMeals = mealPlan.meals[dayOfWeek]
+
+    if (!dayMeals) return
+
+    // Check if the day is skipped
+    if (dayMeals.skipped) {
+      events.push({
+        id: `meal-plan-${format(day, 'yyyy-MM-dd')}`,
+        summary: 'Meal Skipped',
+        description: dayMeals.skip_note || undefined,
+        start: { date: format(day, 'yyyy-MM-dd') },
+        end: { date: format(addDays(day, 1), 'yyyy-MM-dd') },
+        colorId: 'meal-plan-skipped',
+        status: 'confirmed',
+        created: mealPlan.created_at,
+        updated: mealPlan.updated_at,
+      })
+      return
+    }
+
+    // Build summary from planned meals
+    const meals: string[] = []
+    if (dayMeals.dinner) {
+      const recipe = recipeMap.get(dayMeals.dinner)
+      meals.push(recipe?.name || 'Dinner')
+    }
+    if (dayMeals.lunch) {
+      const recipe = recipeMap.get(dayMeals.lunch)
+      meals.push(recipe?.name || 'Lunch')
+    }
+    if (dayMeals.breakfast) {
+      const recipe = recipeMap.get(dayMeals.breakfast)
+      meals.push(recipe?.name || 'Breakfast')
+    }
+    if (dayMeals.snack) {
+      const recipe = recipeMap.get(dayMeals.snack)
+      meals.push(recipe?.name || 'Snack')
+    }
+
+    if (meals.length === 0) return
+
+    // Use the first meal (dinner prioritized) as the summary,
+    // include count if multiple meals are planned
+    const summary =
+      meals.length === 1 ? meals[0]! : `${meals[0]} +${meals.length - 1}`
+
+    events.push({
+      id: `meal-plan-${format(day, 'yyyy-MM-dd')}`,
+      summary,
+      description:
+        meals.length > 1 ? meals.join(', ') : undefined,
+      start: { date: format(day, 'yyyy-MM-dd') },
+      end: { date: format(addDays(day, 1), 'yyyy-MM-dd') },
+      colorId: 'meal-plan',
+      status: 'confirmed',
+      created: mealPlan.created_at,
+      updated: mealPlan.updated_at,
+    })
+  })
+
+  return events
+}
+
+/**
+ * Check if an event is a meal plan event (virtual event)
+ */
+export function isMealPlanEvent(event: CalendarEvent): boolean {
+  return (
+    event.id.startsWith('meal-plan-') ||
+    event.colorId === 'meal-plan' ||
+    event.colorId === 'meal-plan-skipped'
   )
 }

@@ -1,83 +1,39 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import {
-  CheckCircle2,
-  Circle,
-  ShoppingCart,
-  Plus,
-  Copy,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  X,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import { useCooking } from '@/hooks/use-cooking-data'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 import { transitions } from '@/lib/animations'
 import type { ShoppingListItem } from '@/lib/types/cooking.types'
+import { cn } from '@/lib/utils'
+import { categorizeIngredient, CATEGORY_ORDER, normalizeIngredientName } from '@/lib/utils/shopping-utils'
+import { motion } from 'framer-motion'
+import {
+    CheckCircle2,
+    ChevronDown,
+    ChevronRight,
+    Circle,
+    Copy,
+    Plus,
+    ShoppingCart,
+    X
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface ManualItem {
   name: string
   checked: boolean
 }
-
-const categorizeIngredient = (name: string): string => {
-  const lower = name.toLowerCase()
-  if (/milk|cheese|yogurt|cream|butter|sour cream|half.and.half|crème/.test(lower))
-    return 'Dairy'
-  if (/egg/.test(lower)) return 'Dairy'
-  if (/chicken|beef|pork|turkey|sausage|bacon|meat|steak|lamb|ground/.test(lower))
-    return 'Meat & Poultry'
-  if (/salmon|tuna|shrimp|fish|cod|crab|lobster|scallop/.test(lower))
-    return 'Seafood'
-  if (
-    /lettuce|tomato|onion|garlic|pepper|carrot|celery|spinach|kale|broccoli|potato|mushroom|avocado|cucumber|zucchini|squash|cabbage|corn|pea|bean sprout|jalapeño|cilantro|parsley|basil|mint|ginger|scallion|shallot|leek/.test(
-      lower
-    )
-  )
-    return 'Produce'
-  if (/apple|banana|lemon|lime|orange|berry|berries|fruit|grape|mango|pear|peach/.test(lower))
-    return 'Fruits'
-  if (/bread|tortilla|bun|roll|pita|naan|bagel|croissant/.test(lower))
-    return 'Bakery'
-  if (/rice|pasta|noodle|flour|sugar|honey|maple|oil|vinegar|sauce|broth|stock|soy|sriracha/.test(lower))
-    return 'Pantry'
-  if (/salt|pepper|cumin|paprika|oregano|thyme|rosemary|cinnamon|nutmeg|chili|cayenne|turmeric/.test(lower))
-    return 'Spices'
-  if (/can |canned|beans|lentil|chickpea|diced tomato/.test(lower))
-    return 'Canned Goods'
-  if (/frozen/.test(lower)) return 'Frozen'
-  return 'Other'
-}
-
-const CATEGORY_ORDER = [
-  'Produce',
-  'Fruits',
-  'Meat & Poultry',
-  'Seafood',
-  'Dairy',
-  'Bakery',
-  'Pantry',
-  'Spices',
-  'Canned Goods',
-  'Frozen',
-  'Other',
-]
 
 interface ShoppingListProps {
   onRecipeClick?: (recipeName: string) => void
@@ -99,14 +55,17 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
     refreshShoppingList()
   }, [refreshShoppingList])
 
-  // Restore checked state from localStorage
+  // Restore checked state from localStorage (migrate to normalized keys)
   useEffect(() => {
     if (shoppingList) {
       const stored = localStorage.getItem(`shopping-list-${shoppingList.id}`)
       if (stored) {
         try {
           const parsed = JSON.parse(stored)
-          setCheckedItems(new Set(parsed.checked || []))
+          const rawChecked: string[] = parsed.checked || []
+          // Migrate old raw-name keys to normalized keys
+          const normalized = new Set(rawChecked.map((name: string) => normalizeIngredientName(name)))
+          setCheckedItems(normalized)
           setManualItems(parsed.manual || [])
         } catch {
           // Ignore parse errors
@@ -132,11 +91,12 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
   }
 
   const handleToggleItem = (ingredient: string) => {
+    const key = normalizeIngredientName(ingredient)
     const newChecked = new Set(checkedItems)
-    if (newChecked.has(ingredient)) {
-      newChecked.delete(ingredient)
+    if (newChecked.has(key)) {
+      newChecked.delete(key)
     } else {
-      newChecked.add(ingredient)
+      newChecked.add(key)
     }
     setCheckedItems(newChecked)
     persistState(newChecked, manualItems)
@@ -170,9 +130,10 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
       grouped.forEach(([category, items]) => {
         lines.push(`\n${category}:`)
         items.forEach((item) => {
-          const checked = checkedItems.has(item.ingredient)
+          const checked = checkedItems.has(normalizeIngredientName(item.ingredient))
+          const amountStr = item.amount > 0 ? ` - ${Math.round(item.amount * 100) / 100} ${item.unit}` : item.unit ? ` - ${item.unit}` : ''
           lines.push(
-            `  ${checked ? '✓' : '○'} ${item.ingredient}${item.amount ? ` - ${item.amount} ${item.unit}` : ''}`
+            `  ${checked ? '✓' : '○'} ${item.ingredient}${amountStr}`
           )
         })
       })
@@ -215,7 +176,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
   const totalItems =
     (shoppingList?.items.length || 0) + manualItems.length
   const checkedCount =
-    (shoppingList?.items.filter((item) => checkedItems.has(item.ingredient))
+    (shoppingList?.items.filter((item) => checkedItems.has(normalizeIngredientName(item.ingredient)))
       .length || 0) + manualItems.filter((i) => i.checked).length
   const progressPercent = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
 
@@ -308,7 +269,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
       <div className="space-y-2">
         {grouped.map(([category, items]) => {
           const categoryChecked = items.filter((item) =>
-            checkedItems.has(item.ingredient)
+            checkedItems.has(normalizeIngredientName(item.ingredient))
           ).length
           const isCollapsed = collapsedCategories.has(category)
 
@@ -334,7 +295,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                   <CardContent className="px-3 pb-3 pt-0">
                     <div className="space-y-1">
                       {items.map((item) => {
-                        const isChecked = checkedItems.has(item.ingredient)
+                        const isChecked = checkedItems.has(normalizeIngredientName(item.ingredient))
                         return (
                           <motion.div
                             key={item.ingredient}
@@ -451,9 +412,9 @@ function ShoppingItemRow({
           >
             {ingredient}
           </span>
-          {(amount || unit) && (
+          {((amount ?? 0) > 0 || unit) && (
             <span className="text-xs text-muted-foreground shrink-0">
-              {amount} {unit}
+              {(amount ?? 0) > 0 ? `${Math.round((amount ?? 0) * 100) / 100} ` : ''}{unit}
             </span>
           )}
         </div>

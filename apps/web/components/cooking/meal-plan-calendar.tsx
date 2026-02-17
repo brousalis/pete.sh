@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
     Popover,
     PopoverContent,
@@ -20,20 +21,25 @@ import {
     format,
     isToday,
     startOfWeek,
-    subWeeks
+    subWeeks,
 } from 'date-fns'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
     Calendar as CalendarIcon,
     ChefHat,
     ChevronLeft,
     ChevronRight,
+    Dices,
     Flame,
+    MessageSquare,
     Plus,
+    Settings2,
     ShoppingCart,
-    X
+    SkipForward,
+    Undo2,
+    X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { RecipePicker } from './recipe-picker'
 
 const DAYS: DayOfWeek[] = [
@@ -45,7 +51,10 @@ const DAYS: DayOfWeek[] = [
   'saturday',
   'sunday',
 ]
-const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const
+
+const ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const
+const DINNER_ONLY = ['dinner'] as const
+
 const MEAL_COLORS = {
   breakfast: 'border-amber-500/30 bg-amber-500/5',
   lunch: 'border-blue-500/30 bg-blue-500/5',
@@ -69,7 +78,11 @@ export function MealPlanCalendar({
     mealPlanLoading,
     updateMealSlot,
     getRecipeById,
-    getRecipeName,
+    mealPlanMode,
+    setMealPlanMode,
+    skipDay,
+    unskipDay,
+    randomFillDinner,
   } = useCooking()
   const { toast } = useToast()
 
@@ -77,6 +90,12 @@ export function MealPlanCalendar({
     day: DayOfWeek
     meal: string
   } | null>(null)
+  const [skipNoteDay, setSkipNoteDay] = useState<DayOfWeek | null>(null)
+  const [skipNoteText, setSkipNoteText] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
+  const [randomizing, setRandomizing] = useState<DayOfWeek | null>(null)
+
+  const activeMealTypes = mealPlanMode === 'dinner-only' ? DINNER_ONLY : ALL_MEAL_TYPES
 
   const handlePreviousWeek = () => setCurrentWeek(subWeeks(currentWeek, 1))
   const handleNextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1))
@@ -85,11 +104,7 @@ export function MealPlanCalendar({
 
   const handleMealSelect = async (recipeId: string) => {
     if (!pickerSlot) return
-    await updateMealSlot(
-      pickerSlot.day,
-      pickerSlot.meal,
-      recipeId || null
-    )
+    await updateMealSlot(pickerSlot.day, pickerSlot.meal, recipeId || null)
     setPickerSlot(null)
   }
 
@@ -97,27 +112,46 @@ export function MealPlanCalendar({
     await updateMealSlot(day, mealType, null)
   }
 
-  // Count planned meals for the week
+  const handleSkipDay = async (day: DayOfWeek) => {
+    setSkipNoteDay(day)
+    setSkipNoteText('')
+  }
+
+  const confirmSkip = async () => {
+    if (!skipNoteDay) return
+    await skipDay(skipNoteDay, skipNoteText || undefined)
+    setSkipNoteDay(null)
+    setSkipNoteText('')
+  }
+
+  const handleRandomFill = useCallback(async (day: DayOfWeek) => {
+    setRandomizing(day)
+    try {
+      await randomFillDinner(day)
+    } finally {
+      setRandomizing(null)
+    }
+  }, [randomFillDinner])
+
   const plannedMealsCount = DAYS.reduce((count, day) => {
     const dayMeals = mealPlan?.meals[day]
-    if (!dayMeals) return count
+    if (!dayMeals || dayMeals.skipped) return count
     return (
       count +
-      MEAL_TYPES.filter(
+      activeMealTypes.filter(
         (mt) => dayMeals[mt as keyof typeof dayMeals]
       ).length
     )
   }, 0)
 
-  // Calculate daily calories if nutrition data is available
   const getDayCalories = (day: DayOfWeek): number | null => {
     const dayMeals = mealPlan?.meals[day]
     if (!dayMeals) return null
     let total = 0
     let hasData = false
-    MEAL_TYPES.forEach((mt) => {
+    activeMealTypes.forEach((mt) => {
       const recipeId = dayMeals[mt as keyof typeof dayMeals]
-      if (recipeId) {
+      if (recipeId && typeof recipeId === 'string') {
         const recipe = getRecipeById(recipeId)
         if (recipe?.calories_per_serving) {
           total += recipe.calories_per_serving
@@ -129,15 +163,15 @@ export function MealPlanCalendar({
   }
 
   if (mealPlanLoading) {
-    return <MealPlanSkeleton />
+    return <MealPlanSkeleton isDinnerOnly={mealPlanMode === 'dinner-only'} />
   }
 
   return (
     <div className="space-y-4">
       {/* Week navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="size-8" onClick={handlePreviousWeek}>
+          <Button variant="outline" size="icon" className="size-8 rounded-lg" onClick={handlePreviousWeek}>
             <ChevronLeft className="size-4" />
           </Button>
           <div className="flex items-center gap-2">
@@ -147,7 +181,7 @@ export function MealPlanCalendar({
               {format(addDays(currentWeek, 6), 'MMM d, yyyy')}
             </span>
           </div>
-          <Button variant="outline" size="icon" className="size-8" onClick={handleNextWeek}>
+          <Button variant="outline" size="icon" className="size-8 rounded-lg" onClick={handleNextWeek}>
             <ChevronRight className="size-4" />
           </Button>
           <Button variant="ghost" size="sm" className="text-xs h-8" onClick={handleThisWeek}>
@@ -157,8 +191,49 @@ export function MealPlanCalendar({
 
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-xs">
-            {plannedMealsCount} meals planned
+            {plannedMealsCount} {mealPlanMode === 'dinner-only' ? 'dinners' : 'meals'} planned
           </Badge>
+
+          {/* Settings toggle */}
+          <Popover open={showSettings} onOpenChange={setShowSettings}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 rounded-lg">
+                <Settings2 className="size-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-3">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Meal Plan Mode
+                </p>
+                <div className="flex items-center gap-1 rounded-lg border border-border/50 p-0.5">
+                  <button
+                    onClick={() => setMealPlanMode('dinner-only')}
+                    className={cn(
+                      'flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      mealPlanMode === 'dinner-only'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Dinners Only
+                  </button>
+                  <button
+                    onClick={() => setMealPlanMode('all-meals')}
+                    className={cn(
+                      'flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      mealPlanMode === 'all-meals'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    All Meals
+                  </button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {onGenerateShoppingList && plannedMealsCount > 0 && (
             <Button size="sm" className="h-8" onClick={onGenerateShoppingList}>
               <ShoppingCart className="size-3.5 mr-1.5" />
@@ -180,13 +255,16 @@ export function MealPlanCalendar({
           const dayMeals = mealPlan?.meals[day]
           const isDayToday = isToday(dayDate)
           const dayCalories = getDayCalories(day)
+          const isSkipped = dayMeals?.skipped === true
+          const skipNote = dayMeals?.skip_note
 
           return (
             <motion.div key={day} variants={staggerItemVariants}>
               <Card
                 className={cn(
                   'transition-shadow hover:shadow-md',
-                  isDayToday && 'ring-2 ring-primary/30'
+                  isDayToday && 'ring-2 ring-primary/30',
+                  isSkipped && 'opacity-60'
                 )}
               >
                 <CardContent className="p-3">
@@ -212,115 +290,249 @@ export function MealPlanCalendar({
                         {format(dayDate, 'd')}
                       </span>
                     </div>
-                    {dayCalories && (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] gap-0.5 h-5"
-                      >
-                        <Flame className="size-2.5 text-orange-500" />
-                        {dayCalories}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {dayCalories && !isSkipped && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] gap-0.5 h-5"
+                        >
+                          <Flame className="size-2.5 text-orange-500" />
+                          {dayCalories}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Meal slots */}
-                  <div className="space-y-1.5">
-                    {MEAL_TYPES.map((mealType) => {
-                      const recipeId =
-                        dayMeals?.[mealType as keyof typeof dayMeals]
-                      const recipe = recipeId
-                        ? getRecipeById(recipeId)
-                        : null
+                  {/* Skipped state */}
+                  {isSkipped ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-2.5">
+                        <SkipForward className="size-3.5 text-muted-foreground shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-medium text-muted-foreground block">
+                            Skipped
+                          </span>
+                          {skipNote && (
+                            <span className="text-[11px] text-muted-foreground/70 line-clamp-2 block mt-0.5">
+                              {skipNote}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-7 text-[10px]"
+                        onClick={() => unskipDay(day)}
+                      >
+                        <Undo2 className="size-3 mr-1" />
+                        Restore day
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Meal slots */}
+                      <div className="space-y-1.5">
+                        {activeMealTypes.map((mealType) => {
+                          const recipeId =
+                            dayMeals?.[mealType as keyof typeof dayMeals]
+                          const recipe =
+                            recipeId && typeof recipeId === 'string'
+                              ? getRecipeById(recipeId)
+                              : null
 
-                      if (recipe) {
-                        return (
-                          <div
-                            key={mealType}
-                            className={cn(
-                              'group relative flex items-center gap-2 rounded-lg border p-1.5 cursor-pointer transition-colors',
-                              MEAL_COLORS[mealType]
-                            )}
-                            onClick={() => onRecipeClick?.(recipe.id)}
-                          >
-                            {resolveRecipeImageUrl(recipe.image_url) ? (
-                              <img
-                                src={resolveRecipeImageUrl(recipe.image_url)}
-                                alt=""
-                                className="size-7 rounded object-cover shrink-0"
-                              />
-                            ) : (
-                              <div className="size-7 rounded bg-muted flex items-center justify-center shrink-0">
-                                <ChefHat className="size-3 text-muted-foreground" />
+                          if (recipe) {
+                            return (
+                              <div
+                                key={mealType}
+                                className={cn(
+                                  'group relative flex items-center gap-2 rounded-lg border p-1.5 cursor-pointer transition-colors',
+                                  MEAL_COLORS[mealType]
+                                )}
+                                onClick={() => onRecipeClick?.(recipe.id)}
+                              >
+                                {resolveRecipeImageUrl(recipe.image_url) ? (
+                                  <img
+                                    src={resolveRecipeImageUrl(recipe.image_url)}
+                                    alt=""
+                                    className="size-7 rounded object-cover shrink-0"
+                                  />
+                                ) : (
+                                  <div className="size-7 rounded bg-muted flex items-center justify-center shrink-0">
+                                    <ChefHat className="size-3 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  {mealPlanMode === 'all-meals' && (
+                                    <span className="text-[10px] text-muted-foreground capitalize block">
+                                      {mealType}
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] font-medium leading-tight line-clamp-1 block">
+                                    {recipe.name}
+                                  </span>
+                                </div>
+                                <button
+                                  className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-0.5 hover:bg-background/80"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleRemoveMeal(day, mealType)
+                                  }}
+                                >
+                                  <X className="size-3 text-muted-foreground" />
+                                </button>
                               </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <span className="text-[10px] text-muted-foreground capitalize block">
-                                {mealType}
-                              </span>
-                              <span className="text-[11px] font-medium leading-tight line-clamp-1 block">
-                                {recipe.name}
-                              </span>
-                            </div>
-                            <button
-                              className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-0.5 hover:bg-background/80"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveMeal(day, mealType)
+                            )
+                          }
+
+                          return (
+                            <Popover
+                              key={mealType}
+                              open={
+                                pickerSlot?.day === day &&
+                                pickerSlot?.meal === mealType
+                              }
+                              onOpenChange={(open) => {
+                                if (!open) setPickerSlot(null)
                               }}
                             >
-                              <X className="size-3 text-muted-foreground" />
-                            </button>
-                          </div>
-                        )
-                      }
+                              <PopoverTrigger asChild>
+                                <button
+                                  className="flex w-full items-center gap-2 rounded-lg border border-dashed p-1.5 text-[10px] text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/50"
+                                  onClick={() =>
+                                    setPickerSlot({ day, meal: mealType })
+                                  }
+                                >
+                                  <Plus className="size-3" />
+                                  {mealPlanMode === 'all-meals' ? (
+                                    <span className="capitalize">{mealType}</span>
+                                  ) : (
+                                    <span>Add dinner</span>
+                                  )}
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-80 p-0"
+                                align="start"
+                              >
+                                <RecipePicker
+                                  onSelect={handleMealSelect}
+                                  onClose={() => setPickerSlot(null)}
+                                  selectedId={
+                                    typeof recipeId === 'string'
+                                      ? recipeId
+                                      : undefined
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          )
+                        })}
+                      </div>
 
-                      return (
-                        <Popover
-                          key={mealType}
-                          open={
-                            pickerSlot?.day === day &&
-                            pickerSlot?.meal === mealType
-                          }
-                          onOpenChange={(open) => {
-                            if (!open) setPickerSlot(null)
-                          }}
+                      {/* Day action buttons */}
+                      <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/30">
+                        <button
+                          className={cn(
+                            'flex items-center justify-center flex-1 rounded-md p-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                            randomizing === day && 'animate-pulse'
+                          )}
+                          onClick={() => handleRandomFill(day)}
+                          disabled={randomizing !== null}
+                          title="Random dinner"
                         >
-                          <PopoverTrigger asChild>
-                            <button
-                              className="flex w-full items-center gap-2 rounded-lg border border-dashed p-1.5 text-[10px] text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/50"
-                              onClick={() =>
-                                setPickerSlot({ day, meal: mealType })
-                              }
-                            >
-                              <Plus className="size-3" />
-                              <span className="capitalize">{mealType}</span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-72 p-0"
-                            align="start"
-                          >
-                            <RecipePicker
-                              onSelect={handleMealSelect}
-                              onClose={() => setPickerSlot(null)}
-                              selectedId={recipeId || undefined}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      )
-                    })}
-                  </div>
+                          <Dices className="size-3 mr-1" />
+                          Random
+                        </button>
+                        <div className="h-3 w-px bg-border/40" />
+                        <button
+                          className="flex items-center justify-center flex-1 rounded-md p-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          onClick={() => handleSkipDay(day)}
+                          title="Skip this day"
+                        >
+                          <SkipForward className="size-3 mr-1" />
+                          Skip
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           )
         })}
       </motion.div>
+
+      {/* Skip note dialog */}
+      <AnimatePresence>
+        {skipNoteDay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setSkipNoteDay(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm rounded-xl bg-background border shadow-xl p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                  <SkipForward className="size-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Skip {skipNoteDay.charAt(0).toUpperCase() + skipNoteDay.slice(1)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Add an optional note (e.g. "eating out", "leftovers")
+                  </p>
+                </div>
+              </div>
+              <div className="relative">
+                <MessageSquare className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Reason for skipping..."
+                  value={skipNoteText}
+                  onChange={(e) => setSkipNoteText(e.target.value)}
+                  className="h-10 pl-9 text-sm rounded-lg"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmSkip()
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setSkipNoteDay(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8"
+                  onClick={confirmSkip}
+                >
+                  Skip Day
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function MealPlanSkeleton() {
+function MealPlanSkeleton({ isDinnerOnly }: { isDinnerOnly: boolean }) {
+  const slotCount = isDinnerOnly ? 1 : 4
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -336,7 +548,7 @@ function MealPlanSkeleton() {
           <Card key={i}>
             <CardContent className="p-3 space-y-2">
               <Skeleton className="h-10 w-12" />
-              {Array.from({ length: 4 }).map((_, j) => (
+              {Array.from({ length: slotCount }).map((_, j) => (
                 <Skeleton key={j} className="h-8 w-full rounded-lg" />
               ))}
             </CardContent>
