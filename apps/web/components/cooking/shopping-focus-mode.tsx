@@ -99,11 +99,12 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className={cn(
-          'max-w-full h-[100dvh] sm:max-w-full sm:h-[100dvh] p-0 border-0 gap-0',
+          'max-w-full h-[100dvh] sm:max-w-full sm:h-[100dvh] p-0 border-0 gap-0 overflow-hidden rounded-none',
           'bg-background',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
         )}
+        style={{ display: 'flex', flexDirection: 'column' }}
         onInteractOutside={(e) => e.preventDefault()}
         showCloseButton={false}
       >
@@ -111,7 +112,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
           <DialogTitle>Shopping List</DialogTitle>
         </VisuallyHidden>
 
-        <div className="flex h-full flex-col">
+        <div className="flex flex-1 min-h-0 flex-col">
           {/* ── Header ── */}
           <div className="shrink-0 border-b border-border/40 bg-card/50 px-4 pt-4 pb-3 safe-area-inset-top">
             {/* Top row: close + title */}
