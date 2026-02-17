@@ -41,6 +41,7 @@ import {
   Copy,
   Dices,
   Expand,
+  LayoutList,
   MessageSquare,
   PanelLeftClose,
   Plus,
@@ -85,10 +86,12 @@ export function CookingSidebar({ open, onRecipeClick }: CookingSidebarProps) {
           <SheetHeader className="sr-only">
             <SheetTitle>Meal Plan & Shopping</SheetTitle>
           </SheetHeader>
-          <div className="flex h-full flex-col gap-3 overflow-y-auto p-3">
-            <MealPlanCard onRecipeClick={onRecipeClick} />
-            <ShoppingCard />
-          </div>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="flex flex-col gap-3 p-3">
+              <MealPlanCard onRecipeClick={onRecipeClick} />
+              <ShoppingCard />
+            </div>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
     )
@@ -102,11 +105,11 @@ export function CookingSidebar({ open, onRecipeClick }: CookingSidebarProps) {
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="border-border/40 bg-card/30 hidden shrink-0 flex-col gap-3 overflow-hidden border-r p-3 lg:flex"
+          className="border-border/40 bg-card/30 hidden shrink-0 flex-col overflow-hidden border-r lg:flex"
           style={{ display: 'flex' }}
         >
-          <ScrollArea className="flex-1">
-            <div className="flex flex-col gap-3">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="flex flex-col gap-3 p-3">
               <MealPlanCard onRecipeClick={onRecipeClick} />
               <ShoppingCard />
             </div>
@@ -930,6 +933,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
 
   const [newItemInput, setNewItemInput] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [showCategories, setShowCategories] = useState(true)
 
   useEffect(() => {
     refreshShoppingList()
@@ -984,6 +988,13 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
     )
   }, [shoppingList, isItemHidden])
 
+  const flatItems = useMemo(() => {
+    const all = grouped.flatMap(([, items]) => items)
+    const unchecked = all.filter((i) => !isItemChecked(i.ingredient))
+    const checked = all.filter((i) => isItemChecked(i.ingredient))
+    return [...unchecked, ...checked]
+  }, [grouped, isItemChecked])
+
   const visibleItemCount = grouped.reduce((sum, [, items]) => sum + items.length, 0) + manualItems.length
   const checkedCount =
     grouped.reduce((sum, [, items]) => sum + items.filter((i) => isItemChecked(i.ingredient)).length, 0) +
@@ -992,9 +1003,9 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
   const progressPercent = visibleItemCount > 0 ? Math.round((checkedCount / visibleItemCount) * 100) : 0
 
   return (
-    <div className="border-border/50 bg-card flex flex-col overflow-hidden rounded-xl border">
+    <div className="border-border/50 bg-card flex flex-col rounded-xl border">
       {/* Card header */}
-      <div className="border-border/50 border-b px-3 py-2.5">
+      <div className="border-border/50 border-b px-3 py-2.5 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-semibold">Shopping</h3>
@@ -1005,6 +1016,20 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
             )}
           </div>
           <div className="flex items-center gap-0.5">
+            {visibleItemCount > 0 && (
+              <button
+                onClick={() => setShowCategories((v) => !v)}
+                className={cn(
+                  'rounded p-1 transition-colors',
+                  showCategories
+                    ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    : 'text-foreground bg-muted'
+                )}
+                title={showCategories ? 'Show flat list' : 'Show categories'}
+              >
+                <LayoutList className="size-3" />
+              </button>
+            )}
             <button
               onClick={() => refreshShoppingList(true)}
               className={cn(
@@ -1106,91 +1131,75 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
           </div>
         ) : (
           <>
-            {/* Grouped items */}
-            {grouped.map(([category, items]) => {
-              const unchecked = items.filter((i) => !isItemChecked(i.ingredient))
-              const checked = items.filter((i) => isItemChecked(i.ingredient))
-              const sortedItems = [...unchecked, ...checked]
-              const categoryChecked = checked.length
-              const isCatCollapsed = collapsedCategories.has(category)
+            {showCategories ? (
+              /* Grouped items */
+              grouped.map(([category, items]) => {
+                const unchecked = items.filter((i) => !isItemChecked(i.ingredient))
+                const checked = items.filter((i) => isItemChecked(i.ingredient))
+                const sortedItems = [...unchecked, ...checked]
+                const categoryChecked = checked.length
+                const isCatCollapsed = collapsedCategories.has(category)
 
-              return (
-                <div key={category}>
-                  <button
-                    onClick={() => toggleCategory(category)}
-                    className="flex w-full items-center gap-1.5 py-1 text-left"
-                  >
-                    <ChevronDown
-                      className={cn(
-                        'size-3 text-muted-foreground transition-transform',
-                        isCatCollapsed && '-rotate-90'
-                      )}
-                    />
-                    <span className="text-[11px] font-semibold">{category}</span>
-                    <span className="text-[9px] text-muted-foreground tabular-nums ml-auto">
-                      {categoryChecked}/{items.length}
-                    </span>
-                  </button>
-                  {!isCatCollapsed && (
-                    <div className="ml-1 space-y-0.5">
-                      {sortedItems.map((item) => {
-                        const isChecked = isItemChecked(item.ingredient)
-                        return (
-                          <div
+                return (
+                  <div key={category}>
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className="flex w-full items-center gap-1.5 py-1 text-left"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          'size-3 text-muted-foreground transition-transform',
+                          isCatCollapsed && '-rotate-90'
+                        )}
+                      />
+                      <span className="text-[11px] font-semibold">{category}</span>
+                      <span className="text-[9px] text-muted-foreground tabular-nums ml-auto">
+                        {categoryChecked}/{items.length}
+                      </span>
+                    </button>
+                    {!isCatCollapsed && (
+                      <div className="ml-1 space-y-0.5">
+                        {sortedItems.map((item) => (
+                          <ShoppingItemRow
                             key={item.ingredient}
-                            className={cn(
-                              'group/item flex items-center gap-1.5 rounded px-1.5 py-1.5 transition-all',
-                              isChecked ? 'opacity-40' : 'hover:bg-muted/30'
-                            )}
-                          >
-                            <button onClick={() => toggleItem(item.ingredient)} className="shrink-0">
-                              {isChecked ? (
-                                <div className="size-4 rounded-full bg-green-500 flex items-center justify-center">
-                                  <Check className="size-2.5 text-white" />
-                                </div>
-                              ) : (
-                                <Circle className="size-4 text-muted-foreground/40" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <span className={cn(
-                                'text-[11px] transition-colors',
-                                isChecked ? 'line-through text-muted-foreground' : 'font-medium'
-                              )}>
-                                {item.ingredient}
-                              </span>
-                              {(item.amount > 0 || item.unit) && (
-                                <span className="text-[9px] text-muted-foreground/50 ml-1">
-                                  {item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ` : ''}{item.unit}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => hideItem(item.ingredient)}
-                              className="shrink-0 rounded p-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                              title="Remove item"
-                            >
-                              <X className="size-3" />
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                            item={item}
+                            isChecked={isItemChecked(item.ingredient)}
+                            onToggle={() => toggleItem(item.ingredient)}
+                            onHide={() => hideItem(item.ingredient)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            ) : (
+              /* Flat list — no category headers */
+              <div className="space-y-0.5">
+                {flatItems.map((item) => (
+                  <ShoppingItemRow
+                    key={item.ingredient}
+                    item={item}
+                    isChecked={isItemChecked(item.ingredient)}
+                    onToggle={() => toggleItem(item.ingredient)}
+                    onHide={() => hideItem(item.ingredient)}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Manual items */}
             {manualItems.length > 0 && (
               <div>
-                <div className="flex items-center gap-1.5 py-1">
-                  <span className="text-[11px] font-semibold">Custom Items</span>
-                  <span className="text-[9px] text-muted-foreground tabular-nums ml-auto">
-                    {manualItems.filter((i) => i.checked).length}/{manualItems.length}
-                  </span>
-                </div>
-                <div className="ml-1 space-y-0.5">
+                {showCategories && (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <span className="text-[11px] font-semibold">Custom Items</span>
+                    <span className="text-[9px] text-muted-foreground tabular-nums ml-auto">
+                      {manualItems.filter((i) => i.checked).length}/{manualItems.length}
+                    </span>
+                  </div>
+                )}
+                <div className={cn('space-y-0.5', showCategories && 'ml-1')}>
                   {manualItems.map((item, index) => (
                     <div
                       key={index}
@@ -1229,6 +1238,59 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Shopping Item Row ──
+
+function ShoppingItemRow({
+  item,
+  isChecked,
+  onToggle,
+  onHide,
+}: {
+  item: ShoppingListItem
+  isChecked: boolean
+  onToggle: () => void
+  onHide: () => void
+}) {
+  return (
+    <div
+      className={cn(
+        'group/item flex items-center gap-1.5 rounded px-1.5 py-1.5 transition-all',
+        isChecked ? 'opacity-40' : 'hover:bg-muted/30'
+      )}
+    >
+      <button onClick={onToggle} className="shrink-0">
+        {isChecked ? (
+          <div className="size-4 rounded-full bg-green-500 flex items-center justify-center">
+            <Check className="size-2.5 text-white" />
+          </div>
+        ) : (
+          <Circle className="size-4 text-muted-foreground/40" />
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <span className={cn(
+          'text-[11px] transition-colors',
+          isChecked ? 'line-through text-muted-foreground' : 'font-medium'
+        )}>
+          {item.ingredient}
+        </span>
+        {(item.amount > 0 || item.unit) && (
+          <span className="text-[9px] text-muted-foreground/50 ml-1">
+            {item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ` : ''}{item.unit}
+          </span>
+        )}
+      </div>
+      <button
+        onClick={onHide}
+        className="shrink-0 rounded p-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+        title="Remove item"
+      >
+        <X className="size-3" />
+      </button>
     </div>
   )
 }

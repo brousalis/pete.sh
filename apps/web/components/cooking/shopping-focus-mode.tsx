@@ -18,6 +18,7 @@ import {
   Check,
   ChevronDown,
   Circle,
+  LayoutList,
   Plus,
   ShoppingCart,
   Trash2,
@@ -47,6 +48,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
 
   const [newItemInput, setNewItemInput] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [showCategories, setShowCategories] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleAddItem = () => {
@@ -78,6 +80,13 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
       (cat) => [cat, groups.get(cat)!] as [string, ShoppingListItem[]]
     )
   }, [shoppingList, isItemHidden])
+
+  const flatItems = useMemo(() => {
+    const all = grouped.flatMap(([, items]) => items)
+    const unchecked = all.filter((i) => !isItemChecked(i.ingredient))
+    const checked = all.filter((i) => isItemChecked(i.ingredient))
+    return [...unchecked, ...checked]
+  }, [grouped, isItemChecked])
 
   const visibleItemCount = grouped.reduce((sum, [, items]) => sum + items.length, 0) + manualItems.length
   const checkedCount =
@@ -118,14 +127,28 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-12 rounded-full bg-muted/50 hover:bg-muted"
-                onClick={onClose}
-              >
-                <X className="size-6" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'size-10 rounded-full',
+                    showCategories ? 'bg-muted/50 hover:bg-muted' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  )}
+                  onClick={() => setShowCategories((v) => !v)}
+                  title={showCategories ? 'Show flat list' : 'Show categories'}
+                >
+                  <LayoutList className="size-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-12 rounded-full bg-muted/50 hover:bg-muted"
+                  onClick={onClose}
+                >
+                  <X className="size-6" />
+                </Button>
+              </div>
             </div>
 
             {/* Progress bar */}
@@ -186,71 +209,91 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                 </div>
               ) : (
                 <>
-                  {grouped.map(([category, items]) => {
-                    const unchecked = items.filter((i) => !isItemChecked(i.ingredient))
-                    const checked = items.filter((i) => isItemChecked(i.ingredient))
-                    const sortedItems = [...unchecked, ...checked]
-                    const categoryChecked = checked.length
-                    const isCatCollapsed = collapsedCategories.has(category)
+                  {showCategories ? (
+                    grouped.map(([category, items]) => {
+                      const unchecked = items.filter((i) => !isItemChecked(i.ingredient))
+                      const checked = items.filter((i) => isItemChecked(i.ingredient))
+                      const sortedItems = [...unchecked, ...checked]
+                      const categoryChecked = checked.length
+                      const isCatCollapsed = collapsedCategories.has(category)
 
-                    return (
-                      <div key={category} className="mb-2">
-                        <button
-                          onClick={() => toggleCategory(category)}
-                          className="flex w-full items-center gap-2 py-2 text-left touch-manipulation"
-                        >
-                          <ChevronDown
-                            className={cn(
-                              'size-4 text-muted-foreground transition-transform',
-                              isCatCollapsed && '-rotate-90'
+                      return (
+                        <div key={category} className="mb-2">
+                          <button
+                            onClick={() => toggleCategory(category)}
+                            className="flex w-full items-center gap-2 py-2 text-left touch-manipulation"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                'size-4 text-muted-foreground transition-transform',
+                                isCatCollapsed && '-rotate-90'
+                              )}
+                            />
+                            <span className="text-sm font-semibold flex-1">{category}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {categoryChecked}/{items.length}
+                            </span>
+                          </button>
+
+                          <AnimatePresence initial={false}>
+                            {!isCatCollapsed && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="space-y-0.5 pb-1">
+                                  {sortedItems.map((item) => {
+                                    const isChecked = isItemChecked(item.ingredient)
+                                    return (
+                                      <FocusItemRow
+                                        key={item.ingredient}
+                                        label={item.ingredient}
+                                        detail={item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ${item.unit}` : item.unit || undefined}
+                                        checked={isChecked}
+                                        onToggle={() => toggleItem(item.ingredient)}
+                                        onRemove={() => hideItem(item.ingredient)}
+                                      />
+                                    )
+                                  })}
+                                </div>
+                              </motion.div>
                             )}
+                          </AnimatePresence>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="space-y-0.5">
+                      {flatItems.map((item) => {
+                        const isChecked = isItemChecked(item.ingredient)
+                        return (
+                          <FocusItemRow
+                            key={item.ingredient}
+                            label={item.ingredient}
+                            detail={item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ${item.unit}` : item.unit || undefined}
+                            checked={isChecked}
+                            onToggle={() => toggleItem(item.ingredient)}
+                            onRemove={() => hideItem(item.ingredient)}
                           />
-                          <span className="text-sm font-semibold flex-1">{category}</span>
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {categoryChecked}/{items.length}
-                          </span>
-                        </button>
-
-                        <AnimatePresence initial={false}>
-                          {!isCatCollapsed && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="space-y-0.5 pb-1">
-                                {sortedItems.map((item) => {
-                                  const isChecked = isItemChecked(item.ingredient)
-                                  return (
-                                    <FocusItemRow
-                                      key={item.ingredient}
-                                      label={item.ingredient}
-                                      detail={item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ${item.unit}` : item.unit || undefined}
-                                      checked={isChecked}
-                                      onToggle={() => toggleItem(item.ingredient)}
-                                      onRemove={() => hideItem(item.ingredient)}
-                                    />
-                                  )
-                                })}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )
-                  })}
+                        )
+                      })}
+                    </div>
+                  )}
 
                   {/* Manual items */}
                   {manualItems.length > 0 && (
                     <div className="mb-2">
-                      <div className="flex items-center gap-2 py-2">
-                        <span className="text-sm font-semibold flex-1">Custom Items</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {manualItems.filter((i) => i.checked).length}/{manualItems.length}
-                        </span>
-                      </div>
+                      {showCategories && (
+                        <div className="flex items-center gap-2 py-2">
+                          <span className="text-sm font-semibold flex-1">Custom Items</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {manualItems.filter((i) => i.checked).length}/{manualItems.length}
+                          </span>
+                        </div>
+                      )}
                       <div className="space-y-0.5 pb-1">
                         {manualItems.map((item, index) => (
                           <FocusItemRow
