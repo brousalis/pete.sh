@@ -7,19 +7,20 @@ import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
     CreateMealPlanInput,
     MealPlan,
-    RecipeWithIngredients,
     ShoppingList,
     ShoppingListItem,
-    UpdateMealPlanInput,
+    ShoppingListStatePatch,
+    UpdateMealPlanInput
 } from '@/lib/types/cooking.types'
+import { sanitizeIngredientName } from '@/lib/utils/ingredient-sanitizer'
+import {
+    normalizeIngredientName,
+    normalizeUnit,
+    preferredUnit,
+    tryConvertUnits,
+} from '@/lib/utils/shopping-utils'
 import { cookingService } from './cooking.service'
 import { traderJoesService } from './trader-joes.service'
-import {
-  normalizeIngredientName,
-  normalizeUnit,
-  tryConvertUnits,
-  preferredUnit,
-} from '@/lib/utils/shopping-utils'
 
 /**
  * Parse a TJ ingredient string like "2 cups all-purpose flour" into structured parts.
@@ -355,9 +356,9 @@ export class MealPlanningService {
         // Try Trader Joe's recipes
         const tjRecipe = await traderJoesService.getRecipeById(recipeId)
         if (tjRecipe && tjRecipe.recipe_data.ingredients) {
-          const parsed = tjRecipe.recipe_data.ingredients.map(
-            parseTjIngredientString
-          )
+          const parsed = tjRecipe.recipe_data.ingredients
+            .map(parseTjIngredientString)
+            .map((p) => ({ ...p, name: sanitizeIngredientName(p.name).name }))
           recipeIngredients.push({
             recipeName: tjRecipe.name,
             ingredients: parsed,
@@ -474,10 +475,13 @@ export class MealPlanningService {
     }
 
     if (existingList) {
-      // Update existing
+      // Update only items — preserve checked_items, hidden_items, manual_items, trips
       const { data, error } = await supabase
         .from('shopping_lists')
-        .update(listData as never)
+        .update({
+          items: listData.items,
+          updated_at: listData.updated_at,
+        } as never)
         .eq('id', (existingList as { id: string }).id)
         .select()
         .single()
@@ -534,9 +538,14 @@ export class MealPlanningService {
       throw new Error(`Failed to fetch shopping list: ${error.message}`)
     }
 
+    const row = data as ShoppingList
     return {
-      ...(data as ShoppingList),
-      items: ((data as ShoppingList).items as unknown as ShoppingListItem[]) || [],
+      ...row,
+      items: (row.items as unknown as ShoppingListItem[]) || [],
+      checked_items: (row.checked_items as unknown as string[]) || [],
+      hidden_items: (row.hidden_items as unknown as string[]) || [],
+      manual_items: (row.manual_items as unknown as ShoppingList['manual_items']) || [],
+      trips: (row.trips as unknown as ShoppingList['trips']) || [],
     }
   }
 
@@ -560,6 +569,26 @@ export class MealPlanningService {
     if (error) {
       console.error('Error updating shopping list status:', error)
       throw new Error(`Failed to update shopping list: ${error.message}`)
+    }
+  }
+
+  async updateShoppingListState(
+    shoppingListId: string,
+    patch: ShoppingListStatePatch
+  ): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase
+      .from('shopping_lists')
+      .update({ ...patch, updated_at: new Date().toISOString() } as never)
+      .eq('id', shoppingListId)
+
+    if (error) {
+      console.error('Error updating shopping list state:', error)
+      throw new Error(`Failed to update shopping list state: ${error.message}`)
     }
   }
 

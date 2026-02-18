@@ -8,7 +8,7 @@ import { transitions } from '@/lib/animations'
 import type { Recipe, TraderJoesRecipe } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { ChefHat, Clock, Download, ExternalLink, Flame, Star, Users } from 'lucide-react'
+import { CalendarCheck, ChefHat, Clock, Download, ExternalLink, Flame, Star, Users } from 'lucide-react'
 import { AddToMealPlanPopover } from './add-to-meal-plan-popover'
 
 interface RecipeCardProps {
@@ -18,6 +18,8 @@ interface RecipeCardProps {
   className?: string
   fridgeScore?: number
   fridgeFilterActive?: boolean
+  cookCount?: number
+  lastCookedAt?: string
 }
 
 export function RecipeCard({
@@ -27,6 +29,8 @@ export function RecipeCard({
   className,
   fridgeScore,
   fridgeFilterActive: isFridgeActive,
+  cookCount,
+  lastCookedAt,
 }: RecipeCardProps) {
   const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
   const resolvedImage = resolveRecipeImageUrl(recipe.image_url)
@@ -144,6 +148,12 @@ export function RecipeCard({
                   {recipe.difficulty}
                 </Badge>
               )}
+              {cookCount != null && cookCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-green-500/80">
+                  <CalendarCheck className="size-2" />
+                  {cookCount}×
+                </span>
+              )}
               {recipe.tags && recipe.tags.length > 0 && (
                 <>
                   {recipe.tags.slice(0, 1).map((tag) => (
@@ -208,6 +218,7 @@ export function RecipeCardCompact({
   className,
   fridgeScore,
   fridgeFilterActive: isFridgeActive,
+  cookCount,
 }: RecipeCardProps) {
   const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
   const resolvedImage = resolveRecipeImageUrl(recipe.image_url)
@@ -298,6 +309,12 @@ export function RecipeCardCompact({
             >
               {recipe.difficulty}
             </Badge>
+          )}
+          {cookCount != null && cookCount > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-green-500/80">
+              <CalendarCheck className="size-2.5" />
+              {cookCount}×
+            </span>
           )}
           {recipe.tags?.slice(0, 2).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-[9px] h-4 px-1.5 font-normal">

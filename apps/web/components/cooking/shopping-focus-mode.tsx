@@ -2,29 +2,30 @@
 
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { useCooking } from '@/hooks/use-cooking-data'
 import { useShoppingState } from '@/hooks/use-shopping-state'
-import type { ShoppingListItem } from '@/lib/types/cooking.types'
+import type { ShoppingListItem, ShoppingTrip } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { categorizeIngredient, CATEGORY_ORDER } from '@/lib/utils/shopping-utils'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { formatDistanceToNow } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Check,
-  ChevronDown,
-  Circle,
-  LayoutList,
-  Plus,
-  ShoppingCart,
-  Trash2,
-  X,
+    Check,
+    ChevronDown,
+    Circle,
+    LayoutList,
+    PartyPopper,
+    ShoppingBag,
+    ShoppingCart,
+    Undo2,
+    X,
 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 interface ShoppingFocusModeProps {
   open: boolean
@@ -33,30 +34,24 @@ interface ShoppingFocusModeProps {
 
 export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
   const { shoppingList } = useCooking()
-  const shopState = useShoppingState(shoppingList?.id ?? null)
+  const shopState = useShoppingState(shoppingList ?? null)
   const {
     manualItems,
+    trips,
     toggleItem,
     hideItem,
     isChecked: isItemChecked,
     isHidden: isItemHidden,
-    clearChecked,
+    completeTrip,
+    undoLastTrip,
     toggleManualItem,
-    addManualItem,
     removeManualItem,
   } = shopState
 
-  const [newItemInput, setNewItemInput] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [showCategories, setShowCategories] = useState(true)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleAddItem = () => {
-    if (!newItemInput.trim()) return
-    addManualItem(newItemInput)
-    setNewItemInput('')
-    inputRef.current?.focus()
-  }
+  const [showTripHistory, setShowTripHistory] = useState(false)
+  const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
 
   const toggleCategory = (cat: string) => {
     setCollapsedCategories((prev) => {
@@ -95,6 +90,9 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
   const hasCheckedItems = checkedCount > 0
   const progressPercent = visibleItemCount > 0 ? Math.round((checkedCount / visibleItemCount) * 100) : 0
 
+  const totalAcquiredCount = trips.reduce((sum, t) => sum + t.items.length + t.manualItems.length, 0)
+  const weekComplete = visibleItemCount === 0 && trips.length > 0
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
@@ -122,9 +120,18 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                   <ShoppingCart className="size-5 text-green-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold leading-tight">Shopping List</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold leading-tight">Shopping List</h2>
+                    {trips.length > 0 && (
+                      <span className="text-xs font-medium text-green-600 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                        Trip {trips.length + (weekComplete ? 0 : 1)}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {checkedCount} of {visibleItemCount} items
+                    {weekComplete
+                      ? `All done — ${totalAcquiredCount} items across ${trips.length} trip${trips.length !== 1 ? 's' : ''}`
+                      : `${checkedCount} of ${visibleItemCount} items`}
                   </p>
                 </div>
               </div>
@@ -153,56 +160,93 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
             </div>
 
             {/* Progress bar */}
-            <div className="flex items-center gap-3 mb-3">
-              <ProgressRing percent={progressPercent} size={40} />
-              <div className="flex-1">
-                <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-green-500"
-                    initial={false}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-muted-foreground">
-                    {visibleItemCount - checkedCount} remaining
-                  </span>
-                  <span className="text-xs font-semibold tabular-nums text-green-500">
-                    {progressPercent}%
-                  </span>
+            {!weekComplete && (
+              <div className="flex items-center gap-3 mb-3">
+                <ProgressRing percent={progressPercent} size={40} />
+                <div className="flex-1">
+                  <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-green-500"
+                      initial={false}
+                      animate={{ width: `${progressPercent}%` }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {visibleItemCount - checkedCount} remaining
+                    </span>
+                    <span className="text-xs font-semibold tabular-nums text-green-500">
+                      {progressPercent}%
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Add item input */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Plus className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
-                <Input
-                  ref={inputRef}
-                  placeholder="Add an item..."
-                  value={newItemInput}
-                  onChange={(e) => setNewItemInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem() }}
-                  className="h-11 pl-10 text-sm bg-muted/40 border-border/40"
-                />
-              </div>
-              <Button
-                size="sm"
-                className="h-11 px-4"
-                onClick={handleAddItem}
-                disabled={!newItemInput.trim()}
+            {/* Trip history toggle */}
+            {trips.length > 0 && (
+              <button
+                onClick={() => setShowTripHistory((v) => !v)}
+                className="flex w-full items-center gap-2 rounded-lg bg-muted/30 px-3 py-2 text-left transition-colors hover:bg-muted/50"
               >
-                Add
-              </Button>
-            </div>
+                <Check className="size-3.5 text-green-500 shrink-0" />
+                <span className="text-xs font-medium flex-1">
+                  {trips.length} completed trip{trips.length !== 1 ? 's' : ''} &middot; {totalAcquiredCount} item{totalAcquiredCount !== 1 ? 's' : ''} acquired
+                </span>
+                <ChevronDown className={cn('size-3.5 text-muted-foreground transition-transform', showTripHistory && 'rotate-180')} />
+              </button>
+            )}
           </div>
+
+          {/* ── Trip history (collapsible) ── */}
+          <AnimatePresence initial={false}>
+            {showTripHistory && trips.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden shrink-0 border-b border-border/40 bg-muted/10"
+              >
+                <div className="px-4 py-3 space-y-2">
+                  {trips.map((trip, i) => (
+                    <TripHistoryCard
+                      key={trip.id}
+                      trip={trip}
+                      tripNumber={i + 1}
+                      isLatest={i === trips.length - 1}
+                      isExpanded={expandedTripId === trip.id}
+                      onToggleExpand={() => setExpandedTripId(expandedTripId === trip.id ? null : trip.id)}
+                      onUndo={i === trips.length - 1 ? undoLastTrip : undefined}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── Scrollable item list ── */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
             <div className="px-4 py-3 space-y-1">
-              {visibleItemCount === 0 ? (
+              {weekComplete ? (
+                <div className="py-16 text-center">
+                  <PartyPopper className="size-12 mx-auto mb-3 text-green-500/40" />
+                  <p className="text-lg font-semibold text-foreground">Week Complete</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    All {totalAcquiredCount} items acquired across {trips.length} trip{trips.length !== 1 ? 's' : ''}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 gap-1.5 text-muted-foreground"
+                    onClick={undoLastTrip}
+                  >
+                    <Undo2 className="size-3.5" />
+                    Undo last trip
+                  </Button>
+                </div>
+              ) : visibleItemCount === 0 ? (
                 <div className="py-16 text-center">
                   <ShoppingCart className="size-12 mx-auto mb-3 text-muted-foreground/15" />
                   <p className="text-sm text-muted-foreground">Your shopping list is empty</p>
@@ -317,18 +361,97 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
           {hasCheckedItems && (
             <div className="shrink-0 border-t border-border/40 bg-card/50 px-4 py-3 safe-area-inset-bottom">
               <Button
-                variant="outline"
-                className="w-full h-11 gap-2 text-sm"
-                onClick={clearChecked}
+                className="w-full h-11 gap-2 text-sm bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => completeTrip(shoppingList?.items ?? [])}
               >
-                <Trash2 className="size-4" />
-                Clear {checkedCount} checked item{checkedCount !== 1 ? 's' : ''}
+                <ShoppingBag className="size-4" />
+                Complete Trip ({checkedCount} item{checkedCount !== 1 ? 's' : ''})
               </Button>
             </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ── Trip History Card ──
+
+function TripHistoryCard({
+  trip,
+  tripNumber,
+  isLatest,
+  isExpanded,
+  onToggleExpand,
+  onUndo,
+}: {
+  trip: ShoppingTrip
+  tripNumber: number
+  isLatest: boolean
+  isExpanded: boolean
+  onToggleExpand: () => void
+  onUndo?: () => void
+}) {
+  const itemCount = trip.items.length + trip.manualItems.length
+
+  return (
+    <div className="rounded-lg bg-card/60 border border-border/30 overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex size-6 items-center justify-center rounded-full bg-green-500/15 shrink-0">
+          <Check className="size-3 text-green-500" />
+        </div>
+        <button onClick={onToggleExpand} className="flex-1 text-left min-w-0">
+          <span className="text-xs font-medium">Trip {tripNumber}</span>
+          <span className="text-[10px] text-muted-foreground ml-1.5">
+            {itemCount} item{itemCount !== 1 ? 's' : ''} &middot; {formatDistanceToNow(new Date(trip.completedAt), { addSuffix: true })}
+          </span>
+        </button>
+        {isLatest && onUndo && (
+          <button
+            onClick={onUndo}
+            className="shrink-0 rounded-md px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center gap-1"
+          >
+            <Undo2 className="size-2.5" />
+            Undo
+          </button>
+        )}
+        <button onClick={onToggleExpand} className="shrink-0 p-1">
+          <ChevronDown className={cn('size-3.5 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-2.5 space-y-1 border-t border-border/20 pt-2">
+              {trip.items.map((item) => (
+                <div key={item.ingredient} className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Check className="size-3 text-green-500/50 shrink-0" />
+                  <span className="truncate">{item.ingredient}</span>
+                  {(item.amount > 0 || item.unit) && (
+                    <span className="text-[10px] text-muted-foreground/50 shrink-0 ml-auto">
+                      {item.amount > 0 ? `${Math.round(item.amount * 100) / 100} ` : ''}{item.unit}
+                    </span>
+                  )}
+                </div>
+              ))}
+              {trip.manualItems.map((name) => (
+                <div key={name} className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Check className="size-3 text-green-500/50 shrink-0" />
+                  <span className="truncate">{name}</span>
+                  <span className="text-[10px] text-muted-foreground/40 ml-auto">(custom)</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

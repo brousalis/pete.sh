@@ -55,7 +55,16 @@ export function RecipeList({
     fridgeIngredients,
     fridgeFilterActive,
     setFridgeFilterActive,
+    completions,
   } = useCooking()
+
+  const cookCountMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const c of completions) {
+      map.set(c.recipe_id, (map.get(c.recipe_id) || 0) + 1)
+    }
+    return map
+  }, [completions])
 
   const {
     debouncedSearch,
@@ -430,6 +439,7 @@ export function RecipeList({
                 key={`own-${recipe.id}`}
                 recipe={recipe}
                 onClick={() => onRecipeClick?.(recipe)}
+                cookCount={cookCountMap.get(recipe.id)}
               />
             ))}
             {visibleTjRecipes.map((recipe) => (
@@ -567,4 +577,3 @@ function ingredientMatches(fridgeTokens: string[], recipeTokens: string[]): bool
     recipeTokens.some((rt) => rt.includes(ft) || ft.includes(rt))
   )
 }
-

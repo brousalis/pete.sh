@@ -5,7 +5,12 @@
  */
 
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
-import type { TraderJoesRecipe, Recipe, CreateRecipeInput } from '@/lib/types/cooking.types'
+import type { TraderJoesRecipe, CreateRecipeInput } from '@/lib/types/cooking.types'
+import {
+  sanitizeIngredientName,
+  sanitizeIngredientUnit,
+  mergeNotes,
+} from '@/lib/utils/ingredient-sanitizer'
 
 export class TraderJoesService {
   /**
@@ -258,10 +263,12 @@ export class TraderJoesService {
             name = ingredient
           }
 
+          const sanitized = sanitizeIngredientName(name)
           return {
-            name,
+            name: sanitized.name,
             amount,
-            unit,
+            unit: unit ? sanitizeIngredientUnit(unit) : unit,
+            notes: mergeNotes(null, sanitized.extractedNotes) ?? undefined,
             order_index: index,
           }
         }) || [],

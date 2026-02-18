@@ -4,46 +4,50 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
 } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { apiDelete, apiGet } from '@/lib/api/client'
-import type { RecipeWithIngredients } from '@/lib/types/cooking.types'
+import type { MealCompletion, RecipeWithIngredients } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
+import { format, formatDistanceToNow } from 'date-fns'
 import {
-    Beef,
-    ChefHat,
-    Clock,
-    Droplets,
-    Edit,
-    ExternalLink,
-    Flame,
-    History,
-    Minus,
-    PlayCircle,
-    Plus,
-    RotateCcw,
-    Star,
-    Trash2,
-    Wheat,
-    X
+  Beef,
+  CalendarCheck,
+  ChefHat,
+  Clock,
+  Droplets,
+  Edit,
+  ExternalLink,
+  Flame,
+  History,
+  Minus,
+  PlayCircle,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Star,
+  Trash2,
+  Wheat,
+  X
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AddToMealPlanPopover } from './add-to-meal-plan-popover'
+import { RecipeChatSheet } from './recipe-chat-sheet'
 import { RecipeVersionHistory } from './recipe-version-history'
 
 interface RecipeDetailSheetProps {
@@ -69,6 +73,7 @@ export function RecipeDetailSheet({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [scaledServings, setScaledServings] = useState<number | null>(null)
+  const [showRecipeChat, setShowRecipeChat] = useState(false)
 
   useEffect(() => {
     if (recipeId && open) {
@@ -100,6 +105,10 @@ export function RecipeDetailSheet({
       setLoading(false)
     }
   }
+
+  const handleRecipeUpdated = useCallback((updated: RecipeWithIngredients) => {
+    setRecipe(updated)
+  }, [])
 
   const handleDelete = async () => {
     if (!recipe) return
@@ -214,6 +223,15 @@ export function RecipeDetailSheet({
                     recipeName={recipe.name}
                     variant="button"
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 border-amber-500/30 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                    onClick={() => setShowRecipeChat(true)}
+                  >
+                    <Sparkles className="size-3.5 mr-1.5" />
+                    AI Chef
+                  </Button>
                   {onEdit && (
                     <Button
                       variant="outline"
@@ -342,12 +360,20 @@ export function RecipeDetailSheet({
                         Notes
                       </TabsTrigger>
                       <TabsTrigger
+                        value="cook-log"
+                        layoutId="recipe-detail-tabs"
+                        className="flex-1"
+                      >
+                        <CalendarCheck className="size-3.5 mr-1" />
+                        Cook Log
+                      </TabsTrigger>
+                      <TabsTrigger
                         value="history"
                         layoutId="recipe-detail-tabs"
                         className="flex-1"
                       >
                         <History className="size-3.5 mr-1" />
-                        History
+                        Versions
                       </TabsTrigger>
                     </TabsList>
 
@@ -481,6 +507,10 @@ export function RecipeDetailSheet({
                       )}
                     </TabsContent>
 
+                    <TabsContent value="cook-log" className="mt-4">
+                      <RecipeCookLog recipeId={recipe.id} />
+                    </TabsContent>
+
                     <TabsContent value="history" className="mt-4">
                       <RecipeVersionHistory
                         recipeId={recipe.id}
@@ -522,6 +552,15 @@ export function RecipeDetailSheet({
           </div>
         </DialogContent>
       </Dialog>
+
+      {recipe && (
+        <RecipeChatSheet
+          recipe={recipe}
+          open={showRecipeChat}
+          onOpenChange={setShowRecipeChat}
+          onRecipeUpdated={handleRecipeUpdated}
+        />
+      )}
     </>
   )
 }
@@ -610,6 +649,122 @@ function NutritionCard({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function RecipeCookLog({ recipeId }: { recipeId: string }) {
+  const [completions, setCompletions] = useState<MealCompletion[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    apiGet<MealCompletion[]>(`/api/cooking/completions?recipe_id=${recipeId}`).then((res) => {
+      if (res.success && res.data) setCompletions(res.data)
+      setLoading(false)
+    })
+  }, [recipeId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <span className="text-xs text-muted-foreground">Loading cook history...</span>
+      </div>
+    )
+  }
+
+  if (completions.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <CalendarCheck className="size-8 mx-auto mb-2 text-muted-foreground/20" />
+        <p className="text-sm text-muted-foreground">No cook history yet</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">
+          Mark meals as cooked in your meal plan to track history
+        </p>
+      </div>
+    )
+  }
+
+  const avgRating = (() => {
+    const rated = completions.filter((c) => c.rating)
+    if (rated.length === 0) return null
+    return rated.reduce((sum, c) => sum + c.rating!, 0) / rated.length
+  })()
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="flex items-center gap-4 rounded-lg border p-3">
+        <div className="text-center">
+          <span className="text-lg font-bold tabular-nums">{completions.length}</span>
+          <p className="text-[10px] text-muted-foreground">times cooked</p>
+        </div>
+        {avgRating && (
+          <>
+            <div className="h-8 w-px bg-border" />
+            <div className="text-center">
+              <div className="flex items-center gap-0.5">
+                <span className="text-lg font-bold tabular-nums">{avgRating.toFixed(1)}</span>
+                <Star className="size-4 fill-amber-400 text-amber-400" />
+              </div>
+              <p className="text-[10px] text-muted-foreground">avg rating</p>
+            </div>
+          </>
+        )}
+        {completions[0] && (
+          <>
+            <div className="h-8 w-px bg-border" />
+            <div className="text-center">
+              <span className="text-sm font-medium">
+                {formatDistanceToNow(new Date(completions[0].cooked_at), { addSuffix: true })}
+              </span>
+              <p className="text-[10px] text-muted-foreground">last cooked</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Timeline */}
+      <div className="space-y-2">
+        {completions.map((c) => (
+          <div key={c.id} className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors">
+            <div className="flex size-8 items-center justify-center rounded-full bg-green-500/15 shrink-0">
+              <CalendarCheck className="size-4 text-green-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {format(new Date(c.cooked_at), 'MMM d, yyyy')}
+                </span>
+                {c.day_of_week && c.meal_type && (
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5 capitalize">
+                    {c.day_of_week} {c.meal_type}
+                  </Badge>
+                )}
+              </div>
+              {c.rating && (
+                <div className="flex items-center gap-px mt-0.5">
+                  {[1, 2, 3, 4, 5, 6, 7].map((s) => (
+                    <Star
+                      key={s}
+                      className={cn(
+                        'size-3',
+                        s <= c.rating! ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20'
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+              {c.notes && (
+                <p className="text-xs text-muted-foreground mt-0.5">{c.notes}</p>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {formatDistanceToNow(new Date(c.cooked_at), { addSuffix: true })}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

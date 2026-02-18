@@ -2,7 +2,6 @@
 
 import { CookingMode } from '@/components/cooking/cooking-mode'
 import { HorizontalMealPlan, ShoppingCard } from '@/components/cooking/cooking-sidebar'
-import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
 import { FridgeManager } from '@/components/cooking/fridge-manager'
 import { FridgeScanButton, FridgeScanner } from '@/components/cooking/fridge-scanner'
 import { ImportRecipeDialog } from '@/components/cooking/import-recipe-dialog'
@@ -10,6 +9,7 @@ import { RecipeDetailSheet } from '@/components/cooking/recipe-detail'
 import { RecipeEditor } from '@/components/cooking/recipe-editor'
 import type { SourceFilter } from '@/components/cooking/recipe-list'
 import { RecipeList } from '@/components/cooking/recipe-list'
+import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
 import { TraderJoesDetailSheet } from '@/components/cooking/trader-joes-detail'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,11 +35,9 @@ import {
     Search,
     ShoppingCart,
     Snowflake,
-    Sparkles,
     Star,
     X,
 } from 'lucide-react'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -318,7 +316,7 @@ function CookingPageContent() {
                   className="hidden shrink-0 flex-col border-r border-border/40 overflow-hidden lg:flex"
                   style={{ display: 'flex' }}
                 >
-                  <ScrollArea className="flex-1">
+                  <ScrollArea className="flex-1 min-h-0">
                     <div className="p-3">
                       <ShoppingCard onOpenFocusMode={() => setShowShoppingFocus(true)} onCollapse={() => setSidebarOpen(false)} />
                     </div>
@@ -359,7 +357,7 @@ function CookingPageContent() {
                       value={search}
                       onChange={(e) => handleSearch(e.target.value)}
                       className={cn(
-                        'h-8 pl-8 text-sm bg-background/50 border-border/40 focus-visible:bg-background focus-visible:border-border',
+                        'h-8 pl-8 text-xs bg-background/50 border-border/40 focus-visible:bg-background focus-visible:border-border',
                         search && 'pr-8'
                       )}
                     />
@@ -405,13 +403,6 @@ function CookingPageContent() {
                     )}
 
                     <FridgeScanButton onClick={() => setShowFridgeScanner(true)} />
-
-                    <Link href="/cooking/chef">
-                      <Button variant="outline" size="sm" className="h-8 gap-1.5 px-3 ml-1 border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400">
-                        <Sparkles className="size-3.5" />
-                        <span className="hidden sm:inline text-xs">AI Chef</span>
-                      </Button>
-                    </Link>
 
                     <Button onClick={handleNewRecipe} size="sm" className="h-8 gap-1.5 px-3">
                       <Plus className="size-3.5" />

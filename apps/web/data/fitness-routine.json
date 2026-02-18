@@ -1273,7 +1273,28 @@
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "tuesday": {},
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-18T03:55:57.352Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "workout": {
+            "workoutId": "tuesday-core-posture",
+            "completed": true,
+            "completedAt": "2026-02-18T03:56:01.080Z",
+            "exercisesCompleted": [
+              "tuesday-a1",
+              "tuesday-a2",
+              "tuesday-b",
+              "tuesday-c",
+              "tuesday-d",
+              "tue-flush"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "wednesday": {},
         "thursday": {},
         "friday": {},
@@ -1573,5 +1594,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-17T21:47:46.554Z"
+  "updatedAt": "2026-02-18T20:31:07.647Z"
 }

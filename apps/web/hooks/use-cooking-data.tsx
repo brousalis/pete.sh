@@ -1,10 +1,12 @@
 'use client'
 
 import { useToast } from '@/hooks/use-toast'
-import { apiGet, apiPost, apiPut } from '@/lib/api/client'
+import { apiDelete, apiGet, apiPost, apiPut } from '@/lib/api/client'
 import type {
+    CreateMealCompletionInput,
     DayOfWeek,
     FridgeScan,
+    MealCompletion,
     MealPlan,
     MealPlanMode,
     Recipe,
@@ -79,6 +81,14 @@ interface CookingContextValue {
   skipDay: (day: DayOfWeek, note?: string) => Promise<void>
   unskipDay: (day: DayOfWeek) => Promise<void>
   randomFillDinner: (day: DayOfWeek) => Promise<void>
+
+  completions: MealCompletion[]
+  completionsForMealPlan: MealCompletion[]
+  createCompletion: (input: CreateMealCompletionInput) => Promise<MealCompletion | null>
+  updateCompletionRating: (id: string, rating: number) => Promise<void>
+  deleteCompletion: (id: string) => Promise<void>
+  getCompletionsForRecipe: (recipeId: string) => MealCompletion[]
+  isSlotCompleted: (day: DayOfWeek, mealType: string) => MealCompletion | undefined
 }
 
 const CookingContext = createContext<CookingContextValue | null>(null)
@@ -129,6 +139,8 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([])
   const [fridgeFilterActive, setFridgeFilterActive] = useState(false)
   const [latestScan, setLatestScan] = useState<FridgeScan | null>(null)
+
+  const [completions, setCompletions] = useState<MealCompletion[]>([])
 
   const [mealPlanMode, setMealPlanModeState] = useState<MealPlanMode>(() => {
     if (typeof window !== 'undefined') {
@@ -450,6 +462,73 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     }
   }, [recipes, updateMealSlot, toast])
 
+  const refreshCompletions = useCallback(async () => {
+    try {
+      const params = mealPlan?.id ? `?meal_plan_id=${mealPlan.id}` : ''
+      const response = await apiGet<MealCompletion[]>(`/api/cooking/completions${params}`)
+      if (response.success && response.data) {
+        setCompletions(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch completions:', error)
+    }
+  }, [mealPlan?.id])
+
+  const createCompletion = useCallback(async (input: CreateMealCompletionInput): Promise<MealCompletion | null> => {
+    try {
+      const response = await apiPost<MealCompletion>('/api/cooking/completions', input)
+      if (response.success && response.data) {
+        setCompletions((prev) => [response.data!, ...prev])
+        toast({ title: 'Meal marked as cooked' })
+        return response.data
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to log completion', variant: 'destructive' })
+    }
+    return null
+  }, [toast])
+
+  const updateCompletionRating = useCallback(async (id: string, rating: number) => {
+    try {
+      const response = await apiPut<MealCompletion>(`/api/cooking/completions/${id}`, { rating })
+      if (response.success && response.data) {
+        setCompletions((prev) => prev.map((c) => (c.id === id ? response.data! : c)))
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update rating', variant: 'destructive' })
+    }
+  }, [toast])
+
+  const deleteCompletion = useCallback(async (id: string) => {
+    try {
+      const response = await apiDelete(`/api/cooking/completions/${id}`)
+      if (response.success) {
+        setCompletions((prev) => prev.filter((c) => c.id !== id))
+        toast({ title: 'Completion removed' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to remove completion', variant: 'destructive' })
+    }
+  }, [toast])
+
+  const getCompletionsForRecipe = useCallback(
+    (recipeId: string) => completions.filter((c) => c.recipe_id === recipeId),
+    [completions]
+  )
+
+  const isSlotCompleted = useCallback(
+    (day: DayOfWeek, mealType: string) =>
+      completions.find(
+        (c) => c.meal_plan_id === mealPlan?.id && c.day_of_week === day && c.meal_type === mealType
+      ),
+    [completions, mealPlan?.id]
+  )
+
+  const completionsForMealPlan = useMemo(
+    () => completions.filter((c) => c.meal_plan_id === mealPlan?.id),
+    [completions, mealPlan?.id]
+  )
+
   useEffect(() => {
     refreshMealPlan()
   }, [refreshMealPlan])
@@ -460,6 +539,13 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       refreshShoppingList(true)
     }
   }, [mealPlanVersion, refreshShoppingList])
+
+  // Refresh completions when meal plan changes
+  useEffect(() => {
+    if (mealPlan?.id) {
+      refreshCompletions()
+    }
+  }, [mealPlan?.id, refreshCompletions])
 
   const getRecipeById = useCallback(
     (id: string) => recipes.find((r) => r.id === id),
@@ -518,6 +604,13 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       skipDay,
       unskipDay,
       randomFillDinner,
+      completions,
+      completionsForMealPlan,
+      createCompletion,
+      updateCompletionRating,
+      deleteCompletion,
+      getCompletionsForRecipe,
+      isSlotCompleted,
     }),
     [
       recipes,
@@ -556,6 +649,13 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       skipDay,
       unskipDay,
       randomFillDinner,
+      completions,
+      completionsForMealPlan,
+      createCompletion,
+      updateCompletionRating,
+      deleteCompletion,
+      getCompletionsForRecipe,
+      isSlotCompleted,
     ]
   )
 

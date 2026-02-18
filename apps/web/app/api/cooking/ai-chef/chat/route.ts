@@ -5,14 +5,16 @@
  * chat persistence, and disconnect resilience.
  */
 
-import { NextRequest } from 'next/server'
-import type { UIMessage } from 'ai'
+import { config } from '@/lib/config'
 import {
   assembleContext,
+  assembleRecipeContext,
   createChatStream,
+  createRecipeChatStream,
   saveChatMessages,
 } from '@/lib/services/ai-chef.service'
-import { config } from '@/lib/config'
+import type { UIMessage } from 'ai'
+import { NextRequest } from 'next/server'
 
 export const maxDuration = 60
 
@@ -28,12 +30,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { messages, chatId }: { messages: UIMessage[]; chatId?: string } =
+    const { messages, chatId, recipeId }: { messages: UIMessage[]; chatId?: string; recipeId?: string } =
       await request.json()
 
-    const systemContext = await assembleContext()
-
-    const result = await createChatStream(messages, systemContext)
+    let result
+    if (recipeId) {
+      const recipeContext = await assembleRecipeContext(recipeId)
+      result = await createRecipeChatStream(messages, recipeContext, recipeId)
+    } else {
+      const systemContext = await assembleContext()
+      result = await createChatStream(messages, systemContext)
+    }
 
     return result.toUIMessageStreamResponse({
       originalMessages: messages,

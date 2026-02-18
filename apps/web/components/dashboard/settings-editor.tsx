@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { apiGet, apiPost } from '@/lib/api/client'
-import { Activity, GitBranch, Layout, Loader2, Monitor, Palette, Settings, Sunrise, Watch } from 'lucide-react'
+import { Activity, ChefHat, GitBranch, Layout, Loader2, Monitor, Palette, Settings, Sunrise, Watch } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -53,6 +53,19 @@ interface VersionBackfillSummary {
   preview?: boolean
 }
 
+interface SanitizationPreview {
+  ingredients: {
+    total_scanned: number
+    total_changed: number
+    changes: { id: string; recipe_id: string; before: { name: string }; after: { name: string } }[]
+  }
+  cache: {
+    total_recipes_scanned: number
+    total_recipes_changed: number
+    total_ingredients_changed: number
+  }
+}
+
 export function SettingsEditor() {
   const { settings, isLoading, error, updateSettings } = useSettings()
   const [backfillLoading, setBackfillLoading] = useState(false)
@@ -60,6 +73,50 @@ export function SettingsEditor() {
   const [routineBackfillLoading, setRoutineBackfillLoading] = useState(false)
   const [versionBackfillLoading, setVersionBackfillLoading] = useState(false)
   const [versionBackfillPreview, setVersionBackfillPreview] = useState<VersionBackfillSummary | null>(null)
+  const [sanitizeLoading, setSanitizeLoading] = useState(false)
+  const [sanitizePreview, setSanitizePreview] = useState<SanitizationPreview | null>(null)
+
+  // Preview ingredient sanitization (dry run)
+  const handlePreviewSanitize = async () => {
+    setSanitizeLoading(true)
+    try {
+      const response = await apiPost<SanitizationPreview>(
+        '/api/cooking/recipes/sanitize-ingredients?dry_run=true'
+      )
+      if (response.success && response.data) {
+        setSanitizePreview(response.data)
+      } else {
+        toast.error('Failed to preview sanitization')
+      }
+    } catch {
+      toast.error('Failed to preview sanitization')
+    } finally {
+      setSanitizeLoading(false)
+    }
+  }
+
+  // Execute ingredient sanitization
+  const handleExecuteSanitize = async () => {
+    setSanitizeLoading(true)
+    try {
+      const response = await apiPost<SanitizationPreview>(
+        '/api/cooking/recipes/sanitize-ingredients?dry_run=false'
+      )
+      if (response.success && response.data) {
+        const { ingredients, cache } = response.data
+        toast.success(
+          `Sanitized ${ingredients.total_changed} ingredients + ${cache.total_ingredients_changed} cached ingredients across ${cache.total_recipes_changed} recipes`
+        )
+        setSanitizePreview(null)
+      } else {
+        toast.error('Failed to execute sanitization')
+      }
+    } catch {
+      toast.error('Failed to execute sanitization')
+    } finally {
+      setSanitizeLoading(false)
+    }
+  }
 
   // Preview backfill
   const handlePreviewBackfill = async () => {
@@ -508,6 +565,108 @@ export function SettingsEditor() {
             {!versionBackfillPreview && (
               <p className="text-muted-foreground text-xs">
                 Click Preview first to see how many completions need version stamping.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cooking Data Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <ChefHat className="text-muted-foreground size-4" />
+            <CardTitle className="text-base">Cooking Data</CardTitle>
+          </div>
+          <CardDescription>
+            Manage and clean up your recipe data from Trader Joe&apos;s imports
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                Ingredient Sanitization
+              </label>
+              <p className="text-muted-foreground text-xs">
+                Strip &ldquo;TJ&apos;s&rdquo; / &ldquo;Trader Joe&apos;s&rdquo; branding from ingredient names,
+                extract preparation notes, and standardize formatting. Safe to re-run
+                after syncing new recipes.
+              </p>
+            </div>
+
+            {sanitizePreview && (
+              <div className="bg-muted/50 rounded-lg border p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2">
+                  <ChefHat className="size-4 text-orange-500" />
+                  <span className="font-medium">Preview Results</span>
+                </div>
+                <div className="text-muted-foreground space-y-1 text-xs">
+                  <p>
+                    Imported ingredients scanned:{' '}
+                    <span className="text-foreground font-medium">
+                      {sanitizePreview.ingredients.total_scanned}
+                    </span>
+                  </p>
+                  <p>
+                    Would change:{' '}
+                    <span className="text-foreground font-medium">
+                      {sanitizePreview.ingredients.total_changed}
+                    </span>
+                  </p>
+                  <p>
+                    Cached recipes scanned:{' '}
+                    <span className="text-foreground font-medium">
+                      {sanitizePreview.cache.total_recipes_scanned}
+                    </span>
+                  </p>
+                  <p>
+                    Cached ingredients would change:{' '}
+                    <span className="text-foreground font-medium">
+                      {sanitizePreview.cache.total_ingredients_changed}
+                    </span>
+                  </p>
+                </div>
+                {sanitizePreview.ingredients.total_changed === 0 &&
+                  sanitizePreview.cache.total_ingredients_changed === 0 && (
+                    <p className="text-muted-foreground mt-2 text-xs italic">
+                      Everything is already clean — nothing to change.
+                    </p>
+                  )}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewSanitize}
+                disabled={sanitizeLoading}
+              >
+                {sanitizeLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <ChefHat className="mr-2 size-3" />
+                )}
+                Preview
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleExecuteSanitize}
+                disabled={sanitizeLoading || !sanitizePreview}
+              >
+                {sanitizeLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <ChefHat className="mr-2 size-3" />
+                )}
+                Run Sanitization
+              </Button>
+            </div>
+            {!sanitizePreview && (
+              <p className="text-muted-foreground text-xs">
+                Click Preview first to see how many ingredients will be cleaned up.
               </p>
             )}
           </div>

@@ -97,11 +97,33 @@ export interface DayMeals {
 
 export type MealPlanMode = 'dinner-only' | 'all-meals'
 
+export interface ManualItem {
+  name: string
+  checked: boolean
+}
+
+export interface TripItem {
+  ingredient: string
+  amount: number
+  unit: string
+}
+
+export interface ShoppingTrip {
+  id: string
+  completedAt: string
+  items: TripItem[]
+  manualItems: string[]
+}
+
 export interface ShoppingList {
   id: string
   meal_plan_id: string
   items: ShoppingListItem[]
   status: ShoppingListStatus
+  checked_items: string[]
+  hidden_items: string[]
+  manual_items: ManualItem[]
+  trips: ShoppingTrip[]
   created_at: string
   updated_at: string
 }
@@ -110,8 +132,14 @@ export interface ShoppingListItem {
   ingredient: string
   amount: number
   unit: string
-  recipes: string[] // recipe names using this ingredient
-  checked?: boolean // for UI state
+  recipes: string[]
+}
+
+export interface ShoppingListStatePatch {
+  checked_items?: string[]
+  hidden_items?: string[]
+  manual_items?: ManualItem[]
+  trips?: ShoppingTrip[]
 }
 
 export interface TraderJoesRecipe {
@@ -181,4 +209,52 @@ export interface FridgeScan {
   confirmed_items: string[]
   recipes_matched: number
   created_at: string
+}
+
+export interface MealCompletion {
+  id: string
+  recipe_id: string
+  meal_plan_id?: string
+  day_of_week?: DayOfWeek
+  meal_type?: string
+  rating?: number // 1–7
+  notes?: string
+  cooked_at: string
+  created_at: string
+}
+
+export interface CreateMealCompletionInput {
+  recipe_id: string
+  meal_plan_id?: string
+  day_of_week?: DayOfWeek
+  meal_type?: string
+  rating?: number
+  notes?: string
+  cooked_at?: string
+}
+
+export interface UpdateMealCompletionInput {
+  rating?: number
+  notes?: string
+}
+
+// ── Ingredient sanitization report types ──
+
+export interface IngredientChange {
+  id: string
+  recipe_id: string
+  before: { name: string; notes: string | null; unit: string | null }
+  after: { name: string; notes: string | null; unit: string | null }
+}
+
+export interface SanitizationReport {
+  total_scanned: number
+  total_changed: number
+  changes: IngredientChange[]
+}
+
+export interface CacheSanitizationReport {
+  total_recipes_scanned: number
+  total_recipes_changed: number
+  total_ingredients_changed: number
 }

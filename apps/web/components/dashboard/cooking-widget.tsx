@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { DashboardCardHeader } from '@/components/dashboard/dashboard-card-header'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { apiGet } from '@/lib/api/client'
 import type { MealPlan, Recipe, ShoppingList } from '@/lib/types/cooking.types'
 import { format } from 'date-fns'
-import { ChefHat, UtensilsCrossed, ShoppingCart } from 'lucide-react'
+import { ChefHat, ShoppingCart, UtensilsCrossed } from 'lucide-react'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export function CookingWidget() {
   const [todayMeals, setTodayMeals] = useState<{
@@ -67,20 +66,10 @@ export function CookingWidget() {
             `/api/cooking/meal-plans/${mealPlanRes.data.id}/shopping-list`
           )
           if (shopRes.success && shopRes.data) {
-            const stored = localStorage.getItem(
-              `shopping-list-${shopRes.data.id}`
-            )
-            let checkedCount = 0
-            if (stored) {
-              try {
-                const parsed = JSON.parse(stored)
-                checkedCount = (parsed.checked || []).length
-              } catch {
-                // Ignore
-              }
-            }
+            const hiddenCount = (shopRes.data.hidden_items || []).length
+            const checkedCount = (shopRes.data.checked_items || []).length
             setShoppingProgress({
-              total: shopRes.data.items.length,
+              total: Math.max(0, shopRes.data.items.length - hiddenCount),
               checked: checkedCount,
             })
           }

@@ -19,17 +19,17 @@ import {
 import { z } from 'zod'
 
 import { config } from '@/lib/config'
-import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import { cookingService } from '@/lib/services/cooking.service'
 import { mealPlanningService } from '@/lib/services/meal-planning.service'
 import { traderJoesService } from '@/lib/services/trader-joes.service'
+import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
   CookingPreferencesSchema,
   WeekPlanSuggestionSchema,
-  type CookingPreferences,
   type ConversationSummary,
+  type CookingPreferences,
 } from '@/lib/types/ai-chef.types'
-import type { MealPlan, Recipe, DayOfWeek, WeeklyMeals, DayMeals } from '@/lib/types/cooking.types'
+import type { DayMeals, DayOfWeek, MealPlan, Recipe, WeeklyMeals } from '@/lib/types/cooking.types'
 
 // ============================================
 // LANGUAGE MODEL MIDDLEWARE
@@ -381,7 +381,191 @@ Notes: ${preferences.notes || 'none'}`)
 }
 
 // ============================================
-// STREAMING CHAT
+// RECIPE-FOCUSED CONTEXT
+// ============================================
+
+export async function assembleRecipeContext(recipeId: string): Promise<string> {
+  const [recipe, versions, preferences] = await Promise.all([
+    cookingService.getRecipe(recipeId),
+    cookingService.getRecipeVersions(recipeId),
+    getPreferences(),
+  ])
+
+  if (!recipe) throw new Error(`Recipe ${recipeId} not found`)
+
+  const sections: string[] = []
+
+  const ingredientsList = recipe.ingredients
+    .map((ing, i) => {
+      const parts = [`${i + 1}. ${ing.name}`]
+      if (ing.amount) parts.push(`— ${ing.amount}`)
+      if (ing.unit) parts.push(ing.unit)
+      if (ing.notes) parts.push(`(${ing.notes})`)
+      return parts.join(' ')
+    })
+    .join('\n')
+
+  const instructionsList = recipe.instructions
+    .map((step) => `${step.step_number}. ${step.instruction}${step.duration ? ` (${step.duration} min)` : ''}`)
+    .join('\n')
+
+  const metaLines = [
+    `ID: ${recipe.id}`,
+    recipe.description && `Description: ${recipe.description}`,
+    recipe.prep_time != null && `Prep Time: ${recipe.prep_time} min`,
+    recipe.cook_time != null && `Cook Time: ${recipe.cook_time} min`,
+    recipe.servings != null && `Servings: ${recipe.servings}`,
+    recipe.difficulty && `Difficulty: ${recipe.difficulty}`,
+    recipe.tags?.length && `Tags: ${recipe.tags.join(', ')}`,
+    recipe.notes && `Notes: ${recipe.notes}`,
+    recipe.calories_per_serving && `Calories/serving: ${recipe.calories_per_serving}`,
+    recipe.protein_g && `Protein: ${recipe.protein_g}g`,
+    recipe.fat_g && `Fat: ${recipe.fat_g}g`,
+    recipe.carbs_g && `Carbs: ${recipe.carbs_g}g`,
+  ].filter(Boolean).join('\n')
+
+  sections.push(`## Recipe: ${recipe.name}\n${metaLines}\n\n### Ingredients\n${ingredientsList || 'No ingredients listed'}\n\n### Instructions\n${instructionsList || 'No instructions listed'}`)
+
+  if (versions.length > 0) {
+    const versionSummary = versions.slice(0, 5)
+      .map((v) => `- v${v.version_number}: "${v.commit_message}" (${v.created_at.split('T')[0]})`)
+      .join('\n')
+    sections.push(`## Version History (${versions.length} total)\n${versionSummary}`)
+  }
+
+  sections.push(`## User Preferences\nDislikes: ${preferences.dislikes.length > 0 ? preferences.dislikes.join(', ') : 'none'}\nAllergies: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'none'}\nDietary: ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'no restrictions'}`)
+
+  return sections.join('\n\n---\n\n')
+}
+
+// ============================================
+// RECIPE-FOCUSED CHAT STREAM
+// ============================================
+
+export async function createRecipeChatStream(
+  uiMessages: UIMessage[],
+  recipeContext: string,
+  recipeId: string
+) {
+  const model = getModel()
+  const modelMessages = await convertToModelMessages(uiMessages)
+
+  return streamText({
+    model,
+    system: `You are an expert AI Chef helping the user refine a specific recipe. The full recipe details, including ingredients, instructions, and version history, are provided below.
+
+Your personality is warm, knowledgeable, and creative. When discussing changes, be specific about what you'd modify and why.
+
+## Key Behaviors
+- When the user asks to improve, simplify, or modify the recipe, discuss the changes first, then use the **proposeRecipeVersion** tool to create a formal proposal they can review and apply.
+- ALWAYS use proposeRecipeVersion when suggesting concrete changes — never just describe them in text. The tool renders a beautiful preview card with "Apply" / "Dismiss" buttons.
+- When proposing changes, include ALL ingredients and ALL instructions in the proposal (not just the changed ones) — the proposal replaces the entire recipe.
+- Respect food dislikes and allergies listed in the user's preferences.
+- Be creative but practical — suggest changes that enhance flavor, nutrition, or simplicity.
+- If the user asks about substitutions, explain the trade-offs (flavor, texture, nutrition).
+
+Today's date: ${getLocalDateString()}
+
+${recipeContext}`,
+    messages: modelMessages,
+    stopWhen: stepCountIs(6),
+    experimental_transform: smoothStream({ delayInMs: 20, chunking: 'word' }),
+    tools: {
+      proposeRecipeVersion: tool({
+        description: 'Propose an updated version of the current recipe. This shows the user a preview card with the changes for them to review and apply. Include ALL ingredients and ALL instructions in the proposal, not just changed ones — the proposal replaces the entire recipe.',
+        inputSchema: z.object({
+          commitMessage: z.string().describe('Brief description of what changed, e.g. "Replaced red peppers with roasted zucchini"'),
+          name: z.string().optional().describe('New recipe name (omit to keep current)'),
+          description: z.string().optional().describe('New description (omit to keep current)'),
+          prepTime: z.number().optional().describe('New prep time in minutes'),
+          cookTime: z.number().optional().describe('New cook time in minutes'),
+          servings: z.number().optional().describe('New number of servings'),
+          ingredients: z.array(z.object({
+            name: z.string(),
+            amount: z.number().optional(),
+            unit: z.string().optional(),
+            notes: z.string().optional(),
+          })).describe('Complete list of ingredients for the updated recipe'),
+          instructions: z.array(z.object({
+            stepNumber: z.number(),
+            instruction: z.string(),
+            duration: z.number().optional().describe('Step duration in minutes'),
+          })).describe('Complete list of instructions for the updated recipe'),
+          notes: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+        }),
+        execute: async (proposed) => {
+          try {
+            const currentRecipe = await cookingService.getRecipe(recipeId)
+            if (!currentRecipe) return { status: 'error', message: 'Recipe not found' }
+
+            const merged = {
+              name: proposed.name ?? currentRecipe.name,
+              description: proposed.description ?? currentRecipe.description,
+              prep_time: proposed.prepTime ?? currentRecipe.prep_time,
+              cook_time: proposed.cookTime ?? currentRecipe.cook_time,
+              servings: proposed.servings ?? currentRecipe.servings,
+              notes: proposed.notes ?? currentRecipe.notes,
+              tags: proposed.tags ?? currentRecipe.tags,
+              ingredients: proposed.ingredients.map((ing, i) => ({
+                name: ing.name,
+                amount: ing.amount,
+                unit: ing.unit,
+                notes: ing.notes,
+                order_index: i,
+              })),
+              instructions: proposed.instructions.map((step) => ({
+                step_number: step.stepNumber,
+                instruction: step.instruction,
+                duration: step.duration,
+              })),
+            }
+
+            return {
+              status: 'pending_confirmation',
+              commitMessage: proposed.commitMessage,
+              recipeId,
+              proposed: merged,
+              current: {
+                name: currentRecipe.name,
+                description: currentRecipe.description,
+                prep_time: currentRecipe.prep_time,
+                cook_time: currentRecipe.cook_time,
+                servings: currentRecipe.servings,
+                notes: currentRecipe.notes,
+                tags: currentRecipe.tags,
+                ingredients: currentRecipe.ingredients.map((ing) => ({
+                  name: ing.name,
+                  amount: ing.amount,
+                  unit: ing.unit,
+                  notes: ing.notes,
+                })),
+                instructions: currentRecipe.instructions,
+              },
+            }
+          } catch (error) {
+            return {
+              status: 'error',
+              message: error instanceof Error ? error.message : 'Failed to prepare version preview',
+            }
+          }
+        },
+      }),
+    },
+    onStepFinish({ finishReason, usage, toolCalls }) {
+      if (toolCalls && toolCalls.length > 0) {
+        for (const tc of toolCalls) {
+          console.log(
+            `[AI Chef Recipe] Tool ${tc.toolName}: reason=${finishReason} | tokens=${usage?.totalTokens || 0}`
+          )
+        }
+      }
+    },
+  })
+}
+
+// ============================================
+// MEAL PLANNING CHAT STREAM
 // ============================================
 
 export async function createChatStream(

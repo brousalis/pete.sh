@@ -12,11 +12,12 @@ import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCooking } from '@/hooks/use-cooking-data'
+import { useShoppingState } from '@/hooks/use-shopping-state'
 import { useToast } from '@/hooks/use-toast'
 import { transitions } from '@/lib/animations'
 import type { ShoppingListItem } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
-import { categorizeIngredient, CATEGORY_ORDER, normalizeIngredientName } from '@/lib/utils/shopping-utils'
+import { categorizeIngredient, CATEGORY_ORDER } from '@/lib/utils/shopping-utils'
 import { motion } from 'framer-motion'
 import {
     CheckCircle2,
@@ -30,98 +31,38 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-interface ManualItem {
-  name: string
-  checked: boolean
-}
-
 interface ShoppingListProps {
   onRecipeClick?: (recipeName: string) => void
 }
 
 export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
-  const { shoppingList, shoppingListLoading, refreshShoppingList, mealPlan } =
+  const { shoppingList, shoppingListLoading, refreshShoppingList } =
     useCooking()
   const { toast } = useToast()
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
-  const [manualItems, setManualItems] = useState<ManualItem[]>([])
+  const shopState = useShoppingState(shoppingList ?? null)
+  const {
+    manualItems,
+    toggleItem,
+    isChecked: isItemChecked,
+    isHidden: isItemHidden,
+    toggleManualItem,
+    addManualItem,
+    removeManualItem,
+  } = shopState
+
   const [newItemInput, setNewItemInput] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
     new Set()
   )
 
-  // Load on mount and when meal plan changes
   useEffect(() => {
     refreshShoppingList()
   }, [refreshShoppingList])
 
-  // Restore checked state from localStorage (migrate to normalized keys)
-  useEffect(() => {
-    if (shoppingList) {
-      const stored = localStorage.getItem(`shopping-list-${shoppingList.id}`)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          const rawChecked: string[] = parsed.checked || []
-          // Migrate old raw-name keys to normalized keys
-          const normalized = new Set(rawChecked.map((name: string) => normalizeIngredientName(name)))
-          setCheckedItems(normalized)
-          setManualItems(parsed.manual || [])
-        } catch {
-          // Ignore parse errors
-        }
-      }
-    }
-  }, [shoppingList?.id])
-
-  // Persist to localStorage
-  const persistState = (
-    checked: Set<string>,
-    manual: ManualItem[]
-  ) => {
-    if (shoppingList) {
-      localStorage.setItem(
-        `shopping-list-${shoppingList.id}`,
-        JSON.stringify({
-          checked: Array.from(checked),
-          manual,
-        })
-      )
-    }
-  }
-
-  const handleToggleItem = (ingredient: string) => {
-    const key = normalizeIngredientName(ingredient)
-    const newChecked = new Set(checkedItems)
-    if (newChecked.has(key)) {
-      newChecked.delete(key)
-    } else {
-      newChecked.add(key)
-    }
-    setCheckedItems(newChecked)
-    persistState(newChecked, manualItems)
-  }
-
-  const handleToggleManualItem = (index: number) => {
-    const updated = manualItems.map((item, i) =>
-      i === index ? { name: item.name, checked: !item.checked } : item
-    )
-    setManualItems(updated)
-    persistState(checkedItems, updated)
-  }
-
   const handleAddManualItem = () => {
     if (!newItemInput.trim()) return
-    const updated = [...manualItems, { name: newItemInput.trim(), checked: false }]
-    setManualItems(updated)
+    addManualItem(newItemInput)
     setNewItemInput('')
-    persistState(checkedItems, updated)
-  }
-
-  const handleRemoveManualItem = (index: number) => {
-    const updated = manualItems.filter((_, i) => i !== index)
-    setManualItems(updated)
-    persistState(checkedItems, updated)
   }
 
   const handleCopyToClipboard = () => {
@@ -130,7 +71,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
       grouped.forEach(([category, items]) => {
         lines.push(`\n${category}:`)
         items.forEach((item) => {
-          const checked = checkedItems.has(normalizeIngredientName(item.ingredient))
+          const checked = isItemChecked(item.ingredient)
           const amountStr = item.amount > 0 ? ` - ${Math.round(item.amount * 100) / 100} ${item.unit}` : item.unit ? ` - ${item.unit}` : ''
           lines.push(
             `  ${checked ? '✓' : '○'} ${item.ingredient}${amountStr}`
@@ -158,11 +99,12 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
     setCollapsedCategories(newSet)
   }
 
-  // Group items by category
+  // Group visible (non-hidden) items by category
   const grouped = useMemo(() => {
     if (!shoppingList) return []
     const groups = new Map<string, ShoppingListItem[]>()
     shoppingList.items.forEach((item) => {
+      if (isItemHidden(item.ingredient)) return
       const category = categorizeIngredient(item.ingredient)
       if (!groups.has(category)) groups.set(category, [])
       groups.get(category)!.push(item)
@@ -170,21 +112,20 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
     return CATEGORY_ORDER.filter((cat) => groups.has(cat)).map(
       (cat) => [cat, groups.get(cat)!] as [string, ShoppingListItem[]]
     )
-  }, [shoppingList])
+  }, [shoppingList, isItemHidden])
 
-  // Progress
   const totalItems =
-    (shoppingList?.items.length || 0) + manualItems.length
+    grouped.reduce((sum, [, items]) => sum + items.length, 0) + manualItems.length
   const checkedCount =
-    (shoppingList?.items.filter((item) => checkedItems.has(normalizeIngredientName(item.ingredient)))
-      .length || 0) + manualItems.filter((i) => i.checked).length
+    grouped.reduce((sum, [, items]) => sum + items.filter((i) => isItemChecked(i.ingredient)).length, 0) +
+    manualItems.filter((i) => i.checked).length
   const progressPercent = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
 
   if (shoppingListLoading) {
     return <ShoppingListSkeleton />
   }
 
-  if (!shoppingList || (shoppingList.items.length === 0 && manualItems.length === 0)) {
+  if (!shoppingList || (grouped.length === 0 && manualItems.length === 0)) {
     return (
       <div className="py-16 text-center">
         <ShoppingCart className="size-10 mx-auto mb-3 text-muted-foreground/40" />
@@ -195,7 +136,6 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
           Plan your meals to automatically generate a shopping list
         </p>
 
-        {/* Still allow manual items */}
         <div className="max-w-xs mx-auto">
           <div className="flex gap-2">
             <Input
@@ -269,7 +209,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
       <div className="space-y-2">
         {grouped.map(([category, items]) => {
           const categoryChecked = items.filter((item) =>
-            checkedItems.has(normalizeIngredientName(item.ingredient))
+            isItemChecked(item.ingredient)
           ).length
           const isCollapsed = collapsedCategories.has(category)
 
@@ -295,7 +235,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                   <CardContent className="px-3 pb-3 pt-0">
                     <div className="space-y-1">
                       {items.map((item) => {
-                        const isChecked = checkedItems.has(normalizeIngredientName(item.ingredient))
+                        const isChecked = isItemChecked(item.ingredient)
                         return (
                           <motion.div
                             key={item.ingredient}
@@ -308,7 +248,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                               unit={item.unit}
                               recipes={item.recipes}
                               checked={isChecked}
-                              onToggle={() => handleToggleItem(item.ingredient)}
+                              onToggle={() => toggleItem(item.ingredient)}
                               onRecipeClick={onRecipeClick}
                             />
                           </motion.div>
@@ -339,7 +279,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                     key={index}
                     className="group flex items-center gap-2.5 rounded-lg p-2 hover:bg-muted/50 transition-colors"
                   >
-                    <button onClick={() => handleToggleManualItem(index)}>
+                    <button onClick={() => toggleManualItem(index)}>
                       {item.checked ? (
                         <CheckCircle2 className="size-5 text-green-600" />
                       ) : (
@@ -355,7 +295,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                       {item.name}
                     </span>
                     <button
-                      onClick={() => handleRemoveManualItem(index)}
+                      onClick={() => removeManualItem(index)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="size-3.5 text-muted-foreground hover:text-destructive" />

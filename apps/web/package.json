@@ -26,7 +26,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next out dist build .turbo"
+    "clean": "rm -rf .next out dist build .turbo",
+    "migrate": "node scripts/run-migrations.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.44",
@@ -117,6 +118,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
     "node-notifier": "^10.0.1",
+    "pg": "^8.13.0",
     "postcss": "^8.5.0",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",

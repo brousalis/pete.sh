@@ -33,12 +33,17 @@ export async function GET(request: NextRequest) {
     const weekStart = weekStartParam ? new Date(weekStartParam) : undefined
     const mealPlan = await mealPlanningService.getMealPlan(weekStart)
 
-    return withCors(
+    const response = withCors(
       NextResponse.json({
         success: true,
         data: mealPlan,
       })
     )
+    response.headers.set(
+      'Cache-Control',
+      'private, no-store, no-cache, must-revalidate'
+    )
+    return response
   } catch (error) {
     console.error('Error fetching meal plan:', error)
     return withCors(

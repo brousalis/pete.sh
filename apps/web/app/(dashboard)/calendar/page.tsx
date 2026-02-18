@@ -138,7 +138,7 @@ export default function CalendarPage() {
     }
   }, [])
 
-  // Fetch meal plan data for the current week
+  // Fetch meal plan data for the current week (no cache — always fresh from DB)
   const fetchMealPlanData = useCallback(async (date: Date) => {
     try {
       setMealPlanLoading(true)
@@ -146,8 +146,10 @@ export default function CalendarPage() {
       const weekStartStr = format(weekStart, 'yyyy-MM-dd')
 
       const [mealPlanRes, recipesRes] = await Promise.all([
-        apiGet<MealPlan>(`/api/cooking/meal-plans?week_start=${weekStartStr}`),
-        apiGet<Recipe[]>('/api/cooking/recipes'),
+        apiGet<MealPlan>(`/api/cooking/meal-plans?week_start=${weekStartStr}`, {
+          cache: 'no-store',
+        }),
+        apiGet<Recipe[]>('/api/cooking/recipes', { cache: 'no-store' }),
       ])
 
       if (mealPlanRes.success && mealPlanRes.data) {
@@ -166,6 +168,12 @@ export default function CalendarPage() {
     }
   }, [])
 
+  // Week key for the currently viewed week (Monday-based) — refetch meal plan when it changes
+  const currentWeekKey = useMemo(
+    () => format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+    [currentDate]
+  )
+
   useEffect(() => {
     // Wait for connectivity check to complete before fetching
     // This ensures we use the correct API base URL (local vs prod)
@@ -176,11 +184,10 @@ export default function CalendarPage() {
     const init = async () => {
       const isAuthSuccess = searchParams.get('auth') === 'success'
 
-      // Fetch calendar, fitness, and meal plan data in parallel
+      // Fetch calendar and fitness in parallel; meal plan is loaded by week-change effect below
       const [gotAuthData] = await Promise.all([
         fetchEvents(),
         fetchFitnessData(),
-        fetchMealPlanData(currentDate),
       ])
 
       // If this is a fresh OAuth redirect and we didn't get auth data,
@@ -202,6 +209,12 @@ export default function CalendarPage() {
     }, 300000)
     return () => clearInterval(interval)
   }, [fetchEvents, fetchFitnessData, fetchMealPlanData, searchParams, isConnectivityInitialized])
+
+  // Refetch meal plan when user navigates to a different week (sidebar + meal plan events)
+  useEffect(() => {
+    if (!isConnectivityInitialized) return
+    fetchMealPlanData(currentDate)
+  }, [currentWeekKey, isConnectivityInitialized, fetchMealPlanData, currentDate])
 
   // Keyboard navigation
   useEffect(() => {

@@ -12,7 +12,19 @@ import type {
   RecipeFilters,
   CreateRecipeInput,
   UpdateRecipeInput,
+  MealCompletion,
+  CreateMealCompletionInput,
+  UpdateMealCompletionInput,
+  SanitizationReport,
+  IngredientChange,
+  CacheSanitizationReport,
 } from '@/lib/types/cooking.types'
+import {
+  sanitizeIngredientName,
+  sanitizeIngredientUnit,
+  sanitizeRawIngredientString,
+  mergeNotes,
+} from '@/lib/utils/ingredient-sanitizer'
 
 export class CookingService {
   /**
@@ -487,6 +499,233 @@ export class CookingService {
     if (error) {
       console.error('Error creating version:', error)
       // Don't throw - versioning is not critical for recipe updates
+    }
+  }
+
+  // ── Meal Completions ──
+
+  async getMealCompletions(filters: {
+    recipe_id?: string
+    meal_plan_id?: string
+    limit?: number
+  }): Promise<MealCompletion[]> {
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    let query = supabase
+      .from('meal_completions')
+      .select('*')
+      .order('cooked_at', { ascending: false })
+
+    if (filters.recipe_id) {
+      query = query.eq('recipe_id', filters.recipe_id)
+    }
+    if (filters.meal_plan_id) {
+      query = query.eq('meal_plan_id', filters.meal_plan_id)
+    }
+    if (filters.limit) {
+      query = query.limit(filters.limit)
+    }
+
+    const { data, error } = await query
+    if (error) {
+      console.error('Error fetching meal completions:', error)
+      throw new Error(`Failed to fetch meal completions: ${error.message}`)
+    }
+    return (data || []) as MealCompletion[]
+  }
+
+  async createMealCompletion(input: CreateMealCompletionInput): Promise<MealCompletion> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    const { data, error } = await supabase
+      .from('meal_completions')
+      .insert({
+        recipe_id: input.recipe_id,
+        meal_plan_id: input.meal_plan_id ?? null,
+        day_of_week: input.day_of_week ?? null,
+        meal_type: input.meal_type ?? null,
+        rating: input.rating ?? null,
+        notes: input.notes ?? null,
+        cooked_at: input.cooked_at ?? new Date().toISOString(),
+      } as never)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating meal completion:', error)
+      throw new Error(`Failed to create meal completion: ${error.message}`)
+    }
+    return data as MealCompletion
+  }
+
+  async updateMealCompletion(id: string, input: UpdateMealCompletionInput): Promise<MealCompletion> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    const updateData: Record<string, unknown> = {}
+    if (input.rating !== undefined) updateData.rating = input.rating
+    if (input.notes !== undefined) updateData.notes = input.notes
+
+    const { data, error } = await supabase
+      .from('meal_completions')
+      .update(updateData as never)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating meal completion:', error)
+      throw new Error(`Failed to update meal completion: ${error.message}`)
+    }
+    return data as MealCompletion
+  }
+
+  async deleteMealCompletion(id: string): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    const { error } = await supabase
+      .from('meal_completions')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting meal completion:', error)
+      throw new Error(`Failed to delete meal completion: ${error.message}`)
+    }
+  }
+
+  // ── Ingredient Sanitization ──
+
+  /**
+   * Sanitize all recipe_ingredients rows belonging to trader_joes recipes.
+   * Returns a report of changes; set dryRun=false to persist.
+   */
+  async sanitizeAllIngredients(dryRun = true): Promise<SanitizationReport> {
+    const supabase = getSupabaseClientForOperation(dryRun ? 'read' : 'write')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    const { data: tjRecipes, error: recipeErr } = await supabase
+      .from('recipes')
+      .select('id')
+      .eq('source', 'trader_joes')
+
+    if (recipeErr) throw new Error(`Failed to fetch TJ recipes: ${recipeErr.message}`)
+    const tjIds = (tjRecipes || []).map((r: { id: string }) => r.id)
+
+    if (tjIds.length === 0) {
+      return { total_scanned: 0, total_changed: 0, changes: [] }
+    }
+
+    let allIngredients: RecipeIngredient[] = []
+    const batchSize = 100
+    for (let i = 0; i < tjIds.length; i += batchSize) {
+      const batch = tjIds.slice(i, i + batchSize)
+      const { data, error } = await supabase
+        .from('recipe_ingredients')
+        .select('*')
+        .in('recipe_id', batch)
+      if (error) throw new Error(`Failed to fetch ingredients: ${error.message}`)
+      allIngredients = allIngredients.concat((data || []) as RecipeIngredient[])
+    }
+
+    const changes: IngredientChange[] = []
+
+    for (const ing of allIngredients) {
+      const { name: newName, extractedNotes } = sanitizeIngredientName(ing.name)
+      const newNotes = mergeNotes(ing.notes, extractedNotes)
+      const newUnit = ing.unit ? sanitizeIngredientUnit(ing.unit) : ing.unit
+
+      const nameChanged = newName !== ing.name
+      const notesChanged = (newNotes ?? null) !== (ing.notes ?? null)
+      const unitChanged = (newUnit ?? null) !== (ing.unit ?? null)
+
+      if (nameChanged || notesChanged || unitChanged) {
+        changes.push({
+          id: ing.id,
+          recipe_id: ing.recipe_id,
+          before: { name: ing.name, notes: ing.notes ?? null, unit: ing.unit ?? null },
+          after: { name: newName, notes: newNotes, unit: newUnit ?? null },
+        })
+      }
+    }
+
+    if (!dryRun && changes.length > 0) {
+      for (let i = 0; i < changes.length; i += 50) {
+        const batch = changes.slice(i, i + 50)
+        const updates = batch.map((c) =>
+          supabase
+            .from('recipe_ingredients')
+            .update({
+              name: c.after.name,
+              notes: c.after.notes,
+              unit: c.after.unit,
+            } as never)
+            .eq('id', c.id)
+        )
+        await Promise.all(updates)
+      }
+    }
+
+    return {
+      total_scanned: allIngredients.length,
+      total_changed: changes.length,
+      changes,
+    }
+  }
+
+  /**
+   * Sanitize all raw ingredient strings in the trader_joes_recipes_cache table.
+   * Strips branding only (no structural changes). Set dryRun=false to persist.
+   */
+  async sanitizeRecipeCache(dryRun = true): Promise<CacheSanitizationReport> {
+    const supabase = getSupabaseClientForOperation(dryRun ? 'read' : 'write')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    let allCache: { id: string; recipe_data: Record<string, unknown> }[] = []
+    let page = 0
+    const pageSize = 1000
+    while (true) {
+      const { data, error } = await supabase
+        .from('trader_joes_recipes_cache')
+        .select('id, recipe_data')
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+      if (error) throw new Error(`Failed to fetch cache: ${error.message}`)
+      allCache = allCache.concat(data || [])
+      if (!data || data.length < pageSize) break
+      page++
+    }
+
+    let totalRecipesChanged = 0
+    let totalIngredientsChanged = 0
+
+    for (const row of allCache) {
+      const ingredients = (row.recipe_data?.ingredients as string[]) || []
+      if (!ingredients.length) continue
+
+      const sanitized = ingredients.map(sanitizeRawIngredientString)
+      const hasChanges = sanitized.some((s, i) => s !== ingredients[i])
+
+      if (hasChanges) {
+        totalRecipesChanged++
+        totalIngredientsChanged += sanitized.filter((s, i) => s !== ingredients[i]).length
+
+        if (!dryRun) {
+          const updatedData = { ...row.recipe_data, ingredients: sanitized }
+          await supabase
+            .from('trader_joes_recipes_cache')
+            .update({ recipe_data: updatedData } as never)
+            .eq('id', row.id)
+        }
+      }
+    }
+
+    return {
+      total_recipes_scanned: allCache.length,
+      total_recipes_changed: totalRecipesChanged,
+      total_ingredients_changed: totalIngredientsChanged,
     }
   }
 }
