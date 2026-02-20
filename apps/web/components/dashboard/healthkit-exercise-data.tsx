@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/tooltip'
 import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
+import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import type { EnhancedWorkoutAnalytics } from '@/lib/utils/workout-analytics'
 import { format } from 'date-fns'
 import {
@@ -139,18 +140,6 @@ const WORKOUT_COLORS: Record<string, string> = {
   coreTraining: 'border-pink-500/30 bg-pink-500/5',
   hiit: 'border-red-500/30 bg-red-500/5',
   rowing: 'border-cyan-500/30 bg-cyan-500/5',
-}
-
-const WORKOUT_LABELS: Record<string, string> = {
-  running: 'Run',
-  walking: 'Walk',
-  hiking: 'Hike',
-  cycling: 'Cycle',
-  functionalStrengthTraining: 'Strength',
-  traditionalStrengthTraining: 'Weights',
-  coreTraining: 'Core',
-  hiit: 'HIIT',
-  rowing: 'Row',
 }
 
 // ============================================
@@ -421,7 +410,7 @@ export function HealthKitExerciseData({
   ].includes(workout.workout_type)
   const isRunning = workout.workout_type === 'running'
   const colorClass = WORKOUT_COLORS[workout.workout_type] || 'border-gray-500/30'
-  const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+  const label = getWorkoutDisplayLabel(workout.workout_type)
 
   // Get top insights to display
   const topInsights = analytics?.insights.slice(0, 2) || []

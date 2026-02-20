@@ -10,6 +10,10 @@ import {
 } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import {
+  getWorkoutDisplayLabel,
+  getWorkoutTypeByDisplayLabel,
+} from '@/lib/utils/workout-labels'
+import {
     differenceInDays,
     format,
     isToday,
@@ -254,21 +258,6 @@ const WORKOUT_COLORS: Record<string, string> = {
   stairClimbing: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
   elliptical: 'text-teal-500 bg-teal-500/10 border-teal-500/30',
   other: 'text-gray-500 bg-gray-500/10 border-gray-500/30',
-}
-
-const WORKOUT_LABELS: Record<string, string> = {
-  running: 'Run',
-  walking: 'Walk',
-  hiking: 'Hike',
-  cycling: 'Cycle',
-  functionalStrengthTraining: 'Strength',
-  traditionalStrengthTraining: 'Weights',
-  coreTraining: 'Core',
-  hiit: 'HIIT',
-  rowing: 'Row',
-  stairClimbing: 'Stairs',
-  elliptical: 'Elliptical',
-  other: 'Workout',
 }
 
 // Hex colors for charts
@@ -1041,7 +1030,7 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
   const typeDistribution = useMemo(() => {
     const counts: Record<string, number> = {}
     monthWorkouts.forEach(w => {
-      const label = WORKOUT_LABELS[w.workout_type] || w.workout_type
+      const label = getWorkoutDisplayLabel(w.workout_type)
       counts[label] = (counts[label] || 0) + 1
     })
     return Object.entries(counts)
@@ -1196,7 +1185,7 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
             {typeDistribution.map(([type, count]) => {
               const pct = totalMonthWorkouts > 0 ? (count / totalMonthWorkouts) * 100 : 0
               // Find the original type key for color lookup
-              const typeKey = Object.entries(WORKOUT_LABELS).find(([, v]) => v === type)?.[0] || 'other'
+              const typeKey = getWorkoutTypeByDisplayLabel(type) || 'other'
               const hexColor = WORKOUT_HEX_COLORS[typeKey] || WORKOUT_HEX_COLORS.other || '#6b7280'
               return (
                 <div key={type} className="flex items-center gap-2">
@@ -1533,7 +1522,7 @@ function WorkoutRow({
     ? 'border-cyan-500/30'
     : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
   const icon = getWorkoutIcon(workout.workout_type, 'md')
-  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : (WORKOUT_LABELS[workout.workout_type] || workout.workout_type)
+  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : getWorkoutDisplayLabel(workout.workout_type)
   const isCardio = [
     'running',
     'walking',
@@ -1643,7 +1632,7 @@ function DayGroupSection({
   // Get workout type breakdown
   const typeBreakdown = group.workouts.reduce(
     (acc, w) => {
-      const type = WORKOUT_LABELS[w.workout_type] || w.workout_type
+      const type = getWorkoutDisplayLabel(w.workout_type)
       acc[type] = (acc[type] || 0) + 1
       return acc
     },
@@ -1869,7 +1858,7 @@ function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTi
                 return (
                   <span key={w.id} className={cn('flex items-center gap-1 font-medium', tc)}>
                     {getWorkoutIcon(w.workout_type, 'sm')}
-                    {WORKOUT_LABELS[w.workout_type] || w.workout_type}
+                    {getWorkoutDisplayLabel(w.workout_type)}
                     <span className="text-muted-foreground font-normal">{formatDuration(w.duration)}</span>
                   </span>
                 )
@@ -1974,7 +1963,7 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
     ? 'border-cyan-500/30'
     : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
   const icon = getWorkoutIcon(workout.workout_type, 'sm')
-  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : (WORKOUT_LABELS[workout.workout_type] || workout.workout_type)
+  const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : getWorkoutDisplayLabel(workout.workout_type)
   const isCardio = [
     'running',
     'walking',
@@ -2764,7 +2753,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
 
     return Object.entries(counts).map(([type, count]) => ({
       type,
-      label: WORKOUT_LABELS[type] || type,
+      label: getWorkoutDisplayLabel(type),
       count,
       color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
     }))
@@ -2924,7 +2913,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
     const config: ChartConfig = {}
     workoutTypes.forEach(type => {
       config[type] = {
-        label: WORKOUT_LABELS[type] || type,
+        label: getWorkoutDisplayLabel(type),
         color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
       }
     })
@@ -3006,7 +2995,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
                       : 'bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground'
                   )}
                 >
-                  {WORKOUT_LABELS[type] || type}
+                  {getWorkoutDisplayLabel(type)}
                 </button>
               )
             })}
@@ -3347,7 +3336,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
     filteredWorkouts.forEach(w => { counts[w.workout_type] = (counts[w.workout_type] || 0) + 1 })
     return Object.entries(counts).map(([type, count]) => ({
       type,
-      label: WORKOUT_LABELS[type] || type,
+      label: getWorkoutDisplayLabel(type),
       count,
       color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
     }))
@@ -3357,7 +3346,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
     const config: ChartConfig = {}
     workoutTypes.forEach(type => {
       config[type] = {
-        label: WORKOUT_LABELS[type] || type,
+        label: getWorkoutDisplayLabel(type),
         color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
       }
     })
@@ -3738,7 +3727,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            {WORKOUT_LABELS[type] || type}
+            {getWorkoutDisplayLabel(type)}
           </button>
         )
       })}
@@ -5382,7 +5371,7 @@ export function TodayActivityBar({
               const bgColor = WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other
               const borderColor = WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other
               const icon = getWorkoutIcon(workout.workout_type, 'sm')
-              const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+              const label = getWorkoutDisplayLabel(workout.workout_type)
 
               return (
                 <button

@@ -95,7 +95,15 @@ interface WorkoutCenterProps {
   versionNumber?: number | null
 }
 
-// Exercise-to-workout type mapping
+// Workout types shown at section level (Main Workout only), not per-exercise. They attach only to section id "exercises".
+const SECTION_LEVEL_WORKOUT_TYPES = [
+  'functionalStrengthTraining',
+  'traditionalStrengthTraining',
+  'coreTraining',
+]
+
+// Section-level types attach only to the "exercises" (Main Workout) section, not to warmup/finisher/metabolic/mobility.
+// Exercise-to-workout type mapping (used for cardio/exercise-level matching only; strength/core are section-level).
 const EXERCISE_WORKOUT_MAPPING: Record<string, string[]> = {
   // Running exercises
   'endurance run': ['running'],
@@ -116,17 +124,17 @@ const EXERCISE_WORKOUT_MAPPING: Record<string, string[]> = {
   row: ['rowing'],
   rowing: ['rowing'],
   rower: ['rowing'],
-  // Strength
+  // Strength (section-level; kept here only for reference - not used for exercise-level mapping)
   strength: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
   lift: ['functionalStrengthTraining', 'traditionalStrengthTraining'],
   // HIIT
   hiit: ['hiit'],
   circuit: ['hiit', 'functionalStrengthTraining'],
-  // Core
+  // Core (section-level)
   core: ['coreTraining'],
 }
 
-// Helper function to match exercise to HealthKit workout
+// Helper function to match exercise to HealthKit workout (cardio/exercise-level only)
 function matchExerciseToWorkout(
   exercise: { name: string; notes?: string },
   workouts: AppleWorkout[]
@@ -134,22 +142,96 @@ function matchExerciseToWorkout(
   // Combine name and notes for matching (notes often contain equipment details like "Stationary Bike")
   const searchText = `${exercise.name} ${exercise.notes || ''}`.toLowerCase()
 
-  // Find matching workout types for this exercise
+  // Find matching workout types for this exercise (exclude section-level so they don't attach to individual exercises)
   let matchingTypes: string[] = []
   for (const [keyword, types] of Object.entries(EXERCISE_WORKOUT_MAPPING)) {
     if (searchText.includes(keyword)) {
-      matchingTypes = [...matchingTypes, ...types]
+      // Filter to exercise-level types only (rowing, cycling, running, etc. - not strength/core)
+      const exerciseLevelTypes = types.filter(
+        t => !SECTION_LEVEL_WORKOUT_TYPES.includes(t)
+      )
+      if (exerciseLevelTypes.length > 0) {
+        matchingTypes = [...matchingTypes, ...exerciseLevelTypes]
+      }
     }
   }
 
   if (matchingTypes.length === 0) return null
 
-  // Find the best matching workout
   const matchingWorkout = workouts.find(w =>
     matchingTypes.includes(w.workout_type)
   )
-
   return matchingWorkout || null
+}
+
+/** Extended for resolution (API may return linked_workout_id from DB) */
+type AppleWorkoutWithLink = AppleWorkout & { linked_workout_id?: string | null }
+
+export interface ResolveWorkoutAssignmentsResult {
+  exerciseWorkoutMap: Map<string, AppleWorkout>
+  mainWorkoutSectionWorkout: AppleWorkout | null
+}
+
+/**
+ * Pure resolution: which HealthKit workouts attach to which exercises/sections.
+ * - Hiking is never attached.
+ * - One strength/core workout attaches to the Main Workout section only (prefer linked_workout_id match, else first by start_date).
+ * - Remaining workouts match exercises by keyword (rowing, cycling, etc.); each workout used at most once.
+ */
+function resolveWorkoutAssignments(
+  workout: Workout | null,
+  appleWorkouts: AppleWorkout[],
+  currentWorkoutId?: string
+): ResolveWorkoutAssignmentsResult {
+  const exerciseWorkoutMap = new Map<string, AppleWorkout>()
+  let mainWorkoutSectionWorkout: AppleWorkout | null = null
+
+  if (!workout || appleWorkouts.length === 0) {
+    return { exerciseWorkoutMap, mainWorkoutSectionWorkout }
+  }
+
+  const usedWorkoutIds = new Set<string>()
+  const assignable = appleWorkouts.filter(
+    w => w.workout_type !== 'hiking'
+  ) as AppleWorkoutWithLink[]
+
+  // First pass: assign one strength/core workout to the Main Workout section only.
+  // Prefer workout whose linked_workout_id matches today's routine workout id, else first by start_date.
+  const strengthOrCore = assignable.filter(w =>
+    SECTION_LEVEL_WORKOUT_TYPES.includes(w.workout_type)
+  )
+  if (strengthOrCore.length > 0) {
+    const matched =
+      currentWorkoutId &&
+      strengthOrCore.find(w => w.linked_workout_id === currentWorkoutId)
+    const chosen = matched ?? strengthOrCore.sort(
+      (a, b) =>
+        new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    )[0]
+    if (chosen) {
+      mainWorkoutSectionWorkout = chosen
+      usedWorkoutIds.add(chosen.id)
+    }
+  }
+
+  // Second pass: match remaining workouts to exercises by keyword (cardio only).
+  const remaining = assignable.filter(w => !usedWorkoutIds.has(w.id))
+  const allExercises: Exercise[] = [
+    ...(workout.warmup?.exercises || []),
+    ...workout.exercises,
+    ...(workout.finisher || []),
+    ...(workout.metabolicFlush?.exercises || []),
+    ...(workout.mobility?.exercises || []),
+  ]
+  for (const exercise of allExercises) {
+    const matched = matchExerciseToWorkout(exercise, remaining)
+    if (matched) {
+      exerciseWorkoutMap.set(exercise.id, matched)
+      usedWorkoutIds.add(matched.id)
+    }
+  }
+
+  return { exerciseWorkoutMap, mainWorkoutSectionWorkout }
 }
 
 interface SectionConfig {
@@ -220,37 +302,16 @@ export function WorkoutCenter({
     setCompletedExercises(new Set(completion?.exercisesCompleted || []))
   }, [completion?.exercisesCompleted])
 
-  // Match exercises to tracked workouts
-  const exerciseWorkoutMap = useMemo(() => {
-    const map = new Map<string, AppleWorkout>()
-    if (!workout || appleWorkouts.length === 0) return map
-
-    // Track which workouts have been matched to avoid duplicates
-    const usedWorkouts = new Set<string>()
-
-    // Collect all exercises
-    const allExercises: Exercise[] = [
-      ...(workout.warmup?.exercises || []),
-      ...workout.exercises,
-      ...(workout.finisher || []),
-      ...(workout.metabolicFlush?.exercises || []),
-      ...(workout.mobility?.exercises || []),
-    ]
-
-    // Match exercises to workouts (prioritize first match)
-    for (const exercise of allExercises) {
-      const matchedWorkout = matchExerciseToWorkout(
-        exercise,
-        appleWorkouts.filter(w => !usedWorkouts.has(w.id))
-      )
-      if (matchedWorkout) {
-        map.set(exercise.id, matchedWorkout)
-        usedWorkouts.add(matchedWorkout.id)
-      }
-    }
-
-    return map
-  }, [workout, appleWorkouts])
+  // Resolve which workouts attach to which exercises/sections (hiking excluded; strength/core → Main Workout section only)
+  const { exerciseWorkoutMap, mainWorkoutSectionWorkout } = useMemo(
+    () =>
+      resolveWorkoutAssignments(
+        workout,
+        appleWorkouts,
+        workout?.id
+      ),
+    [workout, appleWorkouts]
+  )
 
   // When workout is completed, expand all sections so user can see what they did
   useEffect(() => {
@@ -617,6 +678,9 @@ export function WorkoutCenter({
                 hasInjuryProtocol={hasInjuryProtocol}
                 isPreview={isPreview}
                 exerciseWorkoutMap={exerciseWorkoutMap}
+                mainWorkoutSectionWorkout={
+                  section.id === 'exercises' ? mainWorkoutSectionWorkout : null
+                }
                 isWorkoutCompleted={isWorkoutCompleted}
                 onOpenFullscreenTimer={!isWorkoutCompleted && !isWorkoutSkipped ? openFullscreenTimer : undefined}
               />
@@ -792,13 +856,6 @@ export function WorkoutCenter({
   )
 }
 
-// Workout types that should be shown at section level (not per-exercise)
-const SECTION_LEVEL_WORKOUT_TYPES = [
-  'functionalStrengthTraining',
-  'traditionalStrengthTraining',
-  'coreTraining',
-]
-
 // Section Component
 interface WorkoutSectionProps {
   section: SectionConfig
@@ -811,6 +868,8 @@ interface WorkoutSectionProps {
   hasInjuryProtocol?: boolean
   isPreview?: boolean
   exerciseWorkoutMap?: Map<string, AppleWorkout>
+  /** When set, this section (Main Workout) shows this workout at the top as section-level. */
+  mainWorkoutSectionWorkout?: AppleWorkout | null
   isWorkoutCompleted?: boolean
   onOpenFullscreenTimer?: (exercise: Exercise, sectionExercises?: Exercise[]) => void
 }
@@ -826,6 +885,7 @@ function WorkoutSection({
   hasInjuryProtocol,
   isPreview,
   exerciseWorkoutMap,
+  mainWorkoutSectionWorkout,
   isWorkoutCompleted,
   onOpenFullscreenTimer,
 }: WorkoutSectionProps) {
@@ -834,12 +894,17 @@ function WorkoutSection({
     completedExercises.has(ex.id)
   ).length
 
-  // Collect all linked workouts for this section
-  const linkedWorkouts = useMemo(() => {
+  // Section-level block: for Main Workout only, use mainWorkoutSectionWorkout (strength/core); other sections have none.
+  const sectionLevelWorkouts = useMemo(() => {
+    if (mainWorkoutSectionWorkout) return [mainWorkoutSectionWorkout]
+    return []
+  }, [mainWorkoutSectionWorkout])
+
+  // Exercise-level linked workouts (cardio) from the map
+  const linkedWorkoutsFromMap = useMemo(() => {
     if (!exerciseWorkoutMap) return []
     const workouts: AppleWorkout[] = []
     const seenIds = new Set<string>()
-
     section.exercises.forEach(ex => {
       const workout = exerciseWorkoutMap.get(ex.id)
       if (workout && !seenIds.has(workout.id)) {
@@ -850,17 +915,9 @@ function WorkoutSection({
     return workouts
   }, [section.exercises, exerciseWorkoutMap])
 
-  // Separate section-level workouts (strength/core) from exercise-level workouts (cardio)
-  const sectionLevelWorkouts = linkedWorkouts.filter(w =>
-    SECTION_LEVEL_WORKOUT_TYPES.includes(w.workout_type)
-  )
-  const exerciseLevelWorkoutIds = new Set(
-    linkedWorkouts
-      .filter(w => !SECTION_LEVEL_WORKOUT_TYPES.includes(w.workout_type))
-      .map(w => w.id)
-  )
-
-  const hasLinkedWorkouts = linkedWorkouts.length > 0
+  const exerciseLevelWorkoutIds = new Set(linkedWorkoutsFromMap.map(w => w.id))
+  const hasLinkedWorkouts =
+    sectionLevelWorkouts.length > 0 || linkedWorkoutsFromMap.length > 0
 
   // Check if section has timed exercises (for showing "Start Timer" button)
   const timedExercises = section.exercises.filter(ex => ex.duration)
@@ -879,7 +936,11 @@ function WorkoutSection({
                 <TooltipTrigger asChild>
                   <Watch className="size-3.5 text-green-500" />
                 </TooltipTrigger>
-                <TooltipContent>Activity data linked</TooltipContent>
+                <TooltipContent>
+                  {mainWorkoutSectionWorkout
+                    ? 'Strength session linked to entire Main Workout'
+                    : 'Activity data linked'}
+                </TooltipContent>
               </Tooltip>
             )}
             {section.duration && (

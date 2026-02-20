@@ -38,6 +38,7 @@ import type {
   Workout,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
+import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import {
   addDays,
   addMonths,
@@ -65,6 +66,7 @@ import {
   ChevronRight,
   Dumbbell,
   Flame,
+  Footprints,
   Moon,
   Settings,
   Sun,
@@ -1963,11 +1965,12 @@ interface UnifiedActivitySummaryProps {
   onViewAll?: () => void
 }
 
-// Workout type styling
+// Workout type styling (hiking = Maple Walk, distinct style)
 const WORKOUT_TYPE_STYLES: Record<string, { icon: typeof Dumbbell; color: string; bg: string }> = {
   running: { icon: Flame, color: 'text-green-500', bg: 'bg-green-500/15' },
   cycling: { icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/15' },
   walking: { icon: Target, color: 'text-teal-500', bg: 'bg-teal-500/15' },
+  hiking: { icon: Footprints, color: 'text-amber-600 dark:text-amber-500', bg: 'bg-amber-500/15' },
   swimming: { icon: Zap, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
   functionalStrengthTraining: { icon: Dumbbell, color: 'text-purple-500', bg: 'bg-purple-500/15' },
   traditionalStrengthTraining: { icon: Dumbbell, color: 'text-purple-500', bg: 'bg-purple-500/15' },
@@ -1978,23 +1981,6 @@ const WORKOUT_TYPE_STYLES: Record<string, { icon: typeof Dumbbell; color: string
   elliptical: { icon: Zap, color: 'text-teal-500', bg: 'bg-teal-500/15' },
   yoga: { icon: Sun, color: 'text-pink-500', bg: 'bg-pink-500/15' },
   other: { icon: Dumbbell, color: 'text-slate-500', bg: 'bg-slate-500/15' },
-}
-
-const WORKOUT_LABELS: Record<string, string> = {
-  running: 'Run',
-  cycling: 'Cycle',
-  walking: 'Walk',
-  hiking: 'Hike',
-  swimming: 'Swim',
-  functionalStrengthTraining: 'Strength',
-  traditionalStrengthTraining: 'Weights',
-  coreTraining: 'Core',
-  hiit: 'HIIT',
-  rowing: 'Row',
-  yoga: 'Yoga',
-  stairClimbing: 'Stairs',
-  elliptical: 'Elliptical',
-  other: 'Other',
 }
 
 function formatWorkoutDuration(seconds: number): string {
@@ -2125,13 +2111,13 @@ function UnifiedActivitySummary({
                 const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
                 const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
                 const Icon = typeStyle.icon
-                const label = WORKOUT_LABELS[workout.workout_type] || workout.workout_type
+                const label = getWorkoutDisplayLabel(workout.workout_type)
 
-                // Get hex color for border from type style
+                // Get hex color for border from type style (hiking = Maple Walk)
                 const borderColorMap: Record<string, string> = {
                   running: 'border-l-green-500',
                   walking: 'border-l-teal-500',
-                  hiking: 'border-l-emerald-500',
+                  hiking: 'border-l-amber-500',
                   cycling: 'border-l-blue-500',
                   swimming: 'border-l-cyan-500',
                   functionalStrengthTraining: 'border-l-purple-500',
@@ -2173,6 +2159,9 @@ function UnifiedActivitySummary({
                     <TooltipContent>
                       <div className="text-xs">
                         <div className="font-semibold">{label}</div>
+                        {workout.workout_type === 'hiking' && (
+                          <div className="text-muted-foreground">Dog walk with bathroom markers</div>
+                        )}
                         <div className="text-muted-foreground">
                           {formatWorkoutDuration(workout.duration)} · {Math.round(workout.active_calories)} cal
                           {workout.distance_miles && ` · ${workout.distance_miles.toFixed(2)} mi`}

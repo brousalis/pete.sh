@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
+import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import type {
     EnhancedWorkoutAnalytics,
     PerformanceInsight,
@@ -205,21 +206,6 @@ const ZONE_LABELS: Record<string, string> = {
   fatBurn: 'Fat Burn',
   cardio: 'Cardio',
   peak: 'Peak',
-}
-
-const WORKOUT_TYPE_LABELS: Record<string, string> = {
-  running: 'Run',
-  walking: 'Walk',
-  hiking: 'Hike',
-  cycling: 'Cycle',
-  functionalStrengthTraining: 'Strength',
-  traditionalStrengthTraining: 'Weights',
-  coreTraining: 'Core',
-  hiit: 'HIIT',
-  rowing: 'Row',
-  stairClimbing: 'Stairs',
-  elliptical: 'Elliptical',
-  other: 'Workout',
 }
 
 // ============================================
@@ -2445,7 +2431,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
   const isIndoor = workout.is_indoor === true || (workout.is_indoor == null && isRunning && route == null)
   const workoutLabel = isRunning
     ? (isOutdoor ? 'Outdoor Run' : isIndoor ? 'Indoor Run' : 'Run')
-    : (WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type)
+    : getWorkoutDisplayLabel(workout.workout_type)
   const hasAnalytics = analytics !== null
   const hasEvents = data.workoutEvents && data.workoutEvents.length > 0
   const hasRoute = route != null && route.samples != null && route.samples.length >= 2

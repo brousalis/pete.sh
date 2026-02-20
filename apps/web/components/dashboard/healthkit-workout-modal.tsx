@@ -11,6 +11,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { apiGet } from '@/lib/api/client'
 import type { AppleWorkoutType } from '@/lib/types/apple-health.types'
+import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import {
   Activity,
   Flame,
@@ -51,21 +52,6 @@ interface HealthKitWorkoutModalProps {
   workoutId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-const WORKOUT_TYPE_LABELS: Record<string, string> = {
-  running: 'Run',
-  walking: 'Walk',
-  hiking: 'Hike',
-  cycling: 'Cycling',
-  functionalStrengthTraining: 'Strength',
-  traditionalStrengthTraining: 'Strength',
-  coreTraining: 'Core',
-  hiit: 'HIIT',
-  rowing: 'Rowing',
-  stairClimbing: 'Stairs',
-  elliptical: 'Elliptical',
-  other: 'Workout',
 }
 
 const WORKOUT_TYPE_ICONS: Record<string, typeof Activity> = {
@@ -191,7 +177,7 @@ export function HealthKitWorkoutModal({
               </div>
               <div>
                 <h3 className="font-semibold">
-                  {WORKOUT_TYPE_LABELS[workout.workoutType] || 'Workout'}
+                  {getWorkoutDisplayLabel(workout.workoutType)}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {formatTime(workout.startDate)} -{' '}
@@ -333,7 +319,7 @@ export function HealthKitWorkoutBadge({
     >
       <Watch className="size-3" />
       <span className="text-[10px]">
-        {WORKOUT_TYPE_LABELS[workoutType] || 'Workout'} •{' '}
+        {getWorkoutDisplayLabel(workoutType)} •{' '}
         {formatDuration(duration)}
       </span>
     </Badge>
