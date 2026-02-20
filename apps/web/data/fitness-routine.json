@@ -1293,10 +1293,42 @@
               "tue-flush"
             ],
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-19T15:34:55.526Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "wednesday": {},
-        "thursday": {},
+        "wednesday": {
+          "workout": {
+            "workoutId": "wednesday-fat-incinerator",
+            "completed": false,
+            "skipped": true,
+            "skippedAt": "2026-02-19T15:34:49.839Z",
+            "skippedReason": "recovery day for left foot + work",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
+        "thursday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-02-19T15:35:01.919Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "workout": {
+            "workoutId": "thursday-endurance",
+            "completed": true,
+            "completedAt": "2026-02-19T20:26:28.184Z",
+            "exercisesCompleted": [
+              "thu-run",
+              "thu-flush"
+            ],
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          }
+        },
         "friday": {},
         "saturday": {},
         "sunday": {
@@ -1594,5 +1626,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-18T20:31:07.647Z"
+  "updatedAt": "2026-02-19T23:59:54.583Z"
 }

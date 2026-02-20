@@ -5,7 +5,7 @@ import HealthKit
 
 /// Complete workout payload for POST /api/apple-health/workout
 struct WorkoutPayload: Encodable {
-    let workout: AppleHealthWorkout
+    var workout: AppleHealthWorkout
     let linkedWorkoutId: String?
     let linkedDay: String?
 }
@@ -18,31 +18,34 @@ struct AppleHealthWorkout: Codable {
     let startDate: String
     let endDate: String
     let duration: Int
-    
+
     let activeCalories: Double
     let totalCalories: Double
-    
+
     let distance: Double?
     let distanceMiles: Double?
     let elevationGain: Double?
-    
+
     // Indoor/outdoor distinction
     let isIndoor: Bool?
-    
+
     let heartRate: HeartRateSummary
     let heartRateSamples: [PetehomeHeartRateSample]
-    
+
     let runningMetrics: PetehomeRunningMetrics?
     let cyclingMetrics: PetehomeCyclingMetrics?
     let walkingMetrics: PetehomeWalkingMetrics?
     let route: PetehomeWorkoutRoute?
-    
+
     // Workout events (pauses, segments, laps)
     let workoutEvents: [PetehomeWorkoutEvent]?
-    
+
     // Effort score (Apple's workout intensity metric)
     let effortScore: Double?
-    
+
+    // Bathroom markers (Maple walk tracking)
+    var bathroomMarkers: [PetehomeBathroomMarker]?
+
     let source: String
     let sourceVersion: String?
     let device: PetehomeDeviceInfo?
@@ -167,7 +170,7 @@ struct PetehomeWalkingMetrics: Codable {
     let doubleSupportPercentage: Double? // % time both feet on ground (gait stability)
     let asymmetryPercentage: Double? // % left/right imbalance
     let stepCount: Int? // total steps during workout
-    
+
     // Samples for detailed analysis (optional)
     let speedSamples: [PetehomeWalkingSpeedSample]?
     let stepLengthSamples: [PetehomeWalkingStepLengthSample]?
@@ -209,6 +212,56 @@ struct PetehomeCyclingCadenceSample: Codable {
 struct PetehomeCyclingPowerSample: Codable {
     let timestamp: String
     let watts: Double
+}
+
+// MARK: - Bathroom Markers (Maple Walk Tracking)
+
+enum BathroomMarkerType: String, Codable {
+    case pee
+    case poop
+
+    var emoji: String {
+        switch self {
+        case .pee: return "💧"
+        case .poop: return "💩"
+        }
+    }
+}
+
+/// Local model used by MapleWalkManager during a walk session
+struct BathroomMarker: Codable, Identifiable {
+    let id: UUID
+    let type: BathroomMarkerType
+    let latitude: Double
+    let longitude: Double
+    let timestamp: Date
+
+    init(type: BathroomMarkerType, latitude: Double, longitude: Double) {
+        self.id = UUID()
+        self.type = type
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = Date()
+    }
+
+    func toPetehomeMarker() -> PetehomeBathroomMarker {
+        PetehomeBathroomMarker(
+            id: id.uuidString,
+            type: type.rawValue,
+            latitude: latitude,
+            longitude: longitude,
+            timestamp: timestamp.iso8601String
+        )
+    }
+}
+
+/// API payload model sent to Petehome server
+struct PetehomeBathroomMarker: Codable {
+    let id: String
+    let type: String
+    let latitude: Double
+    let longitude: Double
+    let timestamp: String
 }
 
 // MARK: - Workout Events
@@ -267,7 +320,7 @@ struct PetehomeWeatherInfo: Codable {
 /// Daily health metrics for POST /api/apple-health/daily
 struct PetehomeDailyMetrics: Codable {
     let date: String
-    
+
     // Activity
     let steps: Int
     let activeCalories: Double
@@ -277,25 +330,25 @@ struct PetehomeDailyMetrics: Codable {
     let moveGoal: Int?
     let exerciseGoal: Int?
     let standGoal: Int?
-    
+
     // Heart
     let restingHeartRate: Int?
     let heartRateVariability: Double?
-    
+
     // Cardio Fitness
     let vo2Max: Double?
-    
+
     // Sleep (optional)
     let sleepDuration: Int?
     let sleepStages: PetehomeSleepStages?
-    
+
     // Walking metrics (optional)
     let walkingHeartRateAverage: Int?
     let walkingDoubleSupportPercentage: Double?
     let walkingAsymmetryPercentage: Double?
     let walkingSpeed: Double?
     let walkingStepLength: Double?
-    
+
     let source: String
     let recordedAt: String
 }
@@ -326,7 +379,7 @@ struct BatchSyncResult: Decodable {
     let success: Bool
     let data: BatchSyncData?
     let syncTimestamp: String?
-    
+
     struct BatchSyncData: Decodable {
         let workoutsSaved: Int
         let workoutsFailed: Int
@@ -419,7 +472,7 @@ struct QueuedWorkout: Codable, Identifiable {
     let queuedAt: Date
     var retryCount: Int
     var lastError: String?
-    
+
     init(healthKitId: String, dayNumber: Int?, queuedAt: Date = Date()) {
         self.id = healthKitId
         self.dayNumber = dayNumber
@@ -435,7 +488,7 @@ struct HistoricalSyncResult {
     let skipped: Int
     let failed: Int
     let errors: [String]
-    
+
     var summary: String {
         if total == 0 && skipped == 0 {
             return "No workouts found"
@@ -506,7 +559,7 @@ extension Date {
     var iso8601String: String {
         ISO8601DateFormatter().string(from: self)
     }
-    
+
     /// Format date as yyyy-MM-dd for daily metrics
     var dateOnlyString: String {
         let formatter = DateFormatter()

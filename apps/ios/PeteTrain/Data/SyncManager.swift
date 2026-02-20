@@ -6,9 +6,9 @@ import Observation
 @MainActor
 @Observable
 final class SyncManager {
-    
+
     static let shared = SyncManager()
-    
+
     // MARK: - State
 
     var syncStatus: SyncStatus = .idle
@@ -32,7 +32,7 @@ final class SyncManager {
     func clearLog() {
         debugLog.removeAll()
     }
-    
+
     // Historical sync progress
     var isHistoricalSyncInProgress = false
     var historicalSyncTotal: Int = 0
@@ -42,28 +42,28 @@ final class SyncManager {
         guard historicalSyncTotal > 0 else { return 0 }
         return Double(historicalSyncCompleted + historicalSyncFailed) / Double(historicalSyncTotal)
     }
-    
+
     // MARK: - Settings
-    
+
     @ObservationIgnored
     private let defaults = UserDefaults.standard
-    
+
     private let lastSyncKey = "petehome.lastSyncTimestamp"
     private let pendingWorkoutsKey = "petehome.pendingWorkouts"
     private let autoSyncEnabledKey = "petehome.autoSyncEnabled"
-    
+
     var autoSyncEnabled: Bool {
         get { defaults.bool(forKey: autoSyncEnabledKey) }
         set { defaults.set(newValue, forKey: autoSyncEnabledKey) }
     }
-    
+
     var lastSyncTimestamp: Date? {
         get { defaults.object(forKey: lastSyncKey) as? Date }
         set { defaults.set(newValue, forKey: lastSyncKey) }
     }
-    
+
     // MARK: - Queue
-    
+
     private var pendingWorkouts: [QueuedWorkout] {
         get {
             guard let data = defaults.data(forKey: pendingWorkoutsKey),
@@ -78,32 +78,32 @@ final class SyncManager {
             pendingWorkoutsCount = newValue.count
         }
     }
-    
+
     // MARK: - Dependencies
-    
+
     private let healthKit = HealthKitManager.shared
     private let api = PetehomeAPI.shared
-    
+
     // MARK: - Init
-    
+
     private init() {
         // Load initial state
         lastSyncDate = lastSyncTimestamp
         pendingWorkoutsCount = pendingWorkouts.count
-        
+
         // Set default for auto-sync
         if !defaults.exists(key: autoSyncEnabledKey) {
             autoSyncEnabled = true
         }
     }
-    
+
     // MARK: - Public API
-    
+
     /// Check if sync is available (API configured)
     var canSync: Bool {
         api.isConfigured
     }
-    
+
     /// Sync a completed workout to Petehome
     /// Called automatically after live workouts end
     func syncWorkout(_ workout: HKWorkout, linkedDay: Day?) async {
@@ -111,61 +111,95 @@ final class SyncManager {
             print("⚠️ Petehome sync not configured, skipping")
             return
         }
-        
+
         syncStatus = .syncing
         lastSyncError = nil
-        
+
         do {
             // Build the payload
             let payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: linkedDay)
-            
+
             // Sync with retry
             try await api.syncWorkoutWithRetry(payload)
-            
+
             // Success
             lastSyncTimestamp = Date()
             lastSyncDate = lastSyncTimestamp
             syncStatus = .success
-            
+
             print("✅ Workout synced to Petehome: \(workout.uuid.uuidString)")
-            
+
         } catch {
             print("❌ Failed to sync workout: \(error.localizedDescription)")
             lastSyncError = error.localizedDescription
             syncStatus = .failed
-            
+
             // Queue for retry
             enqueueWorkout(workout, dayNumber: linkedDay?.id)
         }
     }
-    
+
+    /// Sync a Maple Walk workout with bathroom markers to Petehome
+    func syncMapleWalk(_ workout: HKWorkout, markers: [BathroomMarker]) async {
+        guard canSync else {
+            print("⚠️ Petehome sync not configured, skipping Maple Walk")
+            return
+        }
+
+        syncStatus = .syncing
+        lastSyncError = nil
+
+        do {
+            var payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: nil)
+            payload.workout.bathroomMarkers = markers.map { $0.toPetehomeMarker() }
+
+            try await api.syncWorkoutWithRetry(payload)
+
+            lastSyncTimestamp = Date()
+            lastSyncDate = lastSyncTimestamp
+            syncStatus = .success
+
+            MapleWalkManager.clearPersistedMarkers(workoutUUID: workout.uuid.uuidString)
+            print("✅ Maple Walk synced: \(workout.uuid.uuidString) with \(markers.count) markers")
+
+        } catch {
+            print("❌ Failed to sync Maple Walk: \(error.localizedDescription)")
+            lastSyncError = error.localizedDescription
+            syncStatus = .failed
+
+            // Persist markers for retry survival (keyed by workout UUID)
+            MapleWalkManager.shared.persistMarkersForWorkout(workoutUUID: workout.uuid.uuidString)
+            enqueueWorkout(workout, dayNumber: nil)
+        }
+    }
+
     /// Sync today's daily health metrics
     func syncDailyMetrics() async {
         guard canSync else {
             print("⚠️ Petehome sync not configured, skipping daily metrics")
             return
         }
-        
+
         syncStatus = .syncing
         lastSyncError = nil
-        
+
         do {
             let metrics = try await healthKit.queryDailyMetrics(for: Date())
             try await api.syncDailyMetrics(metrics)
-            
+
             lastSyncTimestamp = Date()
             lastSyncDate = lastSyncTimestamp
             syncStatus = .success
-            
+
             print("✅ Daily metrics synced to Petehome")
-            
+
         } catch {
             print("❌ Failed to sync daily metrics: \(error.localizedDescription)")
             lastSyncError = error.localizedDescription
             syncStatus = .failed
         }
     }
-    
+
     /// Perform a full sync - recent workouts + queued workouts + daily metrics
     func performFullSync() async {
         clearLog()
@@ -197,7 +231,7 @@ final class SyncManager {
 
         log("✅ Sync complete")
     }
-    
+
     /// Process the offline queue of failed syncs
     func processQueue() async {
         guard canSync else { return }
@@ -206,22 +240,31 @@ final class SyncManager {
         guard !queue.isEmpty else { return }
 
         print("📤 Processing sync queue: \(queue.count) workouts")
-        
+
         var newQueue: [QueuedWorkout] = []
-        
+
         for queuedWorkout in queue {
             // Skip if too many retries
             if queuedWorkout.retryCount >= 5 {
                 print("⏭️ Skipping workout \(queuedWorkout.id) - too many retries")
                 continue
             }
-            
+
             // Try to fetch and sync the workout
             do {
                 if let workout = try await fetchWorkout(id: queuedWorkout.id) {
                     let day = queuedWorkout.dayNumber.flatMap { WorkoutDataManager.shared.day(for: $0) }
-                    let payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: day)
+                    var payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: day)
+
+                    // Reattach persisted bathroom markers for Maple Walk retries
+                    if let markers = MapleWalkManager.loadPersistedMarkers(workoutUUID: queuedWorkout.id) {
+                        payload.workout.bathroomMarkers = markers.map { $0.toPetehomeMarker() }
+                    }
+
                     try await api.syncWorkoutWithRetry(payload)
+
+                    // Clear persisted markers on success
+                    MapleWalkManager.clearPersistedMarkers(workoutUUID: queuedWorkout.id)
                     print("✅ Queued workout synced: \(queuedWorkout.id)")
                 } else {
                     print("⚠️ Could not find workout \(queuedWorkout.id) in HealthKit")
@@ -234,20 +277,20 @@ final class SyncManager {
                 newQueue.append(updatedWorkout)
             }
         }
-        
+
         pendingWorkouts = newQueue
-        
+
         if newQueue.isEmpty {
             lastSyncTimestamp = Date()
             lastSyncDate = lastSyncTimestamp
         }
     }
-    
+
     /// Clear the pending queue
     func clearQueue() {
         pendingWorkouts = []
     }
-    
+
     // MARK: - Recent Workout Sync
 
     /// Get count of unsynced workouts from today
@@ -332,7 +375,7 @@ final class SyncManager {
             lastSyncError = error.localizedDescription
             return HistoricalSyncResult(total: 0, synced: 0, skipped: 0, failed: 0, errors: [error.localizedDescription])
         }
-        
+
         // Filter out already-synced workouts
         let workoutsToSync = workouts.filter { !alreadySynced.contains($0.uuid.uuidString) }
         let skippedCount = workouts.count - workoutsToSync.count
@@ -369,8 +412,16 @@ final class SyncManager {
             do {
                 // Try to match to a Pete Train day based on workout type and day of week
                 let linkedDay = matchWorkoutToDay(workout)
-                let payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: linkedDay)
+                var payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: linkedDay)
+
+                // Reattach persisted bathroom markers for Maple Walk retries
+                if let markers = MapleWalkManager.loadPersistedMarkers(workoutUUID: workout.uuid.uuidString) {
+                    payload.workout.bathroomMarkers = markers.map { $0.toPetehomeMarker() }
+                }
+
                 try await api.syncWorkoutWithRetry(payload, maxRetries: 2)
+
+                MapleWalkManager.clearPersistedMarkers(workoutUUID: workout.uuid.uuidString)
 
                 syncedCount += 1
                 historicalSyncCompleted = syncedCount
@@ -402,9 +453,9 @@ final class SyncManager {
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
             }
         }
-        
+
         isHistoricalSyncInProgress = false
-        
+
         if failedCount == 0 && syncedCount > 0 {
             syncStatus = .success
             lastSyncTimestamp = Date()
@@ -417,7 +468,7 @@ final class SyncManager {
         } else {
             syncStatus = .success
         }
-        
+
         let result = HistoricalSyncResult(
             total: workoutsToSync.count,
             synced: syncedCount,
@@ -425,18 +476,18 @@ final class SyncManager {
             failed: failedCount,
             errors: errors
         )
-        
+
         print("📦 Historical sync complete: \(result.synced) synced, \(result.skipped) skipped, \(result.failed) failed")
-        
+
         return result
     }
-    
+
     /// Fetch all workouts from HealthKit within a date range
     /// - Parameter days: Number of days to look back, or 0 for all time
     private func fetchAllWorkouts(days: Int) async throws -> [HKWorkout] {
         let endDate = Date()
         let startDate: Date
-        
+
         if days == 0 {
             // All time - go back to HealthKit's beginning (2014)
             startDate = Date(timeIntervalSince1970: 0)
@@ -447,13 +498,13 @@ final class SyncManager {
             }
             startDate = date
         }
-        
+
         let predicate = HKQuery.predicateForSamples(
             withStart: startDate,
             end: endDate,
             options: .strictStartDate
         )
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: .workoutType(),
@@ -465,11 +516,11 @@ final class SyncManager {
                     continuation.resume(throwing: error)
                     return
                 }
-                
+
                 let workouts = (samples as? [HKWorkout]) ?? []
                 continuation.resume(returning: workouts)
             }
-            
+
             HealthKitManager.shared.healthStore.execute(query)
         }
     }
@@ -507,31 +558,31 @@ final class SyncManager {
 
         return nil
     }
-    
+
     /// Sync historical daily metrics for the past N days
     /// - Parameter days: Number of days to sync, or 0 for all time (capped at 365 for performance)
     func syncHistoricalDailyMetrics(days: Int = 30) async -> Int {
         guard canSync else { return 0 }
-        
+
         // Cap daily metrics at 365 days for performance (daily metrics are less critical for history)
         let effectiveDays = days == 0 ? 365 : min(days, 365)
-        
+
         isHistoricalSyncInProgress = true
         historicalSyncTotal = effectiveDays
         historicalSyncCompleted = 0
         historicalSyncFailed = 0
         syncStatus = .syncing
-        
+
         print("📊 Syncing daily metrics for last \(effectiveDays) days...")
-        
+
         let calendar = Calendar.current
         var syncedCount = 0
-        
+
         for dayOffset in 0..<effectiveDays {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else {
                 continue
             }
-            
+
             do {
                 let metrics = try await healthKit.queryDailyMetrics(for: date)
                 try await api.syncDailyMetrics(metrics)
@@ -542,26 +593,26 @@ final class SyncManager {
                 historicalSyncFailed += 1
                 print("   ❌ Day \(dayOffset + 1)/\(days) failed: \(error.localizedDescription)")
             }
-            
+
             // Small delay
             if dayOffset < effectiveDays - 1 {
                 try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 second
             }
         }
-        
+
         isHistoricalSyncInProgress = false
         syncStatus = syncedCount > 0 ? .success : .failed
-        
+
         if syncedCount > 0 {
             lastSyncTimestamp = Date()
             lastSyncDate = lastSyncTimestamp
         }
-        
+
         print("📊 Daily metrics sync complete: \(syncedCount)/\(effectiveDays) days")
-        
+
         return syncedCount
     }
-    
+
     /// Test the API connection
     func testConnection() async -> Bool {
         print("🔌 SyncManager.testConnection() starting...")
@@ -582,33 +633,33 @@ final class SyncManager {
             return false
         }
     }
-    
+
     // MARK: - Queue Management
-    
+
     private func enqueueWorkout(_ workout: HKWorkout, dayNumber: Int?) {
         var queue = pendingWorkouts
-        
+
         // Don't add duplicates
         guard !queue.contains(where: { $0.id == workout.uuid.uuidString }) else {
             return
         }
-        
+
         let queuedWorkout = QueuedWorkout(
             healthKitId: workout.uuid.uuidString,
             dayNumber: dayNumber
         )
-        
+
         queue.append(queuedWorkout)
         pendingWorkouts = queue
-        
+
         print("📥 Workout queued for retry: \(workout.uuid.uuidString)")
     }
-    
+
     private func fetchWorkout(id: String) async throws -> HKWorkout? {
         guard let uuid = UUID(uuidString: id) else { return nil }
-        
+
         let predicate = HKQuery.predicateForObject(with: uuid)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: .workoutType(),
@@ -620,27 +671,27 @@ final class SyncManager {
                     continuation.resume(throwing: error)
                     return
                 }
-                
+
                 let workout = samples?.first as? HKWorkout
                 continuation.resume(returning: workout)
             }
-            
+
             HealthKitManager.shared.healthStore.execute(query)
         }
     }
 
     // MARK: - Formatted Output
-    
+
     var lastSyncDescription: String {
         guard let date = lastSyncDate else {
             return "Never synced"
         }
-        
+
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
     }
-    
+
     var statusDescription: String {
         switch syncStatus {
         case .idle:
@@ -655,7 +706,7 @@ final class SyncManager {
             return "\(pendingWorkoutsCount) queued"
         }
     }
-    
+
     var statusColor: String {
         switch syncStatus {
         case .idle:

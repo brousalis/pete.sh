@@ -202,6 +202,8 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
         <MapleRouteMap
           samples={route.samples}
           hrSamples={walk.hrSamples}
+          bathroomMarkers={walk.bathroomMarkers}
+          walkStartTime={workout?.startDate}
           className="h-[400px]"
           colorByHeartRate
         />
@@ -245,6 +247,76 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
           iconColor="text-purple-500"
         />
       </div>
+
+      {/* Bathroom Breaks */}
+      {walk.bathroomMarkers && walk.bathroomMarkers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <span className="text-lg">🐾</span>
+              Bathroom Breaks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Summary counts */}
+              <div className="flex items-center gap-6">
+                {(() => {
+                  const peeCt = walk.bathroomMarkers!.filter(m => m.type === 'pee').length
+                  const poopCt = walk.bathroomMarkers!.filter(m => m.type === 'poop').length
+                  return (
+                    <>
+                      {peeCt > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">💧</span>
+                          <span className="text-2xl font-bold">x{peeCt}</span>
+                        </div>
+                      )}
+                      {poopCt > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">💩</span>
+                          <span className="text-2xl font-bold">x{poopCt}</span>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Timeline */}
+              <div className="space-y-2">
+                {walk.bathroomMarkers!.map((marker) => {
+                  const markerTime = parseISO(marker.timestamp)
+                  const walkStart = workout?.startDate ? parseISO(workout.startDate) : null
+                  const relativeMin = walkStart
+                    ? Math.round((markerTime.getTime() - walkStart.getTime()) / 60000)
+                    : null
+                  return (
+                    <div
+                      key={marker.id}
+                      className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2"
+                    >
+                      <span className="text-lg">
+                        {marker.type === 'pee' ? '💧' : '💩'}
+                      </span>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          {format(markerTime, 'h:mm a')}
+                        </span>
+                        {relativeMin != null && (
+                          <span className="ml-2 text-xs text-muted-foreground/70">
+                            {relativeMin} min into walk
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Heart Rate and Mood Row */}
       <div className="grid gap-4 md:grid-cols-2">

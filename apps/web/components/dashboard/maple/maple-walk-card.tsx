@@ -122,6 +122,22 @@ export function MapleWalkCard({
                     </span>
                   </div>
                 )}
+
+                {/* Bathroom marker counts */}
+                {walk.bathroomMarkerCounts && (walk.bathroomMarkerCounts.pee > 0 || walk.bathroomMarkerCounts.poop > 0) && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    {walk.bathroomMarkerCounts.pee > 0 && (
+                      <span className={cn(compact ? 'text-xs' : 'text-sm')}>
+                        💧{walk.bathroomMarkerCounts.pee}
+                      </span>
+                    )}
+                    {walk.bathroomMarkerCounts.poop > 0 && (
+                      <span className={cn(compact ? 'text-xs' : 'text-sm')}>
+                        💩{walk.bathroomMarkerCounts.poop}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Notes preview */}

@@ -7,6 +7,10 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Pete Train needs access to save your workout data to Apple Health.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pete Train uses your location to detect when you arrive at the gym and send workout reminders.</string>
+	<string>Pete Train uses your location to detect when you arrive at the gym, send workout reminders, and track Maple walk routes and bathroom markers.</string>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
 </dict>
 </plist>

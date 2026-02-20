@@ -17,6 +17,7 @@ import type {
 import type {
     AppleHealthWorkout,
     AppleHealthWorkoutPayload,
+    BathroomMarker,
     CadenceSample,
     DailyHealthMetrics,
     HeartRateSample,
@@ -280,6 +281,20 @@ export class AppleHealthService {
     }
     if (workout.walkingMetrics?.stepLengthSamples?.length) {
       await this.saveWalkingStepLengthSamples(workoutId, workout.walkingMetrics.stepLengthSamples)
+    }
+
+    // Save bathroom markers if available (Maple walk tracking)
+    if (workout.bathroomMarkers?.length) {
+      await this.saveBathroomMarkers(workoutId, workout.bathroomMarkers)
+    }
+
+    // Auto-create Maple Walk for hiking workouts from PeteTrain with bathroom markers
+    if (
+      workout.workoutType === 'hiking' &&
+      workout.source === 'PeteTrain' &&
+      workout.bathroomMarkers?.length
+    ) {
+      await this.autoCreateMapleWalk(workoutId, workout)
     }
 
     // Trigger workout autocomplete if linked to a day
@@ -647,6 +662,66 @@ export class AppleHealthService {
     }))
 
     await db.from('apple_health_splits').insert(records)
+  }
+
+  /**
+   * Save bathroom markers for a Maple walk workout (idempotent via client_id)
+   */
+  private async saveBathroomMarkers(workoutId: string, markers: BathroomMarker[]): Promise<void> {
+    if (!markers?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const records = markers.map(m => ({
+      workout_id: workoutId,
+      marker_type: m.type,
+      latitude: m.latitude,
+      longitude: m.longitude,
+      timestamp: m.timestamp,
+      client_id: m.id,
+    }))
+
+    const { error } = await db
+      .from('maple_bathroom_markers')
+      .upsert(records, { onConflict: 'client_id', ignoreDuplicates: true })
+
+    if (error) {
+      console.error('[AppleHealth] Error saving bathroom markers:', error)
+    } else {
+      console.log(`[AppleHealth] Saved ${markers.length} bathroom markers for workout ${workoutId}`)
+    }
+  }
+
+  /**
+   * Auto-create a Maple Walk entry when a hiking workout with bathroom markers syncs from PeteTrain
+   */
+  private async autoCreateMapleWalk(workoutId: string, workout: AppleHealthWorkout): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const walkDate = new Date(workout.startDate).toISOString().split('T')[0]
+
+    const { error } = await db
+      .from('maple_walks')
+      .upsert({
+        healthkit_workout_id: workoutId,
+        date: walkDate,
+        duration: Math.round(workout.duration),
+        distance_miles: workout.distanceMiles || null,
+      }, { onConflict: 'healthkit_workout_id', ignoreDuplicates: true })
+
+    if (error) {
+      console.error('[AppleHealth] Error auto-creating maple walk:', error)
+    } else {
+      console.log(`[AppleHealth] Auto-created Maple Walk for workout ${workoutId}`)
+    }
   }
 
   /**

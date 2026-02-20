@@ -35,6 +35,23 @@ export const MOOD_COLORS: Record<MapleMoodRating, { bg: string; text: string; bo
 }
 
 // ============================================
+// BATHROOM MARKERS
+// ============================================
+
+export interface MapleBathroomMarker {
+  id: string
+  type: 'pee' | 'poop'
+  latitude: number
+  longitude: number
+  timestamp: string
+}
+
+export interface MapleBathroomMarkerCounts {
+  pee: number
+  poop: number
+}
+
+// ============================================
 // WALK TYPES
 // ============================================
 
@@ -52,6 +69,7 @@ export interface MapleWalk {
   distanceMiles: number | null
   createdAt: string
   updatedAt: string
+  bathroomMarkerCounts?: MapleBathroomMarkerCounts | null
 }
 
 /**
@@ -118,6 +136,7 @@ export interface MapleWalkWithDetails extends MapleWalk {
     timestamp: string
     bpm: number
   }>
+  bathroomMarkers?: MapleBathroomMarker[]
 }
 
 /**

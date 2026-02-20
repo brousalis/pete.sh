@@ -5,16 +5,16 @@
 
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
-    AvailableWalkingWorkout,
-    CreateMapleWalkInput,
-    ListMapleWalksOptions,
-    MapleLinkedWorkout,
-    MapleStats,
-    MapleWalk,
-    MapleWalkRoute,
-    MapleWalkRow,
-    MapleWalkWithDetails,
-    UpdateMapleWalkInput,
+  AvailableWalkingWorkout,
+  CreateMapleWalkInput,
+  ListMapleWalksOptions,
+  MapleLinkedWorkout,
+  MapleStats,
+  MapleWalk,
+  MapleWalkRoute,
+  MapleWalkRow,
+  MapleWalkWithDetails,
+  UpdateMapleWalkInput,
 } from '@/lib/types/maple.types'
 
 // ============================================
@@ -59,7 +59,42 @@ class MapleService {
       return []
     }
 
-    return (data as MapleWalkRow[]).map((row) => this.mapRowToWalk(row))
+    const walks = (data as MapleWalkRow[]).map((row) => this.mapRowToWalk(row))
+
+    // Batch-fetch bathroom marker counts for all walks
+    const workoutIds = walks
+      .filter((w) => w.healthkitWorkoutId)
+      .map((w) => w.healthkitWorkoutId as string)
+
+    if (workoutIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any
+      const { data: markerData } = await db
+        .from('maple_bathroom_markers')
+        .select('workout_id, marker_type')
+        .in('workout_id', workoutIds)
+
+      if (markerData) {
+        const countsByWorkout = new Map<string, { pee: number; poop: number }>()
+        for (const m of markerData as Array<{ workout_id: string; marker_type: string }>) {
+          const existing = countsByWorkout.get(m.workout_id) || { pee: 0, poop: 0 }
+          if (m.marker_type === 'pee') existing.pee++
+          else if (m.marker_type === 'poop') existing.poop++
+          countsByWorkout.set(m.workout_id, existing)
+        }
+
+        for (const walk of walks) {
+          if (walk.healthkitWorkoutId) {
+            const counts = countsByWorkout.get(walk.healthkitWorkoutId)
+            if (counts && (counts.pee > 0 || counts.poop > 0)) {
+              walk.bathroomMarkerCounts = counts
+            }
+          }
+        }
+      }
+    }
+
+    return walks
   }
 
   /**
@@ -110,6 +145,7 @@ class MapleService {
     let workout: MapleLinkedWorkout | null = null
     let route: MapleWalkRoute | null = null
     let hrSamples: Array<{ timestamp: string; bpm: number }> = []
+    let bathroomMarkers: Array<{ id: string; type: 'pee' | 'poop'; latitude: number; longitude: number; timestamp: string }> = []
 
     // Get linked workout if exists
     if (walk.healthkitWorkoutId) {
@@ -168,6 +204,29 @@ class MapleService {
             (_, i) => i % 10 === 0
           )
         }
+
+        // Get bathroom markers
+        const { data: markerData, error: markerError } = await db
+          .from('maple_bathroom_markers')
+          .select('id, marker_type, latitude, longitude, timestamp')
+          .eq('workout_id', walk.healthkitWorkoutId)
+          .order('timestamp', { ascending: true })
+
+        if (!markerError && markerData) {
+          bathroomMarkers = (markerData as Array<{
+            id: string
+            marker_type: string
+            latitude: string | number
+            longitude: string | number
+            timestamp: string
+          }>).map(m => ({
+            id: m.id,
+            type: m.marker_type as 'pee' | 'poop',
+            latitude: Number(m.latitude),
+            longitude: Number(m.longitude),
+            timestamp: m.timestamp,
+          }))
+        }
       }
     }
 
@@ -176,6 +235,7 @@ class MapleService {
       workout,
       route,
       hrSamples,
+      bathroomMarkers: bathroomMarkers.length > 0 ? bathroomMarkers : undefined,
     }
   }
 

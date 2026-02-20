@@ -10,6 +10,7 @@ struct SettingsHistoryView: View {
     @State private var notificationManager = NotificationManager.shared
     @State private var syncManager = SyncManager.shared
     @State private var workoutDataManager = WorkoutDataManager.shared
+    @State private var mapleWalkManager = MapleWalkManager.shared
 
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @AppStorage("devDayOverride") private var devDayOverride = 1
@@ -17,9 +18,14 @@ struct SettingsHistoryView: View {
     // Sheet states
     @State private var showHistoricalSync = false
     @State private var historicalSyncResult: HistoricalSyncResult?
+    @State private var showMapleWalk = false
+    @State private var showConcurrentWorkoutAlert = false
 
     var body: some View {
         List {
+            // MARK: - Maple Walk Section
+            mapleWalkSection
+
             // MARK: - Sync & Data Section (at top)
             syncDataSection
 
@@ -35,6 +41,14 @@ struct SettingsHistoryView: View {
         .listStyle(.plain)
         .sheet(isPresented: $showHistoricalSync) {
             HistoricalSyncSheet(syncManager: syncManager, result: $historicalSyncResult)
+        }
+        .fullScreenCover(isPresented: $showMapleWalk) {
+            MapleWalkView()
+        }
+        .alert("Workout Active", isPresented: $showConcurrentWorkoutAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("End your current workout before starting a Maple Walk.")
         }
     }
 
@@ -70,6 +84,60 @@ struct SettingsHistoryView: View {
         NotificationsRow(notificationManager: notificationManager)
             .listRowBackground(Color.white.opacity(0.06))
             .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+    }
+
+    // MARK: - Maple Walk Section
+
+    @ViewBuilder
+    private var mapleWalkSection: some View {
+        Button {
+            if mapleWalkManager.isActive {
+                showMapleWalk = true
+            } else {
+                showMapleWalk = true
+            }
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.green.opacity(0.15))
+                        .frame(width: 32, height: 32)
+                    Text("🐾")
+                        .font(.system(size: 16))
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Maple Walk")
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.green)
+
+                    if mapleWalkManager.isActive {
+                        Text("Walk in progress...")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.green.opacity(0.7))
+                    } else {
+                        Text("Track bathroom breaks")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if mapleWalkManager.isActive {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .listRowBackground(Color.green.opacity(0.06))
+        .listRowInsets(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8))
     }
 
     // MARK: - Sync & Data Section

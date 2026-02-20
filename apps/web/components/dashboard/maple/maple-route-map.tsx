@@ -2,6 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import type { LocationSample } from '@/lib/types/apple-health.types'
+import type { MapleBathroomMarker } from '@/lib/types/maple.types'
 import { MapPin, Navigation } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -66,6 +67,8 @@ declare global {
 interface MapleRouteMapProps {
   samples: LocationSample[]
   hrSamples?: Array<{ timestamp: string; bpm: number }>
+  bathroomMarkers?: MapleBathroomMarker[]
+  walkStartTime?: string
   className?: string
   showElevation?: boolean
   colorByHeartRate?: boolean
@@ -94,6 +97,8 @@ function getHrZoneColor(bpm: number, maxHr: number = 185): string {
 export function MapleRouteMap({
   samples,
   hrSamples,
+  bathroomMarkers,
+  walkStartTime,
   className = '',
   colorByHeartRate = false,
 }: MapleRouteMapProps) {
@@ -276,7 +281,57 @@ export function MapleRouteMap({
       })
       markersRef.current.push(endMarker)
     }
-  }, [samples, hrSamples, colorByHeartRate])
+
+    // Add bathroom markers
+    if (bathroomMarkers && bathroomMarkers.length > 0) {
+      const walkStart = walkStartTime ? new Date(walkStartTime).getTime() : null
+
+      for (const bm of bathroomMarkers) {
+        const position = { lat: bm.latitude, lng: bm.longitude }
+        bounds.extend(position)
+
+        const emoji = bm.type === 'pee' ? '💧' : '💩'
+        const markerTime = new Date(bm.timestamp)
+        const timeStr = markerTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+        const relativeMin = walkStart
+          ? Math.round((markerTime.getTime() - walkStart) / 60000)
+          : null
+        const tooltip = relativeMin != null
+          ? `${emoji} ${relativeMin} min into walk \u2013 ${timeStr}`
+          : `${emoji} ${timeStr}`
+
+        const markerContent = document.createElement('div')
+        markerContent.innerHTML = `
+          <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid ${bm.type === 'pee' ? '#3b82f6' : '#a855f7'};
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-size: 18px;
+            cursor: pointer;
+          " title="${tooltip}">
+            ${emoji}
+          </div>
+        `
+
+        const bmMarker = new google.maps.marker.AdvancedMarkerElement({
+          position,
+          map,
+          content: markerContent,
+          title: tooltip,
+        })
+        markersRef.current.push(bmMarker)
+      }
+
+      // Refit bounds to include bathroom markers
+      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 })
+    }
+  }, [samples, hrSamples, colorByHeartRate, bathroomMarkers, walkStartTime])
 
   // Initialize map when ready
   useEffect(() => {

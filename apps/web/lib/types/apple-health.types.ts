@@ -139,10 +139,22 @@ export interface WalkingMetrics {
 }
 
 // ============================================
+// BATHROOM MARKERS (Maple Walk Tracking)
+// ============================================
+
+export interface BathroomMarker {
+  id: string
+  type: 'pee' | 'poop'
+  latitude: number
+  longitude: number
+  timestamp: string
+}
+
+// ============================================
 // WORKOUT EVENTS
 // ============================================
 
-export type WorkoutEventType = 
+export type WorkoutEventType =
   | 'pause'
   | 'resume'
   | 'motion_pause'
@@ -205,44 +217,47 @@ export interface AppleHealthWorkout {
   startDate: string // ISO 8601
   endDate: string // ISO 8601
   duration: number // seconds
-  
+
   // Calories
   activeCalories: number
   totalCalories: number
-  
+
   // Distance (for cardio workouts)
   distance?: number // meters
   distanceMiles?: number
-  
+
   // Elevation (for outdoor workouts)
   elevationGain?: number // meters
-  
+
   // Indoor/outdoor distinction
   // true = indoor, false = outdoor, undefined = unknown (legacy)
   isIndoor?: boolean
-  
+
   // Heart rate data
   heartRate: HeartRateSummary
   heartRateSamples: HeartRateSample[] // Granular per-second/5-second samples
-  
+
   // Running-specific metrics
   runningMetrics?: RunningMetrics
-  
+
   // Cycling-specific metrics
   cyclingMetrics?: CyclingMetrics
-  
+
   // Walking-specific metrics (for Maple walks)
   walkingMetrics?: WalkingMetrics
-  
+
   // Route data (for outdoor workouts)
   route?: WorkoutRoute
-  
+
   // Workout events (pauses, segments, laps)
   workoutEvents?: WorkoutEvent[]
-  
+
+  // Bathroom markers (Maple walk tracking)
+  bathroomMarkers?: BathroomMarker[]
+
   // Effort score (Apple's workout intensity metric, 0-10 scale)
   effortScore?: number
-  
+
   // Metadata
   source: string // "PeteWatch" or device name
   sourceVersion?: string
@@ -252,7 +267,7 @@ export interface AppleHealthWorkout {
     hardwareVersion?: string
     softwareVersion?: string
   }
-  
+
   // Weather conditions during outdoor workout
   weather?: {
     temperature?: number // Celsius
@@ -288,7 +303,7 @@ export interface WorkoutRoute {
 
 export interface DailyHealthMetrics {
   date: string // YYYY-MM-DD
-  
+
   // Activity
   steps: number
   activeCalories: number
@@ -298,14 +313,14 @@ export interface DailyHealthMetrics {
   moveGoal?: number
   exerciseGoal?: number
   standGoal?: number
-  
+
   // Heart
   restingHeartRate?: number
   heartRateVariability?: number // HRV in ms (SDNN)
-  
+
   // Cardio fitness
   vo2Max?: number
-  
+
   // Sleep (if tracked)
   sleepDuration?: number // seconds
   sleepStages?: {
@@ -314,7 +329,7 @@ export interface DailyHealthMetrics {
     core: number
     deep: number
   }
-  
+
   // Walking metrics
   walkingHeartRateAverage?: number
   walkingDoubleSupportPercentage?: number
@@ -326,7 +341,7 @@ export interface DailyHealthMetrics {
   bodyMassLbs?: number
   bodyFatPercentage?: number
   leanBodyMassLbs?: number
-  
+
   source: string
   recordedAt: string // ISO 8601
 }
@@ -367,19 +382,19 @@ export interface AppleHealthBatchSyncPayload {
 
 export interface WorkoutAnalytics {
   workoutId: string
-  
+
   // Heart rate analysis
   hrZoneDistribution: HeartRateZone[]
   averageHrBySegment: { minute: number; avgBpm: number }[]
   recoveryRate?: number // BPM drop in first minute after workout
-  
+
   // Performance trends (compared to previous similar workouts)
   trends?: {
     avgHrTrend: 'improving' | 'stable' | 'declining'
     paceTrend?: 'improving' | 'stable' | 'declining'
     cadenceTrend?: 'improving' | 'stable' | 'declining'
   }
-  
+
   // Running splits (if applicable)
   splits?: {
     mile: number
@@ -393,22 +408,22 @@ export interface WorkoutAnalytics {
 export interface FitnessInsights {
   weekNumber: number
   year: number
-  
+
   // Weekly summary
   totalWorkouts: number
   totalDuration: number // seconds
   totalCalories: number
   totalDistance?: number // meters
-  
+
   // Heart health
   avgRestingHr: number
   avgHrv: number
   vo2MaxEstimate?: number
-  
+
   // Training load
   trainingLoad: 'low' | 'optimal' | 'high' | 'overreaching'
   recoveryStatus: 'recovered' | 'recovering' | 'strained'
-  
+
   // Weekly HR zone breakdown
   weeklyZoneDistribution: HeartRateZone[]
 }
