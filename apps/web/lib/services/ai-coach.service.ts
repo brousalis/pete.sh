@@ -28,15 +28,20 @@ import { appleHealthService } from '@/lib/services/apple-health.service'
 import { exerciseWeightLogService } from '@/lib/services/exercise-weight-log.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
+    DayOfWeekSchema,
     FullAnalysisSchema,
     PostWorkoutAnalysisSchema,
     type AiCoachInsight,
     type AnalysisTrigger,
     type FullAnalysis,
     type PostWorkoutAnalysis,
+    type RoutineChange,
     type TrainingReadiness,
     type TrainingReadinessInput,
 } from '@/lib/types/ai-coach.types'
+import type { Workout } from '@/lib/types/fitness.types'
+import type { Recipe } from '@/lib/types/cooking.types'
+import { applyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
 
 // ============================================
 // LANGUAGE MODEL MIDDLEWARE
@@ -549,7 +554,103 @@ ${weeklyProgress}`)
 ${summaries.join('\n')}`)
   }
 
+  // 9. Weekly Nutrition Summary (from meal plans)
+  const nutritionSummary = await getWeeklyNutritionSummary()
+  if (nutritionSummary) {
+    sections.push(nutritionSummary)
+  }
+
   return sections.join('\n\n---\n\n')
+}
+
+async function getWeeklyNutritionSummary(): Promise<string | null> {
+  try {
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) return null
+
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const monday = new Date(now)
+    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7))
+    const weekStart = monday.toISOString().split('T')[0]
+
+    const { data: mealPlan } = await supabase
+      .from('meal_plans')
+      .select('meals')
+      .eq('week_start_date', weekStart)
+      .single()
+
+    if (!mealPlan?.meals) return null
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meals = mealPlan.meals as Record<string, any>
+    const recipeIds = new Set<string>()
+
+    for (const day of Object.values(meals)) {
+      if (!day || typeof day !== 'object') continue
+      for (const val of Object.values(day as Record<string, unknown>)) {
+        if (typeof val === 'string' && val.length > 10) recipeIds.add(val)
+      }
+    }
+
+    if (recipeIds.size === 0) return null
+
+    const { data: recipes } = await supabase
+      .from('recipes')
+      .select('id, name, calories_per_serving, protein_g, fat_g, carbs_g, fiber_g, nutrition_category')
+      .in('id', Array.from(recipeIds))
+
+    if (!recipes?.length) return null
+
+    const enrichedRecipes = recipes.filter((r: Record<string, unknown>) => r.calories_per_serving)
+    if (enrichedRecipes.length === 0) return null
+
+    let totalCal = 0, totalProtein = 0, totalFat = 0, totalCarbs = 0, totalFiber = 0
+    let mealCount = 0
+
+    for (const day of Object.values(meals)) {
+      if (!day || typeof day !== 'object') continue
+      for (const recipeId of Object.values(day as Record<string, unknown>)) {
+        if (typeof recipeId !== 'string') continue
+        const recipe = enrichedRecipes.find((r: Record<string, unknown>) => r.id === recipeId) as Recipe | undefined
+        if (recipe?.calories_per_serving) {
+          totalCal += recipe.calories_per_serving
+          totalProtein += recipe.protein_g ?? 0
+          totalFat += recipe.fat_g ?? 0
+          totalCarbs += recipe.carbs_g ?? 0
+          totalFiber += recipe.fiber_g ?? 0
+          mealCount++
+        }
+      }
+    }
+
+    if (mealCount === 0) return null
+
+    const avgDailyCal = Math.round(totalCal / 7)
+    const avgDailyProtein = Math.round(totalProtein / 7)
+
+    const categoryFreq = new Map<string, number>()
+    for (const r of enrichedRecipes) {
+      const rec = r as Recipe
+      for (const cat of rec.nutrition_category ?? []) {
+        categoryFreq.set(cat, (categoryFreq.get(cat) || 0) + 1)
+      }
+    }
+
+    const topCategories = Array.from(categoryFreq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([cat]) => cat)
+
+    return `## Weekly Nutrition Summary (Current Week)
+Planned meals with nutrition data: ${mealCount}
+Total weekly: ${totalCal}cal | ${Math.round(totalProtein)}g protein | ${Math.round(totalFat)}g fat | ${Math.round(totalCarbs)}g carbs | ${Math.round(totalFiber)}g fiber
+Daily average: ~${avgDailyCal}cal | ~${avgDailyProtein}g protein
+Meal profile trends: ${topCategories.length > 0 ? topCategories.join(', ') : 'No categories yet'}
+${enrichedRecipes.length < recipeIds.size ? `Note: ${recipeIds.size - enrichedRecipes.length} of ${recipeIds.size} planned recipes don't have nutrition data yet.` : ''}`
+  } catch {
+    return null
+  }
 }
 
 // ============================================
@@ -695,6 +796,8 @@ export async function createChatStream(
     model,
     system: `You are an expert AI fitness coach embedded in the athlete's training dashboard. You have full access to their workout data, body composition, and health metrics. Be conversational but specific — always back up recommendations with data. Follow the coaching knowledge base principles.
 
+When the user asks you to change, swap, add, remove, or modify exercises in their routine, or to adjust weights/reps/sets, use the proposeRoutineVersion tool. Include all related changes in a single tool call. Do not narrate what you plan to change before calling the tool — just call it directly. Never modify the routine without using this tool.
+
 Today's date: ${getLocalDateString()}
 
 ${systemContext}`,
@@ -762,6 +865,102 @@ ${systemContext}`,
         execute: async () => {
           const readiness = await getTrainingReadinessFromData()
           return readiness
+        },
+      }),
+      proposeRoutineVersion: tool({
+        description:
+          'Propose changes to the workout routine. Shows the user a preview card with the changes for them to review and apply. Use this whenever the user asks to change, swap, add, remove, or modify exercises. Include all related changes in a single call.',
+        inputSchema: z.object({
+          commitMessage: z.string().describe('Brief description of what changed, e.g. "Swapped bench press for incline DB press on Monday"'),
+          routineChanges: z.array(z.object({
+            day: DayOfWeekSchema,
+            section: z.enum(['warmup', 'exercises', 'finisher', 'metabolicFlush', 'mobility']).describe('Workout section to modify'),
+            action: z.enum(['add', 'remove', 'modify', 'swap']).describe('Type of change'),
+            exerciseName: z.string().describe('Name of the existing exercise (for remove/modify/swap) or new exercise (for add)'),
+            newExerciseName: z.string().optional().describe('Name of replacement exercise (for swap)'),
+            sets: z.number().optional(),
+            reps: z.number().optional(),
+            weight: z.number().optional().describe('Weight in lbs'),
+            duration: z.number().optional().describe('Duration in seconds'),
+            rest: z.number().optional().describe('Rest in seconds'),
+            form: z.string().optional().describe('Form cues'),
+            reasoning: z.string().describe('Why this change is recommended'),
+          })).optional().default([]).describe('Structural changes to the routine (add/remove/modify/swap exercises)'),
+          progressiveOverload: z.array(z.object({
+            exerciseName: z.string().describe('Exercise name to adjust'),
+            suggestedWeight: z.number().optional().describe('New weight in lbs'),
+            suggestedReps: z.number().optional().describe('New rep count'),
+            suggestedSets: z.number().optional().describe('New set count'),
+            reasoning: z.string().describe('Why this progression is recommended'),
+          })).optional().default([]).describe('Weight/rep/set progression adjustments'),
+        }),
+        execute: async ({ commitMessage, routineChanges, progressiveOverload }) => {
+          try {
+            const supabase = getSupabaseClientForOperation('read')
+            if (!supabase) {
+              return { status: 'error' as const, message: 'Database not available' }
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const db = supabase as any
+            const routineId = 'climber-physique'
+
+            const { data: activeVersion, error: activeError } = await db
+              .from('fitness_routine_versions')
+              .select('workout_definitions')
+              .eq('routine_id', routineId)
+              .eq('is_active', true)
+              .single()
+
+            if (activeError || !activeVersion) {
+              return { status: 'error' as const, message: 'No active routine version found' }
+            }
+
+            const workoutDefs: Record<string, Workout> = JSON.parse(
+              JSON.stringify(activeVersion.workout_definitions || {})
+            )
+
+            const mappedChanges: RoutineChange[] = routineChanges.map((c) => ({
+              ...c,
+              priority: 'immediate' as const,
+            }))
+
+            const mappedOverload: ProgressiveOverloadEntry[] = (progressiveOverload || []).map((o) => ({
+              exerciseName: o.exerciseName,
+              suggestedWeight: o.suggestedWeight,
+              suggestedReps: o.suggestedReps,
+              suggestedSets: o.suggestedSets,
+              reasoning: o.reasoning,
+            }))
+
+            const { changesApplied, diff } = applyRoutineChanges(
+              workoutDefs,
+              mappedChanges,
+              mappedOverload,
+            )
+
+            if (changesApplied === 0) {
+              return {
+                status: 'error' as const,
+                message: 'No matching exercises found for the proposed changes. Check the exercise names match what\'s in the routine.',
+              }
+            }
+
+            return {
+              status: 'pending_confirmation' as const,
+              commitMessage,
+              routineId,
+              routineChanges: mappedChanges,
+              progressiveOverload: mappedOverload,
+              diff,
+              changesApplied,
+            }
+          } catch (error) {
+            return {
+              status: 'error' as const,
+              message: error instanceof Error ? error.message : 'Failed to prepare routine changes',
+            }
+          }
         },
       }),
     },

@@ -1,3 +1,4 @@
+export { AiCoachInline } from './ai-coach-inline'
 export { RoutineEditor } from './routine-editor'
 export { ProfileEditor } from './profile-editor'
 export { ScheduleEditor } from './schedule-editor'

@@ -199,6 +199,7 @@ async function getRecipeCatalogSummary(): Promise<string> {
         if (r.is_favorite) parts.push('★ favorite')
         if (r.calories_per_serving) parts.push(`${r.calories_per_serving}cal`)
         if (r.protein_g) parts.push(`${r.protein_g}g protein`)
+        if (r.nutrition_category?.length) parts.push(`[${r.nutrition_category.join(', ')}]`)
         return parts.join(' ')
       })
       .join('\n')

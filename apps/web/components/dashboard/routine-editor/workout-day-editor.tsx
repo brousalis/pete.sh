@@ -1,11 +1,20 @@
 'use client'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -16,6 +25,7 @@ import {
 } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -23,6 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import type {
   DayOfWeek,
   Exercise,
@@ -36,13 +55,31 @@ import {
   Dumbbell,
   Flame,
   Plus,
+  Shield,
   StretchHorizontal,
   Target,
+  Trash2,
   Wind,
+  X,
   Zap,
 } from 'lucide-react'
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { useCallback, useState } from 'react'
 import { ExerciseEditor } from './exercise-editor'
+import { ExerciseVideoManager } from './exercise-video-manager'
 
 interface WorkoutDayEditorProps {
   workoutDefinitions?: Record<DayOfWeek, Workout>
@@ -50,25 +87,6 @@ interface WorkoutDayEditorProps {
   selectedDay: DayOfWeek
   onSelectDay: (day: DayOfWeek) => void
   onUpdate: (definitions: Record<DayOfWeek, Workout>) => void
-}
-
-const DAYS: DayOfWeek[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-]
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
 }
 
 const FOCUS_OPTIONS: { value: WorkoutFocus; label: string }[] = [
@@ -91,8 +109,7 @@ interface SectionConfig {
   key: SectionType
   label: string
   icon: React.ReactNode
-  description: string
-  color: string
+  borderColor: string
 }
 
 const SECTIONS: SectionConfig[] = [
@@ -100,36 +117,31 @@ const SECTIONS: SectionConfig[] = [
     key: 'warmup',
     label: 'Warm-up',
     icon: <Flame className="h-4 w-4" />,
-    description: 'Skill & warm-up exercises',
-    color: 'text-orange-500',
+    borderColor: 'border-l-orange-500',
   },
   {
     key: 'exercises',
     label: 'Main Workout',
     icon: <Dumbbell className="h-4 w-4" />,
-    description: 'Primary exercises',
-    color: 'text-blue-500',
+    borderColor: 'border-l-blue-500',
   },
   {
     key: 'finisher',
     label: 'Finisher',
     icon: <Zap className="h-4 w-4" />,
-    description: 'Optional finisher exercises',
-    color: 'text-purple-500',
+    borderColor: 'border-l-purple-500',
   },
   {
     key: 'metabolicFlush',
     label: 'Metabolic Flush',
     icon: <Wind className="h-4 w-4" />,
-    description: 'Post-lift cardio',
-    color: 'text-green-500',
+    borderColor: 'border-l-green-500',
   },
   {
     key: 'mobility',
     label: 'Mobility',
     icon: <StretchHorizontal className="h-4 w-4" />,
-    description: 'Deep stretching',
-    color: 'text-cyan-500',
+    borderColor: 'border-l-cyan-500',
   },
 ]
 
@@ -148,6 +160,25 @@ function generateExerciseId(
   return `${prefix}-${sectionPrefix}${index + 1}`.replace('--', '-')
 }
 
+function estimateSectionDuration(exercises: Exercise[]): string {
+  let totalSeconds = 0
+  for (const ex of exercises) {
+    if (ex.duration) {
+      totalSeconds += ex.duration
+    } else if (ex.sets && ex.reps) {
+      totalSeconds += ex.sets * ex.reps * 3 + (ex.rest || 60) * (ex.sets - 1)
+    }
+  }
+  if (totalSeconds <= 0) return ''
+  const mins = Math.round(totalSeconds / 60)
+  return mins > 0 ? `~${mins}m` : ''
+}
+
+interface SelectedExercise {
+  section: SectionType
+  index: number
+}
+
 export function WorkoutDayEditor({
   workoutDefinitions,
   schedule,
@@ -158,31 +189,21 @@ export function WorkoutDayEditor({
   const [expandedSections, setExpandedSections] = useState<SectionType[]>([
     'exercises',
   ])
+  const [selectedExercise, setSelectedExercise] = useState<SelectedExercise | null>(null)
+  const [removingSectionKey, setRemovingSectionKey] = useState<SectionType | null>(null)
 
-  // Handle loading state
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   if (!workoutDefinitions || !schedule) {
     return (
-      <div className="space-y-4">
-        {/* Day Selector */}
-        <div className="flex gap-2">
-          {DAYS.map(day => (
-            <Button
-              key={day}
-              variant={selectedDay === day ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onSelectDay(day)}
-              className="flex-1"
-            >
-              {DAY_LABELS[day]}
-            </Button>
-          ))}
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading workout data...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <p className="text-muted-foreground">Loading workout data...</p>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -197,17 +218,14 @@ export function WorkoutDayEditor({
     )
   }
 
-  const updateWorkout = useCallback(
-    (updates: Partial<Workout>) => {
-      onUpdate({
-        ...workoutDefinitions,
-        [selectedDay]: { ...workout, ...updates },
-      })
-    },
-    [workoutDefinitions, selectedDay, workout, onUpdate]
-  )
+  const updateWorkout = (updates: Partial<Workout>) => {
+    onUpdate({
+      ...workoutDefinitions,
+      [selectedDay]: { ...workout, ...updates },
+    })
+  }
 
-  const getExercisesForSection = (section: SectionType): Exercise[] => {
+  const getExercisesForSection = useCallback((section: SectionType): Exercise[] => {
     if (!workout) return []
 
     switch (section) {
@@ -224,7 +242,7 @@ export function WorkoutDayEditor({
       default:
         return []
     }
-  }
+  }, [workout])
 
   const updateExercisesForSection = (
     section: SectionType,
@@ -278,6 +296,10 @@ export function WorkoutDayEditor({
       reps: 10,
     }
     updateExercisesForSection(section, [...exercises, newExercise])
+    setSelectedExercise({ section, index: exercises.length })
+    if (!expandedSections.includes(section)) {
+      setExpandedSections(prev => [...prev, section])
+    }
   }
 
   const updateExercise = (
@@ -295,6 +317,11 @@ export function WorkoutDayEditor({
       (_, i) => i !== index
     )
     updateExercisesForSection(section, exercises)
+    if (selectedExercise?.section === section && selectedExercise?.index === index) {
+      setSelectedExercise(null)
+    } else if (selectedExercise?.section === section && selectedExercise.index > index) {
+      setSelectedExercise({ section, index: selectedExercise.index - 1 })
+    }
   }
 
   const duplicateExercise = (section: SectionType, index: number) => {
@@ -308,163 +335,193 @@ export function WorkoutDayEditor({
     }
     exercises.splice(index + 1, 0, duplicate)
     updateExercisesForSection(section, exercises)
+    setSelectedExercise({ section, index: index + 1 })
   }
 
-  const moveExercise = (
-    section: SectionType,
-    fromIndex: number,
-    toIndex: number
-  ) => {
-    const exercises = [...getExercisesForSection(section)]
-    const moved = exercises.splice(fromIndex, 1)[0]
+  const handleDragEnd = (sectionKey: SectionType) => (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const exercises = [...getExercisesForSection(sectionKey)]
+    const oldIndex = exercises.findIndex((_, i) => `${sectionKey}-${i}` === active.id)
+    const newIndex = exercises.findIndex((_, i) => `${sectionKey}-${i}` === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const moved = exercises.splice(oldIndex, 1)[0]
     if (moved === undefined) return
-    exercises.splice(toIndex, 0, moved)
-    updateExercisesForSection(section, exercises)
+    exercises.splice(newIndex, 0, moved)
+    updateExercisesForSection(sectionKey, exercises)
+
+    if (selectedExercise?.section === sectionKey) {
+      if (selectedExercise.index === oldIndex) {
+        setSelectedExercise({ section: sectionKey, index: newIndex })
+      } else if (selectedExercise.index > oldIndex && selectedExercise.index <= newIndex) {
+        setSelectedExercise({ section: sectionKey, index: selectedExercise.index - 1 })
+      } else if (selectedExercise.index < oldIndex && selectedExercise.index >= newIndex) {
+        setSelectedExercise({ section: sectionKey, index: selectedExercise.index + 1 })
+      }
+    }
+  }
+
+  const removeSection = (section: SectionType) => {
+    if (section === 'exercises') return
+    const updates: Partial<Workout> = {}
+    switch (section) {
+      case 'warmup':
+        updates.warmup = undefined
+        break
+      case 'finisher':
+        updates.finisher = undefined
+        break
+      case 'metabolicFlush':
+        updates.metabolicFlush = undefined
+        break
+      case 'mobility':
+        updates.mobility = undefined
+        break
+    }
+    updateWorkout(updates)
+    if (selectedExercise?.section === section) {
+      setSelectedExercise(null)
+    }
+    setRemovingSectionKey(null)
+  }
+
+  const currentExercise = selectedExercise
+    ? getExercisesForSection(selectedExercise.section)[selectedExercise.index]
+    : null
+
+  const handleExerciseFieldChange = <K extends keyof Exercise>(field: K, value: Exercise[K]) => {
+    if (!selectedExercise || !currentExercise) return
+    updateExercise(selectedExercise.section, selectedExercise.index, {
+      ...currentExercise,
+      [field]: value,
+    })
+  }
+
+  const navigateExercise = (direction: 'prev' | 'next') => {
+    if (!selectedExercise) return
+    const exercises = getExercisesForSection(selectedExercise.section)
+    const newIndex = direction === 'prev'
+      ? selectedExercise.index - 1
+      : selectedExercise.index + 1
+    if (newIndex >= 0 && newIndex < exercises.length) {
+      setSelectedExercise({ ...selectedExercise, index: newIndex })
+    }
   }
 
   if (!workout) {
     return (
-      <div className="space-y-4">
-        {/* Day Selector */}
-        <div className="flex gap-2">
-          {DAYS.map(day => (
-            <Button
-              key={day}
-              variant={selectedDay === day ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onSelectDay(day)}
-              className="flex-1"
-            >
-              {DAY_LABELS[day]}
-            </Button>
-          ))}
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="bg-muted/50 mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+          <Target className="text-muted-foreground h-10 w-10" />
         </div>
-
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Target className="text-muted-foreground mb-4 h-12 w-12" />
-            <p className="text-muted-foreground mb-2">
-              No workout defined for {selectedDay}
-            </p>
-            <p className="text-muted-foreground mb-4 text-xs">
-              {daySchedule?.focus}: {daySchedule?.goal}
-            </p>
-            <Button
-              onClick={() => {
-                const newWorkout: Workout = {
-                  id: `${selectedDay}-workout`,
-                  name: `${daySchedule?.focus || 'Workout'}`,
-                  focus: 'strength',
-                  day: selectedDay,
-                  goal: daySchedule?.goal,
-                  exercises: [],
-                }
-                onUpdate({
-                  ...workoutDefinitions,
-                  [selectedDay]: newWorkout,
-                })
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Workout
-            </Button>
-          </CardContent>
-        </Card>
+        <p className="text-muted-foreground mb-1 text-lg font-medium">
+          No workout for this day
+        </p>
+        <p className="text-muted-foreground mb-6 text-sm">
+          {daySchedule?.focus && `${daySchedule.focus}: `}
+          {daySchedule?.goal || 'Create a workout to get started'}
+        </p>
+        <Button
+          size="lg"
+          onClick={() => {
+            const newWorkout: Workout = {
+              id: `${selectedDay}-workout`,
+              name: `${daySchedule?.focus || 'Workout'}`,
+              focus: 'strength',
+              day: selectedDay,
+              goal: daySchedule?.goal,
+              exercises: [],
+            }
+            onUpdate({
+              ...workoutDefinitions,
+              [selectedDay]: newWorkout,
+            })
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Workout
+        </Button>
       </div>
     )
   }
 
+  const totalExercises = SECTIONS.reduce(
+    (sum, s) => sum + getExercisesForSection(s.key).length,
+    0
+  )
+
+  const formatDuration = (seconds?: number) => {
+    if (seconds == null || isNaN(seconds) || seconds <= 0) return ''
+    if (seconds >= 60) {
+      const mins = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`
+    }
+    return `${seconds}s`
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Day Selector */}
-      <div className="flex gap-2">
-        {DAYS.map(day => {
-          const hasWorkout = !!workoutDefinitions[day]
+    <>
+    <div className="space-y-5">
+      {/* Workout Header */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">Name</Label>
+          <Input
+            value={workout.name}
+            onChange={e => updateWorkout({ name: e.target.value })}
+            className="h-9"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">Focus</Label>
+          <Select
+            value={workout.focus}
+            onValueChange={(value: WorkoutFocus) =>
+              updateWorkout({ focus: value })
+            }
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FOCUS_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">Goal</Label>
+          <Input
+            value={workout.goal ?? ''}
+            onChange={e => updateWorkout({ goal: e.target.value })}
+            placeholder="Workout goal..."
+            className="h-9"
+          />
+        </div>
+      </div>
+
+      {/* Summary badges */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Badge variant="outline" className="text-xs py-0.5 px-2">
+          {totalExercises} exercises
+        </Badge>
+        {SECTIONS.map(s => {
+          const count = getExercisesForSection(s.key).length
+          if (count === 0) return null
+          const dur = estimateSectionDuration(getExercisesForSection(s.key))
           return (
-            <Button
-              key={day}
-              variant={selectedDay === day ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onSelectDay(day)}
-              className="relative flex-1"
-            >
-              {DAY_LABELS[day]}
-              {hasWorkout && (
-                <span className="absolute top-0 right-0 h-2 w-2 translate-x-1 -translate-y-1 transform rounded-full bg-green-500" />
-              )}
-            </Button>
+            <span key={s.key} className="text-muted-foreground text-xs">
+              {s.label}: {count}{dur ? ` (${dur})` : ''}
+            </span>
           )
         })}
       </div>
-
-      {/* Workout Header */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Dumbbell className="h-5 w-5" />
-                {workout.name}
-              </CardTitle>
-              <CardDescription>{daySchedule?.goal}</CardDescription>
-            </div>
-            <Badge variant="outline">{workout.focus}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Workout Name</Label>
-              <Input
-                value={workout.name}
-                onChange={e => updateWorkout({ name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Focus</Label>
-              <Select
-                value={workout.focus}
-                onValueChange={(value: WorkoutFocus) =>
-                  updateWorkout({ focus: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FOCUS_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Goal</Label>
-              <Input
-                value={workout.goal ?? ''}
-                onChange={e => updateWorkout({ goal: e.target.value })}
-                placeholder="Workout goal..."
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          {workout.notes && workout.notes.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs">Notes</Label>
-              <div className="flex flex-wrap gap-2">
-                {workout.notes.map((note, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {note}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Sections */}
       <div className="space-y-3">
@@ -481,7 +538,6 @@ export function WorkoutDayEditor({
                   ? workout.mobility
                   : null
 
-          // Skip sections that don't exist and aren't main exercises
           if (
             !hasExercises &&
             section.key !== 'exercises' &&
@@ -491,17 +547,16 @@ export function WorkoutDayEditor({
               <Button
                 key={section.key}
                 variant="ghost"
-                className="text-muted-foreground w-full justify-start"
-                onClick={() => {
-                  addExercise(section.key)
-                  setExpandedSections(prev => [...prev, section.key])
-                }}
+                className="text-muted-foreground w-full justify-start border border-dashed py-5"
+                onClick={() => addExercise(section.key)}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add {section.label}
+                Add {section.label} Section
               </Button>
             )
           }
+
+          const durationEstimate = estimateSectionDuration(exercises)
 
           return (
             <Collapsible
@@ -509,44 +564,61 @@ export function WorkoutDayEditor({
               open={isExpanded}
               onOpenChange={() => toggleSection(section.key)}
             >
-              <Card>
+              <Card className={`border-l-4 ${section.borderColor}`}>
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="hover:bg-accent/50 cursor-pointer py-3">
+                  <CardHeader className="group/section hover:bg-accent/30 cursor-pointer py-3 px-4 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={section.color}>{section.icon}</span>
-                        <CardTitle className="text-base">
-                          {section.label}
+                      <div className="flex items-center gap-2.5">
+                        {section.icon}
+                        <CardTitle className="text-base font-semibold">
+                          {sectionData?.name || section.label}
                         </CardTitle>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs h-5 px-1.5">
                           {exercises.length}
                         </Badge>
-                        {sectionData?.duration && (
+                        {durationEstimate && (
                           <span className="text-muted-foreground text-xs">
-                            {sectionData.duration} min
+                            {durationEstimate}
                           </span>
                         )}
                       </div>
-                      {isExpanded ? (
-                        <ChevronDown className="text-muted-foreground h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="text-muted-foreground h-4 w-4" />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {section.key !== 'exercises' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive opacity-0 group-hover/section:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (exercises.length > 0) {
+                                setRemovingSectionKey(section.key)
+                              } else {
+                                removeSection(section.key)
+                              }
+                            }}
+                            title={`Remove ${section.label}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {isExpanded ? (
+                          <ChevronDown className="text-muted-foreground h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="text-muted-foreground h-4 w-4" />
+                        )}
+                      </div>
                     </div>
-                    <CardDescription className="text-xs">
-                      {section.description}
-                    </CardDescription>
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <CardContent className="space-y-3 pt-0">
+                  <CardContent className="space-y-2 pt-0 px-4 pb-4">
                     {/* Section Settings */}
                     {(section.key === 'warmup' ||
                       section.key === 'metabolicFlush' ||
                       section.key === 'mobility') && (
-                      <div className="bg-muted flex gap-3 rounded-lg p-3">
+                      <div className="bg-muted/40 flex gap-3 rounded-lg p-3 mb-1">
                         <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Section Name</Label>
+                          <Label className="text-xs font-medium">Section Name</Label>
                           <Input
                             value={sectionData?.name ?? section.label}
                             onChange={e => {
@@ -578,82 +650,103 @@ export function WorkoutDayEditor({
                                 })
                               }
                             }}
-                            className="h-8"
+                            className="bg-background h-8"
                           />
                         </div>
-                        <div className="w-24 space-y-1">
-                          <Label className="text-xs">Duration (min)</Label>
-                          <Input
-                            type="number"
-                            value={sectionData?.duration ?? ''}
-                            onChange={e => {
-                              const duration = e.target.value
-                                ? Number(e.target.value)
-                                : undefined
-                              if (section.key === 'warmup') {
-                                updateWorkout({
-                                  warmup: {
-                                    ...workout.warmup,
-                                    name: workout.warmup?.name ?? 'Warm-up',
-                                    duration,
-                                    exercises: workout.warmup?.exercises ?? [],
-                                  },
-                                })
-                              } else if (section.key === 'metabolicFlush') {
-                                updateWorkout({
-                                  metabolicFlush: {
-                                    ...workout.metabolicFlush,
-                                    name:
-                                      workout.metabolicFlush?.name ??
-                                      'Metabolic Flush',
-                                    duration,
-                                    exercises:
-                                      workout.metabolicFlush?.exercises ?? [],
-                                  },
-                                })
-                              } else if (section.key === 'mobility') {
-                                updateWorkout({
-                                  mobility: {
-                                    ...workout.mobility,
-                                    name: workout.mobility?.name ?? 'Mobility',
-                                    duration,
-                                    exercises:
-                                      workout.mobility?.exercises ?? [],
-                                  },
-                                })
-                              }
-                            }}
-                            className="h-8"
-                          />
+                        <div className="w-28 space-y-1">
+                          <Label className="text-xs font-medium">Duration</Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              value={sectionData?.duration ?? ''}
+                              onChange={e => {
+                                const duration = e.target.value
+                                  ? Number(e.target.value)
+                                  : undefined
+                                if (section.key === 'warmup') {
+                                  updateWorkout({
+                                    warmup: {
+                                      ...workout.warmup,
+                                      name: workout.warmup?.name ?? 'Warm-up',
+                                      duration,
+                                      exercises: workout.warmup?.exercises ?? [],
+                                    },
+                                  })
+                                } else if (section.key === 'metabolicFlush') {
+                                  updateWorkout({
+                                    metabolicFlush: {
+                                      ...workout.metabolicFlush,
+                                      name:
+                                        workout.metabolicFlush?.name ??
+                                        'Metabolic Flush',
+                                      duration,
+                                      exercises:
+                                        workout.metabolicFlush?.exercises ?? [],
+                                    },
+                                  })
+                                } else if (section.key === 'mobility') {
+                                  updateWorkout({
+                                    mobility: {
+                                      ...workout.mobility,
+                                      name: workout.mobility?.name ?? 'Mobility',
+                                      duration,
+                                      exercises:
+                                        workout.mobility?.exercises ?? [],
+                                    },
+                                  })
+                                }
+                              }}
+                              className="bg-background h-8 pr-10"
+                            />
+                            <span className="text-muted-foreground pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs">
+                              min
+                            </span>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Exercises */}
-                    <div className="space-y-2">
-                      {exercises.map((exercise, index) => (
-                        <ExerciseEditor
-                          key={exercise.id || index}
-                          exercise={exercise}
-                          index={index}
-                          onUpdate={updated =>
-                            updateExercise(section.key, index, updated)
-                          }
-                          onDelete={() => deleteExercise(section.key, index)}
-                          onDuplicate={() =>
-                            duplicateExercise(section.key, index)
-                          }
-                        />
-                      ))}
-                    </div>
+                    {/* Exercise List */}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd(section.key)}
+                    >
+                      <SortableContext
+                        items={exercises.map((_, i) => `${section.key}-${i}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-1">
+                          {exercises.map((exercise, index) => (
+                            <ExerciseEditor
+                              key={exercise.id || index}
+                              exercise={exercise}
+                              index={index}
+                              sortId={`${section.key}-${index}`}
+                              isSelected={
+                                selectedExercise?.section === section.key &&
+                                selectedExercise?.index === index
+                              }
+                              onSelect={() =>
+                                setSelectedExercise({ section: section.key, index })
+                              }
+                              onDelete={() => deleteExercise(section.key, index)}
+                              onDuplicate={() =>
+                                duplicateExercise(section.key, index)
+                              }
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
 
-                    {/* Add Exercise Button */}
                     <Button
-                      variant="outline"
-                      className="w-full"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-muted-foreground hover:text-foreground border border-dashed h-8 text-xs"
                       onClick={() => addExercise(section.key)}
                     >
-                      <Plus className="mr-2 h-4 w-4" />
+                      <Plus className="mr-1.5 h-3 w-3" />
                       Add Exercise
                     </Button>
                   </CardContent>
@@ -664,5 +757,305 @@ export function WorkoutDayEditor({
         })}
       </div>
     </div>
+
+    {/* Exercise Detail Sheet */}
+    <Sheet
+      open={!!selectedExercise && !!currentExercise}
+      onOpenChange={(open) => {
+        if (!open) setSelectedExercise(null)
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="sm:max-w-lg w-full p-0 flex flex-col gap-0"
+      >
+        {currentExercise && selectedExercise && (
+          <>
+            {/* Sheet Header */}
+            <SheetHeader className="px-5 pt-5 pb-3 border-b shrink-0">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 h-6 w-8 justify-center">
+                    {currentExercise.id?.split('-').pop()?.toUpperCase() || selectedExercise.index + 1}
+                  </Badge>
+                  <SheetTitle className="text-base truncate">
+                    {currentExercise.name}
+                  </SheetTitle>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    disabled={selectedExercise.index === 0}
+                    onClick={() => navigateExercise('prev')}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    disabled={
+                      selectedExercise.index >=
+                      getExercisesForSection(selectedExercise.section).length - 1
+                    }
+                    onClick={() => navigateExercise('next')}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => setSelectedExercise(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </SheetHeader>
+
+            {/* Sheet Body */}
+            <ScrollArea className="flex-1 overflow-y-auto">
+              <div className="p-5 space-y-5">
+                {/* Exercise Name */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Exercise Name</Label>
+                  <Input
+                    value={currentExercise.name}
+                    onChange={(e) => handleExerciseFieldChange('name', e.target.value)}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Programming */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Programming</p>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Sets</Label>
+                      <Input
+                        type="number"
+                        value={currentExercise.sets ?? ''}
+                        onChange={(e) => handleExerciseFieldChange('sets', e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="3"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Reps</Label>
+                      <Input
+                        type="number"
+                        value={currentExercise.reps ?? ''}
+                        onChange={(e) => handleExerciseFieldChange('reps', e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="10"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Duration</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={currentExercise.duration ?? ''}
+                          onChange={(e) => handleExerciseFieldChange('duration', e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="60"
+                          className="h-9 pr-6"
+                        />
+                        <span className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px]">s</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Rest</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={currentExercise.rest ?? ''}
+                          onChange={(e) => handleExerciseFieldChange('rest', e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="90"
+                          className="h-9 pr-6"
+                        />
+                        <span className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px]">s</span>
+                      </div>
+                    </div>
+                  </div>
+                  {currentExercise.sets && currentExercise.reps && (
+                    <p className="text-xs text-muted-foreground">
+                      {currentExercise.sets}&times;{currentExercise.reps}
+                      {currentExercise.duration ? ` / ${formatDuration(currentExercise.duration)}` : ''}
+                      {currentExercise.rest ? ` — ${formatDuration(currentExercise.rest)} rest` : ''}
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Coaching */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Coaching</p>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Form Cues</Label>
+                      <Textarea
+                        value={currentExercise.form ?? ''}
+                        onChange={(e) => handleExerciseFieldChange('form', e.target.value)}
+                        placeholder="Form cues and technique tips..."
+                        rows={2}
+                        className="resize-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Notes</Label>
+                      <Input
+                        value={currentExercise.notes ?? ''}
+                        onChange={(e) => handleExerciseFieldChange('notes', e.target.value)}
+                        placeholder="Additional notes..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Media */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Media</p>
+                  <ExerciseVideoManager
+                    exerciseName={currentExercise.name}
+                    currentYoutubeVideoId={currentExercise.youtubeVideoId}
+                    onYoutubeVideoIdChange={(videoId) => handleExerciseFieldChange('youtubeVideoId', videoId)}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Options */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Options</p>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={currentExercise.isElbowSafe ?? false}
+                        onCheckedChange={(checked) => handleExerciseFieldChange('isElbowSafe', checked)}
+                      />
+                      <Label className="text-sm flex items-center gap-1.5">
+                        <Shield className="h-3.5 w-3.5" />
+                        Elbow Safe
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={!!currentExercise.alternative}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleExerciseFieldChange('alternative', { name: '' })
+                          } else {
+                            handleExerciseFieldChange('alternative', undefined)
+                          }
+                        }}
+                      />
+                      <Label className="text-sm">Alternative</Label>
+                    </div>
+                  </div>
+
+                  {currentExercise.alternative && (
+                    <div className="p-3 bg-muted/50 rounded-lg space-y-3 border border-dashed">
+                      <p className="text-xs font-medium text-muted-foreground">Alternative (for injury protocol)</p>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Name</Label>
+                          <Input
+                            value={currentExercise.alternative?.name ?? ''}
+                            onChange={(e) => handleExerciseFieldChange('alternative', {
+                              ...currentExercise.alternative,
+                              name: e.target.value,
+                            })}
+                            placeholder="Alternative name"
+                            className="h-8"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Sets</Label>
+                            <Input
+                              type="number"
+                              value={currentExercise.alternative?.sets ?? ''}
+                              onChange={(e) => handleExerciseFieldChange('alternative', {
+                                ...currentExercise.alternative,
+                                name: currentExercise.alternative?.name ?? '',
+                                sets: e.target.value ? Number(e.target.value) : undefined,
+                              })}
+                              placeholder="3"
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Reps</Label>
+                            <Input
+                              type="number"
+                              value={currentExercise.alternative?.reps ?? ''}
+                              onChange={(e) => handleExerciseFieldChange('alternative', {
+                                ...currentExercise.alternative,
+                                name: currentExercise.alternative?.name ?? '',
+                                reps: e.target.value ? Number(e.target.value) : undefined,
+                              })}
+                              placeholder="10"
+                              className="h-8"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Form Cues</Label>
+                          <Textarea
+                            value={currentExercise.alternative?.form ?? ''}
+                            onChange={(e) => handleExerciseFieldChange('alternative', {
+                              ...currentExercise.alternative,
+                              name: currentExercise.alternative?.name ?? '',
+                              form: e.target.value,
+                            })}
+                            placeholder="Alternative form cues..."
+                            rows={2}
+                            className="resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+
+    {/* Remove Section Confirmation */}
+    <AlertDialog open={!!removingSectionKey} onOpenChange={(open) => { if (!open) setRemovingSectionKey(null) }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove Section?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove the{' '}
+            <strong>
+              {SECTIONS.find(s => s.key === removingSectionKey)?.label}
+            </strong>{' '}
+            section and all {removingSectionKey ? getExercisesForSection(removingSectionKey).length : 0} exercise(s) in it.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => removingSectionKey && removeSection(removingSectionKey)}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

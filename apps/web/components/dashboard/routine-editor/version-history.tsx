@@ -379,12 +379,12 @@ export function VersionHistory({
                 <div key={version.id} className="relative">
                   {/* Timeline dot */}
                   <div
-                    className={`absolute -left-10 top-4 w-3 h-3 rounded-full border-2 bg-background ${
+                    className={`absolute -left-[2.375rem] top-5 w-2.5 h-2.5 rounded-full border-2 bg-background transition-colors ${
                       version.isActive
                         ? 'border-green-500 bg-green-500'
                         : version.isDraft
-                          ? 'border-amber-500'
-                          : 'border-muted-foreground'
+                          ? 'border-amber-500 bg-amber-500/30'
+                          : 'border-muted-foreground/50'
                     }`}
                   />
 

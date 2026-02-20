@@ -1,24 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import type { UserProfile } from '@/lib/types/fitness.types'
 import {
-  User,
-  Target,
-  Scale,
-  Ruler,
   Clock,
   Footprints,
+  Plus,
+  Ruler,
+  Scale,
+  Target,
+  User,
   X,
-  Plus
 } from 'lucide-react'
-import type { UserProfile } from '@/lib/types/fitness.types'
 
 interface ProfileEditorProps {
   profile?: UserProfile
@@ -34,290 +32,209 @@ const DEFAULT_PROFILE: UserProfile = {
 }
 
 export function ProfileEditor({ profile, name = '', onUpdate }: ProfileEditorProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [localProfile, setLocalProfile] = useState<UserProfile>(profile ?? DEFAULT_PROFILE)
-  const [localName, setLocalName] = useState(name)
-  const [newLiftingShoe, setNewLiftingShoe] = useState('')
-  const [newCardioShoe, setNewCardioShoe] = useState('')
+  const p = profile ?? DEFAULT_PROFILE
 
-  // Update local state when props change (only when not editing)
-  useEffect(() => {
-    if (!isEditing && profile) {
-      setLocalProfile(profile)
-    }
-  }, [profile, isEditing])
-
-  useEffect(() => {
-    if (!isEditing && name) {
-      setLocalName(name)
-    }
-  }, [name, isEditing])
-
-  const handleSave = () => {
-    onUpdate(localProfile, localName)
-    setIsEditing(false)
+  const updateProfile = (updates: Partial<UserProfile>) => {
+    onUpdate({ ...p, ...updates }, undefined)
   }
 
-  const handleCancel = () => {
-    setLocalProfile(profile ?? DEFAULT_PROFILE)
-    setLocalName(name)
-    setIsEditing(false)
-  }
-
-  const addLiftingShoe = () => {
-    if (newLiftingShoe.trim()) {
-      setLocalProfile({
-        ...localProfile,
-        shoeStrategy: {
-          ...localProfile.shoeStrategy,
-          lifting: [...localProfile.shoeStrategy.lifting, newLiftingShoe.trim()],
-        },
-      })
-      setNewLiftingShoe('')
-    }
-  }
-
-  const removeLiftingShoe = (index: number) => {
-    setLocalProfile({
-      ...localProfile,
+  const addShoe = (type: 'lifting' | 'cardio', shoe: string) => {
+    if (!shoe.trim()) return
+    onUpdate({
+      ...p,
       shoeStrategy: {
-        ...localProfile.shoeStrategy,
-        lifting: localProfile.shoeStrategy.lifting.filter((_, i) => i !== index),
+        ...p.shoeStrategy,
+        [type]: [...p.shoeStrategy[type], shoe.trim()],
       },
     })
   }
 
-  const addCardioShoe = () => {
-    if (newCardioShoe.trim()) {
-      setLocalProfile({
-        ...localProfile,
-        shoeStrategy: {
-          ...localProfile.shoeStrategy,
-          cardio: [...localProfile.shoeStrategy.cardio, newCardioShoe.trim()],
-        },
-      })
-      setNewCardioShoe('')
-    }
-  }
-
-  const removeCardioShoe = (index: number) => {
-    setLocalProfile({
-      ...localProfile,
+  const removeShoe = (type: 'lifting' | 'cardio', index: number) => {
+    onUpdate({
+      ...p,
       shoeStrategy: {
-        ...localProfile.shoeStrategy,
-        cardio: localProfile.shoeStrategy.cardio.filter((_, i) => i !== index),
+        ...p.shoeStrategy,
+        [type]: p.shoeStrategy[type].filter((_, i) => i !== index),
       },
     })
-  }
-
-  if (!isEditing) {
-    return (
-      <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setIsEditing(true)}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </CardTitle>
-            <Button variant="ghost" size="sm">Edit</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <p className="text-sm font-medium">{localName}</p>
-            <p className="text-xs text-muted-foreground">{localProfile.goal}</p>
-          </div>
-          <div className="flex gap-4 text-sm">
-            <span className="flex items-center gap-1">
-              <Ruler className="h-3 w-3 text-muted-foreground" />
-              {localProfile.stats.height}
-            </span>
-            <span className="flex items-center gap-1">
-              <Scale className="h-3 w-3 text-muted-foreground" />
-              {localProfile.stats.weight} lbs
-            </span>
-          </div>
-          <div className="flex gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {localProfile.schedule.trainingTime}
-            </span>
-            {localProfile.schedule.fasted && (
-              <Badge variant="secondary" className="text-xs">Fasted</Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Edit Profile
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
-            <Button size="sm" onClick={handleSave}>Save</Button>
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Profile
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 px-4 pb-4">
+        {/* Routine Name + Goal */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs font-medium">Routine Name</Label>
+            <Input
+              value={name}
+              onChange={(e) => onUpdate(p, e.target.value)}
+              placeholder="My Training Routine"
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Target className="h-3 w-3" />
+              Goal
+            </Label>
+            <Input
+              value={p.goal}
+              onChange={(e) => updateProfile({ goal: e.target.value })}
+              placeholder="Your fitness goal..."
+              className="h-8"
+            />
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Routine Name */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Routine Name</Label>
-          <Input
-            id="name"
-            value={localName}
-            onChange={(e) => setLocalName(e.target.value)}
-            placeholder="My Training Routine"
-          />
-        </div>
 
-        {/* Goal */}
-        <div className="space-y-2">
-          <Label htmlFor="goal" className="flex items-center gap-2">
-            <Target className="h-3 w-3" />
-            Goal
-          </Label>
-          <Textarea
-            id="goal"
-            value={localProfile.goal}
-            onChange={(e) => setLocalProfile({ ...localProfile, goal: e.target.value })}
-            placeholder="Your fitness goal..."
-            rows={2}
-          />
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="height" className="flex items-center gap-2">
+        {/* Stats + Schedule in one row */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs font-medium flex items-center gap-1">
               <Ruler className="h-3 w-3" />
               Height
             </Label>
             <Input
-              id="height"
-              value={localProfile.stats.height}
-              onChange={(e) => setLocalProfile({
-                ...localProfile,
-                stats: { ...localProfile.stats, height: e.target.value },
+              value={p.stats.height}
+              onChange={(e) => updateProfile({
+                stats: { ...p.stats, height: e.target.value },
               })}
               placeholder={'5\'10"'}
+              className="h-8"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="weight" className="flex items-center gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs font-medium flex items-center gap-1">
               <Scale className="h-3 w-3" />
-              Weight (lbs)
+              Weight
+            </Label>
+            <div className="relative">
+              <Input
+                type="number"
+                value={p.stats.weight || ''}
+                onChange={(e) => updateProfile({
+                  stats: { ...p.stats, weight: Number(e.target.value) },
+                })}
+                placeholder="180"
+                className="h-8 pr-8"
+              />
+              <span className="text-muted-foreground pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px]">
+                lbs
+              </span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Training
             </Label>
             <Input
-              id="weight"
-              type="number"
-              value={localProfile.stats.weight}
-              onChange={(e) => setLocalProfile({
-                ...localProfile,
-                stats: { ...localProfile.stats, weight: Number(e.target.value) },
-              })}
-              placeholder="180"
-            />
-          </div>
-        </div>
-
-        {/* Schedule */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Clock className="h-3 w-3" />
-            Schedule
-          </Label>
-          <div className="flex items-center gap-4">
-            <Input
-              value={localProfile.schedule.trainingTime}
-              onChange={(e) => setLocalProfile({
-                ...localProfile,
-                schedule: { ...localProfile.schedule, trainingTime: e.target.value },
+              value={p.schedule.trainingTime}
+              onChange={(e) => updateProfile({
+                schedule: { ...p.schedule, trainingTime: e.target.value },
               })}
               placeholder="12:00 PM"
-              className="w-32"
+              className="h-8"
             />
-            <div className="flex items-center gap-2">
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-medium">&nbsp;</Label>
+            <div className="flex items-center gap-2 h-8">
               <Switch
-                checked={localProfile.schedule.fasted}
-                onCheckedChange={(checked) => setLocalProfile({
-                  ...localProfile,
-                  schedule: { ...localProfile.schedule, fasted: checked },
+                checked={p.schedule.fasted}
+                onCheckedChange={(checked) => updateProfile({
+                  schedule: { ...p.schedule, fasted: checked },
                 })}
               />
-              <Label className="text-sm">Fasted Training</Label>
+              <Label className="text-xs">Fasted</Label>
             </div>
           </div>
         </div>
 
-        {/* Shoe Strategy */}
-        <div className="space-y-3">
-          <Label className="flex items-center gap-2">
+        {/* Shoe Strategy -- side by side */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium flex items-center gap-1">
             <Footprints className="h-3 w-3" />
             Shoe Strategy
           </Label>
-
-          {/* Lifting Shoes */}
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Lifting</p>
-            <div className="flex flex-wrap gap-2">
-              {localProfile.shoeStrategy.lifting.map((shoe, index) => (
-                <Badge key={index} variant="secondary" className="gap-1">
-                  {shoe}
-                  <button onClick={() => removeLiftingShoe(index)} className="ml-1 hover:text-destructive">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newLiftingShoe}
-                onChange={(e) => setNewLiftingShoe(e.target.value)}
-                placeholder="Add lifting shoe"
-                className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && addLiftingShoe()}
-              />
-              <Button variant="outline" size="icon" onClick={addLiftingShoe}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Cardio Shoes */}
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Cardio</p>
-            <div className="flex flex-wrap gap-2">
-              {localProfile.shoeStrategy.cardio.map((shoe, index) => (
-                <Badge key={index} variant="secondary" className="gap-1">
-                  {shoe}
-                  <button onClick={() => removeCardioShoe(index)} className="ml-1 hover:text-destructive">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newCardioShoe}
-                onChange={(e) => setNewCardioShoe(e.target.value)}
-                placeholder="Add cardio shoe"
-                className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && addCardioShoe()}
-              />
-              <Button variant="outline" size="icon" onClick={addCardioShoe}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <ShoeList
+              label="Lifting"
+              shoes={p.shoeStrategy.lifting}
+              onAdd={(shoe) => addShoe('lifting', shoe)}
+              onRemove={(i) => removeShoe('lifting', i)}
+            />
+            <ShoeList
+              label="Cardio"
+              shoes={p.shoeStrategy.cardio}
+              onAdd={(shoe) => addShoe('cardio', shoe)}
+              onRemove={(i) => removeShoe('cardio', i)}
+            />
           </div>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function ShoeList({
+  label,
+  shoes,
+  onAdd,
+  onRemove,
+}: {
+  label: string
+  shoes: string[]
+  onAdd: (shoe: string) => void
+  onRemove: (index: number) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+      {shoes.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {shoes.map((shoe, index) => (
+            <Badge key={index} variant="secondary" className="gap-1 pr-1 text-xs h-6">
+              {shoe}
+              <button onClick={() => onRemove(index)} className="ml-0.5 hover:text-destructive rounded-full">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-1.5">
+        <Input
+          placeholder={`Add ${label.toLowerCase()} shoe`}
+          className="flex-1 h-7 text-xs"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onAdd((e.target as HTMLInputElement).value);
+              (e.target as HTMLInputElement).value = ''
+            }
+          }}
+        />
+        <Button
+          variant="outline"
+          size="icon"
+          className="shrink-0 h-7 w-7"
+          onClick={(e) => {
+            const input = (e.currentTarget.previousElementSibling as HTMLInputElement)
+            if (input?.value) {
+              onAdd(input.value)
+              input.value = ''
+            }
+          }}
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
   )
 }

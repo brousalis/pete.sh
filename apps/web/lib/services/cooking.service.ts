@@ -25,6 +25,7 @@ import {
   sanitizeRawIngredientString,
   mergeNotes,
 } from '@/lib/utils/ingredient-sanitizer'
+import { maybeRecomputeNutrition } from '@/lib/services/nutrition.service'
 
 export class CookingService {
   /**
@@ -139,10 +140,10 @@ export class CookingService {
       throw new Error(`Failed to fetch recipe: ${recipeError.message}`)
     }
 
-    // Get ingredients
+    // Get ingredients with joined nutrition data
     const { data: ingredientsData, error: ingredientsError } = await supabase
       .from('recipe_ingredients')
-      .select('*')
+      .select('*, ingredient_nutrition(calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, fiber_per_100g, data_source, confidence)')
       .eq('recipe_id', id)
       .order('order_index', { ascending: true })
 
@@ -152,7 +153,13 @@ export class CookingService {
     }
 
     const recipe = recipeData as Recipe
-    const ingredients = (ingredientsData || []) as RecipeIngredient[]
+    const ingredients = (ingredientsData || []).map((row: Record<string, unknown>) => {
+      const { ingredient_nutrition, ...rest } = row
+      return {
+        ...rest,
+        nutrition: ingredient_nutrition ?? null,
+      }
+    }) as RecipeIngredient[]
 
     return {
       ...recipe,
@@ -228,6 +235,9 @@ export class CookingService {
     if (!fullRecipe) {
       throw new Error('Failed to fetch created recipe')
     }
+
+    // Fire-and-forget nutrition enrichment for new recipe
+    maybeRecomputeNutrition(recipeId).catch(() => {})
 
     return fullRecipe
   }
@@ -314,6 +324,11 @@ export class CookingService {
     const fullRecipe = await this.getRecipe(id)
     if (!fullRecipe) {
       throw new Error('Failed to fetch updated recipe')
+    }
+
+    // Fire-and-forget nutrition recomputation when ingredients change
+    if (ingredients !== undefined) {
+      maybeRecomputeNutrition(id).catch(() => {})
     }
 
     return fullRecipe

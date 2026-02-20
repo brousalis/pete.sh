@@ -11,6 +11,7 @@ import {
   sanitizeIngredientUnit,
   mergeNotes,
 } from '@/lib/utils/ingredient-sanitizer'
+import { parseIngredientString } from '@/lib/utils/ingredient-parser'
 
 export class TraderJoesService {
   /**
@@ -243,31 +244,12 @@ export class TraderJoesService {
         })) || [],
       ingredients:
         recipeData.ingredients?.map((ingredient, index) => {
-          // Try to parse ingredient string (e.g., "2 cups flour" or "1 tbsp olive oil")
-          // This is a simple parser - in production, you'd want a more robust solution
-          const parts = ingredient.trim().split(/\s+/)
-          let amount: number | undefined
-          let unit: string | undefined
-          let name: string
-
-          const firstPart = parts[0]
-          const secondPart = parts[1]
-          if (parts.length >= 3 && firstPart && !isNaN(parseFloat(firstPart))) {
-            amount = parseFloat(firstPart)
-            unit = secondPart
-            name = parts.slice(2).join(' ')
-          } else if (parts.length >= 2 && firstPart && !isNaN(parseFloat(firstPart))) {
-            amount = parseFloat(firstPart)
-            name = parts.slice(1).join(' ')
-          } else {
-            name = ingredient
-          }
-
-          const sanitized = sanitizeIngredientName(name)
+          const parsed = parseIngredientString(ingredient)
+          const sanitized = sanitizeIngredientName(parsed.name)
           return {
             name: sanitized.name,
-            amount,
-            unit: unit ? sanitizeIngredientUnit(unit) : unit,
+            amount: parsed.amount,
+            unit: parsed.unit ? sanitizeIngredientUnit(parsed.unit) : parsed.unit,
             notes: mergeNotes(null, sanitized.extractedNotes) ?? undefined,
             order_index: index,
           }

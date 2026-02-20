@@ -47,6 +47,9 @@ const envSchema = z.object({
   CONCERTS_CALENDAR_ID: z.string().optional(),
   CONCERTS_API_KEY: z.string().optional(),
 
+  // USDA FoodData Central
+  USDA_FDC_API_KEY: z.string().optional(),
+
 })
 
 // Parse and validate environment variables
@@ -133,6 +136,10 @@ export const config = {
     calendarId: env.CONCERTS_CALENDAR_ID,
     apiKey: env.CONCERTS_API_KEY,
     isSetlistfmConfigured: Boolean(env.SETLISTFM_API_KEY),
+  },
+  nutrition: {
+    usdaApiKey: env.USDA_FDC_API_KEY,
+    isConfigured: Boolean(env.USDA_FDC_API_KEY),
   },
 } as const
 

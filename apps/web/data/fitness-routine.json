@@ -1,6 +1,6 @@
 {
   "id": "climber-physique",
-  "name": "Rock Climber & Lean Physique Protocol (V15 Elite)",
+  "name": "AI Coach Suggestion v17",
   "userProfile": {
     "goal": "Climber Physique (Wire-strong, vascular, 185 lb target)",
     "stats": {
@@ -22,9 +22,9 @@
       ]
     },
     "musicStrategy": {
-      "wednesday": "170 BPM (Cadence Lock)",
+      "saturday": "180 BPM (Sprint Speed)",
       "thursday": "170 BPM (Cadence Lock)",
-      "saturday": "180 BPM (Sprint Speed)"
+      "wednesday": "170 BPM (Cadence Lock)"
     }
   },
   "injuryProtocol": {
@@ -42,91 +42,52 @@
     "dailyRehab": [
       {
         "name": "Finger Extensions",
-        "description": "Rubber band on fingers. Open wide.",
-        "frequency": "daily",
+        "reps": 25,
         "sets": 2,
-        "reps": 25
+        "frequency": "daily",
+        "description": "Rubber band on fingers. Open wide."
       },
       {
         "name": "DB Wrist Extension Eccentrics",
-        "description": "Forearm on bench, palm down. Lift with help, lower slowly (5 sec) with bad arm.",
-        "frequency": "workout days",
+        "reps": 15,
         "sets": 3,
-        "reps": 15
+        "frequency": "workout days",
+        "description": "Forearm on bench, palm down. Lift with help, lower slowly (5 sec) with bad arm."
       }
     ],
     "description": "Combined Achilles tendon recovery and Golfer's Elbow remodeling protocol"
   },
   "schedule": {
-    "monday": {
-      "focus": "Strength",
-      "goal": "Lift (Elbow Safe) + 40m Bike + Wrist Rehab"
-    },
-    "tuesday": {
-      "focus": "Core",
-      "goal": "Core (Hollow Body) + 45m Velocity Hike"
-    },
-    "wednesday": {
-      "focus": "Hybrid",
-      "goal": "Run (2mi) + Hike (45-60m Velocity)"
-    },
-    "thursday": {
-      "focus": "Endurance",
-      "goal": "Run (4-5mi Slow) + 20m Spin Flush"
-    },
     "friday": {
-      "focus": "Circuit",
-      "goal": "Circuit (DB Y-Raise) + 30m Bike"
+      "goal": "Circuit (DB Y-Raise) + 30m Bike",
+      "focus": "Circuit"
     },
-    "saturday": {
-      "focus": "HIIT",
-      "goal": "Sprints (20m) + Walk + Ice Bottle"
+    "monday": {
+      "goal": "Lift (Elbow Safe) + 40m Bike + Wrist Rehab",
+      "focus": "Strength"
     },
     "sunday": {
-      "focus": "Rest",
-      "goal": "10k Steps (No Gym)"
+      "goal": "10k Steps (No Gym)",
+      "focus": "Rest"
+    },
+    "tuesday": {
+      "goal": "Core (Hollow Body) + 45m Velocity Hike",
+      "focus": "Core"
+    },
+    "saturday": {
+      "goal": "Sprints (20m) + Walk + Ice Bottle",
+      "focus": "HIIT"
+    },
+    "thursday": {
+      "goal": "Run (4-5mi Slow) + 20m Spin Flush",
+      "focus": "Endurance"
+    },
+    "wednesday": {
+      "goal": "Run (2mi) + Hike (45-60m Velocity)",
+      "focus": "Hybrid"
     }
   },
   "dailyRoutines": {
-    "morning": {
-      "id": "oil-the-hinge",
-      "name": "The Morning Armor Routine",
-      "type": "morning",
-      "duration": 10,
-      "exercises": [
-        {
-          "why": "Rebuilds Achilles tendon strength through isometric loading",
-          "name": "Isometric Heel Holds (Achilles Fix)",
-          "action": "Stand on edge of step (or flat). Lift to toes. Hold 45 seconds.",
-          "duration": 135,
-          "sets": 3,
-          "description": "Primary Achilles rehab exercise. Isometric holds build tendon resilience."
-        },
-        {
-          "why": "Opens ankles, knees, and hips for the day",
-          "name": "Deep Squat Hold (Active)",
-          "action": "Drop into deep squat. Use doorframe for balance if needed. Duration: 60 seconds.",
-          "duration": 60,
-          "description": "Opens ankles, knees, and hips. Essential for climbing high-step moves."
-        },
-        {
-          "why": "Prevents hunchback posture from pulling and carrying",
-          "name": "T-Spine Rotations",
-          "action": "From squat or hands/knees, reach arm to sky. 5 reps per side.",
-          "duration": 60,
-          "description": "Prevents developing a hunchback posture from all the pulling and carrying."
-        },
-        {
-          "why": "Elbow rehab and grip balance",
-          "name": "Finger Extensions",
-          "action": "Rubber band on fingers. Open wide. 2 sets x 25 reps.",
-          "sets": 2,
-          "reps": 25,
-          "description": "Counterbalances grip work and aids elbow remodeling."
-        }
-      ],
-      "description": "Do this immediately after waking up. Sequence matters."
-    },
     "night": {
       "id": "release-the-brakes",
       "name": "The Night Release Routine",
@@ -156,6 +117,45 @@
         }
       ],
       "description": "Do this right before bed."
+    },
+    "morning": {
+      "id": "oil-the-hinge",
+      "name": "The Morning Armor Routine",
+      "type": "morning",
+      "duration": 10,
+      "exercises": [
+        {
+          "why": "Rebuilds Achilles tendon strength through isometric loading",
+          "name": "Isometric Heel Holds (Achilles Fix)",
+          "sets": 3,
+          "action": "Stand on edge of step (or flat). Lift to toes. Hold 45 seconds.",
+          "duration": 135,
+          "description": "Primary Achilles rehab exercise. Isometric holds build tendon resilience."
+        },
+        {
+          "why": "Opens ankles, knees, and hips for the day",
+          "name": "Deep Squat Hold (Active)",
+          "action": "Drop into deep squat. Use doorframe for balance if needed. Duration: 60 seconds.",
+          "duration": 60,
+          "description": "Opens ankles, knees, and hips. Essential for climbing high-step moves."
+        },
+        {
+          "why": "Prevents hunchback posture from pulling and carrying",
+          "name": "T-Spine Rotations",
+          "action": "From squat or hands/knees, reach arm to sky. 5 reps per side.",
+          "duration": 60,
+          "description": "Prevents developing a hunchback posture from all the pulling and carrying."
+        },
+        {
+          "why": "Elbow rehab and grip balance",
+          "name": "Finger Extensions",
+          "reps": 25,
+          "sets": 2,
+          "action": "Rubber band on fingers. Open wide. 2 sets x 25 reps.",
+          "description": "Counterbalances grip work and aids elbow remodeling."
+        }
+      ],
+      "description": "Do this immediately after waking up. Sequence matters."
     }
   },
   "weeks": [
@@ -1327,9 +1327,31 @@
               "thu-flush"
             ],
             "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-02-20T14:54:21.201Z",
+            "routineVersionId": "3e5697ce-58a5-409a-9b59-967f18a41dde"
           }
         },
-        "friday": {},
+        "friday": {
+          "workout": {
+            "workoutId": "friday-shin-saver-circuit",
+            "completed": true,
+            "completedAt": "2026-02-20T21:29:47.596Z",
+            "exercisesCompleted": [
+              "friday-circuit-a",
+              "friday-circuit-b",
+              "friday-circuit-c",
+              "friday-circuit-d",
+              "friday-ai-1771599567921-14",
+              "fri-rehab-1",
+              "fri-flush"
+            ],
+            "routineVersionId": "0e2facfa-ebc3-40bb-a6be-e65faf74ff0a"
+          }
+        },
         "saturday": {},
         "sunday": {
           "nightRoutine": {
@@ -1626,5 +1648,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-19T23:59:54.583Z"
+  "updatedAt": "2026-02-20T22:53:24.301Z"
 }

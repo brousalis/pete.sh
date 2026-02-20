@@ -27,6 +27,7 @@ export interface RecipeFilterState {
   selectedCategory: string
   setSelectedCategory: (cat: string) => void
   excludedCategories: Set<string>
+  nutritionFilter: string
 }
 
 interface RecipeListProps {
@@ -74,6 +75,7 @@ export function RecipeList({
     selectedCategory,
     setSelectedCategory,
     excludedCategories,
+    nutritionFilter,
   } = filters
 
   const [displayCount, setDisplayCount] = useState(30)
@@ -103,8 +105,13 @@ export function RecipeList({
     if (favoritesOnly) {
       filtered = filtered.filter((r) => r.is_favorite)
     }
+    if (nutritionFilter && nutritionFilter !== 'all') {
+      filtered = filtered.filter((r) =>
+        r.nutrition_category?.includes(nutritionFilter)
+      )
+    }
     return filtered
-  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly])
+  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly, nutritionFilter])
 
   const filteredTjRecipes = useMemo(() => {
     if (sourceFilter === 'my-recipes') return []

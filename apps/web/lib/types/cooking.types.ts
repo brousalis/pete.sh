@@ -30,6 +30,13 @@ export interface Recipe {
   protein_g?: number
   fat_g?: number
   carbs_g?: number
+  fiber_g?: number
+  sugar_g?: number
+  sodium_mg?: number
+  saturated_fat_g?: number
+  nutrition_category: string[]
+  nutrition_completeness?: number
+  nutrition_updated_at?: string
   created_at: string
   updated_at: string
 }
@@ -42,7 +49,21 @@ export interface RecipeIngredient {
   unit?: string // 'cup', 'tbsp', 'oz', 'lb', 'g', 'ml', etc.
   notes?: string // e.g., "chopped", "diced", "optional"
   order_index: number
+  nutrition_id?: string
+  weight_grams?: number
+  nutrition?: IngredientNutritionInline | null
   created_at?: string
+}
+
+/** Inline nutrition data joined from ingredient_nutrition when fetching a recipe */
+export interface IngredientNutritionInline {
+  calories_per_100g?: number | null
+  protein_per_100g?: number | null
+  fat_per_100g?: number | null
+  carbs_per_100g?: number | null
+  fiber_per_100g?: number | null
+  data_source?: string | null
+  confidence?: number | null
 }
 
 export interface RecipeStep {

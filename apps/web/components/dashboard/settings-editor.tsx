@@ -21,8 +21,8 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { apiGet, apiPost } from '@/lib/api/client'
-import { Activity, ChefHat, GitBranch, Layout, Loader2, Monitor, Palette, Settings, Sunrise, Watch } from 'lucide-react'
-import { useState } from 'react'
+import { Activity, Apple, ChefHat, GitBranch, Layout, Loader2, Monitor, Palette, Settings, Sunrise, Watch } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 interface BackfillSummary {
@@ -75,6 +75,20 @@ export function SettingsEditor() {
   const [versionBackfillPreview, setVersionBackfillPreview] = useState<VersionBackfillSummary | null>(null)
   const [sanitizeLoading, setSanitizeLoading] = useState(false)
   const [sanitizePreview, setSanitizePreview] = useState<SanitizationPreview | null>(null)
+  const [nutritionLoading, setNutritionLoading] = useState(false)
+  const [nutritionProgress, setNutritionProgress] = useState<{
+    total: number
+    completed: number
+    failed: number
+    current_recipe?: string
+    phase: string
+  } | null>(null)
+  const [nutritionResult, setNutritionResult] = useState<{
+    total: number
+    enriched: number
+    failed: number
+  } | null>(null)
+  const nutritionAbortRef = useRef<AbortController | null>(null)
 
   // Preview ingredient sanitization (dry run)
   const handlePreviewSanitize = async () => {
@@ -223,6 +237,79 @@ export function SettingsEditor() {
       setVersionBackfillLoading(false)
     }
   }
+
+  const handleNutritionEnrich = useCallback(async (force = false) => {
+    setNutritionLoading(true)
+    setNutritionProgress(null)
+    setNutritionResult(null)
+
+    const abort = new AbortController()
+    nutritionAbortRef.current = abort
+
+    try {
+      const url = `/api/cooking/nutrition/enrich-all${force ? '?force=true' : ''}`
+      const response = await fetch(url, {
+        method: 'POST',
+        signal: abort.signal,
+      })
+
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const match = line.match(/^data:\s*(.+)$/m)
+          if (!match?.[1]) continue
+
+          try {
+            const event = JSON.parse(match[1])
+            if (event.type === 'progress') {
+              setNutritionProgress({
+                total: event.total,
+                completed: event.completed,
+                failed: event.failed,
+                current_recipe: event.current_recipe,
+                phase: event.phase,
+              })
+            } else if (event.type === 'complete') {
+              setNutritionResult({
+                total: event.total,
+                enriched: event.enriched,
+                failed: event.failed,
+              })
+              toast.success(
+                `Enriched ${event.enriched} recipes with nutrition data` +
+                (event.failed > 0 ? ` (${event.failed} failed)` : '')
+              )
+            } else if (event.type === 'error') {
+              toast.error(`Enrichment error: ${event.error}`)
+            }
+          } catch {
+            // skip malformed events
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        toast.error('Nutrition enrichment failed')
+      }
+    } finally {
+      setNutritionLoading(false)
+      nutritionAbortRef.current = null
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -579,7 +666,7 @@ export function SettingsEditor() {
             <CardTitle className="text-base">Cooking Data</CardTitle>
           </div>
           <CardDescription>
-            Manage and clean up your recipe data from Trader Joe&apos;s imports
+            Manage recipe data, ingredient cleanup, and nutrition enrichment
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -667,6 +754,125 @@ export function SettingsEditor() {
             {!sanitizePreview && (
               <p className="text-muted-foreground text-xs">
                 Click Preview first to see how many ingredients will be cleaned up.
+              </p>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t" />
+
+          {/* Nutrition Enrichment */}
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                Nutrition Enrichment
+              </label>
+              <p className="text-muted-foreground text-xs">
+                Enrich all recipes with nutritional data from the USDA FoodData Central
+                database. Resolves each ingredient to calories, protein, fat, carbs, fiber,
+                sugar, and sodium per serving, then categorizes recipes (high-protein, low-carb,
+                post-workout, etc.). Uses AI estimation for ingredients not found in USDA.
+              </p>
+            </div>
+
+            {/* Progress display */}
+            {nutritionProgress && !nutritionResult && (
+              <div className="bg-muted/50 rounded-lg border p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2">
+                  <Apple className="size-4 text-green-500" />
+                  <span className="font-medium">
+                    {nutritionProgress.phase === 'dedup' && 'Deduplicating ingredients...'}
+                    {nutritionProgress.phase === 'resolve' && 'Resolving ingredients via USDA...'}
+                    {nutritionProgress.phase === 'enrich' && 'Enriching recipes...'}
+                    {nutritionProgress.phase === 'done' && 'Complete!'}
+                  </span>
+                </div>
+                {nutritionProgress.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>
+                        {nutritionProgress.completed} / {nutritionProgress.total} recipes
+                        {nutritionProgress.failed > 0 && (
+                          <span className="text-destructive"> ({nutritionProgress.failed} failed)</span>
+                        )}
+                      </span>
+                      <span>{Math.round((nutritionProgress.completed / nutritionProgress.total) * 100)}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-300"
+                        style={{ width: `${(nutritionProgress.completed / nutritionProgress.total) * 100}%` }}
+                      />
+                    </div>
+                    {nutritionProgress.current_recipe && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Current: {nutritionProgress.current_recipe}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Result display */}
+            {nutritionResult && (
+              <div className="bg-muted/50 rounded-lg border p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2">
+                  <Apple className="size-4 text-green-500" />
+                  <span className="font-medium">Enrichment Complete</span>
+                </div>
+                <div className="text-muted-foreground space-y-1 text-xs">
+                  <p>Total recipes: <span className="text-foreground font-medium">{nutritionResult.total}</span></p>
+                  <p>Successfully enriched: <span className="text-foreground font-medium">{nutritionResult.enriched}</span></p>
+                  {nutritionResult.failed > 0 && (
+                    <p>Failed: <span className="text-destructive font-medium">{nutritionResult.failed}</span></p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleNutritionEnrich(false)}
+                disabled={nutritionLoading}
+              >
+                {nutritionLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <Apple className="mr-2 size-3" />
+                )}
+                Enrich New Recipes
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleNutritionEnrich(true)}
+                disabled={nutritionLoading}
+              >
+                {nutritionLoading ? (
+                  <Loader2 className="mr-2 size-3 animate-spin" />
+                ) : (
+                  <Apple className="mr-2 size-3" />
+                )}
+                Re-enrich All
+              </Button>
+              {nutritionLoading && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => nutritionAbortRef.current?.abort()}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
+            {!nutritionLoading && !nutritionResult && (
+              <p className="text-muted-foreground text-xs">
+                &ldquo;Enrich New&rdquo; processes only recipes without nutrition data.
+                &ldquo;Re-enrich All&rdquo; reprocesses every recipe (useful after adding
+                new ingredients to the USDA cache).
               </p>
             )}
           </div>

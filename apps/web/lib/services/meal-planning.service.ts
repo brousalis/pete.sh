@@ -13,6 +13,7 @@ import type {
     UpdateMealPlanInput
 } from '@/lib/types/cooking.types'
 import { sanitizeIngredientName } from '@/lib/utils/ingredient-sanitizer'
+import { parseIngredientString } from '@/lib/utils/ingredient-parser'
 import {
     normalizeIngredientName,
     normalizeUnit,
@@ -21,82 +22,6 @@ import {
 } from '@/lib/utils/shopping-utils'
 import { cookingService } from './cooking.service'
 import { traderJoesService } from './trader-joes.service'
-
-/**
- * Parse a TJ ingredient string like "2 cups all-purpose flour" into structured parts.
- * Handles fractions (½, ¼), ranges (1-2), and plain names.
- */
-function parseTjIngredientString(raw: string): {
-  name: string
-  amount?: number
-  unit?: string
-} {
-  const trimmed = raw.trim()
-  if (!trimmed) return { name: raw }
-
-  // Match: optional amount (number, fraction, mixed), optional unit, then name
-  const match = trimmed.match(
-    /^([\d½¼¾⅓⅔⅛⅜⅝⅞./]+(?:\s*[-–]\s*[\d½¼¾⅓⅔⅛⅜⅝⅞./]+)?)\s+(cup|cups|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons|oz|ounce|ounces|lb|lbs|pound|pounds|g|gram|grams|kg|ml|l|liter|liters|can|cans|package|packages|pkg|bunch|bunches|head|heads|clove|cloves|piece|pieces|slice|slices|sprig|sprigs|stalk|stalks|pinch|pinches|dash|dashes)\s+(.+)$/i
-  )
-
-  if (match && match[1] && match[2] && match[3]) {
-    return {
-      amount: parseFractionAmount(match[1]),
-      unit: match[2],
-      name: match[3],
-    }
-  }
-
-  // Try just amount + name (no unit), e.g. "2 eggs"
-  const amountMatch = trimmed.match(
-    /^([\d½¼¾⅓⅔⅛⅜⅝⅞./]+(?:\s*[-–]\s*[\d½¼¾⅓⅔⅛⅜⅝⅞./]+)?)\s+(.+)$/
-  )
-
-  if (amountMatch && amountMatch[1] && amountMatch[2]) {
-    return {
-      amount: parseFractionAmount(amountMatch[1]),
-      name: amountMatch[2],
-    }
-  }
-
-  return { name: trimmed }
-}
-
-/** Parse a fractional amount like "1½", "1/2", "½", "1-2" into a number */
-function parseFractionAmount(str: string): number {
-  const unicodeFractions: Record<string, number> = {
-    '½': 0.5, '¼': 0.25, '¾': 0.75,
-    '⅓': 0.333, '⅔': 0.667,
-    '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875,
-  }
-
-  // Handle ranges like "1-2" — use the average
-  if (/[-–]/.test(str)) {
-    const parts = str.split(/[-–]/).map((p) => parseFractionAmount(p.trim()))
-    return parts.reduce((a, b) => a + b, 0) / parts.length
-  }
-
-  // Handle unicode fractions mixed with whole numbers: "1½"
-  for (const [frac, val] of Object.entries(unicodeFractions)) {
-    if (str.includes(frac)) {
-      const whole = str.replace(frac, '').trim()
-      return (whole ? parseFloat(whole) : 0) + val
-    }
-  }
-
-  // Handle slash fractions: "1/2"
-  if (str.includes('/')) {
-    const parts = str.split('/')
-    const numVal = parseFloat(parts[0] ?? '')
-    const denVal = parseFloat(parts[1] ?? '')
-    if (!isNaN(numVal) && !isNaN(denVal) && denVal !== 0) {
-      return numVal / denVal
-    }
-  }
-
-  const val = parseFloat(str)
-  return isNaN(val) ? 0 : val
-}
 
 export class MealPlanningService {
   /**
@@ -357,7 +282,7 @@ export class MealPlanningService {
         const tjRecipe = await traderJoesService.getRecipeById(recipeId)
         if (tjRecipe && tjRecipe.recipe_data.ingredients) {
           const parsed = tjRecipe.recipe_data.ingredients
-            .map(parseTjIngredientString)
+            .map(parseIngredientString)
             .map((p) => ({ ...p, name: sanitizeIngredientName(p.name).name }))
           recipeIngredients.push({
             recipeName: tjRecipe.name,

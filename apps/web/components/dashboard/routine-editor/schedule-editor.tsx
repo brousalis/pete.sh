@@ -1,17 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
-  Calendar,
-  Pencil,
-  Check,
-  X
-} from 'lucide-react'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { WeeklySchedule, DayOfWeek } from '@/lib/types/fitness.types'
 
 interface ScheduleEditorProps {
@@ -30,27 +29,41 @@ const DEFAULT_SCHEDULE: WeeklySchedule = {
   saturday: { focus: 'HIIT', goal: '' },
   sunday: { focus: 'Rest', goal: '' },
 }
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
+
+const DAY_FULL: Record<DayOfWeek, string> = {
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday',
+  sunday: 'Sunday',
 }
 
+const FOCUS_OPTIONS = [
+  'Strength',
+  'Core',
+  'Cardio',
+  'HIIT',
+  'Recovery',
+  'Conditioning',
+  'Hybrid',
+  'Endurance',
+  'Circuit',
+  'Rest',
+]
+
 const FOCUS_COLORS: Record<string, string> = {
-  strength: 'bg-red-500/10 text-red-600 border-red-200',
-  core: 'bg-orange-500/10 text-orange-600 border-orange-200',
-  cardio: 'bg-blue-500/10 text-blue-600 border-blue-200',
-  hiit: 'bg-purple-500/10 text-purple-600 border-purple-200',
-  recovery: 'bg-green-500/10 text-green-600 border-green-200',
-  conditioning: 'bg-cyan-500/10 text-cyan-600 border-cyan-200',
-  hybrid: 'bg-amber-500/10 text-amber-600 border-amber-200',
-  endurance: 'bg-indigo-500/10 text-indigo-600 border-indigo-200',
-  rest: 'bg-slate-500/10 text-slate-600 border-slate-200',
-  circuit: 'bg-pink-500/10 text-pink-600 border-pink-200',
+  strength: 'bg-red-500/15 text-red-400 border-red-500/30',
+  core: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  cardio: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  hiit: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  recovery: 'bg-green-500/15 text-green-400 border-green-500/30',
+  conditioning: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  hybrid: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  endurance: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+  rest: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
+  circuit: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
 }
 
 function getFocusColor(focus: string): string {
@@ -58,139 +71,72 @@ function getFocusColor(focus: string): string {
   for (const [key, value] of Object.entries(FOCUS_COLORS)) {
     if (lowerFocus.includes(key)) return value
   }
-  return 'bg-slate-500/10 text-slate-600 border-slate-200'
-}
-
-interface DayEditorProps {
-  day: DayOfWeek
-  data: { focus: string; goal: string }
-  onSave: (focus: string, goal: string) => void
-  onCancel: () => void
-}
-
-function DayEditor({ day, data, onSave, onCancel }: DayEditorProps) {
-  const [focus, setFocus] = useState(data.focus)
-  const [goal, setGoal] = useState(data.goal)
-
-  return (
-    <Card className="border-2 border-primary">
-      <CardContent className="p-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="font-medium capitalize">{day}</span>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCancel}>
-              <X className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSave(focus, goal)}>
-              <Check className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div>
-            <Label className="text-xs">Focus</Label>
-            <Input
-              value={focus}
-              onChange={(e) => setFocus(e.target.value)}
-              placeholder="e.g., Strength, Core, Rest"
-              className="h-8 text-sm"
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Goal</Label>
-            <Input
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              placeholder="e.g., Build strength, Recovery"
-              className="h-8 text-sm"
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
+  return 'bg-slate-500/15 text-slate-400 border-slate-500/30'
 }
 
 export function ScheduleEditor({ schedule, onUpdate }: ScheduleEditorProps) {
-  const [editingDay, setEditingDay] = useState<DayOfWeek | null>(null)
   const currentSchedule = schedule ?? DEFAULT_SCHEDULE
 
-  const handleSave = (day: DayOfWeek, focus: string, goal: string) => {
+  const handleDayUpdate = (day: DayOfWeek, field: 'focus' | 'goal', value: string) => {
     onUpdate({
       ...currentSchedule,
-      [day]: { ...currentSchedule[day], focus, goal },
+      [day]: { ...currentSchedule[day], [field]: value },
     })
-    setEditingDay(null)
   }
 
   if (!schedule) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Weekly Schedule
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading schedule...</p>
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground">Loading schedule...</p>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Weekly Schedule
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-2">
-          {DAYS.map((day) => {
-            const dayData = currentSchedule[day]
-            const isEditing = editingDay === day
+    <div className="space-y-3">
+      {DAYS.map((day) => {
+        const dayData = currentSchedule[day]
+        const focusColor = getFocusColor(dayData.focus)
 
-            if (isEditing) {
-              return (
-                <DayEditor
-                  key={day}
-                  day={day}
-                  data={dayData}
-                  onSave={(focus, goal) => handleSave(day, focus, goal)}
-                  onCancel={() => setEditingDay(null)}
-                />
-              )
-            }
-
-            return (
-              <Card
-                key={day}
-                className="cursor-pointer hover:bg-accent/50 transition-colors group"
-                onClick={() => setEditingDay(day)}
+        return (
+          <Card key={day} className="overflow-hidden">
+            <CardContent className="flex items-center gap-4 py-3 px-4">
+              <div className="w-24 shrink-0">
+                <span className="text-sm font-semibold">{DAY_FULL[day]}</span>
+              </div>
+              <Badge
+                variant="outline"
+                className={`shrink-0 border px-2 py-0.5 text-xs font-medium ${focusColor}`}
               >
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">{DAY_LABELS[day]}</span>
-                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs font-medium ${getFocusColor(dayData.focus)}`}
-                  >
-                    {dayData.focus}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
-                    {dayData.goal}
-                  </p>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </CardContent>
-    </Card>
+                {dayData.focus || '—'}
+              </Badge>
+              <Select
+                value={dayData.focus}
+                onValueChange={(value) => handleDayUpdate(day, 'focus', value)}
+              >
+                <SelectTrigger className="w-40 shrink-0">
+                  <SelectValue placeholder="Focus" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FOCUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={dayData.goal}
+                onChange={(e) => handleDayUpdate(day, 'goal', e.target.value)}
+                placeholder="Training goal for this day..."
+                className="flex-1"
+              />
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
   )
 }

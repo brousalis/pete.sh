@@ -6,6 +6,13 @@
  */
 
 import { Button } from '@/components/ui/button'
+import {
+  RoutineDismissedBadge,
+  RoutineErrorBadge,
+  RoutineVersionPreviewCard,
+  type RoutineProposal,
+} from '@/components/dashboard/ai-coach-routine-card'
+import { useToast } from '@/hooks/use-toast'
 import type { TrainingReadiness } from '@/lib/types/ai-coach.types'
 import { cn } from '@/lib/utils'
 import { useChat } from '@ai-sdk/react'
@@ -52,6 +59,7 @@ const TOOL_LABELS: Record<string, { label: string }> = {
   getBodyCompositionTrend: { label: 'Body Composition' },
   getDailyMetrics: { label: 'Daily Metrics' },
   getTrainingReadiness: { label: 'Training Readiness' },
+  proposeRoutineVersion: { label: 'Preparing Routine Update' },
 }
 
 // ============================================
@@ -416,6 +424,12 @@ export default function AiCoachPage() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
+  const { toast } = useToast()
+
+  // Routine version proposal state
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [routineApplying, setRoutineApplying] = useState<string | null>(null)
+  const [applied, setApplied] = useState<Map<string, { versionNumber: number }>>(new Map())
 
   const transport = useMemo(
     () =>
@@ -556,6 +570,40 @@ export default function AiCoachPage() {
     },
     [chatId, handleNewChat]
   )
+
+  const handleApplyRoutineVersion = useCallback(async (
+    toolResult: RoutineProposal,
+    toolCallId: string,
+  ) => {
+    setRoutineApplying(toolCallId)
+    try {
+      const res = await fetch('/api/fitness/ai-coach/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          routineChanges: toolResult.routineChanges ?? [],
+          progressiveOverload: toolResult.progressiveOverload ?? [],
+          changeSummary: `AI Coach: ${toolResult.commitMessage}`,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setApplied((prev) => new Map(prev).set(toolCallId, { versionNumber: data.data.versionNumber }))
+        toast({ title: 'Routine updated', description: `Draft v${data.data.versionNumber} created` })
+        sendMessage({ text: `Applied routine changes. ${data.data.message}` })
+      } else {
+        throw new Error(data.error || 'Failed to apply')
+      }
+    } catch (err) {
+      toast({
+        title: 'Failed to apply changes',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'destructive',
+      })
+    } finally {
+      setRoutineApplying(null)
+    }
+  }, [sendMessage, toast])
 
   return (
     <div className="flex h-full bg-zinc-950">
@@ -743,6 +791,7 @@ export default function AiCoachPage() {
                         ) {
                           const toolPart = part as {
                             type: string
+                            toolCallId?: string
                             toolName?: string
                             state: string
                             input?: unknown
@@ -758,6 +807,39 @@ export default function AiCoachPage() {
                               : toolPart.state === 'input-available'
                                 ? 'call'
                                 : toolPart.state
+                          const isComplete = badgeState === 'result' || badgeState === 'output-available'
+                          const toolCallId = toolPart.toolCallId || `tool-${index}`
+
+                          if (toolName === 'proposeRoutineVersion' && isComplete && toolPart.output) {
+                            const result = toolPart.output as RoutineProposal
+                            if (applied.has(toolCallId)) {
+                              return (
+                                <RoutineVersionPreviewCard
+                                  key={index}
+                                  proposal={result}
+                                  appliedVersion={applied.get(toolCallId)!}
+                                />
+                              )
+                            }
+                            if (dismissed.has(toolCallId)) {
+                              return <RoutineDismissedBadge key={index} />
+                            }
+                            if (result.status === 'pending_confirmation') {
+                              return (
+                                <RoutineVersionPreviewCard
+                                  key={index}
+                                  proposal={result}
+                                  onApply={() => handleApplyRoutineVersion(result, toolCallId)}
+                                  onDismiss={() => setDismissed((prev) => new Set(prev).add(toolCallId))}
+                                  applying={routineApplying === toolCallId}
+                                />
+                              )
+                            }
+                            if (result.status === 'error') {
+                              return <RoutineErrorBadge key={index} message={result.message} />
+                            }
+                          }
+
                           return (
                             <ToolInvocationBadge
                               key={index}

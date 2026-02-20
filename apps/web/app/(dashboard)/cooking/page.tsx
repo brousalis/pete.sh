@@ -87,6 +87,7 @@ function CookingPageContent() {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set())
+  const [nutritionFilter, setNutritionFilter] = useState<string>('all')
   const [showFridgeScanner, setShowFridgeScanner] = useState(false)
   const [showFridgeManager, setShowFridgeManager] = useState(false)
   const [showShoppingFocus, setShowShoppingFocus] = useState(false)
@@ -103,7 +104,7 @@ function CookingPageContent() {
   )
 
   const hasActiveFilters =
-    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || excludedCategories.size > 0 || fridgeFilterActive
+    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || excludedCategories.size > 0 || fridgeFilterActive || nutritionFilter !== 'all'
 
   const clearAllFilters = useCallback(() => {
     setSearch('')
@@ -112,6 +113,7 @@ function CookingPageContent() {
     setFavoritesOnly(false)
     setSelectedCategory('')
     setExcludedCategories(new Set())
+    setNutritionFilter('all')
     setFridgeFilterActive(false)
   }, [setFridgeFilterActive])
 
@@ -234,6 +236,7 @@ function CookingPageContent() {
     selectedCategory,
     setSelectedCategory,
     excludedCategories,
+    nutritionFilter,
   }
 
   // Search-filtered recipe sets (reused for counts + categories)
@@ -509,6 +512,25 @@ function CookingPageContent() {
                       <SelectItem value="easy">Easy</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Nutrition Category */}
+                  <Select value={nutritionFilter} onValueChange={setNutritionFilter}>
+                    <SelectTrigger className="h-7 w-[130px] text-xs shrink-0 bg-muted/30 border-border/40">
+                      <SelectValue placeholder="Nutrition" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Nutrition</SelectItem>
+                      <SelectItem value="high-protein">High Protein</SelectItem>
+                      <SelectItem value="low-carb">Low Carb</SelectItem>
+                      <SelectItem value="low-calorie">Low Calorie</SelectItem>
+                      <SelectItem value="balanced">Balanced</SelectItem>
+                      <SelectItem value="high-fiber">High Fiber</SelectItem>
+                      <SelectItem value="post-workout">Post-Workout</SelectItem>
+                      <SelectItem value="pre-workout-friendly">Pre-Workout</SelectItem>
+                      <SelectItem value="rest-day">Rest Day</SelectItem>
+                      <SelectItem value="recomp-friendly">Recomp Friendly</SelectItem>
                     </SelectContent>
                   </Select>
 

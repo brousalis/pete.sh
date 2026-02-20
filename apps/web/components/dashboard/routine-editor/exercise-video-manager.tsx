@@ -1,5 +1,15 @@
 'use client'
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,7 +39,6 @@ import {
     Star,
     Trash2,
     Video,
-    Youtube,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -51,6 +60,7 @@ export function ExerciseVideoManager({
   const [newVideo, setNewVideo] = useState<Partial<ExerciseDemoVideoInput>>({
     videoType: 'youtube',
   })
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null)
 
   // Normalize exercise name for API calls
   const normalizedName = exerciseName.toLowerCase().trim()
@@ -124,8 +134,6 @@ export function ExerciseVideoManager({
   }
 
   const handleDeleteVideo = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this video?')) return
-
     try {
       const response = await fetch(`/api/fitness/exercise-videos/${id}`, {
         method: 'DELETE',
@@ -136,6 +144,8 @@ export function ExerciseVideoManager({
       }
     } catch (error) {
       console.error('Failed to delete video:', error)
+    } finally {
+      setDeletingVideoId(null)
     }
   }
 
@@ -184,10 +194,17 @@ export function ExerciseVideoManager({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label className="text-xs flex items-center gap-1">
-          <Video className="h-3 w-3" />
-          Demo Videos
-        </Label>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm font-medium flex items-center gap-1.5">
+            <Video className="h-3.5 w-3.5" />
+            Demo Videos
+          </Label>
+          {videos.length > 0 && (
+            <Badge variant="secondary" className="text-xs h-5 px-1.5">
+              {videos.length}
+            </Badge>
+          )}
+        </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -253,22 +270,6 @@ export function ExerciseVideoManager({
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Legacy YouTube Video ID field */}
-      {onYoutubeVideoIdChange && (
-        <div className="space-y-2">
-          <Label className="text-xs flex items-center gap-1 text-muted-foreground">
-            <Youtube className="h-3 w-3 text-red-500" />
-            YouTube Video ID (legacy)
-          </Label>
-          <Input
-            value={currentYoutubeVideoId ?? ''}
-            onChange={(e) => onYoutubeVideoIdChange(e.target.value)}
-            placeholder="e.g., dQw4w9WgXcQ"
-            className="font-mono text-xs"
-          />
-        </div>
-      )}
 
       {/* Video list */}
       {loading ? (
@@ -359,7 +360,7 @@ export function ExerciseVideoManager({
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteVideo(video.id)}
+                    onClick={() => setDeletingVideoId(video.id)}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -431,6 +432,27 @@ export function ExerciseVideoManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingVideoId} onOpenChange={(open) => !open && setDeletingVideoId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Video?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this demo video. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingVideoId && handleDeleteVideo(deletingVideoId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

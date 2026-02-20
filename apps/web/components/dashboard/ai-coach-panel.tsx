@@ -14,8 +14,15 @@
  */
 
 import { Button } from "@/components/ui/button"
+import {
+  RoutineDismissedBadge,
+  RoutineErrorBadge,
+  RoutineVersionPreviewCard,
+  type RoutineProposal,
+} from "@/components/dashboard/ai-coach-routine-card"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import type { FullAnalysis, TrainingReadiness } from "@/lib/types/ai-coach.types"
+import { useToast } from "@/hooks/use-toast"
+import type { FullAnalysis, PostWorkoutAnalysis, TrainingReadiness, RoutineChange, ProgressiveOverload } from "@/lib/types/ai-coach.types"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import {
@@ -49,6 +56,7 @@ const TOOL_LABELS: Record<string, { label: string; icon: string }> = {
   getBodyCompositionTrend: { label: "Body Composition", icon: "scale" },
   getDailyMetrics: { label: "Daily Metrics", icon: "heart" },
   getTrainingReadiness: { label: "Training Readiness", icon: "gauge" },
+  proposeRoutineVersion: { label: "Preparing Routine Update", icon: "dumbbell" },
 }
 
 // ============================================
@@ -234,13 +242,15 @@ function InsightCard({
   onApply,
   isApplying,
 }: {
-  analysis: FullAnalysis
+  analysis: FullAnalysis | PostWorkoutAnalysis
   onApply?: () => void
   isApplying?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
+  const isFull = "progressSummary" in analysis
+  const full = isFull ? (analysis as FullAnalysis) : null
 
-  const trendIcon = {
+  const trendIcon: Record<"losing" | "maintaining" | "gaining", React.ReactNode> = {
     losing: <TrendingDown className="h-4 w-4 text-green-400" />,
     maintaining: <Minus className="h-4 w-4 text-yellow-400" />,
     gaining: <TrendingUp className="h-4 w-4 text-red-400" />,
@@ -265,39 +275,45 @@ function InsightCard({
         </Button>
       </div>
 
-      <p className="text-xs text-white/70 mb-3">{analysis.progressSummary}</p>
+      <p className="text-xs text-white/70 mb-3">
+        {isFull ? analysis.progressSummary : (analysis as PostWorkoutAnalysis).workoutSummary}
+      </p>
 
       {/* Body composition snapshot */}
-      <div className="flex items-center gap-3 text-xs mb-3">
-        {trendIcon[analysis.bodyComposition.weightTrend]}
-        <span className="text-white/70">
-          {analysis.bodyComposition.currentWeight} lbs
-          {analysis.bodyComposition.isCleanCut && (
-            <span className="text-green-400 ml-1">(clean cut)</span>
-          )}
-        </span>
-        {analysis.bodyComposition.weeklyRate !== 0 && (
-          <span className="text-white/50">
-            {analysis.bodyComposition.weeklyRate > 0 ? "+" : ""}
-            {analysis.bodyComposition.weeklyRate.toFixed(1)} lbs/wk
+      {full?.bodyComposition && (
+        <div className="flex items-center gap-3 text-xs mb-3">
+          {trendIcon[full.bodyComposition.weightTrend]}
+          <span className="text-white/70">
+            {full.bodyComposition.currentWeight} lbs
+            {full.bodyComposition.isCleanCut && (
+              <span className="text-green-400 ml-1">(clean cut)</span>
+            )}
           </span>
-        )}
-      </div>
+          {full.bodyComposition.weeklyRate !== 0 && (
+            <span className="text-white/50">
+              {full.bodyComposition.weeklyRate > 0 ? "+" : ""}
+              {full.bodyComposition.weeklyRate.toFixed(1)} lbs/wk
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Weekly focus */}
-      <div className="rounded bg-purple-500/10 border border-purple-500/20 p-2 mb-3">
-        <p className="text-xs text-purple-300">{analysis.weeklyFocus}</p>
-      </div>
+      {full?.weeklyFocus && (
+        <div className="rounded bg-purple-500/10 border border-purple-500/20 p-2 mb-3">
+          <p className="text-xs text-purple-300">{full.weeklyFocus}</p>
+        </div>
+      )}
 
       {expanded && (
         <div className="space-y-3 border-t border-white/10 pt-3">
           {/* Progressive overload suggestions */}
-          {analysis.progressiveOverload.length > 0 && (
+          {full && (full.progressiveOverload?.length ?? 0) > 0 && (
             <div>
               <h4 className="text-xs font-medium text-white/50 mb-1.5">
                 Progressive Overload
               </h4>
-              {analysis.progressiveOverload.map((po, i) => (
+              {full.progressiveOverload.map((po: ProgressiveOverload, i: number) => (
                 <div key={i} className="text-xs text-white/70 flex items-center gap-1 mb-1">
                   <ArrowRight className="h-3 w-3 text-blue-400" />
                   <span>
@@ -312,12 +328,12 @@ function InsightCard({
           )}
 
           {/* Routine changes */}
-          {analysis.routineChanges.length > 0 && (
+          {full && (full.routineChanges?.length ?? 0) > 0 && (
             <div>
               <h4 className="text-xs font-medium text-white/50 mb-1.5">
                 Routine Suggestions
               </h4>
-              {analysis.routineChanges.map((change, i) => (
+              {full.routineChanges.map((change: RoutineChange, i: number) => (
                 <div key={i} className="text-xs text-white/70 mb-1">
                   <span className="capitalize">{change.day}</span>{" "}
                   <span className="text-white/40">{change.section}</span>:{" "}
@@ -352,20 +368,22 @@ function InsightCard({
           )}
 
           {/* Injury update */}
-          <div>
-            <h4 className="text-xs font-medium text-white/50 mb-1.5">
-              Injury Status
-            </h4>
-            <p className="text-xs text-white/70">
-              Elbow: {analysis.injuryUpdate.elbowStatus}
-              {analysis.injuryUpdate.elbowProgressionReady && (
-                <span className="text-green-400 ml-1">(ready to progress)</span>
-              )}
-            </p>
-            <p className="text-xs text-white/70">
-              Achilles: {analysis.injuryUpdate.achillesStatus}
-            </p>
-          </div>
+          {full?.injuryUpdate && (
+            <div>
+              <h4 className="text-xs font-medium text-white/50 mb-1.5">
+                Injury Status
+              </h4>
+              <p className="text-xs text-white/70">
+                Elbow: {full.injuryUpdate.elbowStatus}
+                {full.injuryUpdate.elbowProgressionReady && (
+                  <span className="text-green-400 ml-1">(ready to progress)</span>
+                )}
+              </p>
+              <p className="text-xs text-white/70">
+                Achilles: {full.injuryUpdate.achillesStatus}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -394,13 +412,19 @@ interface AiCoachPanelProps {
 
 export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
   const [readiness, setReadiness] = useState<TrainingReadiness | null>(null)
-  const [latestAnalysis, setLatestAnalysis] = useState<FullAnalysis | null>(null)
+  const [latestAnalysis, setLatestAnalysis] = useState<FullAnalysis | PostWorkoutAnalysis | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [loadingReadiness, setLoadingReadiness] = useState(false)
   const [chatId, setChatId] = useState<string>(() => crypto.randomUUID())
   const [chatError, setChatError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
+
+  // Routine version proposal state
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [routineApplying, setRoutineApplying] = useState<string | null>(null)
+  const [applied, setApplied] = useState<Map<string, { versionNumber: number }>>(new Map())
 
   const [input, setInput] = useState("")
 
@@ -450,7 +474,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
         .then((r) => r.json())
         .then((data) => {
           if (data.success && data.data?.analysis) {
-            setLatestAnalysis(data.data.analysis as FullAnalysis)
+            setLatestAnalysis(data.data.analysis as FullAnalysis | PostWorkoutAnalysis)
           }
         })
         .catch(console.error)
@@ -519,16 +543,17 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
   }, [])
 
   const handleApplySuggestions = useCallback(async () => {
-    if (!latestAnalysis) return
+    if (!latestAnalysis || !("progressSummary" in latestAnalysis)) return
+    const full = latestAnalysis as FullAnalysis
     setIsApplying(true)
     try {
       const res = await fetch("/api/fitness/ai-coach/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          routineChanges: latestAnalysis.routineChanges,
-          progressiveOverload: latestAnalysis.progressiveOverload,
-          changeSummary: `AI Coach: ${latestAnalysis.routineChanges.length} routine changes, ${latestAnalysis.progressiveOverload.length} overload updates. ${latestAnalysis.weeklyFocus}`,
+          routineChanges: full.routineChanges ?? [],
+          progressiveOverload: full.progressiveOverload ?? [],
+          changeSummary: `AI Coach: ${full.routineChanges?.length ?? 0} routine changes, ${full.progressiveOverload?.length ?? 0} overload updates. ${full.weeklyFocus ?? ""}`,
         }),
       })
       const data = await res.json()
@@ -543,6 +568,40 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
       setIsApplying(false)
     }
   }, [latestAnalysis, sendMessage])
+
+  const handleApplyRoutineVersion = useCallback(async (
+    toolResult: RoutineProposal,
+    toolCallId: string,
+  ) => {
+    setRoutineApplying(toolCallId)
+    try {
+      const res = await fetch("/api/fitness/ai-coach/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          routineChanges: toolResult.routineChanges ?? [],
+          progressiveOverload: toolResult.progressiveOverload ?? [],
+          changeSummary: `AI Coach: ${toolResult.commitMessage}`,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setApplied((prev) => new Map(prev).set(toolCallId, { versionNumber: data.data.versionNumber }))
+        toast({ title: "Routine updated", description: `Draft v${data.data.versionNumber} created` })
+        sendMessage({ text: `Applied routine changes. ${data.data.message}` })
+      } else {
+        throw new Error(data.error || "Failed to apply")
+      }
+    } catch (err) {
+      toast({
+        title: "Failed to apply changes",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      })
+    } finally {
+      setRoutineApplying(null)
+    }
+  }, [sendMessage, toast])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -617,18 +676,19 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
             ) : null}
 
             {/* Latest Analysis */}
-            {latestAnalysis && (
-              <InsightCard
-                analysis={latestAnalysis}
-                onApply={
-                  latestAnalysis.routineChanges.length > 0 ||
-                  latestAnalysis.progressiveOverload.length > 0
-                    ? handleApplySuggestions
-                    : undefined
-                }
-                isApplying={isApplying}
-              />
-            )}
+            {latestAnalysis && (() => {
+              const hasApplyable =
+                "progressSummary" in latestAnalysis &&
+                (((latestAnalysis as FullAnalysis).routineChanges?.length ?? 0) > 0 ||
+                  ((latestAnalysis as FullAnalysis).progressiveOverload?.length ?? 0) > 0)
+              return (
+                <InsightCard
+                  analysis={latestAnalysis}
+                  onApply={hasApplyable ? handleApplySuggestions : undefined}
+                  isApplying={isApplying}
+                />
+              )
+            })()}
 
             {/* Quick Actions (only show when no messages) */}
             {messages.length === 0 && (
@@ -702,6 +762,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                           ) {
                             const toolPart = part as {
                               type: string
+                              toolCallId?: string
                               toolName?: string
                               state: string
                               input?: unknown
@@ -717,6 +778,39 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                                 : toolPart.state === "input-available"
                                   ? "call"
                                   : toolPart.state
+                            const isComplete = badgeState === "result" || badgeState === "output-available"
+                            const toolCallId = toolPart.toolCallId || `tool-${index}`
+
+                            if (toolName === "proposeRoutineVersion" && isComplete && toolPart.output) {
+                              const result = toolPart.output as RoutineProposal
+                              if (applied.has(toolCallId)) {
+                                return (
+                                  <RoutineVersionPreviewCard
+                                    key={index}
+                                    proposal={result}
+                                    appliedVersion={applied.get(toolCallId)!}
+                                  />
+                                )
+                              }
+                              if (dismissed.has(toolCallId)) {
+                                return <RoutineDismissedBadge key={index} />
+                              }
+                              if (result.status === "pending_confirmation") {
+                                return (
+                                  <RoutineVersionPreviewCard
+                                    key={index}
+                                    proposal={result}
+                                    onApply={() => handleApplyRoutineVersion(result, toolCallId)}
+                                    onDismiss={() => setDismissed((prev) => new Set(prev).add(toolCallId))}
+                                    applying={routineApplying === toolCallId}
+                                  />
+                                )
+                              }
+                              if (result.status === "error") {
+                                return <RoutineErrorBadge key={index} message={result.message} />
+                              }
+                            }
+
                             return (
                               <ToolInvocationBadge
                                 key={index}

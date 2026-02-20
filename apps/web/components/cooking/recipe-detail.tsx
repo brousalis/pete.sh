@@ -35,6 +35,7 @@ import {
   ExternalLink,
   Flame,
   History,
+  Leaf,
   Minus,
   PlayCircle,
   Plus,
@@ -331,6 +332,12 @@ export function RecipeDetailSheet({
                       protein={recipe.protein_g}
                       fat={recipe.fat_g}
                       carbs={recipe.carbs_g}
+                      fiber={recipe.fiber_g}
+                      sugar={recipe.sugar_g}
+                      sodium={recipe.sodium_mg}
+                      saturatedFat={recipe.saturated_fat_g}
+                      categories={recipe.nutrition_category}
+                      completeness={recipe.nutrition_completeness}
                       scaleFactor={scaleFactor}
                     />
                   )}
@@ -430,31 +437,56 @@ export function RecipeDetailSheet({
                       )}
 
                       {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                        <ul className="space-y-2">
-                          {recipe.ingredients.map((ingredient, index) => (
-                            <li
-                              key={ingredient.id || index}
-                              className="flex items-start gap-3 rounded-lg p-2 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="size-5 rounded-full border-2 shrink-0 mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm font-medium">
-                                  {ingredient.name}
-                                </span>
-                                {(ingredient.amount || ingredient.unit) && (
-                                  <span className="text-sm text-muted-foreground ml-2">
-                                    {scaleAmount(ingredient.amount)}{' '}
-                                    {ingredient.unit}
-                                  </span>
-                                )}
-                                {ingredient.notes && (
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    ({ingredient.notes})
-                                  </span>
-                                )}
-                              </div>
-                            </li>
-                          ))}
+                        <ul className="space-y-1">
+                          {recipe.ingredients.map((ingredient, index) => {
+                            const n = ingredient.nutrition
+                            const grams = ingredient.weight_grams
+                            const hasMacros = n && grams && grams > 0
+                            const ingCal = hasMacros ? Math.round(((n.calories_per_100g ?? 0) * grams) / 100 * scaleFactor) : null
+                            const ingProtein = hasMacros ? Math.round(((n.protein_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+                            const ingFat = hasMacros ? Math.round(((n.fat_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+                            const ingCarbs = hasMacros ? Math.round(((n.carbs_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+
+                            return (
+                              <li
+                                key={ingredient.id || index}
+                                className="rounded-lg p-2 hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="size-5 rounded-full border-2 shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline gap-2 flex-wrap">
+                                      <span className="text-sm font-medium">
+                                        {ingredient.name}
+                                      </span>
+                                      {(ingredient.amount || ingredient.unit) && (
+                                        <span className="text-sm text-muted-foreground">
+                                          {scaleAmount(ingredient.amount)}{' '}
+                                          {ingredient.unit}
+                                        </span>
+                                      )}
+                                      {ingredient.notes && (
+                                        <span className="text-xs text-muted-foreground">
+                                          ({ingredient.notes})
+                                        </span>
+                                      )}
+                                    </div>
+                                    {ingCal != null && (
+                                      <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/70">
+                                        <span>{ingCal} cal</span>
+                                        {ingProtein ? <span>{ingProtein}g P</span> : null}
+                                        {ingFat ? <span>{ingFat}g F</span> : null}
+                                        {ingCarbs ? <span>{ingCarbs}g C</span> : null}
+                                        {n?.data_source === 'ai_estimate' && (
+                                          <span className="text-amber-500/60 italic">est.</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </li>
+                            )
+                          })}
                         </ul>
                       ) : (
                         <p className="text-sm text-muted-foreground py-4 text-center">
@@ -565,39 +597,108 @@ export function RecipeDetailSheet({
   )
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  'high-protein': 'bg-red-500/10 text-red-500',
+  'low-carb': 'bg-blue-500/10 text-blue-500',
+  'low-calorie': 'bg-green-500/10 text-green-500',
+  'high-fiber': 'bg-emerald-500/10 text-emerald-500',
+  'balanced': 'bg-violet-500/10 text-violet-500',
+  'post-workout': 'bg-orange-500/10 text-orange-500',
+  'pre-workout-friendly': 'bg-yellow-500/10 text-yellow-600',
+  'rest-day': 'bg-sky-500/10 text-sky-500',
+  'recomp-friendly': 'bg-pink-500/10 text-pink-500',
+  'clean': 'bg-emerald-500/10 text-emerald-600',
+  'low-sodium': 'bg-teal-500/10 text-teal-500',
+  'junk-carbs': 'bg-amber-500/10 text-amber-600',
+  'inflammatory-fats': 'bg-red-500/10 text-red-400',
+  'high-sugar': 'bg-amber-500/10 text-amber-500',
+  'high-carb': 'bg-amber-500/10 text-amber-600',
+  'high-fat': 'bg-yellow-500/10 text-yellow-600',
+  'high-calorie': 'bg-orange-500/10 text-orange-600',
+  'low-fat': 'bg-sky-500/10 text-sky-500',
+  'moderate-carb': 'bg-slate-500/10 text-slate-500',
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'high-protein': 'High Protein',
+  'low-carb': 'Low Carb',
+  'moderate-carb': 'Moderate Carb',
+  'high-carb': 'High Carb',
+  'low-fat': 'Low Fat',
+  'high-fat': 'High Fat',
+  'balanced': 'Balanced',
+  'low-calorie': 'Low Calorie',
+  'high-calorie': 'High Calorie',
+  'high-fiber': 'High Fiber',
+  'low-sodium': 'Low Sodium',
+  'high-sugar': 'High Sugar',
+  'junk-carbs': 'Junk Carbs',
+  'inflammatory-fats': 'Inflammatory Fats',
+  'clean': 'Clean',
+  'post-workout': 'Post-Workout',
+  'pre-workout-friendly': 'Pre-Workout',
+  'rest-day': 'Rest Day',
+  'recomp-friendly': 'Recomp Friendly',
+}
+
 function NutritionCard({
   calories,
   protein,
   fat,
   carbs,
+  fiber,
+  sugar,
+  sodium,
+  saturatedFat,
+  categories,
+  completeness,
   scaleFactor,
 }: {
   calories: number
   protein?: number
   fat?: number
   carbs?: number
+  fiber?: number
+  sugar?: number
+  sodium?: number
+  saturatedFat?: number
+  categories?: string[]
+  completeness?: number
   scaleFactor: number
 }) {
-  const scale = (val: number | undefined) =>
+  const scale = (val: number | undefined | null) =>
     val ? Math.round(val * scaleFactor) : null
 
   const scaledCal = Math.round(calories * scaleFactor)
   const scaledProtein = scale(protein)
   const scaledFat = scale(fat)
   const scaledCarbs = scale(carbs)
+  const scaledFiber = scale(fiber)
+  const scaledSugar = scale(sugar)
+  const scaledSodium = scale(sodium)
+  const scaledSatFat = scale(saturatedFat)
 
   const totalMacros = (scaledProtein || 0) + (scaledFat || 0) + (scaledCarbs || 0)
+  const hasExtended = scaledFiber || scaledSugar || scaledSodium || scaledSatFat
 
   return (
     <Card>
       <CardContent className="p-3">
+        {/* Calories header */}
         <div className="flex items-center gap-2 mb-3">
           <Flame className="size-4 text-orange-500" />
           <span className="text-sm font-semibold">
             {scaledCal} calories
           </span>
           <span className="text-[10px] text-muted-foreground">per serving</span>
+          {completeness != null && completeness < 1 && (
+            <span className="ml-auto text-[10px] text-muted-foreground/60">
+              {Math.round(completeness * 100)}% data
+            </span>
+          )}
         </div>
+
+        {/* Primary macros */}
         {(scaledProtein || scaledFat || scaledCarbs) && (
           <div className="grid grid-cols-3 gap-3">
             {scaledProtein && (
@@ -645,6 +746,57 @@ function NutritionCard({
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Extended macros */}
+        {hasExtended && (
+          <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/30">
+            {scaledFiber && (
+              <div className="text-center">
+                <Leaf className="size-3 text-green-500 mx-auto mb-0.5" />
+                <span className="text-[10px] text-muted-foreground block">Fiber</span>
+                <span className="text-xs font-semibold">{scaledFiber}g</span>
+              </div>
+            )}
+            {scaledSugar && (
+              <div className="text-center">
+                <Sparkles className="size-3 text-pink-400 mx-auto mb-0.5" />
+                <span className="text-[10px] text-muted-foreground block">Sugar</span>
+                <span className="text-xs font-semibold">{scaledSugar}g</span>
+              </div>
+            )}
+            {scaledSodium && (
+              <div className="text-center">
+                <Droplets className="size-3 text-slate-400 mx-auto mb-0.5" />
+                <span className="text-[10px] text-muted-foreground block">Sodium</span>
+                <span className="text-xs font-semibold">{scaledSodium}mg</span>
+              </div>
+            )}
+            {scaledSatFat && (
+              <div className="text-center">
+                <Droplets className="size-3 text-orange-400 mx-auto mb-0.5" />
+                <span className="text-[10px] text-muted-foreground block">Sat. Fat</span>
+                <span className="text-xs font-semibold">{scaledSatFat}g</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Category badges */}
+        {categories && categories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/30">
+            {categories.map((cat) => (
+              <span
+                key={cat}
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                  CATEGORY_COLORS[cat] || 'bg-muted text-muted-foreground'
+                )}
+              >
+                {CATEGORY_LABELS[cat] || cat}
+              </span>
+            ))}
           </div>
         )}
       </CardContent>
