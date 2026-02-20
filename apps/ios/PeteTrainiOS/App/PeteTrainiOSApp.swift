@@ -11,7 +11,7 @@ struct PeteTrainiOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
                 .onAppear {
                     // Schedule background sync when app becomes active
                     BackgroundSyncManager.shared.scheduleBackgroundSync()

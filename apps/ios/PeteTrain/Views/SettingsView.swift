@@ -521,6 +521,51 @@ struct SettingsView: View {
                     .font(.system(.caption2, design: .rounded))
             }
             
+            // Routine Section
+            SwiftUI.Section {
+                Button {
+                    Task {
+                        WKInterfaceDevice.current().play(.click)
+                        await workoutDataManager.refreshFromAPI()
+                        if workoutDataManager.lastError == nil {
+                            WKInterfaceDevice.current().play(.success)
+                        } else {
+                            WKInterfaceDevice.current().play(.failure)
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.down.circle")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("Fetch Latest Routine")
+                            .font(.system(.caption, design: .rounded))
+                        Spacer()
+                        if workoutDataManager.isLoading {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(workoutDataManager.isLoading)
+
+                HStack {
+                    Text("Status")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(workoutDataManager.statusDescription)
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Routine")
+            } footer: {
+                Text("Fetches and caches the latest workout routine from Petehome")
+                    .font(.system(.caption2, design: .rounded))
+            }
+
             // Petehome Sync Section
             SwiftUI.Section {
                 // Auto-sync toggle

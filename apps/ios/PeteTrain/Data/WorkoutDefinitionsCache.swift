@@ -10,7 +10,8 @@ actor WorkoutDefinitionsCache {
     // MARK: - Constants
 
     private let cacheFileName = "workout_definitions_cache.json"
-    private let maxCacheAge: TimeInterval = 24 * 60 * 60  // 24 hours
+    // Cache never expires - manual refresh only
+    // private let maxCacheAge: TimeInterval = 24 * 60 * 60
 
     // MARK: - Cache Structure
 
@@ -47,13 +48,7 @@ actor WorkoutDefinitionsCache {
             let data = try Data(contentsOf: cacheURL)
             let container = try JSONDecoder().decode(CacheContainer.self, from: data)
 
-            // Check expiration
             let age = Date().timeIntervalSince(container.timestamp)
-            if age > maxCacheAge {
-                print("📦 Cache: Expired (age: \(Int(age / 3600))h)")
-                return nil
-            }
-
             let versionStr = container.version.map { "v\($0.number)" } ?? "unknown"
             print("📦 Cache: Loaded \(container.definitions.count) workouts \(versionStr) (age: \(Int(age / 60))m)")
             return CacheResult(definitions: container.definitions, version: container.version)
@@ -87,20 +82,9 @@ actor WorkoutDefinitionsCache {
         }
     }
 
-    /// Check if cache exists and is valid (not expired)
+    /// Check if cache exists and is valid
     var isValid: Bool {
-        guard FileManager.default.fileExists(atPath: cacheURL.path) else {
-            return false
-        }
-
-        do {
-            let data = try Data(contentsOf: cacheURL)
-            let container = try JSONDecoder().decode(CacheContainer.self, from: data)
-            let age = Date().timeIntervalSince(container.timestamp)
-            return age <= maxCacheAge
-        } catch {
-            return false
-        }
+        return FileManager.default.fileExists(atPath: cacheURL.path)
     }
 
     /// Get cache age in seconds, or nil if no cache exists

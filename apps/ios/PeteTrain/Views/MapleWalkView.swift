@@ -94,7 +94,7 @@ struct MapleWalkView: View {
             Text(formatDuration(walkManager.elapsedTime))
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(walkManager.walkState == .paused ? .secondary : .green)
+                .foregroundStyle(walkManager.walkState == .paused ? Color.secondary : Color.green)
 
             HStack(spacing: 16) {
                 // Heart rate

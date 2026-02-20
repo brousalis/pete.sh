@@ -39,7 +39,7 @@ final class NotificationManager: NSObject {
     }
     
     var reminderHour: Int {
-        get { UserDefaults.standard.object(forKey: "reminderHour") as? Int ?? 17 } // Default 5 PM
+        get { UserDefaults.standard.object(forKey: "reminderHour") as? Int ?? 12 } // Default 12 PM
         set {
             UserDefaults.standard.set(newValue, forKey: "reminderHour")
             if remindersEnabled {

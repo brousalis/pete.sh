@@ -468,7 +468,7 @@ final class HealthKitSyncManager {
 
     // MARK: - HealthKit Queries
 
-    private func fetchAllWorkouts(days: Int) async throws -> [HKWorkout] {
+    func fetchAllWorkouts(days: Int) async throws -> [HKWorkout] {
         let endDate = Date()
         let startDate: Date
 
@@ -900,7 +900,10 @@ final class HealthKitSyncManager {
 
             query.initialResultsHandler = { _, results, error in
                 if let error = error {
-                    continuation.resume(throwing: error)
+                    // HKStatisticsCollectionQuery can fail with "No data available" for workout types
+                    // that don't produce step count data — return empty instead of failing the whole sync
+                    print("[HealthKit] Cadence step count query error (non-fatal): \(error.localizedDescription)")
+                    continuation.resume(returning: [])
                     return
                 }
 
@@ -1781,15 +1784,18 @@ final class HealthKitSyncManager {
                 options: .cumulativeSum
             ) { _, statistics, error in
                 if let error = error {
-                    continuation.resume(throwing: error)
+                    // HKStatisticsQuery can fail with "No data available" for workout types
+                    // that don't produce step count data — return nil instead of failing the whole sync
+                    print("[HealthKit] Walking step count query error (non-fatal): \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
                     return
                 }
-                
+
                 guard let sum = statistics?.sumQuantity() else {
                     continuation.resume(returning: nil)
                     return
                 }
-                
+
                 let steps = Int(sum.doubleValue(for: .count()))
                 continuation.resume(returning: steps)
             }

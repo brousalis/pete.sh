@@ -1,21 +1,16 @@
 import SwiftUI
 
-/// Main content view - WebView that can trigger native sync sheet
-struct ContentView: View {
-    @Environment(\.scenePhase) private var scenePhase
+/// WebView tab — loads pete.sh with JS bridge for native sheets
+struct WebViewTab: View {
     @State private var isLoading = true
     @State private var showSyncSheet = false
     @State private var showFridgeScanner = false
-    @State private var hasPerformedInitialSync = false
-    @State private var lastActiveDate: Date?
     @State private var resolvedURL: URL?
 
     /// Remote (production) URL
     private let remoteURL = URL(string: "https://pete.sh")!
     /// Local dev server URL
     private let localURL = URL(string: "https://boufos.local:3000")!
-    /// Minimum time between automatic syncs (30 minutes)
-    private let minimumSyncInterval: TimeInterval = 30 * 60
 
     /// The URL the WebView should load (local if available, else remote)
     private var webViewURL: URL { resolvedURL ?? remoteURL }
@@ -63,11 +58,7 @@ struct ContentView: View {
             FridgeScannerSheet(
                 scanManager: FridgeScanManager.shared,
                 onScanComplete: { items, scanId in
-                    // The web view coordinator will send results back via JS bridge
-                    // This is handled after the sheet dismisses
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        // Find the webview coordinator and send results
-                        // The coordinator reference is updated in updateUIView
                         NotificationCenter.default.post(
                             name: .fridgeScanCompleted,
                             object: nil,
@@ -80,57 +71,16 @@ struct ContentView: View {
             .presentationDragIndicator(.visible)
         }
         .task {
-            // Check local server before the WebView loads
             resolvedURL = await checkLocalServer() ? localURL : remoteURL
-            _ = await HealthKitSyncManager.shared.requestHealthKitAuthorization()
-        }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            if newPhase == .active {
-                handleAppBecameActive()
-            } else if newPhase == .background {
-                // Re-schedule background sync when app goes to background
-                BackgroundSyncManager.shared.scheduleBackgroundSync()
-            }
         }
     }
 
     /// Check if the local dev server is reachable via native URLSession
-    /// (bypasses WKWebView cross-origin cert issues)
     private func checkLocalServer() async -> Bool {
         let checker = LocalServerChecker()
         let isAvailable = await checker.check(url: localURL)
-        print("[ContentView] Local server check: \(isAvailable ? "available" : "unavailable")")
+        print("[WebViewTab] Local server check: \(isAvailable ? "available" : "unavailable")")
         return isAvailable
-    }
-
-    /// Handle app becoming active - sync daily metrics if needed
-    private func handleAppBecameActive() {
-        let syncManager = HealthKitSyncManager.shared
-
-        // Check if we should perform auto-sync
-        guard syncManager.autoSyncEnabled else { return }
-
-        // Determine if enough time has passed since last sync
-        let shouldSync: Bool
-        if !hasPerformedInitialSync {
-            // Always sync on first app launch
-            shouldSync = true
-            hasPerformedInitialSync = true
-        } else if let lastActive = lastActiveDate {
-            // Sync if more than minimumSyncInterval has passed
-            shouldSync = Date().timeIntervalSince(lastActive) >= minimumSyncInterval
-        } else {
-            shouldSync = true
-        }
-
-        lastActiveDate = Date()
-
-        if shouldSync {
-            Task {
-                print("[ContentView] Auto-syncing daily metrics on app activation")
-                _ = await syncManager.syncDailyMetrics(days: 1)
-            }
-        }
     }
 }
 
@@ -174,5 +124,5 @@ private class LocalServerChecker: NSObject, URLSessionDelegate {
 }
 
 #Preview {
-    ContentView()
+    WebViewTab()
 }

@@ -51,6 +51,9 @@
 		AAA00058 /* WorkoutMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00058 /* WorkoutMapper.swift */; };
 		AAA00059 /* WorkoutDefinitionsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00059 /* WorkoutDefinitionsCache.swift */; };
 		AAA00060 /* WorkoutDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00060 /* WorkoutDataManager.swift */; };
+		AAA00061 /* MapleWalkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00061 /* MapleWalkManager.swift */; };
+		AAA00062 /* MapleWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00062 /* MapleWalkView.swift */; };
+		AAA00063 /* MapleWalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00063 /* MapleWalkSummaryView.swift */; };
 		CBB3A45F2F0C2DCE00D10471 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
 		CBB3A4602F0C2DCE00D10471 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */; };
 		CBB3A46D2F0C2DD100D10471 /* PeteTrainWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -130,6 +133,9 @@
 		BBB00058 /* WorkoutMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMapper.swift; sourceTree = "<group>"; };
 		BBB00059 /* WorkoutDefinitionsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDefinitionsCache.swift; sourceTree = "<group>"; };
 		BBB00060 /* WorkoutDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDataManager.swift; sourceTree = "<group>"; };
+		BBB00061 /* MapleWalkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkManager.swift; sourceTree = "<group>"; };
+		BBB00062 /* MapleWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkView.swift; sourceTree = "<group>"; };
+		BBB00063 /* MapleWalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkSummaryView.swift; sourceTree = "<group>"; };
 		CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PeteTrainWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -303,6 +309,8 @@
 				BBB00034 /* WorkoutFlowComponents.swift */,
 				BBB00045 /* FatigueIndicatorCard.swift */,
 				BBB00046 /* MonthlyCalendarView.swift */,
+				BBB00062 /* MapleWalkView.swift */,
+				BBB00063 /* MapleWalkSummaryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -333,6 +341,7 @@
 				BBB00058 /* WorkoutMapper.swift */,
 				BBB00059 /* WorkoutDefinitionsCache.swift */,
 				BBB00060 /* WorkoutDataManager.swift */,
+				BBB00061 /* MapleWalkManager.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -538,6 +547,9 @@
 				AAA00058 /* WorkoutMapper.swift in Sources */,
 				AAA00059 /* WorkoutDefinitionsCache.swift in Sources */,
 				AAA00060 /* WorkoutDataManager.swift in Sources */,
+				AAA00061 /* MapleWalkManager.swift in Sources */,
+				AAA00062 /* MapleWalkView.swift in Sources */,
+				AAA00063 /* MapleWalkSummaryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -630,6 +642,7 @@
 				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrainiOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "petehome training app for my own uses pete brousalis tracking healthkit";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -668,6 +681,7 @@
 				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PeteTrainiOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "petehome training app for my own uses pete brousalis tracking healthkit";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
