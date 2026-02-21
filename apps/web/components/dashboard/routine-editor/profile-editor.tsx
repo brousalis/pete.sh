@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import type { UserProfile } from '@/lib/types/fitness.types'
 import {
+  Activity,
   Clock,
   Footprints,
   Plus,
@@ -68,33 +70,34 @@ export function ProfileEditor({ profile, name = '', onUpdate }: ProfileEditorPro
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 px-4 pb-4">
-        {/* Routine Name + Goal */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">Routine Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => onUpdate(p, e.target.value)}
-              placeholder="My Training Routine"
-              className="h-8"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium flex items-center gap-1">
-              <Target className="h-3 w-3" />
-              Goal
-            </Label>
-            <Input
-              value={p.goal}
-              onChange={(e) => updateProfile({ goal: e.target.value })}
-              placeholder="Your fitness goal..."
-              className="h-8"
-            />
-          </div>
+        {/* Routine Name */}
+        <div className="space-y-1">
+          <Label className="text-xs font-medium">Routine Name</Label>
+          <Input
+            value={name}
+            onChange={(e) => onUpdate(p, e.target.value)}
+            placeholder="My Training Routine"
+            className="h-8"
+          />
         </div>
 
-        {/* Stats + Schedule in one row */}
-        <div className="grid grid-cols-4 gap-3">
+        {/* Goal -- full width, larger */}
+        <div className="space-y-1">
+          <Label className="text-xs font-medium flex items-center gap-1">
+            <Target className="h-3 w-3" />
+            Goal
+          </Label>
+          <Textarea
+            value={p.goal}
+            onChange={(e) => updateProfile({ goal: e.target.value })}
+            placeholder="Describe your fitness goal..."
+            rows={2}
+            className="resize-none text-sm"
+          />
+        </div>
+
+        {/* Height + Schedule row */}
+        <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs font-medium flex items-center gap-1">
               <Ruler className="h-3 w-3" />
@@ -111,28 +114,8 @@ export function ProfileEditor({ profile, name = '', onUpdate }: ProfileEditorPro
           </div>
           <div className="space-y-1">
             <Label className="text-xs font-medium flex items-center gap-1">
-              <Scale className="h-3 w-3" />
-              Weight
-            </Label>
-            <div className="relative">
-              <Input
-                type="number"
-                value={p.stats.weight || ''}
-                onChange={(e) => updateProfile({
-                  stats: { ...p.stats, weight: Number(e.target.value) },
-                })}
-                placeholder="180"
-                className="h-8 pr-8"
-              />
-              <span className="text-muted-foreground pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px]">
-                lbs
-              </span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              Training
+              Training Time
             </Label>
             <Input
               value={p.schedule.trainingTime}
@@ -154,6 +137,39 @@ export function ProfileEditor({ profile, name = '', onUpdate }: ProfileEditorPro
               />
               <Label className="text-xs">Fasted</Label>
             </div>
+          </div>
+        </div>
+
+        {/* Weight -- HealthKit aware */}
+        <div className="rounded-lg border border-dashed p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Scale className="h-3 w-3" />
+              Weight
+            </Label>
+            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Activity className="h-3 w-3" />
+              Tracked via Fitindex scale
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                value={p.stats.weight || ''}
+                onChange={(e) => updateProfile({
+                  stats: { ...p.stats, weight: Number(e.target.value) },
+                })}
+                placeholder="Auto from scale"
+                className="h-8 pr-8"
+              />
+              <span className="text-muted-foreground pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px]">
+                lbs
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-tight max-w-[180px]">
+              Override only if needed. HealthKit weight syncs automatically from your scale.
+            </p>
           </div>
         </div>
 

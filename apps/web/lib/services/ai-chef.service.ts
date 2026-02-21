@@ -21,7 +21,6 @@ import { z } from 'zod'
 import { config } from '@/lib/config'
 import { cookingService } from '@/lib/services/cooking.service'
 import { mealPlanningService } from '@/lib/services/meal-planning.service'
-import { traderJoesService } from '@/lib/services/trader-joes.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
   CookingPreferencesSchema,
@@ -184,63 +183,44 @@ export async function updatePreferences(
 async function getRecipeCatalogSummary(): Promise<string> {
   try {
     const recipes = await cookingService.getRecipes()
-    if (recipes.length === 0) return 'No custom recipes in the catalog yet.'
+    if (recipes.length === 0) return 'No recipes in the catalog yet.'
 
-    return recipes
-      .map((r: Recipe) => {
-        const parts = [`- "${r.name}"`]
-        parts.push(`[id: ${r.id}]`)
-        if (r.difficulty) parts.push(`(${r.difficulty})`)
-        if (r.prep_time || r.cook_time) {
-          const total = (r.prep_time || 0) + (r.cook_time || 0)
-          parts.push(`${total}min`)
-        }
-        if (r.tags?.length) parts.push(`tags: ${r.tags.join(', ')}`)
-        if (r.is_favorite) parts.push('★ favorite')
-        if (r.calories_per_serving) parts.push(`${r.calories_per_serving}cal`)
-        if (r.protein_g) parts.push(`${r.protein_g}g protein`)
-        if (r.nutrition_category?.length) parts.push(`[${r.nutrition_category.join(', ')}]`)
-        return parts.join(' ')
-      })
-      .join('\n')
-  } catch {
-    return 'Recipe catalog unavailable.'
-  }
-}
+    const custom = recipes.filter((r: Recipe) => r.source === 'custom')
+    const tj = recipes.filter((r: Recipe) => r.source === 'trader_joes')
 
-async function getTjRecipeSummary(): Promise<string> {
-  try {
-    const tjRecipes = await traderJoesService.searchRecipes()
-    if (tjRecipes.length === 0) return 'No Trader Joe\'s recipes cached.'
-
-    // Group by primary category and list recipe names + IDs for each
-    const byCategory = new Map<string, { name: string; id: string; time?: number }[]>()
-    for (const r of tjRecipes) {
-      const cat = r.category || 'Other'
-      if (!byCategory.has(cat)) byCategory.set(cat, [])
-      byCategory.get(cat)!.push({
-        name: r.name,
-        id: r.id,
-        time: r.recipe_data.prep_time,
-      })
+    function formatRecipe(r: Recipe): string {
+      const parts = [`- "${r.name}"`]
+      parts.push(`[id: ${r.id}]`)
+      if (r.source === 'trader_joes') parts.push('[TJ]')
+      if (r.difficulty) parts.push(`(${r.difficulty})`)
+      if (r.prep_time || r.cook_time) {
+        const total = (r.prep_time || 0) + (r.cook_time || 0)
+        parts.push(`${total}min`)
+      }
+      if (r.tags?.length) parts.push(`tags: ${r.tags.join(', ')}`)
+      if (r.is_favorite) parts.push('★ favorite')
+      if (r.calories_per_serving) parts.push(`${r.calories_per_serving}cal`)
+      if (r.protein_g) parts.push(`${r.protein_g}g protein`)
+      if (r.nutrition_category?.length) parts.push(`[${r.nutrition_category.join(', ')}]`)
+      return parts.join(' ')
     }
 
-    const lines: string[] = [`${tjRecipes.length} Trader Joe's recipes available.\n`]
-    const sortedCats = Array.from(byCategory.entries()).sort((a, b) => b[1].length - a[1].length)
+    const lines: string[] = [`${recipes.length} total recipes (${custom.length} custom, ${tj.length} Trader Joe's).\n`]
 
-    for (const [cat, recipes] of sortedCats) {
-      lines.push(`### ${cat} (${recipes.length})`)
-      for (const r of recipes) {
-        lines.push(`- "${r.name}" [id:${r.id}]${r.time ? ` ${r.time}min` : ''}`)
-      }
+    if (custom.length > 0) {
+      lines.push('### Custom Recipes')
+      lines.push(...custom.map(formatRecipe))
       lines.push('')
     }
 
-    lines.push('Use the searchRecipes tool with source "trader-joes" and a query to get full details (description, ingredients) for any TJ recipe.')
+    if (tj.length > 0) {
+      lines.push(`### Trader Joe's Recipes (${tj.length})`)
+      lines.push(...tj.map(formatRecipe))
+    }
 
     return lines.join('\n')
   } catch {
-    return 'Trader Joe\'s recipe catalog unavailable.'
+    return 'Recipe catalog unavailable.'
   }
 }
 
@@ -338,14 +318,12 @@ export async function assembleContext(): Promise<string> {
   const [
     preferences,
     recipeCatalog,
-    tjCatalog,
     currentPlan,
     recentPlans,
     fridge,
   ] = await Promise.all([
     getPreferences(),
     getRecipeCatalogSummary(),
-    getTjRecipeSummary(),
     getCurrentMealPlanContext(),
     getRecentMealPlansContext(4),
     getFridgeContext(),
@@ -353,7 +331,6 @@ export async function assembleContext(): Promise<string> {
 
   const sections: string[] = []
 
-  // 1. User Preferences
   sections.push(`## Food Preferences
 Dislikes: ${preferences.dislikes.length > 0 ? preferences.dislikes.join(', ') : 'none specified'}
 Allergies: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'none'}
@@ -363,19 +340,12 @@ Household Size: ${preferences.householdSize} people
 Weeknight Cooking Time: ${preferences.cookingTimePreference}
 Notes: ${preferences.notes || 'none'}`)
 
-  // 2. Current Meal Plan
   sections.push(`## Current Week's Meal Plan\n${currentPlan}`)
 
-  // 3. Recent Meal Plans (for variety)
   sections.push(`## Recent Meal Plans (for variety — avoid repeats)\n${recentPlans}`)
 
-  // 4. Recipe Catalog
-  sections.push(`## Available Recipes (user's own)\n${recipeCatalog}`)
+  sections.push(`## Recipe Catalog (custom + Trader Joe's)\n${recipeCatalog}`)
 
-  // 5. Trader Joe's Catalog
-  sections.push(`## Trader Joe's Recipes (quick, accessible options)\n${tjCatalog}`)
-
-  // 6. Fridge Contents
   sections.push(`## Current Fridge Contents\n${fridge}`)
 
   return sections.join('\n\n---\n\n')
@@ -578,24 +548,23 @@ export async function createChatStream(
 
   return streamText({
     model,
-    system: `You are an expert AI Chef and meal planning assistant embedded in the user's cooking dashboard. You have full access to their recipe catalog, Trader Joe's recipes, meal plan history, food preferences, and fridge contents.
+    system: `You are an expert AI Chef and meal planning assistant embedded in the user's cooking dashboard. You have full access to their recipe catalog (both custom recipes and Trader Joe's recipes), meal plan history, food preferences, and fridge contents.
 
 Your personality is warm, helpful, and practical — like a knowledgeable friend who loves cooking. Be specific: reference actual recipe names, prep times, and ingredients from the data.
 
 ## IMPORTANT: Tool Usage Workflow
 
-The user's food preferences, current meal plan, recent meal plans, recipe catalog, AND the full Trader Joe's recipe catalog (names + IDs organized by category) are ALREADY provided below in the context data. You do NOT need to call tools to read data that is already here.
+The user's food preferences, current meal plan, recent meal plans, and the full recipe catalog (names + IDs, grouped by source) are ALREADY provided below in the context data. You do NOT need to call tools to read data that is already here.
 
 When the user asks you to **plan a week or suggest meals**:
-1. Review the context data already provided (preferences, recent plans, both recipe catalogs)
-2. Pick recipes from BOTH the "Available Recipes" (user's own) AND "Trader Joe's Recipes" sections — each has an [id: ...] you need for tool calls
-3. **Actively mix in Trader Joe's recipes** — they are quick, accessible options from a nearby store. Aim for a blend of user recipes and TJ recipes unless the user says otherwise.
-4. If you want more details about a TJ recipe before suggesting it (ingredients, description), use searchRecipes with source "trader-joes" and the recipe name as the query.
-5. Call the **suggestWeekPlan** tool with your complete plan — this is REQUIRED. Do NOT just describe meals in text. The suggestWeekPlan tool renders a beautiful card in the UI with an "Apply All" button.
+1. Review the context data already provided (preferences, recent plans, recipe catalog)
+2. Pick recipes from the catalog — recipes marked [TJ] are from Trader Joe's (quick, accessible options). Mix in TJ recipes alongside custom recipes for variety.
+3. If you want more details about a recipe before suggesting it, use searchRecipes with the recipe name as the query.
+4. Call the **suggestWeekPlan** tool with your complete plan — this is REQUIRED. Do NOT just describe meals in text. The suggestWeekPlan tool renders a beautiful card in the UI with an "Apply All" button.
 
 When the user asks **questions about recipes** (e.g. "what greek recipes do we have", "suggest something with chicken"):
-1. Check both catalogs in the context data first
-2. Use searchRecipes to find matching recipes by ingredient, cuisine, or keyword — search BOTH sources
+1. Check the catalog in the context data first
+2. Use searchRecipes to find matching recipes by ingredient, cuisine, or keyword
 3. Provide helpful details: describe the recipes, compare options, and suggest how to use them
 
 When the user asks to **change a specific day**:
@@ -610,6 +579,7 @@ CRITICAL: Always finish with an ACTION tool (suggestWeekPlan or setMealSlot) whe
 - Consider prep time preferences: on weeknights, favor meals within the user's time preference
 - Factor in nutrition when possible (calories, protein, etc.)
 - If the fridge has items, try to suggest meals that use them before they expire
+- Actively use Trader Joe's recipes — they are quick, accessible options from a nearby store
 
 Today's date: ${getLocalDateString()}
 Day of week: ${getDayOfWeek()}
@@ -621,45 +591,29 @@ ${systemContext}`,
     tools: {
       searchRecipes: tool({
         description:
-          'Search recipes by name, tags, ingredients, or cuisine. Returns full details including description and ingredients. TJ recipe names and IDs are already in the context for quick reference, but use this tool to get full details or to search by ingredient/description.',
+          'Search recipes by name, tags, ingredients, or cuisine. Returns full details including description and ingredients. Recipe names and IDs are already in the context for quick reference, but use this tool to get full details or to search by ingredient/description.',
         inputSchema: z.object({
-          query: z.string().optional().describe('Search query (matches name, description, ingredients, categories)'),
-          category: z.string().optional().describe('Category filter (for TJ recipes, e.g. "Dinner", "Breakfast")'),
-          source: z.enum(['all', 'user', 'trader-joes']).default('all').describe('Which catalog to search'),
+          query: z.string().optional().describe('Search query (matches name, description, tags)'),
+          source: z.enum(['all', 'custom', 'trader_joes']).default('all').describe('Filter by source: custom (user recipes), trader_joes (TJ recipes), or all'),
         }),
-        execute: async ({ query, category, source }) => {
+        execute: async ({ query, source }) => {
+          const filters: { search?: string; source?: 'custom' | 'trader_joes' } = {}
+          if (query) filters.search = query
+          if (source !== 'all') filters.source = source
+
+          const recipes = await cookingService.getRecipes(filters)
           const results: string[] = []
 
-          if (source === 'all' || source === 'user') {
-            const recipes = await cookingService.getRecipes(
-              query ? { search: query } : undefined
+          for (const r of recipes.slice(0, 30)) {
+            const totalTime = (r.prep_time || 0) + (r.cook_time || 0)
+            const tag = r.source === 'trader_joes' ? '[TJ]' : '[USER]'
+            results.push(
+              `${tag} "${r.name}" [id:${r.id}]` +
+              (totalTime ? ` | ${totalTime}min` : '') +
+              (r.servings ? ` | serves ${r.servings}` : '') +
+              (r.tags?.length ? ` | tags: ${r.tags.join(', ')}` : '') +
+              (r.description ? `\n  ${r.description.slice(0, 150)}` : '')
             )
-            for (const r of recipes.slice(0, 20)) {
-              const totalTime = (r.prep_time || 0) + (r.cook_time || 0)
-              results.push(
-                `[USER] "${r.name}" [id:${r.id}]` +
-                (totalTime ? ` | ${totalTime}min` : '') +
-                (r.servings ? ` | serves ${r.servings}` : '') +
-                (r.tags?.length ? ` | tags: ${r.tags.join(', ')}` : '') +
-                (r.description ? `\n  ${r.description.slice(0, 150)}` : '')
-              )
-            }
-          }
-
-          if (source === 'all' || source === 'trader-joes') {
-            const tjRecipes = await traderJoesService.searchRecipes(query, category)
-            for (const r of tjRecipes.slice(0, 25)) {
-              const rd = r.recipe_data
-              results.push(
-                `[TJ] "${r.name}" [id:${r.id}]` +
-                (rd.prep_time ? ` | ${rd.prep_time}min` : '') +
-                (rd.servings ? ` | serves ${rd.servings}` : '') +
-                (rd.categories?.length ? ` | categories: ${rd.categories.join(', ')}` : '') +
-                (rd.tags?.length ? ` | tags: ${rd.tags.join(', ')}` : '') +
-                (rd.description ? `\n  ${rd.description.slice(0, 150)}` : '') +
-                (rd.ingredients?.length ? `\n  Ingredients: ${rd.ingredients.slice(0, 8).join('; ')}${rd.ingredients.length > 8 ? ` (+${rd.ingredients.length - 8} more)` : ''}` : '')
-              )
-            }
           }
 
           return results.length > 0

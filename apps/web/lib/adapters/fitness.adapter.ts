@@ -8,31 +8,31 @@
 
 import { FitnessService } from '@/lib/services/fitness.service'
 import type {
-    FitnessRoutineInsert,
-    FitnessRoutineRow,
-    FitnessRoutineVersionInsert,
-    FitnessRoutineVersionRow,
-    FitnessWeekInsert,
-    FitnessWeekRow
+  FitnessRoutineInsert,
+  FitnessRoutineRow,
+  FitnessRoutineVersionInsert,
+  FitnessRoutineVersionRow,
+  FitnessWeekInsert,
+  FitnessWeekRow
 } from '@/lib/supabase/types'
 import type {
-    ConsistencyStats,
-    DayOfWeek,
-    ExerciseDemoVideo,
-    ExerciseDemoVideoInput,
-    ExerciseDemoVideoUpdate,
-    FitnessProgress,
-    WeeklyRoutine,
-    Workout,
+  ConsistencyStats,
+  DayOfWeek,
+  ExerciseDemoVideo,
+  ExerciseDemoVideoInput,
+  ExerciseDemoVideoUpdate,
+  FitnessProgress,
+  WeeklyRoutine,
+  Workout,
 } from '@/lib/types/fitness.types'
 import type {
-    CreateVersionRequest,
-    RoutineVersion,
-    RoutineVersionSummary,
-    UpdateVersionRequest,
-    VersionsListResponse,
+  CreateVersionRequest,
+  RoutineVersion,
+  RoutineVersionSummary,
+  UpdateVersionRequest,
+  VersionsListResponse,
 } from '@/lib/types/routine-editor.types'
-import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
+import { BaseAdapter, SUPABASE_QUERY_TIMEOUT, SyncResult, getCurrentTimestamp, withTimeout } from './base.adapter'
 
 /**
  * Fitness Adapter - manages fitness routines and progress
@@ -239,12 +239,16 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      const { data, error } = await clientAny
-        .from('fitness_routine_versions')
-        .select('id')
-        .eq('routine_id', this.currentRoutineId)
-        .eq('is_active', true)
-        .single()
+      const { data, error } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .select('id')
+          .eq('routine_id', this.currentRoutineId)
+          .eq('is_active', true)
+          .single(),
+        SUPABASE_QUERY_TIMEOUT,
+        'getActiveVersionId query'
+      )
 
       if (!error && data?.id) {
         return data.id as string
@@ -297,12 +301,16 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await clientAny
-            .from('fitness_routine_versions')
-            .select('workout_definitions')
-            .eq('routine_id', this.currentRoutineId)
-            .eq('is_active', true)
-            .single()
+          const { data, error } = await withTimeout(
+            clientAny
+              .from('fitness_routine_versions')
+              .select('workout_definitions')
+              .eq('routine_id', this.currentRoutineId)
+              .eq('is_active', true)
+              .single(),
+            SUPABASE_QUERY_TIMEOUT,
+            'getWorkoutForDay query'
+          )
 
           if (!error && data?.workout_definitions?.[day]) {
             return data.workout_definitions[day] as Workout
@@ -313,7 +321,6 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       }
     }
 
-    // Fall back to JSON file
     return this.fitnessService.getWorkoutForDay(day, weekNumber)
   }
 
@@ -829,11 +836,15 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await clientAny
-            .from('fitness_routine_versions')
-            .select('id, version_number, name, change_summary, is_active, is_draft, created_at, activated_at')
-            .eq('routine_id', routineId)
-            .order('version_number', { ascending: false })
+          const { data, error } = await withTimeout(
+            clientAny
+              .from('fitness_routine_versions')
+              .select('id, version_number, name, change_summary, is_active, is_draft, created_at, activated_at')
+              .eq('routine_id', routineId)
+              .order('version_number', { ascending: false }),
+            SUPABASE_QUERY_TIMEOUT,
+            'getVersions query'
+          )
 
           if (!error && data && data.length > 0) {
             const versions: RoutineVersionSummary[] = data.map((row: Partial<FitnessRoutineVersionRow>) => ({
@@ -849,16 +860,14 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
 
             const activeVersion = versions.find(v => v.isActive)
 
-            // Only consider drafts newer than active version as "the draft"
-            // (older drafts are orphaned and should be cleaned up)
             const activeVersionNum = activeVersion?.versionNumber ?? 0
             const validDrafts = versions.filter(v => v.isDraft && v.versionNumber > activeVersionNum)
-            const draftVersion = validDrafts[0] // Newest draft (already sorted desc)
+            const draftVersion = validDrafts[0]
 
             return { versions, activeVersion, draftVersion }
           }
         } catch (error) {
-          this.logError('Error fetching versions from Supabase', error)
+          this.logError('Error fetching versions from Supabase (falling back to JSON)', error)
         }
       }
     }
@@ -936,18 +945,22 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      const { data, error } = await clientAny
-        .from('fitness_routine_versions')
-        .select('*')
-        .eq('id', versionId)
-        .single()
+      const { data, error } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .select('*')
+          .eq('id', versionId)
+          .single(),
+        SUPABASE_QUERY_TIMEOUT,
+        'getVersion query'
+      )
 
       if (error || !data) return null
 
       const row = data as FitnessRoutineVersionRow
       return this.rowToVersion(row)
     } catch (error) {
-      this.logError('Error fetching version', error)
+      this.logError('Error fetching version (falling back)', error)
       return null
     }
   }
@@ -992,31 +1005,36 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      // Get the latest version number using MAX aggregate for accuracy
-      const { data: versionData } = await clientAny
-        .from('fitness_routine_versions')
-        .select('version_number')
-        .eq('routine_id', request.routineId)
-        .order('version_number', { ascending: false })
-        .limit(1)
+      const { data: versionData } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .select('version_number')
+          .eq('routine_id', request.routineId)
+          .order('version_number', { ascending: false })
+          .limit(1),
+        SUPABASE_QUERY_TIMEOUT,
+        'createVersion max-version query'
+      )
 
       const maxVersion = versionData?.[0]?.version_number ?? 0
       const nextVersionNumber = maxVersion + 1
 
-      // Get base data - either from specified version or current active
       let baseData: RoutineVersion | null = null
       if (request.basedOnVersionId) {
         baseData = await this.getVersion(request.basedOnVersionId)
       }
 
       if (!baseData) {
-        // Get current active version or fall back to JSON files
-        const { data: activeData } = await clientAny
-          .from('fitness_routine_versions')
-          .select('*')
-          .eq('routine_id', request.routineId)
-          .eq('is_active', true)
-          .single()
+        const { data: activeData } = await withTimeout(
+          clientAny
+            .from('fitness_routine_versions')
+            .select('*')
+            .eq('routine_id', request.routineId)
+            .eq('is_active', true)
+            .single(),
+          SUPABASE_QUERY_TIMEOUT,
+          'createVersion active-version query'
+        )
 
         if (activeData) {
           baseData = this.rowToVersion(activeData as FitnessRoutineVersionRow)
@@ -1061,17 +1079,20 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         updated_at: getCurrentTimestamp(),
       }
 
-      const { data, error } = await clientAny
-        .from('fitness_routine_versions')
-        .insert(insert)
-        .select()
-        .single()
+      const { data, error } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .insert(insert)
+          .select()
+          .single(),
+        SUPABASE_QUERY_TIMEOUT,
+        'createVersion insert query'
+      )
 
       if (error) throw error
 
       return this.rowToVersion(data as FitnessRoutineVersionRow)
     } catch (error: unknown) {
-      // Check if it's a duplicate key error (code 23505)
       const pgError = error as { code?: string }
       if (pgError.code === '23505' && retryCount < MAX_RETRIES) {
         this.log(`Duplicate version number, retrying (attempt ${retryCount + 1}/${MAX_RETRIES})`)
@@ -1166,12 +1187,16 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         }
       }
 
-      const { data, error } = await clientAny
-        .from('fitness_routine_versions')
-        .update(updateData)
-        .eq('id', versionId)
-        .select()
-        .single()
+      const { data, error } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .update(updateData)
+          .eq('id', versionId)
+          .select()
+          .single(),
+        SUPABASE_QUERY_TIMEOUT,
+        'updateVersion query'
+      )
 
       if (error) throw error
 
@@ -1197,26 +1222,27 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      // Get the version to activate
       const version = await this.getVersion(versionId)
       if (!version) return null
 
-      // Update to active (trigger will deactivate others)
-      const { data, error } = await clientAny
-        .from('fitness_routine_versions')
-        .update({
-          is_active: true,
-          is_draft: false,
-          activated_at: getCurrentTimestamp(),
-          updated_at: getCurrentTimestamp(),
-        })
-        .eq('id', versionId)
-        .select()
-        .single()
+      const { data, error } = await withTimeout(
+        clientAny
+          .from('fitness_routine_versions')
+          .update({
+            is_active: true,
+            is_draft: false,
+            activated_at: getCurrentTimestamp(),
+            updated_at: getCurrentTimestamp(),
+          })
+          .eq('id', versionId)
+          .select()
+          .single(),
+        SUPABASE_QUERY_TIMEOUT,
+        'activateVersion query'
+      )
 
       if (error) throw error
 
-      // Sync to JSON files and main routine table
       const activatedVersion = this.rowToVersion(data as FitnessRoutineVersionRow)
       await this.syncVersionToFiles(activatedVersion)
       await this.syncVersionToRoutineTable(activatedVersion)
@@ -1366,12 +1392,16 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await clientAny
-            .from('fitness_routine_versions')
-            .select('workout_definitions')
-            .eq('routine_id', routineId)
-            .eq('is_active', true)
-            .single()
+          const { data, error } = await withTimeout(
+            clientAny
+              .from('fitness_routine_versions')
+              .select('workout_definitions')
+              .eq('routine_id', routineId)
+              .eq('is_active', true)
+              .single(),
+            SUPABASE_QUERY_TIMEOUT,
+            'getWorkoutDefinitions query'
+          )
 
           if (!error && data?.workout_definitions) {
             return data.workout_definitions as Record<DayOfWeek, Workout>

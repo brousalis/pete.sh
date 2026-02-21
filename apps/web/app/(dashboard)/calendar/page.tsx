@@ -1,16 +1,16 @@
 'use client'
 
 import {
-    CalendarAgendaView,
-    CalendarDayView,
-    CalendarEventDetail,
-    CalendarFitnessSidebar,
-    CalendarHeader,
-    CalendarMealPlanSidebar,
-    CalendarMini,
-    CalendarMobileInfo,
-    CalendarMonthGrid,
-    CalendarWeekView,
+  CalendarAgendaView,
+  CalendarDayView,
+  CalendarEventDetail,
+  CalendarFitnessSidebar,
+  CalendarHeader,
+  CalendarMealPlanSidebar,
+  CalendarMini,
+  CalendarMobileInfo,
+  CalendarMonthGrid,
+  CalendarWeekView,
 } from '@/components/calendar'
 import { useConnectivity } from '@/components/connectivity-provider'
 import { Button } from '@/components/ui/button'
@@ -23,10 +23,10 @@ import type { MealPlan, Recipe } from '@/lib/types/cooking.types'
 import type { ConsistencyStats, WeeklyRoutine } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-    filterEvents,
-    generateFitnessEvents,
-    generateMealPlanEvents,
-    navigateDate,
+  filterEvents,
+  generateFitnessEvents,
+  generateMealPlanEvents,
+  navigateDate,
 } from '@/lib/utils/calendar-utils'
 import { format, isSameDay, startOfWeek } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -415,7 +415,7 @@ export default function CalendarPage() {
     (source === 'cache' || source === 'none')
 
   return (
-    <div className="-m-3 flex h-[calc(100%+24px)] flex-col overflow-hidden sm:-m-5 sm:h-[calc(100%+40px)] md:-mx-6 md:-my-6 md:h-[calc(100%+48px)]">
+    <div className="flex-col h-full overflow-scroll">
       {/* Header */}
       <div className="relative">
         <CalendarHeader
@@ -455,11 +455,11 @@ export default function CalendarPage() {
       </div>
 
       {/* Main content area - optimized for iPad Mini horizontal (1024x768) */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left sidebar - Mini calendar, fitness, and upcoming (hidden on small screens, shown on tablet+) */}
         <aside
           className={cn(
-            'border-border/50 bg-card/30 hidden shrink-0 flex-col gap-3 overflow-hidden border-r p-3 md:flex',
+            'border-border/50 hidden shrink-0 flex-col gap-3 overflow-hidden border-r md:flex',
             'w-[250px] lg:w-[270px]'
           )}
         >
@@ -513,7 +513,7 @@ export default function CalendarPage() {
         </aside>
 
         {/* Main calendar view */}
-        <main className="flex flex-1 overflow-hidden">
+        <main className="flex flex-1 overflow-hidden ">
           {/* Mobile Info Panel - shown when info tab is active on mobile */}
           {mobileInfoActive && (
             <div className="flex-1 overflow-hidden md:hidden">
@@ -534,7 +534,7 @@ export default function CalendarPage() {
           {/* Calendar grid/view - with swipe gestures for touch navigation */}
           <div
             className={cn(
-              'bg-background flex-1 touch-pan-y overflow-hidden',
+              'bg-background flex-1 touch-pan-y overflow-hidden rounded-lg',
               selectedEvent && 'lg:flex-[2]',
               mobileInfoActive && 'hidden md:flex md:flex-1'
             )}

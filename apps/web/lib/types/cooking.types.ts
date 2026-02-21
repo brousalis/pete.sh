@@ -2,7 +2,7 @@
  * TypeScript types for Cooking / Recipe Management feature
  */
 
-export type RecipeSource = 'trader_joes' | 'custom' | 'imported'
+export type RecipeSource = 'trader_joes' | 'custom'
 
 export type RecipeDifficulty = 'easy' | 'medium' | 'hard'
 

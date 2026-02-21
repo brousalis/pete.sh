@@ -218,7 +218,7 @@ export function CookingMode({ recipe, open, onClose }: CookingModeProps) {
               </Badge>
 
               {/* Step text */}
-              <p className="text-2xl sm:text-3xl md:text-4xl font-medium leading-relaxed">
+              <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium leading-relaxed px-2">
                 {step.instruction}
               </p>
 
@@ -295,43 +295,49 @@ export function CookingMode({ recipe, open, onClose }: CookingModeProps) {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between border-t px-6 py-4 shrink-0">
+      <div className="flex items-center justify-between border-t px-4 sm:px-6 py-3 sm:py-4 shrink-0 safe-area-inset-bottom">
         <Button
           variant="outline"
           size="lg"
           onClick={handlePrevStep}
           disabled={currentStep === 0}
-          className="min-w-[120px]"
+          className="min-w-[100px] sm:min-w-[120px] h-11 sm:h-12 touch-manipulation"
         >
           <ChevronLeft className="size-5 mr-1" />
-          Previous
+          <span className="hidden sm:inline">Previous</span>
+          <span className="sm:hidden">Prev</span>
         </Button>
 
-        {/* Step dots */}
-        <div className="hidden sm:flex items-center gap-1.5">
-          {steps.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentStep(i)}
-              className={cn(
-                'size-2.5 rounded-full transition-colors',
-                i === currentStep
-                  ? 'bg-primary'
-                  : i < currentStep
-                    ? 'bg-primary/30'
-                    : 'bg-muted-foreground/20'
-              )}
-            />
-          ))}
+        {/* Step dots / counter */}
+        <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5">
+            {steps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentStep(i)}
+                className={cn(
+                  'size-2.5 rounded-full transition-colors',
+                  i === currentStep
+                    ? 'bg-primary'
+                    : i < currentStep
+                      ? 'bg-primary/30'
+                      : 'bg-muted-foreground/20'
+                )}
+              />
+            ))}
+          </div>
+          <span className="sm:hidden text-xs text-muted-foreground tabular-nums font-medium">
+            {currentStep + 1} / {totalSteps}
+          </span>
         </div>
 
         {currentStep === totalSteps - 1 ? (
-          <Button size="lg" onClick={onClose} className="min-w-[120px]">
+          <Button size="lg" onClick={onClose} className="min-w-[100px] sm:min-w-[120px] h-11 sm:h-12 touch-manipulation">
             <Check className="size-5 mr-1" />
             Done
           </Button>
         ) : (
-          <Button size="lg" onClick={handleNextStep} className="min-w-[120px]">
+          <Button size="lg" onClick={handleNextStep} className="min-w-[100px] sm:min-w-[120px] h-11 sm:h-12 touch-manipulation">
             Next
             <ChevronRight className="size-5 ml-1" />
           </Button>

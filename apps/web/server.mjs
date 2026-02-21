@@ -238,11 +238,12 @@ const httpsOptions = {
 // ============================================================================
 // Server setup
 // ============================================================================
-const app = next({ dev, hostname, port })
+const httpsServer = createServer(httpsOptions)
+const app = next({ dev, hostname, port, httpServer: httpsServer })
 const handle = app.getRequestHandler()
 
 app.prepare().then(() => {
-  createServer(httpsOptions, async (req, res) => {
+  httpsServer.on('request', async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true)
       await handle(req, res, parsedUrl)
@@ -252,7 +253,9 @@ app.prepare().then(() => {
       res.statusCode = 500
       res.end('internal server error')
     }
-  }).listen(port, hostname, () => {
+  })
+
+  httpsServer.listen(port, hostname, () => {
     // Startup banner (use original write to avoid formatting)
     const lanIp = getLanIp()
     const w = (s) => originalStdoutWrite(s + '\n')

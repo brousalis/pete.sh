@@ -4,9 +4,6 @@
   "private": true,
   "description": "petehome ecosystem - Smart home control center with web, desktop, mobile, and browser extension apps",
   "author": "Pete",
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "scripts": {
     "dev": "cd apps/web && yarn dev:https",
     "dev:http": "cd apps/web && yarn dev",

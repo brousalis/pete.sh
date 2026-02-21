@@ -27,6 +27,7 @@ import {
     Copy,
     Plus,
     ShoppingCart,
+    Trash2,
     X
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -48,6 +49,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
     toggleManualItem,
     addManualItem,
     removeManualItem,
+    clearAll,
   } = shopState
 
   const [newItemInput, setNewItemInput] = useState('')
@@ -167,7 +169,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
               {checkedCount} of {totalItems} items
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
@@ -176,6 +178,15 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
             >
               <Copy className="size-3 mr-1" />
               Copy
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs text-destructive hover:bg-destructive/10"
+              onClick={clearAll}
+            >
+              <Trash2 className="size-3 mr-1" />
+              Clear
             </Button>
           </div>
         </div>

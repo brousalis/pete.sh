@@ -1,45 +1,49 @@
 'use client'
 
 import { CookingMode } from '@/components/cooking/cooking-mode'
-import { HorizontalMealPlan, ShoppingCard } from '@/components/cooking/cooking-sidebar'
+import { HorizontalMealPlan, MobileMealPlanView, ShoppingCard } from '@/components/cooking/cooking-sidebar'
 import { FridgeManager } from '@/components/cooking/fridge-manager'
 import { FridgeScanButton, FridgeScanner } from '@/components/cooking/fridge-scanner'
-import { ImportRecipeDialog } from '@/components/cooking/import-recipe-dialog'
 import { RecipeDetailSheet } from '@/components/cooking/recipe-detail'
 import { RecipeEditor } from '@/components/cooking/recipe-editor'
 import type { SourceFilter } from '@/components/cooking/recipe-list'
 import { RecipeList } from '@/components/cooking/recipe-list'
 import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
-import { TraderJoesDetailSheet } from '@/components/cooking/trader-joes-detail'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import type {
-    Recipe,
-    RecipeWithIngredients,
-    TraderJoesRecipe,
+  Recipe,
+  RecipeWithIngredients,
 } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    ChefHat,
-    Plus,
-    Search,
-    ShoppingCart,
-    Snowflake,
-    Star,
-    X,
+  CalendarDays,
+  ChefHat,
+  Expand,
+  Filter,
+  ImageIcon,
+  Plus,
+  Search,
+  ShoppingCart,
+  Snowflake,
+  Star,
+  X,
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+type MobileTab = 'plan' | 'shopping' | 'recipes'
 
 export default function CookingPage() {
   return (
@@ -54,13 +58,10 @@ export default function CookingPage() {
 function CookingPageContent() {
   const {
     recipes,
-    tjRecipes,
     sidebarOpen,
     setSidebarOpen,
     selectedRecipeId,
     setSelectedRecipeId,
-    selectedTjRecipe,
-    setSelectedTjRecipe,
     showEditor,
     setShowEditor,
     editingRecipe,
@@ -76,7 +77,6 @@ function CookingPageContent() {
   } = useCooking()
 
   const searchParams = useSearchParams()
-  const [importRecipe, setImportRecipe] = useState<TraderJoesRecipe | null>(null)
   const hydratedFromUrl = useRef(false)
 
   // ── Filter state ──
@@ -88,9 +88,12 @@ function CookingPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set())
   const [nutritionFilter, setNutritionFilter] = useState<string>('all')
+  const [cardImageSize, setCardImageSize] = useState(160)
   const [showFridgeScanner, setShowFridgeScanner] = useState(false)
   const [showFridgeManager, setShowFridgeManager] = useState(false)
   const [showShoppingFocus, setShowShoppingFocus] = useState(false)
+  const [mobileTab, setMobileTab] = useState<MobileTab>('plan')
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false)
 
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
   const handleSearch = useCallback(
@@ -121,25 +124,16 @@ function CookingPageContent() {
   useEffect(() => {
     if (hydratedFromUrl.current) return
     const recipeParam = searchParams.get('recipe')
-    const tjParam = searchParams.get('tj')
     if (recipeParam && recipes.length > 0) {
       setSelectedRecipeId(recipeParam)
-      hydratedFromUrl.current = true
-    } else if (tjParam && tjRecipes.length > 0) {
-      const found = tjRecipes.find((r) => r.id === tjParam)
-      if (found) setSelectedTjRecipe(found)
-      hydratedFromUrl.current = true
-    } else if (!recipeParam && !tjParam) {
-      hydratedFromUrl.current = true
     }
-  }, [searchParams, recipes, tjRecipes, setSelectedRecipeId, setSelectedTjRecipe])
+    hydratedFromUrl.current = true
+  }, [searchParams, recipes, setSelectedRecipeId])
 
   const updateUrlParam = useCallback((key: string, value: string | null) => {
     const url = new URL(window.location.href)
     if (value) url.searchParams.set(key, value)
     else url.searchParams.delete(key)
-    if (key === 'recipe') url.searchParams.delete('tj')
-    if (key === 'tj') url.searchParams.delete('recipe')
     window.history.replaceState({}, '', url.toString())
   }, [])
 
@@ -150,14 +144,6 @@ function CookingPageContent() {
       updateUrlParam('recipe', recipe.id)
     },
     [setSelectedRecipeId, updateUrlParam]
-  )
-
-  const handleTjRecipeClick = useCallback(
-    (recipe: TraderJoesRecipe) => {
-      setSelectedTjRecipe(recipe)
-      updateUrlParam('tj', recipe.id)
-    },
-    [setSelectedTjRecipe, updateUrlParam]
   )
 
   const handleNewRecipe = useCallback(() => {
@@ -195,20 +181,6 @@ function CookingPageContent() {
     await refreshRecipes()
   }, [setSelectedRecipeId, updateUrlParam, refreshRecipes])
 
-  const handleImportTj = useCallback((recipe: TraderJoesRecipe) => {
-    setImportRecipe(recipe)
-  }, [])
-
-  const handleImportComplete = useCallback(
-    async (_imported: RecipeWithIngredients) => {
-      setImportRecipe(null)
-      setSelectedTjRecipe(null)
-      updateUrlParam('tj', null)
-      await refreshRecipes()
-    },
-    [setSelectedTjRecipe, updateUrlParam, refreshRecipes]
-  )
-
   const handleStartCooking = useCallback(
     (recipe: RecipeWithIngredients) => {
       setCookingRecipe(recipe)
@@ -239,90 +211,376 @@ function CookingPageContent() {
     nutritionFilter,
   }
 
-  // Search-filtered recipe sets (reused for counts + categories)
-  const searchFilteredTj = useMemo(() => {
+  // Search-filtered recipe counts by source
+  const searchFilteredCounts = useMemo(() => {
+    let filtered = recipes
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase()
+      filtered = filtered.filter(
+        (r) =>
+          r.name.toLowerCase().includes(lower) ||
+          r.description?.toLowerCase().includes(lower) ||
+          r.tags?.some((t) => t.toLowerCase().includes(lower))
+      )
+    }
+    return {
+      mine: filtered.filter((r) => r.source === 'custom').length,
+      tj: filtered.filter((r) => r.source === 'trader_joes').length,
+    }
+  }, [recipes, debouncedSearch])
+
+  // Category options with counts (from TJ-sourced recipes' tags)
+  const categoriesWithCounts = useMemo(() => {
+    const cats = new Map<string, number>()
+    const tjRecipes = recipes.filter((r) => r.source === 'trader_joes')
     let filtered = tjRecipes
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase()
       filtered = filtered.filter(
         (r) =>
           r.name.toLowerCase().includes(lower) ||
-          r.recipe_data.description?.toLowerCase().includes(lower) ||
-          r.recipe_data.ingredients?.some((i) => i.toLowerCase().includes(lower)) ||
-          r.recipe_data.tags?.some((t) => t.toLowerCase().includes(lower)) ||
-          r.category?.toLowerCase().includes(lower) ||
-          r.recipe_data.categories?.some((c) => c.toLowerCase().includes(lower)) ||
-          r.url?.toLowerCase().includes(lower) ||
-          r.recipe_data.instructions?.some((s) => s.toLowerCase().includes(lower))
+          r.description?.toLowerCase().includes(lower) ||
+          r.tags?.some((t) => t.toLowerCase().includes(lower))
       )
     }
     if (excludedCategories.size > 0) {
       filtered = filtered.filter((r) => {
-        const recipeCats = [
-          ...(r.category ? [r.category.toLowerCase()] : []),
-          ...(r.recipe_data.categories?.map((c) => c.toLowerCase()) || []),
-        ]
-        return !recipeCats.some((c) => excludedCategories.has(c))
+        const recipeTags = r.tags?.map((t) => t.toLowerCase()) || []
+        return !recipeTags.some((t) => excludedCategories.has(t))
       })
     }
-    return filtered
-  }, [tjRecipes, debouncedSearch, excludedCategories])
-
-  const searchFilteredMineCount = useMemo(() => {
-    if (!debouncedSearch) return recipes.length
-    const lower = debouncedSearch.toLowerCase()
-    return recipes.filter(
-      (r) =>
-        r.name.toLowerCase().includes(lower) ||
-        r.description?.toLowerCase().includes(lower) ||
-        r.tags?.some((t) => t.toLowerCase().includes(lower))
-    ).length
-  }, [recipes, debouncedSearch])
-
-  const searchFilteredCounts = useMemo(() => ({
-    mine: searchFilteredMineCount,
-    tj: searchFilteredTj.length,
-  }), [searchFilteredMineCount, searchFilteredTj])
-
-  // Category options with counts (from search-filtered TJ recipes)
-  const categoriesWithCounts = useMemo(() => {
-    const cats = new Map<string, number>()
-    searchFilteredTj.forEach((r) => {
-      r.recipe_data.categories?.forEach((c) => {
-        cats.set(c, (cats.get(c) || 0) + 1)
+    filtered.forEach((r) => {
+      r.tags?.forEach((t) => {
+        cats.set(t, (cats.get(t) || 0) + 1)
       })
     })
     return Array.from(cats.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 12)
-  }, [searchFilteredTj])
+  }, [recipes, debouncedSearch, excludedCategories])
 
-  const totalRecipeCount = recipes.length + tjRecipes.length
+  const totalRecipeCount = recipes.length
+
+  const { shoppingList } = useCooking()
+  const shoppingItemCount = shoppingList?.items?.length ?? 0
+  const activeFilterCount = [
+    difficultyFilter !== 'all',
+    nutritionFilter !== 'all',
+    favoritesOnly,
+    fridgeFilterActive,
+    selectedCategory,
+    excludedCategories.size > 0,
+  ].filter(Boolean).length
 
   return (
     <>
       <div className="flex h-full flex-col overflow-hidden">
-        {/* ── Horizontal Meal Plan (focal point) ── */}
-        <HorizontalMealPlan onRecipeClick={handleSidebarRecipeClick} />
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* ── MOBILE: Tab Navigation ── */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        <div className="md:hidden shrink-0 px-3 pt-2 pb-1">
+          <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1">
+            {([
+              { key: 'plan' as MobileTab, label: 'Plan', icon: CalendarDays },
+              { key: 'shopping' as MobileTab, label: 'Shop', icon: ShoppingCart, badge: shoppingItemCount > 0 ? shoppingItemCount : undefined },
+              { key: 'recipes' as MobileTab, label: 'Recipes', icon: ChefHat, badge: totalRecipeCount > 0 ? totalRecipeCount : undefined },
+            ]).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setMobileTab(tab.key)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-medium transition-all touch-manipulation',
+                  mobileTab === tab.key
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground active:bg-muted/80'
+                )}
+              >
+                <tab.icon className="size-3.5" />
+                <span>{tab.label}</span>
+                {tab.badge != null && (
+                  <span className={cn(
+                    'text-[10px] tabular-nums',
+                    mobileTab === tab.key ? 'text-muted-foreground' : 'opacity-50'
+                  )}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* ── Content: Shopping List + Recipes (card) ── */}
-        <div className="flex flex-1 overflow-hidden px-3 pt-3">
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* ── MOBILE: Tab Content ── */}
+        {/* ═══════════════════════════════════════════════════════ */}
+
+        {/* Mobile: Meal Plan Tab */}
+        <div className={cn('md:hidden flex-1 overflow-hidden', mobileTab !== 'plan' && 'hidden')}>
+          <MobileMealPlanView onRecipeClick={handleSidebarRecipeClick} />
+        </div>
+
+        {/* Mobile: Shopping Tab */}
+        <div className={cn('md:hidden flex-1 overflow-y-auto', mobileTab !== 'shopping' && 'hidden')}>
+          <div className="p-3 space-y-3">
+            <Button
+              className="w-full h-12 gap-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl"
+              onClick={() => setShowShoppingFocus(true)}
+            >
+              <Expand className="size-4" />
+              Open Shopping Mode
+            </Button>
+            <ShoppingCard
+              onOpenFocusMode={() => setShowShoppingFocus(true)}
+            />
+          </div>
+        </div>
+
+        {/* Mobile: Recipes Tab */}
+        <div className={cn('md:hidden flex-1 flex flex-col overflow-hidden', mobileTab !== 'recipes' && 'hidden')}>
+          {/* Mobile recipe header */}
+          <div className="shrink-0 px-3 pt-2 pb-2 space-y-2">
+            {/* Search row */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
+                <Input
+                  placeholder="Search recipes..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className={cn(
+                    'h-10 pl-9 text-sm bg-card border-border/40 rounded-xl',
+                    search && 'pr-9'
+                  )}
+                />
+                {search && (
+                  <button
+                    onClick={() => handleSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+              <Button onClick={handleNewRecipe} size="icon" className="size-10 rounded-xl shrink-0">
+                <Plus className="size-4" />
+              </Button>
+            </div>
+
+            {/* Source + filter toggle row */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-lg border border-border/40 p-0.5 bg-muted/30">
+                {([
+                  { value: 'all' as SourceFilter, label: 'All', count: searchFilteredCounts.mine + searchFilteredCounts.tj },
+                  { value: 'my-recipes' as SourceFilter, label: 'Mine', count: searchFilteredCounts.mine },
+                  { value: 'trader-joes' as SourceFilter, label: "TJ's", count: searchFilteredCounts.tj },
+                ]).map((source) => (
+                  <button
+                    key={source.value}
+                    onClick={() => { setSourceFilter(source.value); setSelectedCategory('') }}
+                    className={cn(
+                      'rounded-md px-2.5 py-1.5 text-xs font-medium transition-all flex items-center gap-1 touch-manipulation',
+                      sourceFilter === source.value
+                        ? 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    <span>{source.label}</span>
+                    <span className="tabular-nums text-[10px] opacity-60">{source.count}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1" />
+
+              <button
+                onClick={() => setFavoritesOnly(!favoritesOnly)}
+                className={cn(
+                  'flex items-center justify-center size-9 rounded-lg transition-all touch-manipulation',
+                  favoritesOnly
+                    ? 'bg-amber-500/15 text-amber-500'
+                    : 'text-muted-foreground active:bg-muted'
+                )}
+              >
+                <Star className={cn('size-4', favoritesOnly && 'fill-amber-500')} />
+              </button>
+
+              {fridgeIngredients.length > 0 && (
+                <button
+                  onClick={() => setShowFridgeManager(true)}
+                  className={cn(
+                    'flex items-center justify-center size-9 rounded-lg transition-all touch-manipulation',
+                    fridgeFilterActive
+                      ? 'bg-green-500/15 text-green-500'
+                      : 'text-muted-foreground active:bg-muted'
+                  )}
+                >
+                  <Snowflake className="size-4" />
+                </button>
+              )}
+
+              <button
+                onClick={() => setMobileFiltersExpanded(!mobileFiltersExpanded)}
+                className={cn(
+                  'flex items-center justify-center size-9 rounded-lg transition-all touch-manipulation relative',
+                  mobileFiltersExpanded || activeFilterCount > 0
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground active:bg-muted'
+                )}
+              >
+                <Filter className="size-4" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Expandable filters */}
+            <AnimatePresence>
+              {mobileFiltersExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-2 pt-1 pb-1">
+                    {/* Category chips */}
+                    {categoriesWithCounts.length > 0 && (
+                      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                        {categoriesWithCounts.map(([cat, count]) => {
+                          const isSelected = selectedCategory === cat
+                          const isExcluded = excludedCategories.has(cat.toLowerCase())
+                          return (
+                            <button
+                              key={cat}
+                              onClick={() => {
+                                if (isExcluded) {
+                                  setExcludedCategories((prev) => {
+                                    const next = new Set(prev)
+                                    next.delete(cat.toLowerCase())
+                                    return next
+                                  })
+                                } else {
+                                  setSelectedCategory(isSelected ? '' : cat)
+                                }
+                              }}
+                              className={cn(
+                                'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 touch-manipulation',
+                                isExcluded
+                                  ? 'bg-red-500/10 text-red-400/70 line-through'
+                                  : isSelected
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted/60 text-muted-foreground active:bg-muted'
+                              )}
+                            >
+                              <span>{cat}</span>
+                              <span className="tabular-nums text-[10px] opacity-50">{count}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Selects row */}
+                    <div className="flex items-center gap-2">
+                      <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                        <SelectTrigger className="h-9 flex-1 text-xs bg-card border-border/40 rounded-lg">
+                          <SelectValue placeholder="Difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Levels</SelectItem>
+                          <SelectItem value="easy">Easy</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="hard">Hard</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={nutritionFilter} onValueChange={setNutritionFilter}>
+                        <SelectTrigger className="h-9 flex-1 text-xs bg-card border-border/40 rounded-lg">
+                          <SelectValue placeholder="Nutrition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Nutrition</SelectItem>
+                          <SelectItem value="high-protein">High Protein</SelectItem>
+                          <SelectItem value="low-carb">Low Carb</SelectItem>
+                          <SelectItem value="low-calorie">Low Calorie</SelectItem>
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="high-fiber">High Fiber</SelectItem>
+                          <SelectItem value="post-workout">Post-Workout</SelectItem>
+                          <SelectItem value="pre-workout-friendly">Pre-Workout</SelectItem>
+                          <SelectItem value="rest-day">Rest Day</SelectItem>
+                          <SelectItem value="recomp-friendly">Recomp Friendly</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearAllFilters}
+                          className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 px-2 py-1.5 rounded-lg active:bg-muted"
+                        >
+                          <X className="size-3.5" />
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    <FridgeScanButton onClick={() => setShowFridgeScanner(true)} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Mobile recipe list */}
+          <div className="flex-1 overflow-y-auto px-3 pb-3">
+            {showEditor ? (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <RecipeEditor
+                  recipe={editingRecipe || undefined}
+                  onSave={handleSaveRecipe}
+                  onCancel={handleCancelEdit}
+                />
+              </motion.div>
+            ) : (
+              <RecipeList
+                filters={filterState}
+                onRecipeClick={handleRecipeClick}
+                onNewRecipe={handleNewRecipe}
+                cardImageSize={cardImageSize}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* ── DESKTOP: Existing Layout ── */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        <div className="hidden md:block shrink-0">
+          <HorizontalMealPlan onRecipeClick={handleSidebarRecipeClick} />
+        </div>
+
+        <div className="hidden md:flex flex-1 overflow-hidden px-3 pt-3">
           <div className="flex flex-1 overflow-hidden rounded-xl border border-border/50 bg-card">
             {/* Shopping list column - left side */}
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.aside
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 280, opacity: 1 }}
+                  animate={{ width: 340, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2, ease: 'easeInOut' }}
                   className="hidden shrink-0 flex-col border-r border-border/40 overflow-hidden lg:flex"
                   style={{ display: 'flex' }}
                 >
                   <ScrollArea className="flex-1 min-h-0">
-                    <div className="p-3">
-                      <ShoppingCard onOpenFocusMode={() => setShowShoppingFocus(true)} onCollapse={() => setSidebarOpen(false)} />
-                    </div>
+                    <ShoppingCard onOpenFocusMode={() => setShowShoppingFocus(true)} onCollapse={() => setSidebarOpen(false)} />
                   </ScrollArea>
                 </motion.aside>
               )}
@@ -334,7 +592,6 @@ function CookingPageContent() {
               <div className="border-b border-border/40">
                 {/* Row 1: Title + Search + Actions */}
                 <div className="flex items-center gap-2.5 px-4 py-2">
-                  {/* Shopping list toggle (only when sidebar is hidden) */}
                   {!sidebarOpen && (
                     <button
                       onClick={() => setSidebarOpen(true)}
@@ -345,14 +602,12 @@ function CookingPageContent() {
                     </button>
                   )}
 
-                  {/* Title - compact inline */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  {/* <div className="flex items-center gap-1.5 shrink-0">
                     <ChefHat className="size-4 text-orange-500" />
                     <span className="text-xs font-bold">Recipes</span>
                     <span className="text-[10px] text-muted-foreground tabular-nums">{totalRecipeCount}</span>
-                  </div>
+                  </div> */}
 
-                  {/* Search */}
                   <div className="relative flex-1 min-w-0 max-w-lg">
                     <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50" />
                     <Input
@@ -360,7 +615,7 @@ function CookingPageContent() {
                       value={search}
                       onChange={(e) => handleSearch(e.target.value)}
                       className={cn(
-                        'h-8 pl-8 text-xs bg-background/50 border-border/40 focus-visible:bg-background focus-visible:border-border',
+                        'h-8 pl-8 !text-xs bg-background/50 border-border/40 focus-visible:bg-background focus-visible:border-border',
                         search && 'pr-8'
                       )}
                     />
@@ -375,8 +630,19 @@ function CookingPageContent() {
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-1 ml-auto shrink-0">
+                    <div className="flex items-center gap-1.5 mr-1">
+                      <ImageIcon className="size-3 text-muted-foreground shrink-0" />
+                      <Slider
+                        value={[cardImageSize]}
+                        onValueChange={(v) => v[0] != null && setCardImageSize(v[0])}
+                        min={80}
+                        max={220}
+                        step={10}
+                        className="w-20"
+                      />
+                    </div>
+
                     <button
                       onClick={() => setFavoritesOnly(!favoritesOnly)}
                       className={cn(
@@ -416,7 +682,6 @@ function CookingPageContent() {
 
                 {/* Row 2: Filter Bar */}
                 <div className="flex items-center gap-2 px-4 py-1.5 border-t border-border/20">
-                  {/* Source toggle pills */}
                   <div className="flex items-center rounded-lg border border-border/40 p-0.5 shrink-0 bg-muted/30">
                     {([
                       { value: 'all' as SourceFilter, label: 'All', count: searchFilteredCounts.mine + searchFilteredCounts.tj },
@@ -441,7 +706,6 @@ function CookingPageContent() {
 
                   <div className="h-5 w-px bg-border/40 shrink-0" />
 
-                  {/* Category chips */}
                   <ScrollArea className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 pb-0.5">
                       {categoriesWithCounts.map(([cat, count]) => {
@@ -452,7 +716,6 @@ function CookingPageContent() {
                             key={cat}
                             onClick={(e) => {
                               if (e.shiftKey) {
-                                // Shift+click: toggle exclude
                                 setExcludedCategories((prev) => {
                                   const next = new Set(prev)
                                   const key = cat.toLowerCase()
@@ -460,10 +723,8 @@ function CookingPageContent() {
                                   else next.add(key)
                                   return next
                                 })
-                                // Clear include if this category was selected
                                 if (isSelected) setSelectedCategory('')
                               } else {
-                                // Normal click: toggle include (and remove from excluded if it was)
                                 if (isExcluded) {
                                   setExcludedCategories((prev) => {
                                     const next = new Set(prev)
@@ -502,7 +763,6 @@ function CookingPageContent() {
 
                   <div className="h-5 w-px bg-border/40 shrink-0" />
 
-                  {/* Difficulty */}
                   <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                     <SelectTrigger className="h-7 w-[110px] text-xs shrink-0 bg-muted/30 border-border/40">
                       <SelectValue placeholder="Difficulty" />
@@ -515,7 +775,6 @@ function CookingPageContent() {
                     </SelectContent>
                   </Select>
 
-                  {/* Nutrition Category */}
                   <Select value={nutritionFilter} onValueChange={setNutritionFilter}>
                     <SelectTrigger className="h-7 w-[130px] text-xs shrink-0 bg-muted/30 border-border/40">
                       <SelectValue placeholder="Nutrition" />
@@ -565,9 +824,8 @@ function CookingPageContent() {
                     <RecipeList
                       filters={filterState}
                       onRecipeClick={handleRecipeClick}
-                      onTjRecipeClick={handleTjRecipeClick}
                       onNewRecipe={handleNewRecipe}
-                      onImportTj={handleImportTj}
+                      cardImageSize={cardImageSize}
                     />
                   )}
                 </div>
@@ -591,29 +849,6 @@ function CookingPageContent() {
         onDelete={handleDeleteRecipe}
         onStartCooking={handleStartCooking}
       />
-
-      <TraderJoesDetailSheet
-        recipe={selectedTjRecipe}
-        open={!!selectedTjRecipe}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedTjRecipe(null)
-            updateUrlParam('tj', null)
-          }
-        }}
-        onImport={handleImportTj}
-      />
-
-      {importRecipe && (
-        <ImportRecipeDialog
-          open={!!importRecipe}
-          onOpenChange={(open) => {
-            if (!open) setImportRecipe(null)
-          }}
-          recipe={importRecipe}
-          onImportComplete={handleImportComplete}
-        />
-      )}
 
       <FridgeScanner
         open={showFridgeScanner}

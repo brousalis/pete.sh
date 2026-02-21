@@ -12,8 +12,6 @@ import type {
     ShoppingListStatePatch,
     UpdateMealPlanInput
 } from '@/lib/types/cooking.types'
-import { sanitizeIngredientName } from '@/lib/utils/ingredient-sanitizer'
-import { parseIngredientString } from '@/lib/utils/ingredient-parser'
 import {
     normalizeIngredientName,
     normalizeUnit,
@@ -21,7 +19,6 @@ import {
     tryConvertUnits,
 } from '@/lib/utils/shopping-utils'
 import { cookingService } from './cooking.service'
-import { traderJoesService } from './trader-joes.service'
 
 export class MealPlanningService {
   /**
@@ -252,7 +249,6 @@ export class MealPlanningService {
       unit?: string
     }
 
-    // Fetch all recipes (user recipes and TJ recipes) with ingredients
     const recipeIngredients: Array<{
       recipeName: string
       ingredients: ParsedIngredient[]
@@ -260,7 +256,6 @@ export class MealPlanningService {
 
     for (const recipeId of recipeIds) {
       try {
-        // Try user recipes first
         const recipe = await cookingService.getRecipe(recipeId)
         if (recipe) {
           recipeIngredients.push({
@@ -270,23 +265,6 @@ export class MealPlanningService {
               amount: ing.amount,
               unit: ing.unit,
             })),
-          })
-          continue
-        }
-      } catch {
-        // Not a user recipe, try TJ
-      }
-
-      try {
-        // Try Trader Joe's recipes
-        const tjRecipe = await traderJoesService.getRecipeById(recipeId)
-        if (tjRecipe && tjRecipe.recipe_data.ingredients) {
-          const parsed = tjRecipe.recipe_data.ingredients
-            .map(parseIngredientString)
-            .map((p) => ({ ...p, name: sanitizeIngredientName(p.name).name }))
-          recipeIngredients.push({
-            recipeName: tjRecipe.name,
-            ingredients: parsed,
           })
         }
       } catch (error) {
@@ -494,6 +472,23 @@ export class MealPlanningService {
     if (error) {
       console.error('Error updating shopping list status:', error)
       throw new Error(`Failed to update shopping list: ${error.message}`)
+    }
+  }
+
+  async deleteShoppingList(mealPlanId: string): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase
+      .from('shopping_lists')
+      .delete()
+      .eq('meal_plan_id', mealPlanId)
+
+    if (error) {
+      console.error('Error deleting shopping list:', error)
+      throw new Error(`Failed to delete shopping list: ${error.message}`)
     }
   }
 

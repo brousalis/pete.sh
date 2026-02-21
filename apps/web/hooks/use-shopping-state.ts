@@ -30,6 +30,7 @@ interface ShoppingState {
   toggleManualItem: (index: number) => void
   addManualItem: (name: string) => void
   removeManualItem: (index: number) => void
+  clearAll: () => void
 }
 
 const LEGACY_KEY_PREFIX = 'shopping-list-'
@@ -270,6 +271,17 @@ export function useShoppingState(shoppingList: ShoppingList | null): ShoppingSta
     sync({ trips: [] })
   }, [sync])
 
+  const clearAll = useCallback(() => {
+    setCheckedItems(new Set())
+    setHiddenItems(new Set())
+    setManualItems([])
+    sync({
+      checked_items: [],
+      hidden_items: [],
+      manual_items: [],
+    })
+  }, [sync])
+
   const toggleManualItem = useCallback(
     (index: number) => {
       setManualItems((prev) => {
@@ -322,5 +334,6 @@ export function useShoppingState(shoppingList: ShoppingList | null): ShoppingSta
     toggleManualItem,
     addManualItem,
     removeManualItem,
+    clearAll,
   }
 }

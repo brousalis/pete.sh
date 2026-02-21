@@ -15,7 +15,7 @@ import { withCors, corsOptionsResponse } from '@/lib/api/cors'
  * Query params:
  *   - search: Search by name
  *   - tags: Comma-separated tags
- *   - source: 'trader_joes' | 'custom' | 'imported'
+ *   - source: 'trader_joes' | 'custom'
  *   - difficulty: 'easy' | 'medium' | 'hard'
  *   - is_favorite: 'true' | 'false'
  */

@@ -53,6 +53,38 @@ export async function GET(
 }
 
 /**
+ * DELETE /api/cooking/meal-plans/[id]/shopping-list
+ * Delete/clear the shopping list for a meal plan
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    await mealPlanningService.deleteShoppingList(id)
+
+    return withCors(
+      NextResponse.json({
+        success: true,
+        message: 'Shopping list deleted',
+      })
+    )
+  } catch (error) {
+    console.error('Error deleting shopping list:', error)
+    return withCors(
+      NextResponse.json(
+        {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      )
+    )
+  }
+}
+
+/**
  * POST /api/cooking/meal-plans/[id]/shopping-list
  * Update shopping list status
  * Body: { status: 'draft' | 'active' | 'completed' }

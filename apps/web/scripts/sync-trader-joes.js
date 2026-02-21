@@ -594,6 +594,119 @@ async function syncAllRecipes() {
   }
 }
 
+/**
+ * Auto-import any newly cached TJ recipes into the unified recipes table.
+ * Skips recipes already imported (matched by source_url).
+ * Uses the TJ cache UUID as the recipe ID for meal plan reference integrity.
+ */
+async function autoImportNewRecipes() {
+  console.log('\n--- Auto-importing new TJ recipes into recipes table ---')
+
+  const { data: cacheRecipes, error: cacheErr } = await supabase
+    .from('trader_joes_recipes_cache')
+    .select('*')
+    .order('name')
+
+  if (cacheErr || !cacheRecipes) {
+    console.error('Failed to fetch cache recipes:', cacheErr?.message)
+    return
+  }
+
+  const { data: existingImported } = await supabase
+    .from('recipes')
+    .select('source_url')
+    .eq('source', 'trader_joes')
+
+  const importedUrls = new Set(
+    (existingImported || []).map((r) => r.source_url).filter(Boolean)
+  )
+
+  const toImport = cacheRecipes.filter((tj) => !importedUrls.has(tj.url))
+
+  if (toImport.length === 0) {
+    console.log('All TJ cache recipes already imported. Nothing to do.')
+    return
+  }
+
+  console.log(`Found ${toImport.length} new recipes to import...`)
+
+  const recipeRows = []
+  const ingredientRows = []
+  const now = new Date().toISOString()
+
+  for (const tj of toImport) {
+    const rd = tj.recipe_data || {}
+
+    const instructions = (rd.instructions || []).map((instruction, index) => ({
+      step_number: index + 1,
+      instruction,
+    }))
+
+    recipeRows.push({
+      id: tj.id,
+      name: tj.name,
+      description: rd.description || null,
+      source: 'trader_joes',
+      source_url: tj.url,
+      prep_time: rd.prep_time || null,
+      cook_time: rd.cook_time || null,
+      servings: rd.servings || null,
+      difficulty: null,
+      tags: rd.tags || [],
+      image_url: tj.image_url || null,
+      instructions: JSON.stringify(instructions),
+      notes: null,
+      is_favorite: false,
+      created_at: now,
+      updated_at: now,
+    })
+
+    if (rd.ingredients && rd.ingredients.length > 0) {
+      for (let i = 0; i < rd.ingredients.length; i++) {
+        const raw = rd.ingredients[i]
+        const name = typeof raw === 'string' ? raw : String(raw)
+        ingredientRows.push({
+          recipe_id: tj.id,
+          name: name,
+          amount: null,
+          unit: null,
+          notes: null,
+          order_index: i,
+        })
+      }
+    }
+  }
+
+  const BATCH = 200
+  let imported = 0
+
+  for (let i = 0; i < recipeRows.length; i += BATCH) {
+    const batch = recipeRows.slice(i, i + BATCH)
+    const { error } = await supabase
+      .from('recipes')
+      .upsert(batch, { onConflict: 'id', ignoreDuplicates: true })
+
+    if (error) {
+      console.error(`  Recipe batch ${i}-${i + batch.length} error:`, error.message)
+    } else {
+      imported += batch.length
+    }
+  }
+
+  for (let i = 0; i < ingredientRows.length; i += BATCH) {
+    const batch = ingredientRows.slice(i, i + BATCH)
+    const { error } = await supabase
+      .from('recipe_ingredients')
+      .insert(batch)
+
+    if (error) {
+      console.error(`  Ingredient batch ${i}-${i + batch.length} error:`, error.message)
+    }
+  }
+
+  console.log(`Auto-imported ${imported} new recipes into recipes table.`)
+}
+
 // --- Entry point ---
 async function main() {
   if (clear) {
@@ -604,6 +717,7 @@ async function main() {
     await testSingleRecipe(testUrl)
   } else {
     await syncAllRecipes()
+    await autoImportNewRecipes()
   }
 }
 

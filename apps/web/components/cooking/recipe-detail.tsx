@@ -208,26 +208,28 @@ export function RecipeDetailSheet({
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide pb-0.5 -mb-0.5">
                   {recipe.instructions && recipe.instructions.length > 0 && (
                     <Button
                       size="sm"
-                      className="h-8"
+                      className="h-9 shrink-0 touch-manipulation"
                       onClick={() => onStartCooking?.(recipe)}
                     >
                       <PlayCircle className="size-4 mr-1.5" />
                       Start Cooking
                     </Button>
                   )}
-                  <AddToMealPlanPopover
-                    recipeId={recipe.id}
-                    recipeName={recipe.name}
-                    variant="button"
-                  />
+                  <div className="shrink-0">
+                    <AddToMealPlanPopover
+                      recipeId={recipe.id}
+                      recipeName={recipe.name}
+                      variant="button"
+                    />
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 border-amber-500/30 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                    className="h-9 shrink-0 border-amber-500/30 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 touch-manipulation"
                     onClick={() => setShowRecipeChat(true)}
                   >
                     <Sparkles className="size-3.5 mr-1.5" />
@@ -237,7 +239,7 @@ export function RecipeDetailSheet({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8"
+                      className="h-9 shrink-0 touch-manipulation"
                       onClick={() => onEdit(recipe)}
                     >
                       <Edit className="size-3.5 mr-1.5" />
@@ -247,7 +249,7 @@ export function RecipeDetailSheet({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-destructive hover:text-destructive"
+                    className="h-9 shrink-0 text-destructive hover:text-destructive touch-manipulation"
                     onClick={() => setDeleteDialogOpen(true)}
                   >
                     <Trash2 className="size-3.5" />

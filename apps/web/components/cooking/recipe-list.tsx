@@ -3,18 +3,18 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useCooking } from '@/hooks/use-cooking-data'
-import type { Recipe, TraderJoesRecipe } from '@/lib/types/cooking.types'
+import type { Recipe } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
 import {
-    ChefHat,
-    Clock,
-    Plus,
-    Shuffle,
-    Snowflake,
-    X,
+  ChefHat,
+  Clock,
+  Plus,
+  Shuffle,
+  Snowflake,
+  X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { RecipeCardCompact, RecipeCardCompactSkeleton, TjRecipeCardCompact } from './recipe-card'
+import { RecipeCardCompact, RecipeCardCompactSkeleton } from './recipe-card'
 
 export type SourceFilter = 'all' | 'my-recipes' | 'trader-joes'
 
@@ -34,25 +34,21 @@ interface RecipeListProps {
   filters: RecipeFilterState
   sidebarOpen?: boolean
   onRecipeClick?: (recipe: Recipe) => void
-  onTjRecipeClick?: (recipe: TraderJoesRecipe) => void
   onNewRecipe?: () => void
-  onImportTj?: (recipe: TraderJoesRecipe) => void
   className?: string
+  cardImageSize?: number
 }
 
 export function RecipeList({
   filters,
   onRecipeClick,
-  onTjRecipeClick,
   onNewRecipe,
-  onImportTj,
   className,
+  cardImageSize,
 }: RecipeListProps) {
   const {
     recipes,
-    tjRecipes,
     recipesLoading,
-    tjRecipesLoading,
     fridgeIngredients,
     fridgeFilterActive,
     setFridgeFilterActive,
@@ -82,14 +78,22 @@ export function RecipeList({
 
   const [randomSeed, setRandomSeed] = useState(0)
   const randomTjRecipe = useMemo(() => {
-    if (tjRecipes.length === 0) return null
-    const idx = (Date.now() + randomSeed) % tjRecipes.length
-    return tjRecipes[idx]
-  }, [tjRecipes, randomSeed])
+    const tj = recipes.filter((r) => r.source === 'trader_joes')
+    if (tj.length === 0) return null
+    const idx = (Date.now() + randomSeed) % tj.length
+    return tj[idx]
+  }, [recipes, randomSeed])
 
   const filteredRecipes = useMemo(() => {
-    if (sourceFilter === 'trader-joes') return []
     let filtered = [...recipes]
+
+    // Source filtering
+    if (sourceFilter === 'my-recipes') {
+      filtered = filtered.filter((r) => r.source === 'custom')
+    } else if (sourceFilter === 'trader-joes') {
+      filtered = filtered.filter((r) => r.source === 'trader_joes')
+    }
+
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase()
       filtered = filtered.filter(
@@ -110,52 +114,19 @@ export function RecipeList({
         r.nutrition_category?.includes(nutritionFilter)
       )
     }
-    return filtered
-  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly, nutritionFilter])
-
-  const filteredTjRecipes = useMemo(() => {
-    if (sourceFilter === 'my-recipes') return []
-    let filtered = [...tjRecipes]
-    if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase()
-      filtered = filtered.filter(
-        (r) =>
-          r.name.toLowerCase().includes(lower) ||
-          r.recipe_data.description?.toLowerCase().includes(lower) ||
-          r.recipe_data.ingredients?.some((i) =>
-            i.toLowerCase().includes(lower)
-          ) ||
-          r.recipe_data.tags?.some((t) => t.toLowerCase().includes(lower)) ||
-          r.category?.toLowerCase().includes(lower) ||
-          r.recipe_data.categories?.some((c) =>
-            c.toLowerCase().includes(lower)
-          ) ||
-          r.url?.toLowerCase().includes(lower) ||
-          r.recipe_data.instructions?.some((s) =>
-            s.toLowerCase().includes(lower)
-          )
-      )
-    }
     if (selectedCategory) {
       filtered = filtered.filter(
-        (r) =>
-          r.category?.toLowerCase() === selectedCategory.toLowerCase() ||
-          r.recipe_data.categories?.some(
-            (c) => c.toLowerCase() === selectedCategory.toLowerCase()
-          )
+        (r) => r.tags?.some((t) => t.toLowerCase() === selectedCategory.toLowerCase())
       )
     }
     if (excludedCategories.size > 0) {
       filtered = filtered.filter((r) => {
-        const recipeCats = [
-          ...(r.category ? [r.category.toLowerCase()] : []),
-          ...(r.recipe_data.categories?.map((c) => c.toLowerCase()) || []),
-        ]
-        return !recipeCats.some((c) => excludedCategories.has(c))
+        const recipeTags = r.tags?.map((t) => t.toLowerCase()) || []
+        return !recipeTags.some((t) => excludedCategories.has(t))
       })
     }
     return filtered
-  }, [tjRecipes, debouncedSearch, sourceFilter, selectedCategory, excludedCategories])
+  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly, nutritionFilter, selectedCategory, excludedCategories])
 
   // Fridge ingredient matching
   const fridgeMatchScores = useMemo(() => {
@@ -163,19 +134,6 @@ export function RecipeList({
 
     const scores = new Map<string, number>()
     const fridgeTokens = fridgeIngredients.map((item) => tokenizeIngredient(item))
-
-    for (const recipe of filteredTjRecipes) {
-      const ingredients = recipe.recipe_data.ingredients || []
-      if (ingredients.length === 0) continue
-      let matched = 0
-      for (const fridgeItem of fridgeTokens) {
-        if (ingredients.some((ing) => ingredientMatches(fridgeItem, tokenizeIngredient(ing)))) {
-          matched++
-        }
-      }
-      const score = matched / ingredients.length
-      scores.set(`tj-${recipe.id}`, score)
-    }
 
     for (const recipe of filteredRecipes) {
       const nameLower = recipe.name.toLowerCase()
@@ -185,26 +143,21 @@ export function RecipeList({
           matchCount++
         }
       }
-      scores.set(`own-${recipe.id}`, matchCount > 0 ? matchCount / Math.max(fridgeIngredients.length, 1) : 0)
+      scores.set(recipe.id, matchCount > 0 ? matchCount / Math.max(fridgeIngredients.length, 1) : 0)
     }
 
     return scores
-  }, [fridgeFilterActive, fridgeIngredients, filteredTjRecipes, filteredRecipes])
+  }, [fridgeFilterActive, fridgeIngredients, filteredRecipes])
 
-  // Tiered results when fridge filter is active
-  type ScoredItem = { type: 'own'; recipe: Recipe; score: number } | { type: 'tj'; recipe: TraderJoesRecipe; score: number }
+  type ScoredItem = { recipe: Recipe; score: number }
   const { readyToCook, almostThere, otherRecipes } = useMemo(() => {
     if (!fridgeFilterActive) {
       return { readyToCook: [] as ScoredItem[], almostThere: [] as ScoredItem[], otherRecipes: [] as ScoredItem[] }
     }
-    const allItems: ScoredItem[] = []
-
-    for (const r of filteredRecipes) {
-      allItems.push({ type: 'own', recipe: r, score: fridgeMatchScores.get(`own-${r.id}`) || 0 })
-    }
-    for (const r of filteredTjRecipes) {
-      allItems.push({ type: 'tj', recipe: r, score: fridgeMatchScores.get(`tj-${r.id}`) || 0 })
-    }
+    const allItems: ScoredItem[] = filteredRecipes.map((r) => ({
+      recipe: r,
+      score: fridgeMatchScores.get(r.id) || 0,
+    }))
 
     allItems.sort((a, b) => b.score - a.score)
 
@@ -213,26 +166,23 @@ export function RecipeList({
     const other = allItems.filter((i) => i.score < 0.5 && i.score > 0)
 
     return { readyToCook: ready, almostThere: almost, otherRecipes: other }
-  }, [fridgeFilterActive, filteredRecipes, filteredTjRecipes, fridgeMatchScores])
+  }, [fridgeFilterActive, filteredRecipes, fridgeMatchScores])
 
-  const isLoading =
-    (sourceFilter !== 'trader-joes' && recipesLoading) ||
-    (sourceFilter !== 'my-recipes' && tjRecipesLoading)
-  const totalResults = filteredRecipes.length + filteredTjRecipes.length
+  const isLoading = recipesLoading
+  const totalResults = filteredRecipes.length
   const hasActiveFilters =
     debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || fridgeFilterActive
 
-  const visibleTjRecipes = useMemo(
-    () => filteredTjRecipes.slice(0, displayCount),
-    [filteredTjRecipes, displayCount]
+  const visibleRecipes = useMemo(
+    () => filteredRecipes.slice(0, displayCount),
+    [filteredRecipes, displayCount]
   )
-  const hasMoreRecipes = filteredTjRecipes.length > displayCount
+  const hasMoreRecipes = filteredRecipes.length > displayCount
 
   useEffect(() => {
     setDisplayCount(30)
   }, [debouncedSearch, sourceFilter, selectedCategory, excludedCategories, difficultyFilter, favoritesOnly, fridgeFilterActive])
 
-  // Infinite scroll via IntersectionObserver
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const loadMore = useCallback(() => {
     if (hasMoreRecipes) setDisplayCount((c) => c + 30)
@@ -324,8 +274,8 @@ export function RecipeList({
       {/* Try Something New -- discovery card */}
       {showDiscovery && randomTjRecipe && (
         <div
-          className="group relative overflow-hidden rounded-lg border border-primary/10 border-l-[3px] border-l-primary bg-gradient-to-r from-primary/5 to-orange-500/5 cursor-pointer transition-all hover:shadow-md hover:border-primary/20 hover:border-l-primary"
-          onClick={() => onTjRecipeClick?.(randomTjRecipe)}
+          className="group relative overflow-hidden rounded-lg border border-primary/10 bg-gradient-to-r from-orange-500/[0.04] to-amber-500/[0.04] cursor-pointer transition-all hover:shadow-md hover:border-primary/20 "
+          onClick={() => onRecipeClick?.(randomTjRecipe)}
         >
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="relative size-10 shrink-0 overflow-hidden rounded-md">
@@ -353,10 +303,10 @@ export function RecipeList({
               </h4>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              {randomTjRecipe.recipe_data.prep_time && (
+              {(randomTjRecipe.prep_time ?? 0) > 0 && (
                 <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Clock className="size-3" />
-                  <span className="font-bold tabular-nums">{randomTjRecipe.recipe_data.prep_time}m</span>
+                  <span className="font-bold tabular-nums">{randomTjRecipe.prep_time}m</span>
                 </span>
               )}
               <button
@@ -376,7 +326,7 @@ export function RecipeList({
 
       {/* Recipe list */}
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <RecipeCardCompactSkeleton key={i} />
           ))}
@@ -391,8 +341,6 @@ export function RecipeList({
               titleColor="text-green-500"
               items={readyToCook}
               onRecipeClick={onRecipeClick}
-              onTjRecipeClick={onTjRecipeClick}
-              onImportTj={onImportTj}
               fridgeFilterActive={fridgeFilterActive}
             />
           )}
@@ -404,8 +352,6 @@ export function RecipeList({
               titleColor="text-amber-500"
               items={almostThere}
               onRecipeClick={onRecipeClick}
-              onTjRecipeClick={onTjRecipeClick}
-              onImportTj={onImportTj}
               fridgeFilterActive={fridgeFilterActive}
             />
           )}
@@ -416,8 +362,6 @@ export function RecipeList({
               titleColor="text-muted-foreground"
               items={otherRecipes}
               onRecipeClick={onRecipeClick}
-              onTjRecipeClick={onTjRecipeClick}
-              onImportTj={onImportTj}
               fridgeFilterActive={fridgeFilterActive}
             />
           )}
@@ -440,21 +384,14 @@ export function RecipeList({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            {filteredRecipes.map((recipe) => (
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+            {visibleRecipes.map((recipe) => (
               <RecipeCardCompact
-                key={`own-${recipe.id}`}
+                key={recipe.id}
                 recipe={recipe}
                 onClick={() => onRecipeClick?.(recipe)}
                 cookCount={cookCountMap.get(recipe.id)}
-              />
-            ))}
-            {visibleTjRecipes.map((recipe) => (
-              <TjRecipeCardCompact
-                key={`tj-${recipe.id}`}
-                recipe={recipe}
-                onClick={() => onTjRecipeClick?.(recipe)}
-                onImport={() => onImportTj?.(recipe)}
+                imageSize={cardImageSize}
               />
             ))}
           </div>
@@ -499,18 +436,14 @@ function FridgeTierSection({
   titleColor,
   items,
   onRecipeClick,
-  onTjRecipeClick,
-  onImportTj,
   fridgeFilterActive,
 }: {
   title: string
   subtitle?: string
   dotColor: string
   titleColor: string
-  items: Array<{ type: 'own'; recipe: Recipe; score: number } | { type: 'tj'; recipe: TraderJoesRecipe; score: number }>
+  items: Array<{ recipe: Recipe; score: number }>
   onRecipeClick?: (recipe: Recipe) => void
-  onTjRecipeClick?: (recipe: TraderJoesRecipe) => void
-  onImportTj?: (recipe: TraderJoesRecipe) => void
   fridgeFilterActive: boolean
 }) {
   const iconBgMap: Record<string, string> = {
@@ -532,26 +465,15 @@ function FridgeTierSection({
         </div>
         <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{items.length} recipe{items.length !== 1 ? 's' : ''}</span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
         {items.map((item) => (
-          <div key={`${item.type}-${item.recipe.id}`}>
-            {item.type === 'own' ? (
-              <RecipeCardCompact
-                recipe={item.recipe}
-                onClick={() => onRecipeClick?.(item.recipe as Recipe)}
-                fridgeScore={item.score}
-                fridgeFilterActive={fridgeFilterActive}
-              />
-            ) : (
-              <TjRecipeCardCompact
-                recipe={item.recipe as TraderJoesRecipe}
-                onClick={() => onTjRecipeClick?.(item.recipe as TraderJoesRecipe)}
-                onImport={() => onImportTj?.(item.recipe as TraderJoesRecipe)}
-                fridgeScore={item.score}
-                fridgeFilterActive={fridgeFilterActive}
-              />
-            )}
-          </div>
+          <RecipeCardCompact
+            key={item.recipe.id}
+            recipe={item.recipe}
+            onClick={() => onRecipeClick?.(item.recipe)}
+            fridgeScore={item.score}
+            fridgeFilterActive={fridgeFilterActive}
+          />
         ))}
       </div>
     </div>
@@ -576,11 +498,4 @@ function tokenizeIngredient(text: string): string[] {
     .replace(/[^a-z\s]/g, '')
     .split(/\s+/)
     .filter((word) => word.length > 1 && !SKIP_WORDS.has(word))
-}
-
-function ingredientMatches(fridgeTokens: string[], recipeTokens: string[]): boolean {
-  if (fridgeTokens.length === 0 || recipeTokens.length === 0) return false
-  return fridgeTokens.some((ft) =>
-    recipeTokens.some((rt) => rt.includes(ft) || ft.includes(rt))
-  )
 }

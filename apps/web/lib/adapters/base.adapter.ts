@@ -1,11 +1,11 @@
 /**
  * Base Adapter
  * Provides common functionality for all service adapters
- * 
+ *
  * The adapter pattern allows seamless switching between:
  * - Local mode: Fetch from real service + write to Supabase (auto-detected)
  * - Production mode: Read from Supabase cache (fallback when services unreachable)
- * 
+ *
  * Mode is auto-detected by attempting to reach local services.
  * No DEPLOYMENT_MODE env var required.
  */
@@ -55,7 +55,7 @@ const DEFAULT_MIN_WRITE_INTERVALS: Record<ServiceName, number> = {
 function isAvailabilityCacheValid(serviceName: ServiceName): boolean {
   const cached = serviceAvailabilityCache.get(serviceName)
   if (!cached) return false
-  
+
   const age = Date.now() - cached.checkedAt.getTime()
   return age < AVAILABILITY_CACHE_TTL
 }
@@ -66,11 +66,11 @@ function isAvailabilityCacheValid(serviceName: ServiceName): boolean {
 export function getServiceAvailabilityStatus(): Record<ServiceName, ServiceAvailability | null> {
   const result: Record<string, ServiceAvailability | null> = {}
   const services: ServiceName[] = ['hue', 'spotify', 'cta', 'calendar', 'fitness', 'concerts']
-  
+
   for (const service of services) {
     result[service] = serviceAvailabilityCache.get(service) ?? null
   }
-  
+
   return result as Record<ServiceName, ServiceAvailability | null>
 }
 
@@ -90,6 +90,30 @@ export function isAnyLocalServiceAvailable(): boolean {
 export function clearAvailabilityCache(): void {
   serviceAvailabilityCache.clear()
 }
+
+/**
+ * Race a promise against a timeout. Rejects with a TimeoutError if the
+ * timeout fires first, allowing callers to fall through to a fallback.
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label = 'Operation'
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    )
+    promise.then(
+      value => { clearTimeout(timer); resolve(value) },
+      err   => { clearTimeout(timer); reject(err) },
+    )
+  })
+}
+
+/** Default timeout for Supabase queries (ms) */
+export const SUPABASE_QUERY_TIMEOUT = 8_000
 
 /**
  * Clear all write timestamp caches (for testing or manual refresh)
@@ -144,7 +168,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
   protected debug: boolean
   protected minWriteInterval: number
   protected enableChangeDetection: boolean
-  
+
   /** Cached availability status for this adapter instance */
   private localAvailable: boolean | null = null
 
@@ -212,7 +236,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
    * - Change detection is disabled, OR
    * - Data has changed, OR
    * - Enough time has passed since last write (for periodic snapshots)
-   * 
+   *
    * @param newData The new data to potentially write
    * @returns true if we should write to cache
    */
@@ -315,22 +339,22 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
     // Perform actual check
     this.log('Checking local service availability...')
-    
+
     try {
       const available = await this.checkServiceAvailability()
-      
+
       // Cache the result
       serviceAvailabilityCache.set(this.serviceName, {
         available,
         checkedAt: new Date(),
       })
       this.localAvailable = available
-      
+
       this.log(`Local service ${available ? 'available' : 'unavailable'}`)
       return available
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      
+
       // Cache the failure
       serviceAvailabilityCache.set(this.serviceName, {
         available: false,
@@ -338,7 +362,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
         error: errorMessage,
       })
       this.localAvailable = false
-      
+
       this.log(`Local service check failed: ${errorMessage}`)
       return false
     }
@@ -368,12 +392,12 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     if (this.localAvailable !== null) {
       return this.localAvailable
     }
-    
+
     const cached = serviceAvailabilityCache.get(this.serviceName)
     if (cached && isAvailabilityCacheValid(this.serviceName)) {
       return cached.available
     }
-    
+
     // Default to false (production) if not yet checked
     return false
   }
@@ -397,7 +421,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       const errObj = error as Record<string, unknown>
       // Suppress table not found errors (migration not run yet)
       if (errObj.code === 'PGRST205' || errObj.code === '42P01') return
-      // Suppress connection errors when Supabase isn't properly configured  
+      // Suppress connection errors when Supabase isn't properly configured
       if (errObj.message && String(errObj.message).includes('not configured')) return
     }
     console.error(`[${this.serviceName.toUpperCase()} Adapter] ${message}`, error ?? '')
@@ -412,7 +436,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     try {
       const client = this.getWriteClient()
       if (!client) return // Supabase not configured
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (client.from('sync_log') as any).insert({
         service: this.serviceName,
@@ -438,7 +462,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     try {
       const client = this.getReadClient()
       if (!client) return null // Supabase not configured
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (client.from('sync_log') as any)
         .select('synced_at')
@@ -481,7 +505,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
    */
   async getData(): Promise<TServiceData | TCachedData | null> {
     const isLocalAvailable = await this.isLocal()
-    
+
     if (isLocalAvailable) {
       return this.getDataLocal()
     }
@@ -497,7 +521,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
     try {
       const data = await this.fetchFromService()
-      
+
       // Write to cache in background only if change detection passes
       if (this.isSupabaseAvailable() && this.shouldWriteToCache(data)) {
         this.writeToCache(data)
@@ -517,7 +541,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       return data
     } catch (error) {
       this.logError('Error fetching from service', error)
-      
+
       // On service error, try falling back to cache
       this.log('Service error, attempting cache fallback...')
       if (this.isSupabaseAvailable()) {
@@ -531,7 +555,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
           // Cache fallback also failed
         }
       }
-      
+
       throw error
     }
   }
@@ -550,7 +574,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
     try {
       const data = await this.fetchFromCache()
-      
+
       if (!data) {
         this.log('No cached data available')
         return null
@@ -570,7 +594,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
    */
   async refreshCache(): Promise<SyncResult> {
     const isLocalAvailable = await this.isLocal()
-    
+
     if (!isLocalAvailable) {
       return { success: false, recordsWritten: 0, error: 'Cache refresh only available when local services are reachable' }
     }
@@ -583,7 +607,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
 
     try {
       const data = await this.fetchFromService()
-      
+
       // For explicit sync, check if we should write (respects min interval but always writes on change)
       if (!this.shouldWriteToCache(data)) {
         this.log('Skipping cache write - no changes detected')
@@ -591,13 +615,13 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
       }
 
       const result = await this.writeToCache(data)
-      
+
       if (result.success) {
         this.recordWriteTimestamp(data)
       }
-      
+
       await this.logSync(result.success ? 'success' : 'error', result.recordsWritten, result.error)
-      
+
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -612,7 +636,7 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
    */
   async forceRefreshCache(): Promise<SyncResult> {
     const isLocalAvailable = await this.isLocal()
-    
+
     if (!isLocalAvailable) {
       return { success: false, recordsWritten: 0, error: 'Cache refresh only available when local services are reachable' }
     }
@@ -626,13 +650,13 @@ export abstract class BaseAdapter<TServiceData, TCachedData> {
     try {
       const data = await this.fetchFromService()
       const result = await this.writeToCache(data)
-      
+
       if (result.success) {
         this.recordWriteTimestamp(data)
       }
-      
+
       await this.logSync(result.success ? 'success' : 'error', result.recordsWritten, result.error)
-      
+
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'

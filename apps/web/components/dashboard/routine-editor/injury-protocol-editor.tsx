@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import type { InjuryProtocol, DailyRehab } from '@/lib/types/fitness.types'
 import {
   Activity,
@@ -85,24 +86,25 @@ export function InjuryProtocolEditor({ protocol, onUpdate }: InjuryProtocolEdito
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-4 pb-4">
-        {/* Injury Details -- side by side */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Injury Details */}
+        <div className="space-y-2">
           <div className="space-y-1">
             <Label className="text-xs font-medium">Injury Name</Label>
             <Input
               value={p.name}
               onChange={(e) => update({ name: e.target.value })}
-              placeholder="e.g., Golfer's Elbow"
-              className="h-8"
+              placeholder="e.g., Achilles & Elbow Rehab Protocol"
+              className="h-9"
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs font-medium">Description</Label>
-            <Input
+            <Textarea
               value={p.description}
               onChange={(e) => update({ description: e.target.value })}
-              placeholder="Describe the injury..."
-              className="h-8"
+              placeholder="Describe the injury and current rehab status..."
+              rows={2}
+              className="resize-none text-sm"
             />
           </div>
         </div>

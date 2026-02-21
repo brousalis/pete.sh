@@ -19,12 +19,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ToastAction } from '@/components/ui/toast'
 import { useToast } from '@/hooks/use-toast'
 import { apiGet, apiPost, apiPut } from '@/lib/api/client'
-import { cn } from '@/lib/utils'
 import type { DayOfWeek, Workout } from '@/lib/types/fitness.types'
 import type {
   RoutineVersion,
   VersionsListResponse,
 } from '@/lib/types/routine-editor.types'
+import { cn } from '@/lib/utils'
 import type { RoutineChangeDiffEntry } from '@/lib/utils/routine-change-utils'
 import {
   AlertCircle,
@@ -501,8 +501,8 @@ export function RoutineEditor({
   return (
     <div className="flex h-full flex-col">
       {/* Top Header Bar */}
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 flex h-14 shrink-0 items-center justify-between border-b px-5 backdrop-blur">
-        <div className="flex items-center gap-3">
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 flex h-12 shrink-0 items-center justify-between border-b px-5 backdrop-blur">
+        <div className="flex items-center gap-3 min-w-0">
           {onBack && (
             <Button
               variant="ghost"
@@ -514,37 +514,30 @@ export function RoutineEditor({
                   onBack()
                 }
               }}
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
-          <div className="flex items-center gap-3">
-            <h1 className="text-base font-semibold">{currentVersion.name}</h1>
-            {!isLocalMode && (
-              <Badge variant="outline" className="font-mono text-xs">
-                v{currentVersion.versionNumber}
-              </Badge>
-            )}
-          </div>
+          <h1 className="text-sm font-semibold truncate">{currentVersion.name}</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Save Status */}
           {saveStatus === 'saving' && (
-            <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <Loader2 className="h-3 w-3 animate-spin" />
               Saving
             </span>
           )}
           {saveStatus === 'saved' && lastSaved && (
-            <span className="flex items-center gap-1.5 text-sm text-green-500">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-green-500">
+              <CheckCircle2 className="h-3 w-3" />
               Saved {new Date(lastSaved).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           {saveStatus === 'error' && (
-            <span className="flex items-center gap-1.5 text-sm text-red-500">
-              <AlertCircle className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-red-500">
+              <AlertCircle className="h-3 w-3" />
               Failed
             </span>
           )}
@@ -552,15 +545,17 @@ export function RoutineEditor({
             <Button
               variant="outline"
               size="sm"
+              className="h-7 text-xs"
               onClick={() => saveChanges(currentVersion)}
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-1.5 h-3 w-3" />
               {isLocalMode ? 'Save' : 'Save Draft'}
             </Button>
           )}
           {isEditingDraft && (
             <Button
               size="sm"
+              className="h-7 text-xs"
               onClick={publishVersion}
               disabled={saveStatus === 'saving' || hasUnsavedChanges}
               title={
@@ -569,7 +564,7 @@ export function RoutineEditor({
                   : 'Make this version active'
               }
             >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <CheckCircle2 className="mr-1.5 h-3 w-3" />
               Publish
             </Button>
           )}
@@ -577,6 +572,7 @@ export function RoutineEditor({
             <Button
               variant="outline"
               size="sm"
+              className="h-7 text-xs"
               onClick={async () => {
                 const draft = await ensureDraft()
                 if (draft) {
@@ -592,45 +588,46 @@ export function RoutineEditor({
             </Button>
           )}
           <Button
-            variant={aiCoachOpen ? 'default' : 'outline'}
             size="sm"
             onClick={() => setAiCoachOpen(v => !v)}
             className={cn(
-              'hidden gap-1.5 lg:inline-flex',
-              aiCoachOpen && 'bg-purple-600 text-white hover:bg-purple-700'
+              'hidden h-7 gap-1.5 text-xs lg:inline-flex border',
+              aiCoachOpen
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/50 hover:bg-amber-500/25'
+                : 'bg-transparent text-amber-400/80 border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-300'
             )}
           >
-            <Brain className="h-3.5 w-3.5" />
+            <Brain className="h-3 w-3" />
             AI Coach
           </Button>
         </div>
       </div>
 
-      {/* Version Status Banner */}
+      {/* Version Status Bar */}
       {isLocalMode && (
-        <div className="flex items-center gap-2 border-b bg-blue-500/10 px-5 py-1.5 text-sm">
-          <span className="h-2 w-2 rounded-full bg-blue-500" />
-          <span className="font-medium text-blue-400">Local Mode</span>
-          <span className="text-muted-foreground">— Changes saved to local JSON file. Connect Supabase for versioning.</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-blue-500/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+          <span className="text-blue-400 font-medium">Local</span>
+          <span className="text-muted-foreground">Changes saved to JSON file</span>
         </div>
       )}
       {isEditingDraft && (
-        <div className="flex items-center gap-2 border-b bg-amber-500/10 px-5 py-1.5 text-sm">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-          <span className="font-medium text-amber-400">Draft v{currentVersion.versionNumber}</span>
-          <span className="text-muted-foreground">— Editing draft. Publish when ready to make it the active routine.</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-amber-500/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+          <span className="text-amber-400 font-medium">Editing Draft v{currentVersion.versionNumber}</span>
           {activeVersion && (
-            <span className="text-muted-foreground ml-auto text-xs">
-              Active: v{activeVersion.versionNumber}
-            </span>
+            <>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="text-muted-foreground">Live: v{activeVersion.versionNumber}</span>
+            </>
           )}
         </div>
       )}
       {!isLocalMode && !isEditingDraft && currentVersion.isActive && (
-        <div className="flex items-center gap-2 border-b bg-green-500/10 px-5 py-1.5 text-sm">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="font-medium text-green-400">Active v{currentVersion.versionNumber}</span>
-          <span className="text-muted-foreground">— This is the live routine. Create a new version to make changes.</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-green-500/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+          <span className="text-green-400 font-medium">v{currentVersion.versionNumber} Active</span>
+          <span className="text-muted-foreground">This is the live routine</span>
         </div>
       )}
 
@@ -715,31 +712,6 @@ export function RoutineEditor({
             </div>
           </ScrollArea>
 
-          {/* Sidebar footer: version status */}
-          <div className="border-t p-3">
-            <div className="flex items-center gap-2">
-              {isLocalMode ? (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span className="text-muted-foreground text-xs">Local mode</span>
-                </>
-              ) : isEditingDraft ? (
-                <>
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-                  <span className="text-xs">
-                    Draft v{currentVersion.versionNumber}
-                  </span>
-                </>
-              ) : currentVersion.isActive ? (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-xs">
-                    Active v{currentVersion.versionNumber}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </div>
         </nav>
 
         {/* Main Content */}

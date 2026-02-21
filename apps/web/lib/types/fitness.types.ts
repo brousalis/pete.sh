@@ -13,7 +13,7 @@ export interface UserProfile {
   goal: string
   stats: {
     height: string
-    weight: number
+    weight?: number
   }
   schedule: {
     startDay: "monday"

@@ -132,12 +132,15 @@ export class FitnessService {
 
       // Ensure current week exists
       const currentWeek = this.getCurrentWeekNumber()
-      await this.getOrCreateWeek(routine, currentWeek)
+      const existingWeek = routine.weeks.find(w => w.weekNumber === currentWeek)
+      let dirty = false
 
-      // Load workout definitions
-      const workoutDefinitions = await this.getWorkoutDefinitions()
+      if (!existingWeek) {
+        await this.getOrCreateWeek(routine, currentWeek)
+        dirty = true
+      }
 
-      // Ensure all days have workout definitions in current week
+      // Ensure all days have entries in current week
       const week = routine.weeks.find(w => w.weekNumber === currentWeek)
       if (week) {
         const days: DayOfWeek[] = [
@@ -152,12 +155,12 @@ export class FitnessService {
         days.forEach(day => {
           if (!week.days[day]) {
             week.days[day] = {}
-          }
-          // Add workout definition if it exists and not already set
-          if (workoutDefinitions[day] && !week.days[day]?.workout) {
-            // Workout will be loaded from definitions when needed
+            dirty = true
           }
         })
+      }
+
+      if (dirty) {
         await this.updateRoutine(routine)
       }
 

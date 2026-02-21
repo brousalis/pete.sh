@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
+import { DateNavigator } from "@/components/ui/date-navigator"
 import { Input } from "@/components/ui/input"
 import {
   Popover,
@@ -18,19 +19,17 @@ import {
 import type { CalendarViewMode } from "@/lib/types/calendar-views.types"
 import { cn } from "@/lib/utils"
 import { getViewTitle, navigateDate } from "@/lib/utils/calendar-utils"
-import { setMonth, setYear, startOfMonth } from "date-fns"
+import { isSameDay, isSameMonth, isSameWeek, setMonth, setYear, startOfMonth } from "date-fns"
 import {
   Calendar,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Dumbbell,
   List,
   RefreshCw,
   Search,
 } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 interface CalendarHeaderProps {
   currentDate: Date
@@ -86,6 +85,17 @@ export function CalendarHeader({
     onDateChange(new Date())
   }
 
+  const isAtToday = useMemo(() => {
+    const now = new Date()
+    switch (viewMode) {
+      case "month": return isSameMonth(currentDate, now)
+      case "week": return isSameWeek(currentDate, now, { weekStartsOn: 0 })
+      case "day":
+      case "agenda": return isSameDay(currentDate, now)
+      default: return false
+    }
+  }, [currentDate, viewMode])
+
   const handleMonthChange = (month: string) => {
     const monthIndex = MONTHS.indexOf(month)
     if (monthIndex !== -1) {
@@ -111,49 +121,27 @@ export function CalendarHeader({
   const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i)
 
   return (
-    <div className="flex flex-col gap-2 border-b border-border/50 bg-card/50 px-3 py-2">
+    <div className="flex flex-col gap-2 border-b border-border/50 bg-card/50 px-3 py-2 rounded-lg mb-3">
       {/* Top row - Navigation and title */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Left side - Navigation */}
         <div className="flex items-center gap-1.5">
-          {/* Today button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToday}
-            className="h-8 text-xs"
-          >
-            Today
-          </Button>
+          <DateNavigator
+            label={title}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onToday={handleToday}
+            isAtToday={isAtToday}
+          />
 
-          {/* Prev/Next navigation */}
-          <div className="flex items-center rounded-md border border-border/50">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrev}
-              className="h-8 w-8 rounded-r-none"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNext}
-              className="h-8 w-8 rounded-l-none"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-
-          {/* Date picker */}
+          {/* Date picker popover */}
           <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-8 gap-1.5 text-base font-semibold"
+                size="icon"
+                className="h-8 w-8"
               >
-                <span>{title}</span>
                 <Calendar className="size-4 text-muted-foreground" />
               </Button>
             </PopoverTrigger>

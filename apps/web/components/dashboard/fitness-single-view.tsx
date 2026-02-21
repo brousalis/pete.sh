@@ -30,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { MiniDayProgressRing } from '@/components/dashboard/mini-day-progress-ring'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import type {
   ConsistencyStats,
@@ -38,6 +39,18 @@ import type {
   Workout,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
+import {
+  DAYS_OF_WEEK,
+  DAY_LABELS,
+  FOCUS_CONFIG,
+  FOCUS_CONFIG_FALLBACK,
+  WEEKDAY_LABELS,
+  getDayCompletionProgress,
+  getFitnessStatusForDay,
+  getWeekNumber,
+  type FitnessStatus,
+  type FitnessStatusDetails,
+} from '@/lib/utils/fitness-ui'
 import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import {
   addDays,
@@ -60,10 +73,12 @@ import {
   ArrowLeft,
   Ban,
   Calendar,
+  CalendarDays,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Columns3,
   Dumbbell,
   Flame,
   Footprints,
@@ -78,181 +93,6 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-const DAYS_OF_WEEK: DayOfWeek[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-]
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
-}
-
-const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
-
-// Map focus to icons and colors (matching calendar-fitness-sidebar)
-const FOCUS_CONFIG: Record<
-  string,
-  { icon: typeof Dumbbell; color: string; bg: string; ring: string }
-> = {
-  Strength: {
-    icon: Dumbbell,
-    color: 'text-orange-500',
-    bg: 'bg-orange-500/10',
-    ring: 'ring-orange-500/30',
-  },
-  'Core/Posture': {
-    icon: Target,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-    ring: 'ring-blue-500/30',
-  },
-  Hybrid: {
-    icon: Zap,
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
-    ring: 'ring-purple-500/30',
-  },
-  Endurance: {
-    icon: Flame,
-    color: 'text-red-500',
-    bg: 'bg-red-500/10',
-    ring: 'ring-red-500/30',
-  },
-  Circuit: {
-    icon: Zap,
-    color: 'text-green-500',
-    bg: 'bg-green-500/10',
-    ring: 'ring-green-500/30',
-  },
-  HIIT: {
-    icon: Flame,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    ring: 'ring-amber-500/30',
-  },
-  Rest: {
-    icon: Calendar,
-    color: 'text-slate-400',
-    bg: 'bg-slate-500/10',
-    ring: 'ring-slate-500/30',
-  },
-  'Active Recovery': {
-    icon: Sun,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-    ring: 'ring-teal-500/30',
-  },
-}
-
-type FitnessStatus = 'complete' | 'partial' | 'missed' | 'rest' | 'future' | 'skipped'
-
-interface FitnessStatusDetails {
-  workout: boolean
-  workoutSkipped: boolean
-  morning: boolean
-  morningSkipped: boolean
-  night: boolean
-  nightSkipped: boolean
-  isRest: boolean
-  skipped: boolean
-  skippedReason?: string
-}
-
-function getFitnessStatusForDay(
-  date: Date,
-  routine: WeeklyRoutine | null | undefined
-): { status: FitnessStatus; details: FitnessStatusDetails } {
-  const defaultDetails: FitnessStatusDetails = { workout: false, workoutSkipped: false, morning: false, morningSkipped: false, night: false, nightSkipped: false, isRest: false, skipped: false }
-  if (!routine) return { status: 'future', details: defaultDetails }
-
-  const dayOfWeek = date
-    .toLocaleDateString('en-US', { weekday: 'long' })
-    .toLowerCase() as DayOfWeek
-  const weekNumber = getWeekNumber(date)
-  const schedule = routine.schedule[dayOfWeek]
-  const week = routine.weeks.find(w => w.weekNumber === weekNumber)
-  const dayData = week?.days[dayOfWeek]
-
-  const isRestDay =
-    schedule?.focus === 'Rest' || schedule?.focus === 'Active Recovery'
-  const isToday = isSameDay(date, new Date())
-  const isFutureDate = date > new Date()
-
-  const workoutDone = dayData?.workout?.completed ?? false
-  const workoutSkipped = dayData?.workout?.skipped ?? false
-  const morningDone = dayData?.morningRoutine?.completed ?? false
-  const morningExplicitlySkipped = dayData?.morningRoutine?.skipped ?? false
-  const nightDone = dayData?.nightRoutine?.completed ?? false
-  const nightExplicitlySkipped = dayData?.nightRoutine?.skipped ?? false
-
-  // Routines inherit skipped state from workout if not completed
-  const morningSkipped = morningExplicitlySkipped || (workoutSkipped && !morningDone)
-  const nightSkipped = nightExplicitlySkipped || (workoutSkipped && !nightDone)
-
-  const details: FitnessStatusDetails = {
-    workout: workoutDone,
-    workoutSkipped: workoutSkipped,
-    morning: morningDone,
-    morningSkipped: morningSkipped,
-    night: nightDone,
-    nightSkipped: nightSkipped,
-    isRest: isRestDay,
-    skipped: workoutSkipped || morningExplicitlySkipped || nightExplicitlySkipped,
-    skippedReason: dayData?.workout?.skippedReason || dayData?.morningRoutine?.skippedReason || dayData?.nightRoutine?.skippedReason,
-  }
-
-  if (isFutureDate && !isToday) {
-    return { status: 'future', details }
-  }
-
-  // Check if entire day is skipped (all activities skipped)
-  const allSkipped = isRestDay
-    ? (morningSkipped && nightSkipped) && !morningDone && !nightDone
-    : (workoutSkipped || !schedule?.workout) && morningSkipped && nightSkipped && !workoutDone && !morningDone && !nightDone
-
-  if (allSkipped) {
-    return { status: 'skipped', details }
-  }
-
-  // Check for skipped workout first (before checking completion)
-  if (workoutSkipped && !isRestDay && !workoutDone) {
-    return { status: 'skipped', details }
-  }
-
-  if (isRestDay) {
-    // For rest days, check if routines are done or skipped
-    if (morningDone && nightDone) return { status: 'complete', details }
-    if (morningDone || nightDone) return { status: 'partial', details }
-    if (morningSkipped && nightSkipped) return { status: 'skipped', details }
-    if (!isToday && !isFutureDate) return { status: 'missed', details }
-    return { status: 'rest', details }
-  }
-
-  // For workout days
-  if (workoutDone && morningDone && nightDone) return { status: 'complete', details }
-  if (workoutDone || morningDone || nightDone) return { status: 'partial', details }
-  if (!isToday && !isFutureDate) return { status: 'missed', details }
-  return { status: 'future', details }
-}
-
-function getWeekNumber(date: Date): number {
-  const startOfYear = new Date(date.getFullYear(), 0, 1)
-  const days = Math.floor(
-    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
-  )
-  return Math.ceil((days + startOfYear.getDay() + 1) / 7)
-}
 
 // Enhanced Fitness Date Picker Component
 interface FitnessDatePickerProps {
@@ -355,12 +195,7 @@ function FitnessDatePicker({
                 .toLowerCase() as DayOfWeek
               const daySchedule = routine?.schedule[dayOfWeek]
               const focus = daySchedule?.focus || 'Rest'
-              const focusConfig = FOCUS_CONFIG[focus] || {
-                icon: Calendar,
-                color: 'text-slate-400',
-                bg: 'bg-slate-500/10',
-                ring: 'ring-slate-500/30',
-              }
+              const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
               const FocusIcon = focusConfig.icon
               const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
               const { status, details } = getFitnessStatusForDay(day, routine)
@@ -643,10 +478,9 @@ function FitnessDatePicker({
 }
 
 interface FitnessSingleViewProps {
-  /** Optional initial date to display (from URL param like ?day=2026-01-29) */
   initialDate?: Date | null
-  /** Callback to switch to edit routine mode */
   onSwitchToEdit?: () => void
+  onSwitchToWeek?: () => void
 }
 
 /**
@@ -666,6 +500,7 @@ interface FitnessSingleViewProps {
 export function FitnessSingleView({
   initialDate,
   onSwitchToEdit,
+  onSwitchToWeek,
 }: FitnessSingleViewProps) {
   const router = useRouter()
   const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
@@ -1273,24 +1108,24 @@ export function FitnessSingleView({
                 )}
               </Popover>
 
-              {/* Navigation - 40px+ touch targets */}
-              <div className="flex items-center shrink-0">
+              {/* Navigation arrows - border-grouped for consistency */}
+              <div className="flex items-center rounded-md border border-border/50 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 sm:h-9 sm:w-9 touch-manipulation"
+                  className="h-8 w-8 rounded-r-none touch-manipulation"
                   onClick={handlePrevDay}
                 >
-                  <ChevronLeft className="size-5" />
+                  <ChevronLeft className="size-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 sm:h-9 sm:w-9 touch-manipulation"
+                  className="h-8 w-8 rounded-l-none touch-manipulation"
                   onClick={handleNextDay}
                   disabled={isViewingToday}
                 >
-                  <ChevronRight className="size-5" />
+                  <ChevronRight className="size-4" />
                 </Button>
               </div>
 
@@ -1306,11 +1141,7 @@ export function FitnessSingleView({
                     const isFutureDate = dayDate > new Date() && !isTodayDay
                     const focus = daySchedule?.focus || 'Rest'
                     const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
-                    const focusConfig = FOCUS_CONFIG[focus] || {
-                      icon: Calendar,
-                      color: 'text-muted-foreground',
-                      bg: 'bg-muted',
-                    }
+                    const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
                     const FocusIcon = focusConfig.icon
                     const { status, details } = getFitnessStatusForDay(dayDate, routine)
 
@@ -1394,11 +1225,7 @@ export function FitnessSingleView({
                     const isFutureDate = dayDate > new Date() && !isTodayDay
                     const focus = daySchedule?.focus || 'Rest'
                     const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
-                    const focusConfig = FOCUS_CONFIG[focus] || {
-                      icon: Calendar,
-                      color: 'text-muted-foreground',
-                      bg: 'bg-muted',
-                    }
+                    const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
                     const FocusIcon = focusConfig.icon
                     const { status, details } = getFitnessStatusForDay(dayDate, routine)
 
@@ -1460,12 +1287,12 @@ export function FitnessSingleView({
 
               {/* Actions - Grouped with consistent sizing */}
               <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                {/* Today button - prominent when viewing past dates */}
+                {/* Today button - consistent outline style */}
                 {!isViewingToday && (
                   <Button
-                    variant="default"
+                    variant="outline"
                     size="sm"
-                    className="h-8 sm:h-9 gap-1.5 px-3 sm:px-4 text-xs font-semibold touch-manipulation shadow-sm"
+                    className="h-8 px-3 text-xs touch-manipulation"
                     onClick={() => {
                       setSelectedDay(null)
                       setSelectedDayWorkout(null)
@@ -1473,8 +1300,7 @@ export function FitnessSingleView({
                       window.history.replaceState(null, '', '/fitness')
                     }}
                   >
-                    <ArrowLeft className="size-3.5" />
-                    <span>Today</span>
+                    Today
                   </Button>
                 )}
 
@@ -1546,6 +1372,30 @@ export function FitnessSingleView({
                   <TooltipContent>AI Fitness Coach</TooltipContent>
                 </Tooltip>
 
+                {/* View toggle: Day / Week */}
+                {onSwitchToWeek && (
+                  <div className="flex items-center rounded-lg bg-muted/40 p-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2.5 text-xs font-medium bg-background shadow-sm touch-manipulation"
+                      disabled
+                    >
+                      <CalendarDays className="size-3.5" />
+                      <span className="hidden sm:inline">Day</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground touch-manipulation"
+                      onClick={onSwitchToWeek}
+                    >
+                      <Columns3 className="size-3.5" />
+                      <span className="hidden sm:inline">Week</span>
+                    </Button>
+                  </div>
+                )}
+
                 {/* Activity Dashboard link */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1581,16 +1431,27 @@ export function FitnessSingleView({
               {/* Row 1: Date + Nav + Actions */}
               <div className="flex items-center justify-between gap-1.5 px-2 py-2">
                 {/* Left: Compact Date Picker with integrated nav */}
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   {/* Prev button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 touch-manipulation"
-                    onClick={handlePrevDay}
-                  >
-                    <ChevronLeft className="size-5" />
-                  </Button>
+                  <div className="flex items-center rounded-md border border-border/50">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-r-none touch-manipulation"
+                      onClick={handlePrevDay}
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-l-none touch-manipulation"
+                      onClick={handleNextDay}
+                      disabled={isViewingToday}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
 
                   {/* Date Picker - Compact but readable */}
                   <Popover open={dayPickerOpen} onOpenChange={(open) => {
@@ -1646,27 +1507,16 @@ export function FitnessSingleView({
                       </PopoverContent>
                     )}
                   </Popover>
-
-                  {/* Next button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 touch-manipulation"
-                    onClick={handleNextDay}
-                    disabled={isViewingToday}
-                  >
-                    <ChevronRight className="size-5" />
-                  </Button>
                 </div>
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-0.5">
-                  {/* Today button */}
+                  {/* Today button - consistent outline style */}
                   {!isViewingToday && (
                     <Button
-                      variant="default"
+                      variant="outline"
                       size="sm"
-                      className="h-9 gap-1.5 px-3 text-xs font-semibold touch-manipulation shadow-sm"
+                      className="h-8 px-3 text-xs touch-manipulation"
                       onClick={() => {
                         setSelectedDay(null)
                         setSelectedDayWorkout(null)
@@ -1674,7 +1524,6 @@ export function FitnessSingleView({
                         window.history.replaceState(null, '', '/fitness')
                       }}
                     >
-                      <ArrowLeft className="size-3.5" />
                       Today
                     </Button>
                   )}
@@ -1687,6 +1536,18 @@ export function FitnessSingleView({
                       </Button>
                     </DialogTrigger>
                   </Dialog>
+
+                  {/* Week view toggle */}
+                  {onSwitchToWeek && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToWeek}>
+                          <Columns3 className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Week View</TooltipContent>
+                    </Tooltip>
+                  )}
 
                   {/* Activity link */}
                   <Link href="/fitness/activity">
@@ -1716,11 +1577,7 @@ export function FitnessSingleView({
                     const isFutureDate = dayDate > new Date() && !isTodayDay
                     const focus = daySchedule?.focus || 'Rest'
                     const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
-                    const focusConfig = FOCUS_CONFIG[focus] || {
-                      icon: Calendar,
-                      color: 'text-muted-foreground',
-                      bg: 'bg-muted',
-                    }
+                    const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
                     const FocusIcon = focusConfig.icon
                     const { status, details } = getFitnessStatusForDay(dayDate, routine)
                     const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
@@ -1884,76 +1741,6 @@ export function FitnessSingleView({
   )
 }
 
-// Mini Progress Ring for Week Strip - Shows completion percentage around icon
-interface MiniDayProgressRingProps {
-  progress: number // 0-100
-  size?: number
-  strokeWidth?: number
-  color?: string
-  children: React.ReactNode
-}
-
-function MiniDayProgressRing({
-  progress,
-  size = 28,
-  strokeWidth = 2,
-  color = '#10b981', // emerald-500
-  children,
-}: MiniDayProgressRingProps) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference * (1 - Math.min(progress, 100) / 100)
-  const center = size / 2
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg
-        width={size}
-        height={size}
-        className="absolute inset-0 -rotate-90 transform"
-      >
-        {/* Background ring */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          className="text-muted/30"
-        />
-        {/* Progress ring */}
-        {progress > 0 && (
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-500 ease-out"
-          />
-        )}
-      </svg>
-      {/* Icon centered inside */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-// Helper to calculate day completion percentage
-function getDayCompletionProgress(details: FitnessStatusDetails, isRestDay: boolean): number {
-  const items = isRestDay
-    ? [details.morning, details.night] // Rest days: 2 items
-    : [details.morning, details.workout, details.night] // Workout days: 3 items
-  const completed = items.filter(Boolean).length
-  return Math.round((completed / items.length) * 100)
-}
 
 // Unified Activity Summary - Combines Activity Bar and Consistency Stats
 interface UnifiedActivitySummaryProps {

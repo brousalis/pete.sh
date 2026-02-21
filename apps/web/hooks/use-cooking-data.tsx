@@ -12,7 +12,6 @@ import type {
     Recipe,
     RecipeWithIngredients,
     ShoppingList,
-    TraderJoesRecipe,
 } from '@/lib/types/cooking.types'
 import { startOfWeek } from 'date-fns'
 import type { ReactNode } from 'react'
@@ -27,11 +26,8 @@ import {
 
 interface CookingContextValue {
   recipes: Recipe[]
-  tjRecipes: TraderJoesRecipe[]
   recipesLoading: boolean
-  tjRecipesLoading: boolean
   refreshRecipes: () => Promise<void>
-  refreshTjRecipes: () => Promise<void>
 
   currentWeek: Date
   setCurrentWeek: (date: Date) => void
@@ -47,6 +43,7 @@ interface CookingContextValue {
   shoppingList: ShoppingList | null
   shoppingListLoading: boolean
   refreshShoppingList: (regenerate?: boolean) => Promise<void>
+  clearShoppingList: () => Promise<void>
 
   getRecipeById: (id: string) => Recipe | undefined
   getRecipeName: (id: string) => string
@@ -55,8 +52,6 @@ interface CookingContextValue {
   setSidebarOpen: (open: boolean) => void
   selectedRecipeId: string | null
   setSelectedRecipeId: (id: string | null) => void
-  selectedTjRecipe: TraderJoesRecipe | null
-  setSelectedTjRecipe: (recipe: TraderJoesRecipe | null) => void
   showEditor: boolean
   setShowEditor: (show: boolean) => void
   editingRecipe: RecipeWithIngredients | null
@@ -97,9 +92,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast()
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [tjRecipes, setTjRecipes] = useState<TraderJoesRecipe[]>([])
   const [recipesLoading, setRecipesLoading] = useState(true)
-  const [tjRecipesLoading, setTjRecipesLoading] = useState(true)
 
   const [currentWeek, setCurrentWeek] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -127,8 +120,6 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null)
-  const [selectedTjRecipe, setSelectedTjRecipe] =
-    useState<TraderJoesRecipe | null>(null)
   const [showEditor, setShowEditor] = useState(false)
   const [editingRecipe, setEditingRecipe] =
     useState<RecipeWithIngredients | null>(null)
@@ -170,22 +161,6 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const refreshTjRecipes = useCallback(async () => {
-    setTjRecipesLoading(true)
-    try {
-      const response = await apiGet<TraderJoesRecipe[]>(
-        '/api/cooking/trader-joes/search'
-      )
-      if (response.success && response.data) {
-        setTjRecipes(response.data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch TJ recipes:', error)
-    } finally {
-      setTjRecipesLoading(false)
-    }
-  }, [])
-
   const refreshMealPlan = useCallback(async () => {
     setMealPlanLoading(true)
     try {
@@ -222,6 +197,18 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       setShoppingListLoading(false)
     }
   }, [mealPlan?.id])
+
+  const clearShoppingList = useCallback(async () => {
+    if (!mealPlan?.id) return
+    try {
+      await apiDelete(`/api/cooking/meal-plans/${mealPlan.id}/shopping-list`)
+      setShoppingList(null)
+      toast({ title: 'Shopping list cleared' })
+    } catch (error) {
+      console.error('Failed to clear shopping list:', error)
+      toast({ title: 'Failed to clear shopping list', variant: 'destructive' })
+    }
+  }, [mealPlan?.id, toast])
 
   const updateMealSlot = useCallback(
     async (day: DayOfWeek, mealType: string, recipeId: string | null) => {
@@ -274,8 +261,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshRecipes()
-    refreshTjRecipes()
-  }, [refreshRecipes, refreshTjRecipes])
+  }, [refreshRecipes])
 
   // Load latest fridge scan on mount
   useEffect(() => {
@@ -560,11 +546,8 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       recipes,
-      tjRecipes,
       recipesLoading,
-      tjRecipesLoading,
       refreshRecipes,
-      refreshTjRecipes,
       currentWeek,
       setCurrentWeek,
       mealPlan,
@@ -574,14 +557,13 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       shoppingList,
       shoppingListLoading,
       refreshShoppingList,
+      clearShoppingList,
       getRecipeById,
       getRecipeName,
       sidebarOpen,
       setSidebarOpen,
       selectedRecipeId,
       setSelectedRecipeId,
-      selectedTjRecipe,
-      setSelectedTjRecipe,
       showEditor,
       setShowEditor,
       editingRecipe,
@@ -614,11 +596,8 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     }),
     [
       recipes,
-      tjRecipes,
       recipesLoading,
-      tjRecipesLoading,
       refreshRecipes,
-      refreshTjRecipes,
       currentWeek,
       mealPlan,
       mealPlanLoading,
@@ -627,12 +606,12 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       shoppingList,
       shoppingListLoading,
       refreshShoppingList,
+      clearShoppingList,
       getRecipeById,
       getRecipeName,
       sidebarOpen,
       setSidebarOpen,
       selectedRecipeId,
-      selectedTjRecipe,
       showEditor,
       editingRecipe,
       showCookingMode,
