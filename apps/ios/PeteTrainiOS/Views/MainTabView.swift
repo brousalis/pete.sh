@@ -4,26 +4,36 @@ struct MainTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var hasPerformedInitialSync = false
     @State private var lastActiveDate: Date?
+    @State private var selectedTab = 0
 
     /// Minimum time between automatic syncs (30 minutes)
     private let minimumSyncInterval: TimeInterval = 30 * 60
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TodayView()
                 .tabItem {
                     Label("Today", systemImage: "heart.text.square")
                 }
+                .tag(0)
 
             SyncView()
                 .tabItem {
                     Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                 }
+                .tag(1)
 
             WebViewTab()
                 .tabItem {
                     Label("Home", systemImage: "globe")
                 }
+                .tag(2)
+
+            ActivityView(selectedTab: $selectedTab)
+                .tabItem {
+                    Label("Activity", systemImage: "figure.run")
+                }
+                .tag(3)
         }
         .tint(.white)
         .task {

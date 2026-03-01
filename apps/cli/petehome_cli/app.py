@@ -693,7 +693,11 @@ class PetehomeApp(App):
             with Horizontal(id="input-bar"):
                 yield Static("❯", id="prompt-char")
                 yield cmd_input
-            yield AutoComplete(cmd_input, candidates=self._get_candidates)
+            yield AutoComplete(
+                cmd_input,
+                candidates=self._get_candidates,
+                prevent_default_enter=False,
+            )
             with Collapsible(title="output", id="col-output", collapsed=False):
                 yield RichLog(id="cmd-output", markup=True, wrap=True, max_lines=1000, auto_scroll=True)
             with Vertical(id="log-panels"):
@@ -710,7 +714,11 @@ class PetehomeApp(App):
             with Horizontal(id="input-bar"):
                 yield Static("❯", id="prompt-char")
                 yield cmd_input
-            yield DropUp(cmd_input, candidates=self._get_candidates)
+            yield DropUp(
+                cmd_input,
+                candidates=self._get_candidates,
+                prevent_default_enter=False,
+            )
 
         yield Footer()
 

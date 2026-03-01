@@ -5,10 +5,17 @@ import {
   useIsReadOnly,
 } from '@/components/connectivity-provider'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { LiveBadge, ReadOnlyNotice } from '@/components/ui/live-badge'
+import { PageHeader, PageHeaderRow } from '@/components/ui/page-header'
 import { Slider } from '@/components/ui/slider'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ToggleSwitch } from '@/components/ui/toggle-switch'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost, apiPut } from '@/lib/api/client'
 import type {
   HueAllLightsStatus,
   HueLight,
@@ -22,11 +29,11 @@ import {
   BedDouble,
   Briefcase,
   ChevronDown,
-  ChevronRight,
   Dumbbell,
   Home,
   Lamp,
   Lightbulb,
+  Loader2,
   Monitor,
   Moon,
   Palette,
@@ -92,9 +99,8 @@ export function HueControls() {
   const [brightness, setBrightness] = useState(127)
   const [isTogglingAll, setIsTogglingAll] = useState(false)
   const [activatingScene, setActivatingScene] = useState<string | null>(null)
-  const [showAnalytics, setShowAnalytics] = useState(false)
   const isReadOnly = useIsReadOnly()
-  const { apiBaseUrl, isInitialized } = useConnectivity()
+  const { isInitialized } = useConnectivity()
 
   // Hue Sync state
   const [syncStatus, setSyncStatus] = useState<{ active: boolean } | null>(null)
@@ -106,96 +112,70 @@ export function HueControls() {
       setError(null)
 
       const [zonesRes, scenesRes, statusRes, entertainmentRes] = await Promise.all([
-        fetch(`${apiBaseUrl}/api/hue/zones`),
-        fetch(`${apiBaseUrl}/api/hue/scenes`),
-        fetch(`${apiBaseUrl}/api/hue/all`),
-        fetch(`${apiBaseUrl}/api/hue/entertainment`).catch(() => null),
+        apiGet<Record<string, HueZone>>('/api/hue/zones'),
+        apiGet<HueScene[]>('/api/hue/scenes'),
+        apiGet<HueAllLightsStatus>('/api/hue/all'),
+        apiGet<Array<{ id: string; name: string }>>('/api/hue/entertainment').catch(() => ({ success: false })),
       ])
 
-      if (!zonesRes.ok) {
-        if (zonesRes.status === 400) {
+      if (!zonesRes.success || !zonesRes.data) {
+        if (zonesRes.error?.toLowerCase().includes('not configured')) {
           setError('HUE bridge not configured')
           return
         }
-        throw new Error('Failed to fetch zones')
+        throw new Error(zonesRes.error || 'Failed to fetch zones')
       }
 
-      const zonesData = await zonesRes.json()
-      if (zonesData.success && zonesData.data) {
-        const allZones = Object.entries(zonesData.data)
-          .map(([id, zone]) => ({
-            ...(zone as HueZone),
-            id,
-          }))
-          .filter(z => z.type === 'Room' || z.type === 'Zone')
+      const allZones = Object.entries(zonesRes.data)
+        .map(([id, zone]) => ({ ...zone, id }))
+        .filter(z => z.type === 'Room' || z.type === 'Zone')
 
-        // Deduplicate by name - prefer 'Room' type over 'Zone' type
-        const seenNames = new Map<string, HueZone & { id: string }>()
-        for (const zone of allZones) {
-          const normalizedName = zone.name.toLowerCase().trim()
-          const existing = seenNames.get(normalizedName)
-          if (!existing || (zone.type === 'Room' && existing.type === 'Zone')) {
-            seenNames.set(normalizedName, zone)
-          }
+      // Deduplicate by name - prefer 'Room' type over 'Zone' type
+      const seenNames = new Map<string, HueZone & { id: string }>()
+      for (const zone of allZones) {
+        const normalizedName = zone.name.toLowerCase().trim()
+        const existing = seenNames.get(normalizedName)
+        if (!existing || (zone.type === 'Room' && existing.type === 'Zone')) {
+          seenNames.set(normalizedName, zone)
         }
+      }
 
-        const zonesArray = Array.from(seenNames.values())
-          .sort((a, b) => getRoomPriority(a.name) - getRoomPriority(b.name))
+      const zonesArray = Array.from(seenNames.values())
+        .sort((a, b) => getRoomPriority(a.name) - getRoomPriority(b.name))
 
-        setZones(zonesArray)
+      setZones(zonesArray)
 
-        const scenesPromises = zonesArray.map(async zone => {
-          try {
-            const res = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/scenes`)
-            if (res.ok) {
-              const data = await res.json()
-              return { zoneId: zone.id, scenes: data.success ? data.data : [] }
-            }
-            return { zoneId: zone.id, scenes: [] }
-          } catch {
-            return { zoneId: zone.id, scenes: [] }
-          }
-        })
-
-        const scenesResults = await Promise.all(scenesPromises)
+      // Derive zone scenes from allScenes (scene.group === zone id) - no per-zone fetches
+      if (scenesRes.success && scenesRes.data) {
+        setAllScenes(scenesRes.data)
         const scenesMap: Record<string, HueScene[]> = {}
-        scenesResults.forEach(({ zoneId, scenes: zoneScenes }) => {
-          scenesMap[zoneId] = zoneScenes
-        })
+        for (const zone of zonesArray) {
+          scenesMap[zone.id] = scenesRes.data.filter(s => s.group === zone.id)
+        }
         setScenes(scenesMap)
       }
 
-      if (scenesRes.ok) {
-        const scenesData = await scenesRes.json()
-        if (scenesData.success && scenesData.data) {
-          setAllScenes(scenesData.data)
+      if (statusRes.success && statusRes.data) {
+        setStatus(statusRes.data)
+        if (statusRes.data.averageBrightness) {
+          setBrightness(statusRes.data.averageBrightness)
         }
       }
 
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        if (statusData.success && statusData.data) {
-          setStatus(statusData.data)
-          if (statusData.data.averageBrightness) {
-            setBrightness(statusData.data.averageBrightness)
-          }
-        }
-      }
-
-      if (entertainmentRes?.ok) {
-        const entertainmentData = await entertainmentRes.json()
-        if (entertainmentData.success && entertainmentData.data?.length > 0) {
-          const area = entertainmentData.data.find((a: { name: string }) =>
-            a.name.toLowerCase().includes('office')
-          ) || entertainmentData.data[0]
+      if (
+        entertainmentRes.success &&
+        'data' in entertainmentRes &&
+        Array.isArray(entertainmentRes.data) &&
+        entertainmentRes.data.length > 0
+      ) {
+        const area =
+          entertainmentRes.data.find((a: { name: string }) => a.name.toLowerCase().includes('office')) ??
+          entertainmentRes.data[0]
+        if (area) {
           setSyncArea(area)
-
-          const syncRes = await fetch(`${apiBaseUrl}/api/hue/entertainment/${area.id}`)
-          if (syncRes.ok) {
-            const syncData = await syncRes.json()
-            if (syncData.success && syncData.data) {
-              setSyncStatus(syncData.data)
-            }
+          const syncRes = await apiGet<{ active: boolean }>(`/api/hue/entertainment/${area.id}`)
+          if (syncRes.success && syncRes.data) {
+            setSyncStatus(syncRes.data)
           }
         }
       }
@@ -205,7 +185,7 @@ export function HueControls() {
     } finally {
       setLoading(false)
     }
-  }, [apiBaseUrl])
+  }, [])
 
   useEffect(() => {
     if (isInitialized) {
@@ -226,17 +206,14 @@ export function HueControls() {
     if (!syncArea) return
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`${apiBaseUrl}/api/hue/entertainment/${syncArea.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success && data.data) {
-            setSyncStatus(data.data)
-          }
+        const res = await apiGet<{ active: boolean }>(`/api/hue/entertainment/${syncArea.id}`)
+        if (res.success && res.data) {
+          setSyncStatus(res.data)
         }
       } catch {}
     }, 3000)
     return () => clearInterval(interval)
-  }, [syncArea, apiBaseUrl])
+  }, [syncArea])
 
   // Handlers
   const handleToggleAll = async (on: boolean) => {
@@ -389,19 +366,185 @@ export function HueControls() {
   const secondaryRooms = zones.slice(2)
 
   return (
-    <div className="space-y-6">
-      <ReadOnlyNotice className="rounded-lg" />
+    <div className="space-y-4">
+      <PageHeader
+        secondaryRow={
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2">
+            {/* Power Status */}
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'flex size-9 items-center justify-center rounded-lg transition-all',
+                  status?.anyOn ? 'bg-brand/20 text-brand' : 'bg-white/5 text-muted-foreground'
+                )}
+              >
+                <Power className="size-4" strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="text-sm font-semibold tabular-nums">
+                  {status?.lightsOn || 0}/{status?.totalLights || 0}
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    {status?.anyOn ? 'on' : 'off'}
+                  </span>
+                </div>
+                <div className="mt-1 flex gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleAll(true)}
+                    disabled={isReadOnly || isTogglingAll || status?.allOn}
+                    className="h-6 min-h-[44px] px-2 text-[11px] sm:min-h-0"
+                  >
+                    All On
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleAll(false)}
+                    disabled={isReadOnly || isTogglingAll || !status?.anyOn}
+                    className="h-6 min-h-[44px] px-2 text-[11px] sm:min-h-0"
+                  >
+                    All Off
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-      {/* ========== COMMAND BAR ========== */}
-      <div className="space-y-4">
-        {/* Header Row */}
-        <div className="flex items-center justify-between">
+            <div className="h-10 w-px bg-white/10 hidden sm:block" />
+
+            {/* Quick Scenes */}
+            {favoriteScenes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {favoriteScenes.map(scene => {
+                  const Icon = getSceneIcon(scene.name)
+                  const isActivating = activatingScene === scene.id
+                  return (
+                    <button
+                      key={scene.id}
+                      onClick={() => handleActivateScene(scene)}
+                      disabled={isReadOnly || isActivating}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all',
+                        'disabled:cursor-not-allowed disabled:opacity-50',
+                        getSceneStyles(scene.name)
+                      )}
+                    >
+                      {isActivating ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Icon className="size-3.5" />
+                      )}
+                      <span className="capitalize">{scene.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="h-10 w-px bg-white/10 hidden lg:block" />
+
+            {/* Office Brightness */}
+            {officeZone && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">Office</span>
+                <div className="flex gap-1">
+                  {presetBrightness.map(preset => {
+                    const Icon = preset.icon
+                    const isActive = Math.abs(brightness - preset.value) < 20 && status?.anyOn
+                    return (
+                      <Button
+                        key={preset.label}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleBrightnessPreset(preset.value)}
+                        disabled={isReadOnly}
+                        className={cn(
+                          'h-7 gap-1 px-2 text-[11px]',
+                          isActive && 'bg-white/10 text-foreground'
+                        )}
+                      >
+                        <Icon className="size-3" />
+                        {preset.label}
+                      </Button>
+                    )
+                  })}
+                </div>
+                {status?.anyOn && (
+                  <div className="flex w-32 items-center gap-2">
+                    <Slider
+                      value={[brightness]}
+                      onValueChange={v => v[0] !== undefined && setBrightness(v[0])}
+                      onValueCommit={handleBrightnessCommit}
+                      min={1}
+                      max={254}
+                      step={1}
+                      disabled={isReadOnly}
+                      className="flex-1"
+                    />
+                    <span className="w-7 tabular-nums text-[11px] text-muted-foreground">
+                      {brightnessPercent}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Hue Sync */}
+            {syncArea && (
+              <>
+                <div className="h-10 w-px bg-white/10 hidden xl:block" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          'flex size-7 items-center justify-center rounded-md transition-all',
+                          syncStatus?.active
+                            ? 'bg-purple-500/20 text-purple-400'
+                            : 'bg-white/5 text-muted-foreground'
+                        )}
+                      >
+                        <Monitor className="size-3.5" />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">Sync</span>
+                        <div
+                          className={cn(
+                            'size-1.5 rounded-full',
+                            syncStatus?.active ? 'animate-pulse bg-green-500' : 'bg-white/20'
+                          )}
+                        />
+                      </div>
+                      {syncStatus?.active && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleStopSync}
+                          disabled={isReadOnly}
+                          className="h-6 gap-1 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        >
+                          <Square className="size-2.5" />
+                          Stop
+                        </Button>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Sync lights with screen content (Hue Entertainment)
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
+          </div>
+        }
+      >
+        <PageHeaderRow className="flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand/15">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/15">
               <Lightbulb className="size-5 text-brand" strokeWidth={2.5} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight">Lighting</h1>
                 <LiveBadge />
               </div>
@@ -410,169 +553,21 @@ export function HueControls() {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchData} disabled={loading} className="gap-1.5">
-            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
-            Refresh
-          </Button>
-        </div>
-
-        {/* Control Strip */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          {/* Power Status */}
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex size-9 items-center justify-center rounded-lg transition-all',
-                status?.anyOn ? 'bg-brand/20 text-brand' : 'bg-white/5 text-muted-foreground'
-              )}
+          <div className="flex items-center gap-2">
+            <ReadOnlyNotice className="shrink-0 rounded-lg" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchData}
+              disabled={loading}
+              className="shrink-0 gap-1.5"
             >
-              <Power className="size-4" strokeWidth={2.5} />
-            </div>
-            <div>
-              <div className="text-sm font-semibold tabular-nums">
-                {status?.lightsOn || 0}/{status?.totalLights || 0}
-                <span className="ml-1 font-normal text-muted-foreground">
-                  {status?.anyOn ? 'on' : 'off'}
-                </span>
-              </div>
-              <div className="flex gap-1.5 mt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleAll(true)}
-                  disabled={isReadOnly || isTogglingAll || status?.allOn}
-                  className="h-6 px-2 text-[11px]"
-                >
-                  All On
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleAll(false)}
-                  disabled={isReadOnly || isTogglingAll || !status?.anyOn}
-                  className="h-6 px-2 text-[11px]"
-                >
-                  All Off
-                </Button>
-              </div>
-            </div>
+              <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
+              Refresh
+            </Button>
           </div>
-
-          <div className="h-12 w-px bg-white/10 hidden sm:block" />
-
-          {/* Quick Scenes */}
-          {favoriteScenes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {favoriteScenes.map(scene => {
-                const Icon = getSceneIcon(scene.name)
-                return (
-                  <button
-                    key={scene.id}
-                    onClick={() => handleActivateScene(scene)}
-                    disabled={isReadOnly || activatingScene === scene.id}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all',
-                      'disabled:cursor-not-allowed disabled:opacity-50',
-                      getSceneStyles(scene.name)
-                    )}
-                  >
-                    <Icon className="size-3.5" />
-                    <span className="capitalize">{scene.name}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-
-          <div className="h-12 w-px bg-white/10 hidden lg:block" />
-
-          {/* Office Brightness */}
-          {officeZone && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">Office</span>
-              <div className="flex gap-1">
-                {presetBrightness.map(preset => {
-                  const Icon = preset.icon
-                  const isActive = Math.abs(brightness - preset.value) < 20 && status?.anyOn
-                  return (
-                    <Button
-                      key={preset.label}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleBrightnessPreset(preset.value)}
-                      disabled={isReadOnly}
-                      className={cn(
-                        'h-7 gap-1 px-2 text-[11px]',
-                        isActive && 'bg-white/10 text-foreground'
-                      )}
-                    >
-                      <Icon className="size-3" />
-                      {preset.label}
-                    </Button>
-                  )
-                })}
-              </div>
-              {status?.anyOn && (
-                <div className="flex items-center gap-2 w-32">
-                  <Slider
-                    value={[brightness]}
-                    onValueChange={v => v[0] !== undefined && setBrightness(v[0])}
-                    onValueCommit={handleBrightnessCommit}
-                    min={1}
-                    max={254}
-                    step={1}
-                    disabled={isReadOnly}
-                    className="flex-1"
-                  />
-                  <span className="text-[11px] tabular-nums text-muted-foreground w-7">
-                    {brightnessPercent}%
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Hue Sync */}
-          {syncArea && (
-            <>
-              <div className="h-12 w-px bg-white/10 hidden xl:block" />
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    'flex size-7 items-center justify-center rounded-md transition-all',
-                    syncStatus?.active
-                      ? 'bg-purple-500/20 text-purple-400'
-                      : 'bg-white/5 text-muted-foreground'
-                  )}
-                >
-                  <Monitor className="size-3.5" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs">Sync</span>
-                  <div
-                    className={cn(
-                      'size-1.5 rounded-full',
-                      syncStatus?.active ? 'animate-pulse bg-green-500' : 'bg-white/20'
-                    )}
-                  />
-                </div>
-                {syncStatus?.active && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleStopSync}
-                    disabled={isReadOnly}
-                    className="h-6 gap-1 px-2 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  >
-                    <Square className="size-2.5" />
-                    Stop
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+        </PageHeaderRow>
+      </PageHeader>
 
       {/* ========== MAIN CONTENT ========== */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -590,7 +585,8 @@ export function HueControls() {
               scenes={scenes[zone.id] || []}
               onUpdate={fetchData}
               isReadOnly={isReadOnly}
-              apiBaseUrl={apiBaseUrl}
+              activatingSceneId={activatingScene}
+              onActivateScene={handleActivateScene}
               size="large"
             />
           </motion.div>
@@ -619,7 +615,8 @@ export function HueControls() {
               scenes={scenes[zone.id] || []}
               onUpdate={fetchData}
               isReadOnly={isReadOnly}
-              apiBaseUrl={apiBaseUrl}
+              activatingSceneId={activatingScene}
+              onActivateScene={handleActivateScene}
               size="compact"
             />
           </motion.div>
@@ -638,7 +635,8 @@ interface RoomCardProps {
   scenes?: HueScene[]
   onUpdate?: () => Promise<void>
   isReadOnly?: boolean
-  apiBaseUrl: string
+  activatingSceneId?: string | null
+  onActivateScene?: (scene: HueScene) => Promise<void>
   size?: 'large' | 'compact'
 }
 
@@ -647,13 +645,15 @@ function RoomCard({
   scenes = [],
   onUpdate,
   isReadOnly = false,
-  apiBaseUrl,
+  activatingSceneId,
+  onActivateScene,
   size = 'compact',
 }: RoomCardProps) {
   const [on, setOn] = useState(zone.state.any_on)
   const [brightness, setBrightness] = useState(zone.action?.bri || 127)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [expanded, setExpanded] = useState(false)
+  const [scenesExpanded, setScenesExpanded] = useState(false)
+  const [lightsOpen, setLightsOpen] = useState(false)
   const [lights, setLights] = useState<HueLight[]>([])
   const [loadingLights, setLoadingLights] = useState(false)
 
@@ -665,19 +665,18 @@ function RoomCard({
   }, [zone.state.any_on, zone.action?.bri])
 
   useEffect(() => {
-    if (expanded && lights.length === 0) {
+    if (lightsOpen && lights.length === 0) {
       setLoadingLights(true)
-      fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/lights`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.data) {
-            setLights(data.data)
+      apiGet<HueLight[]>(`/api/hue/zones/${zone.id}/lights`)
+        .then(res => {
+          if (res.success && res.data) {
+            setLights(res.data)
           }
         })
         .catch(() => toast.error('Failed to load lights'))
         .finally(() => setLoadingLights(false))
     }
-  }, [expanded, zone.id, lights.length, apiBaseUrl])
+  }, [lightsOpen, zone.id, lights.length])
 
   const handleToggle = useCallback(
     async (checked: boolean) => {
@@ -688,12 +687,8 @@ function RoomCard({
       setIsUpdating(true)
       setOn(checked)
       try {
-        const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/toggle`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ on: checked }),
-        })
-        if (!response.ok) throw new Error('Failed to toggle zone')
+        const response = await apiPost(`/api/hue/zones/${zone.id}/toggle`, { on: checked })
+        if (!response.success) throw new Error('Failed to toggle zone')
         onUpdate?.()
       } catch {
         setOn(!checked)
@@ -702,7 +697,7 @@ function RoomCard({
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate, isReadOnly, apiBaseUrl]
+    [zone.id, zone.name, onUpdate, isReadOnly]
   )
 
   const handleBrightnessChange = (values: number[]) => {
@@ -719,12 +714,8 @@ function RoomCard({
       if (value === undefined) return
       setIsUpdating(true)
       try {
-        const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/brightness`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ brightness: value }),
-        })
-        if (!response.ok) throw new Error('Failed to set brightness')
+        const response = await apiPost(`/api/hue/zones/${zone.id}/brightness`, { brightness: value })
+        if (!response.success) throw new Error('Failed to set brightness')
         setOn(true)
         onUpdate?.()
       } catch {
@@ -733,43 +724,19 @@ function RoomCard({
         setIsUpdating(false)
       }
     },
-    [zone.id, zone.name, onUpdate, isReadOnly, apiBaseUrl]
+    [zone.id, zone.name, onUpdate, isReadOnly]
   )
 
-  const handleActivateScene = useCallback(
-    async (sceneId: string, sceneName: string) => {
-      if (isReadOnly) {
-        toast.error('Controls disabled in live view mode')
-        return
-      }
-      setIsUpdating(true)
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/scenes/${sceneId}`, {
-          method: 'POST',
-        })
-        if (!response.ok) throw new Error('Failed to activate scene')
-        setOn(true)
-        toast.success(`Activated: ${sceneName}`)
-        onUpdate?.()
-      } catch {
-        toast.error('Failed to activate scene')
-      } finally {
-        setIsUpdating(false)
-      }
-    },
-    [zone.id, onUpdate, isReadOnly, apiBaseUrl]
-  )
 
   const handleLightUpdate = useCallback(async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/hue/zones/${zone.id}/lights`)
-      const data = await response.json()
-      if (data.success && data.data) {
-        setLights(data.data)
+      const res = await apiGet<HueLight[]>(`/api/hue/zones/${zone.id}/lights`)
+      if (res.success && res.data) {
+        setLights(res.data)
       }
     } catch {}
     onUpdate?.()
-  }, [zone.id, onUpdate, apiBaseUrl])
+  }, [zone.id, onUpdate])
 
   const filteredScenes = scenes.filter(scene => {
     const name = scene.name.toLowerCase()
@@ -821,7 +788,7 @@ function RoomCard({
       className={cn(
         'group relative overflow-hidden rounded-2xl transition-all duration-200',
         on ? 'bg-brand/[0.08]' : 'bg-white/[0.03] hover:bg-white/[0.05]',
-        isLarge ? 'p-5' : 'p-4'
+        'p-3'
       )}
     >
       {/* Accent line when on */}
@@ -855,7 +822,7 @@ function RoomCard({
       <AnimatePresence>
         {on && (
           <motion.div
-            className={cn('mt-4', isLarge && 'mt-5')}
+            className="mt-3"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -882,29 +849,34 @@ function RoomCard({
 
       {/* Scenes */}
       {sortedScenes.length > 0 && (
-        <div className={cn('mt-4', isLarge && 'mt-5')}>
+        <div className="mt-3">
           <div className="flex flex-wrap gap-1.5">
-            {sortedScenes.slice(0, expanded ? undefined : (isLarge ? 5 : 4)).map(scene => {
+            {sortedScenes.slice(0, scenesExpanded ? undefined : (isLarge ? 5 : 4)).map(scene => {
               const isFavorite = scene.name.toLowerCase().includes('pete')
+              const isActivating = activatingSceneId === scene.id
               return (
                 <button
                   key={scene.id}
-                  onClick={() => handleActivateScene(scene.id, scene.name)}
-                  disabled={isReadOnly || isUpdating}
+                  onClick={() => onActivateScene?.(scene)}
+                  disabled={isReadOnly || isActivating}
                   className={cn(
                     'flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     getSceneStyle(scene.name)
                   )}
                 >
-                  {isFavorite && <Sparkles className="size-2.5" />}
+                  {isActivating ? (
+                    <Loader2 className="size-2.5 animate-spin" />
+                  ) : (
+                    isFavorite && <Sparkles className="size-2.5" />
+                  )}
                   {scene.name}
                 </button>
               )
             })}
-            {sortedScenes.length > (isLarge ? 5 : 4) && !expanded && (
+            {sortedScenes.length > (isLarge ? 5 : 4) && !scenesExpanded && (
               <button
-                onClick={() => setExpanded(true)}
+                onClick={() => setScenesExpanded(true)}
                 className="rounded-md bg-white/5 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/10"
               >
                 +{sortedScenes.length - (isLarge ? 5 : 4)}
@@ -914,28 +886,19 @@ function RoomCard({
         </div>
       )}
 
-      {/* Expand Lights */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className={cn(
-          'mt-4 flex w-full items-center justify-center gap-1 py-2 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground',
-          isLarge && 'mt-5'
-        )}
-      >
-        <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
-        {expanded ? 'Hide' : 'Lights'}
-      </button>
-
-      {/* Lights List */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            className="mt-2 space-y-1 border-t border-white/5 pt-3"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15 }}
+      {/* Lights - Collapsible */}
+      <Collapsible open={lightsOpen} onOpenChange={setLightsOpen} className="mt-3">
+        <CollapsibleTrigger asChild>
+          <button
+            className="flex w-full items-center justify-center gap-1 py-2 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+            type="button"
           >
+            <ChevronDown className={cn('size-3.5 transition-transform', lightsOpen && 'rotate-180')} />
+            {lightsOpen ? 'Hide' : 'Lights'}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2 space-y-1 border-t border-white/5 pt-3">
             {loadingLights ? (
               <div className="flex items-center justify-center py-4">
                 <div className="size-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
@@ -954,9 +917,9 @@ function RoomCard({
             ) : (
               <p className="py-3 text-center text-xs text-muted-foreground">No lights</p>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   )
 }
@@ -967,23 +930,24 @@ function RoomCard({
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="size-10 animate-pulse rounded-xl bg-white/5" />
-          <div className="space-y-1.5">
-            <div className="h-5 w-24 animate-pulse rounded bg-white/5" />
-            <div className="h-3 w-32 animate-pulse rounded bg-white/5" />
+    <div className="space-y-4">
+      {/* PageHeader shape */}
+      <div className="rounded-xl border border-border/50 bg-card/40">
+        <div className="flex items-center justify-between gap-2 px-3 py-2">
+          <div className="flex items-center gap-3">
+            <div className="size-10 shrink-0 animate-pulse rounded-xl bg-white/5" />
+            <div className="space-y-1.5">
+              <div className="h-5 w-24 animate-pulse rounded bg-white/5" />
+              <div className="h-3 w-32 animate-pulse rounded bg-white/5" />
+            </div>
           </div>
+          <div className="h-8 w-16 animate-pulse rounded bg-white/5" />
         </div>
-      </div>
-
-      {/* Control Strip */}
-      <div className="flex gap-4">
-        <div className="h-16 w-32 animate-pulse rounded-lg bg-white/5" />
-        <div className="h-16 w-48 animate-pulse rounded-lg bg-white/5" />
-        <div className="h-16 w-40 animate-pulse rounded-lg bg-white/5" />
+        <div className="flex flex-wrap gap-4 border-t border-border/30 px-3 py-2">
+          <div className="h-12 w-28 animate-pulse rounded-lg bg-white/5" />
+          <div className="h-12 w-36 animate-pulse rounded-lg bg-white/5" />
+          <div className="h-12 w-32 animate-pulse rounded-lg bg-white/5" />
+        </div>
       </div>
 
       {/* Cards Grid */}
@@ -993,7 +957,7 @@ function LoadingSkeleton() {
             key={i}
             className={cn(
               'animate-pulse rounded-2xl bg-white/[0.03]',
-              i <= 2 ? 'h-48' : 'h-40'
+              i <= 2 ? 'h-44' : 'h-36'
             )}
             style={{ animationDelay: `${i * 60}ms` }}
           />

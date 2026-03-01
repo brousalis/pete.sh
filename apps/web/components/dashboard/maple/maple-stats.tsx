@@ -7,20 +7,77 @@ import type { MapleStats } from '@/lib/types/maple.types'
 import { MOOD_COLORS, MOOD_EMOJI } from '@/lib/types/maple.types'
 import { cn } from '@/lib/utils'
 import {
-    Calendar,
-    Clock,
-    Footprints,
-    Route
+  Calendar,
+  Clock,
+  Footprints,
+  Route,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 interface MapleStatsProps {
   className?: string
+  stats?: MapleStats | null
+  loading?: boolean
 }
 
-export function MapleStatsCards({ className }: MapleStatsProps) {
+// Compact stats strip for dashboard header - receives stats as prop
+export function MapleStatsStrip({
+  stats,
+  loading,
+  className,
+}: {
+  stats: MapleStats | null
+  loading: boolean
+  className?: string
+}) {
+  if (loading) {
+    return (
+      <div className={cn('flex flex-wrap items-center gap-4', className)}>
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-8 w-16" />
+        ))}
+      </div>
+    )
+  }
+  if (!stats) return null
+
+  return (
+    <div className={cn('flex flex-wrap items-center gap-4 text-sm', className)}>
+      <span className="flex items-center gap-1.5">
+        <Footprints className="size-4 text-blue-500" />
+        <strong>{stats.totalWalks}</strong>
+        <span className="text-muted-foreground">walks</span>
+      </span>
+      <span className="text-muted-foreground">·</span>
+      <span className="flex items-center gap-1.5">
+        <Route className="size-4 text-green-500" />
+        <strong>{stats.totalDistanceMiles.toFixed(1)}</strong>
+        <span className="text-muted-foreground">mi</span>
+      </span>
+      <span className="text-muted-foreground">·</span>
+      <span className="flex items-center gap-1.5">
+        <Clock className="size-4 text-purple-500" />
+        <strong>{Math.round(stats.avgDurationMinutes)}</strong>
+        <span className="text-muted-foreground">m avg</span>
+      </span>
+      <span className="text-muted-foreground">·</span>
+      <span className="flex items-center gap-1.5">
+        <Calendar className="size-4 text-orange-500" />
+        <strong>{stats.thisWeekWalks}</strong>
+        <span className="text-muted-foreground">this week</span>
+      </span>
+    </div>
+  )
+}
+
+export function MapleStatsCards({
+  className,
+  stats: statsProp,
+  loading: loadingProp,
+}: MapleStatsProps) {
   const [stats, setStats] = useState<MapleStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const useProps = statsProp !== undefined
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -37,73 +94,67 @@ export function MapleStatsCards({ className }: MapleStatsProps) {
   }, [])
 
   useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+    if (!useProps) fetchStats()
+  }, [fetchStats, useProps])
 
-  if (loading) {
+  const displayStats = useProps ? statsProp : stats
+  const displayLoading = useProps ? (loadingProp ?? false) : loading
+
+  if (displayLoading) {
     return (
-      <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}>
+      <div className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-4', className)}>
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-28" />
+          <Skeleton key={i} className="h-20" />
         ))}
       </div>
     )
   }
 
-  if (!stats) {
-    return null
-  }
+  if (!displayStats) return null
 
   return (
-    <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}>
-      {/* Total Walks */}
+    <div className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-4', className)}>
       <Card>
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
-            <Footprints className="size-6" />
+        <CardContent className="flex items-center gap-3 p-3">
+          <div className="rounded-lg bg-blue-500/10 p-2 text-blue-500">
+            <Footprints className="size-5" />
           </div>
           <div>
-            <p className="text-3xl font-bold">{stats.totalWalks}</p>
-            <p className="text-sm text-muted-foreground">Total Walks</p>
+            <p className="text-xl font-bold">{displayStats.totalWalks}</p>
+            <p className="text-xs text-muted-foreground">Total Walks</p>
           </div>
         </CardContent>
       </Card>
-
-      {/* Total Distance */}
       <Card>
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="rounded-lg bg-green-500/10 p-3 text-green-500">
-            <Route className="size-6" />
+        <CardContent className="flex items-center gap-3 p-3">
+          <div className="rounded-lg bg-green-500/10 p-2 text-green-500">
+            <Route className="size-5" />
           </div>
           <div>
-            <p className="text-3xl font-bold">{stats.totalDistanceMiles.toFixed(1)}</p>
-            <p className="text-sm text-muted-foreground">Miles Walked</p>
+            <p className="text-xl font-bold">{displayStats.totalDistanceMiles.toFixed(1)}</p>
+            <p className="text-xs text-muted-foreground">Miles Walked</p>
           </div>
         </CardContent>
       </Card>
-
-      {/* Average Duration */}
       <Card>
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="rounded-lg bg-purple-500/10 p-3 text-purple-500">
-            <Clock className="size-6" />
+        <CardContent className="flex items-center gap-3 p-3">
+          <div className="rounded-lg bg-purple-500/10 p-2 text-purple-500">
+            <Clock className="size-5" />
           </div>
           <div>
-            <p className="text-3xl font-bold">{Math.round(stats.avgDurationMinutes)}</p>
-            <p className="text-sm text-muted-foreground">Avg Minutes</p>
+            <p className="text-xl font-bold">{Math.round(displayStats.avgDurationMinutes)}</p>
+            <p className="text-xs text-muted-foreground">Avg Minutes</p>
           </div>
         </CardContent>
       </Card>
-
-      {/* This Week */}
       <Card>
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="rounded-lg bg-orange-500/10 p-3 text-orange-500">
-            <Calendar className="size-6" />
+        <CardContent className="flex items-center gap-3 p-3">
+          <div className="rounded-lg bg-orange-500/10 p-2 text-orange-500">
+            <Calendar className="size-5" />
           </div>
           <div>
-            <p className="text-3xl font-bold">{stats.thisWeekWalks}</p>
-            <p className="text-sm text-muted-foreground">This Week</p>
+            <p className="text-xl font-bold">{displayStats.thisWeekWalks}</p>
+            <p className="text-xs text-muted-foreground">This Week</p>
           </div>
         </CardContent>
       </Card>
@@ -111,10 +162,19 @@ export function MapleStatsCards({ className }: MapleStatsProps) {
   )
 }
 
-// Mood breakdown component
-export function MapleMoodBreakdown({ className }: { className?: string }) {
+// Mood breakdown component - accepts stats as prop to avoid duplicate fetch
+export function MapleMoodBreakdown({
+  className,
+  stats: statsProp,
+  loading: loadingProp,
+}: {
+  className?: string
+  stats?: MapleStats | null
+  loading?: boolean
+} = {}) {
   const [stats, setStats] = useState<MapleStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const useProps = statsProp !== undefined
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -131,23 +191,22 @@ export function MapleMoodBreakdown({ className }: { className?: string }) {
   }, [])
 
   useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+    if (!useProps) fetchStats()
+  }, [fetchStats, useProps])
 
-  if (loading) {
-    return <Skeleton className={cn('h-40', className)} />
+  const displayStats = useProps ? statsProp : stats
+  const displayLoading = useProps ? (loadingProp ?? false) : loading
+
+  if (displayLoading) {
+    return <Skeleton className={cn('h-32', className)} />
   }
 
-  if (!stats || stats.totalWalks === 0) {
-    return null
-  }
+  if (!displayStats || displayStats.totalWalks === 0) return null
 
-  const { moodBreakdown, totalWalks } = stats
+  const { moodBreakdown } = displayStats
   const totalWithMood = moodBreakdown.happy + moodBreakdown.neutral + moodBreakdown.sad
 
-  if (totalWithMood === 0) {
-    return null
-  }
+  if (totalWithMood === 0) return null
 
   const moods = [
     { key: 'happy' as const, count: moodBreakdown.happy },
@@ -157,18 +216,16 @@ export function MapleMoodBreakdown({ className }: { className?: string }) {
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <span className="text-lg">🐕</span>
-          How Maple's Been
+      <CardHeader className="p-3 pb-0">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <span className="text-base">🐕</span>
+          How Maple&apos;s Been
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Bar chart */}
-        <div className="flex h-8 overflow-hidden rounded-full">
+      <CardContent className="space-y-3 p-3 pt-2">
+        <div className="flex h-6 overflow-hidden rounded-full">
           {moods.map((mood) => {
             const percentage = (mood.count / totalWithMood) * 100
-            const colors = MOOD_COLORS[mood.key]
             return (
               <div
                 key={mood.key}
@@ -182,23 +239,21 @@ export function MapleMoodBreakdown({ className }: { className?: string }) {
                 title={`${mood.key}: ${mood.count} walks (${Math.round(percentage)}%)`}
               >
                 {percentage > 15 && (
-                  <span className="text-sm font-medium text-white">{MOOD_EMOJI[mood.key]}</span>
+                  <span className="text-xs font-medium text-white">{MOOD_EMOJI[mood.key]}</span>
                 )}
               </div>
             )
           })}
         </div>
-
-        {/* Legend */}
-        <div className="flex justify-center gap-6">
+        <div className="flex justify-center gap-4">
           {moods.map((mood) => {
             const percentage = Math.round((mood.count / totalWithMood) * 100)
             const colors = MOOD_COLORS[mood.key]
             return (
-              <div key={mood.key} className="flex items-center gap-2">
-                <span className="text-lg">{MOOD_EMOJI[mood.key]}</span>
+              <div key={mood.key} className="flex items-center gap-1.5">
+                <span className="text-base">{MOOD_EMOJI[mood.key]}</span>
                 <div>
-                  <p className={cn('font-medium', colors.text)}>{mood.count}</p>
+                  <p className={cn('text-sm font-medium', colors.text)}>{mood.count}</p>
                   <p className="text-xs text-muted-foreground">{percentage}%</p>
                 </div>
               </div>

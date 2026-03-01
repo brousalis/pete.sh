@@ -1,6 +1,6 @@
 'use client'
 
-import { useConnectivity } from '@/components/connectivity-provider'
+import { apiPost, apiPut } from '@/lib/api/client'
 import { Slider } from '@/components/ui/slider'
 import { ToggleSwitch } from '@/components/ui/toggle-switch'
 import type { HueLight } from '@/lib/types/hue.types'
@@ -25,7 +25,6 @@ export function HueLightItem({
   const [on, setOn] = useState(light.state.on)
   const [brightness, setBrightness] = useState(light.state.bri || 127)
   const [isUpdating, setIsUpdating] = useState(false)
-  const { apiBaseUrl } = useConnectivity()
 
   useEffect(() => {
     setOn(light.state.on)
@@ -41,15 +40,8 @@ export function HueLightItem({
       setIsUpdating(true)
       setOn(checked)
       try {
-        const response = await fetch(
-          `${apiBaseUrl}/api/hue/lights/${light.id}/toggle`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ on: checked }),
-          }
-        )
-        if (!response.ok) throw new Error('Failed to toggle light')
+        const response = await apiPost(`/api/hue/lights/${light.id}/toggle`, { on: checked })
+        if (!response.success) throw new Error('Failed to toggle light')
         onUpdate?.()
       } catch {
         setOn(!checked)
@@ -58,7 +50,7 @@ export function HueLightItem({
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate, isReadOnly, apiBaseUrl]
+    [light.id, light.name, onUpdate, isReadOnly]
   )
 
   const handleBrightnessChange = (values: number[]) => {
@@ -78,15 +70,8 @@ export function HueLightItem({
       if (value === undefined) return
       setIsUpdating(true)
       try {
-        const response = await fetch(
-          `${apiBaseUrl}/api/hue/lights/${light.id}/state`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bri: value, on: true }),
-          }
-        )
-        if (!response.ok) throw new Error('Failed to set brightness')
+        const response = await apiPut(`/api/hue/lights/${light.id}/state`, { bri: value, on: true })
+        if (!response.success) throw new Error('Failed to set brightness')
         setOn(true)
         onUpdate?.()
       } catch {
@@ -95,7 +80,7 @@ export function HueLightItem({
         setIsUpdating(false)
       }
     },
-    [light.id, light.name, onUpdate, isReadOnly, apiBaseUrl]
+    [light.id, light.name, onUpdate, isReadOnly]
   )
 
   // Determine light color display based on state

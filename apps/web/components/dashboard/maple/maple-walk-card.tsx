@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { MapleWalk, MapleWalkWithDetails } from '@/lib/types/maple.types'
-import { formatWalkDistance, formatWalkDuration, MOOD_EMOJI } from '@/lib/types/maple.types'
+import { formatWalkDistance, formatWalkDuration } from '@/lib/types/maple.types'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, parseISO } from 'date-fns'
 import { motion } from 'framer-motion'
@@ -18,11 +18,11 @@ interface MapleWalkCardProps {
   compact?: boolean
 }
 
-function formatWalkDate(dateStr: string): string {
+function formatWalkDate(dateStr: string, compact = false): string {
   const date = parseISO(dateStr)
   if (isToday(date)) return 'Today'
   if (isYesterday(date)) return 'Yesterday'
-  return format(date, 'EEEE, MMM d')
+  return compact ? format(date, 'EEE, MMM d') : format(date, 'EEEE, MMM d')
 }
 
 function formatWalkTime(dateStr: string): string {
@@ -58,27 +58,20 @@ export function MapleWalkCard({
         onClick={onClick}
       >
         <CardContent className="p-0">
-          <div className="flex items-start gap-4">
-            {/* Mood Emoji */}
+          <div className={cn('flex items-start', compact ? 'gap-3' : 'gap-4')}>
             <div className="shrink-0">
               <MapleMoodBadge mood={walk.moodRating} size={compact ? 'sm' : 'md'} />
             </div>
-
-            {/* Walk Info */}
             <div className="min-w-0 flex-1">
-              {/* Title and Date */}
               <div className="mb-1 flex items-center justify-between gap-2">
                 <h3 className={cn('font-semibold', compact ? 'text-sm' : 'text-base')}>
-                  {walk.title || formatWalkDate(walk.date)}
+                  {walk.title || formatWalkDate(walk.date, compact)}
                 </h3>
-                {walk.moodRating && (
-                  <span className="text-lg">{MOOD_EMOJI[walk.moodRating]}</span>
-                )}
               </div>
-
-              {/* Subtitle - Date if there's a title */}
               {walk.title && (
-                <p className="mb-2 text-xs text-muted-foreground">{formatWalkDate(walk.date)}</p>
+                <p className={cn('text-xs text-muted-foreground', compact ? 'mb-1' : 'mb-2')}>
+                  {formatWalkDate(walk.date, compact)}
+                </p>
               )}
 
               {/* Stats */}
@@ -140,9 +133,15 @@ export function MapleWalkCard({
                 )}
               </div>
 
-              {/* Notes preview */}
-              {!compact && walk.notes && (
-                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{walk.notes}</p>
+              {walk.notes && (
+                <p
+                  className={cn(
+                    'text-sm text-muted-foreground',
+                    compact ? 'mt-1 line-clamp-1' : 'mt-2 line-clamp-2'
+                  )}
+                >
+                  {walk.notes}
+                </p>
               )}
             </div>
 
@@ -187,19 +186,21 @@ export function MapleWalkList({
   onWalkClick,
   selectedId,
   loading = false,
-  emptyMessage = "No walks recorded yet",
+  emptyMessage = 'No walks recorded yet',
+  compact = false,
 }: {
   walks: MapleWalk[]
   onWalkClick?: (walk: MapleWalk) => void
   selectedId?: string
   loading?: boolean
   emptyMessage?: string
+  compact?: boolean
 }) {
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className={cn('space-y-2', !compact && 'space-y-3')}>
         {[...Array(3)].map((_, i) => (
-          <MapleWalkCardSkeleton key={i} />
+          <MapleWalkCardSkeleton key={i} compact={compact} />
         ))}
       </div>
     )
@@ -207,21 +208,25 @@ export function MapleWalkList({
 
   if (walks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="flex flex-col items-center justify-center py-8 text-center">
         <span className="mb-2 text-4xl">🐕</span>
-        <p className="text-muted-foreground">{emptyMessage}</p>
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Record a walk as &quot;Hiking&quot; on your Apple Watch and sync it first.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-2', !compact && 'space-y-3')}>
       {walks.map((walk) => (
         <MapleWalkCard
           key={walk.id}
           walk={walk}
           onClick={() => onWalkClick?.(walk)}
           isSelected={walk.id === selectedId}
+          compact={compact}
         />
       ))}
     </div>

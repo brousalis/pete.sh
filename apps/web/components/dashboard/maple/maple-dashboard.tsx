@@ -1,14 +1,14 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader, PageHeaderRow } from '@/components/ui/page-header'
 import { apiGet } from '@/lib/api/client'
-import type { MapleWalk } from '@/lib/types/maple.types'
+import type { MapleStats, MapleWalk } from '@/lib/types/maple.types'
 import { cn } from '@/lib/utils'
 import { Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { MapleAddWalkDialog } from './maple-add-walk-dialog'
-import { MapleMoodBreakdown, MapleStatsCards, MapleStatsOverview } from './maple-stats'
+import { MapleMoodBreakdown, MapleStatsStrip } from './maple-stats'
 import { MapleWalkList } from './maple-walk-card'
 import { MapleWalkDetail } from './maple-walk-detail'
 
@@ -21,6 +21,8 @@ type ViewMode = 'list' | 'detail'
 export function MapleDashboard({ className }: MapleDashboardProps) {
   const [walks, setWalks] = useState<MapleWalk[]>([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<MapleStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(true)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [selectedWalkId, setSelectedWalkId] = useState<string | null>(null)
@@ -41,14 +43,33 @@ export function MapleDashboard({ className }: MapleDashboardProps) {
     }
   }, [])
 
+  // Fetch stats (single source of truth - passed to children)
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const response = await apiGet<MapleStats>('/api/maple/stats')
+      if (response.success && response.data) {
+        setStats(response.data)
+      }
+    } catch (err) {
+      console.error('Error fetching stats:', err)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchWalks()
   }, [fetchWalks, refreshKey])
 
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats, refreshKey])
+
   // Handle walk created
   const handleWalkCreated = (walk: MapleWalk) => {
     setWalks((prev) => [walk, ...prev])
-    setRefreshKey((k) => k + 1) // Refresh stats
+    setRefreshKey((k) => k + 1) // Refresh walks and stats
   }
 
   // Handle walk click
@@ -92,30 +113,26 @@ export function MapleDashboard({ className }: MapleDashboardProps) {
 
   // Render list view
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Hero Section */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="relative flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-yellow-100 p-8 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-yellow-950/30">
-            {/* Dog emoji as placeholder - could be replaced with actual photo */}
-            <div className="mb-4 flex size-24 items-center justify-center rounded-full bg-white/50 text-6xl shadow-lg dark:bg-black/20">
-              🐕
+    <div className={cn('space-y-4', className)}>
+      {/* Compact header with stats */}
+      <PageHeader>
+        <PageHeaderRow className="flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🐕</span>
+            <div>
+              <h1 className="text-xl font-bold">Maple&apos;s Walks</h1>
+              <p className="text-xs text-muted-foreground">
+                Track and remember all of Maple&apos;s adventures
+              </p>
             </div>
-            <h1 className="mb-2 text-3xl font-bold">Maple's Walks</h1>
-            <p className="mb-4 text-muted-foreground">Track and remember all of Maple's adventures</p>
-
-            {/* Quick stats */}
-            <MapleStatsOverview className="mt-2" />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Grid */}
-      <MapleStatsCards />
+          <MapleStatsStrip stats={stats} loading={statsLoading} />
+        </PageHeaderRow>
+      </PageHeader>
 
       {/* Actions Row */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Recent Walks</h2>
+        <h2 className="text-lg font-semibold">Recent Walks</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={handleRefresh}>
             <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
@@ -128,8 +145,7 @@ export function MapleDashboard({ className }: MapleDashboardProps) {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Walk List */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <MapleWalkList
             walks={walks}
@@ -137,17 +153,14 @@ export function MapleDashboard({ className }: MapleDashboardProps) {
             selectedId={selectedWalkId || undefined}
             loading={loading}
             emptyMessage="No walks recorded yet. Add your first walk!"
+            compact
           />
         </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Mood Breakdown */}
-          <MapleMoodBreakdown />
+        <div className="space-y-4">
+          <MapleMoodBreakdown stats={stats} loading={statsLoading} />
         </div>
       </div>
 
-      {/* Add Walk Dialog */}
       <MapleAddWalkDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}

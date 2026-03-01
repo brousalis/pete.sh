@@ -10,7 +10,11 @@ export {
 } from './maple-mood-rating'
 export { MapleRouteMap, MapleRouteMapStatic } from './maple-route-map'
 export {
-    MapleMoodBreakdown, MapleStatBadge, MapleStatsCards, MapleStatsOverview
+  MapleMoodBreakdown,
+  MapleStatBadge,
+  MapleStatsCards,
+  MapleStatsOverview,
+  MapleStatsStrip,
 } from './maple-stats'
 export { MapleWalkCard, MapleWalkCardSkeleton, MapleWalkList } from './maple-walk-card'
 export { MapleWalkDetail } from './maple-walk-detail'
