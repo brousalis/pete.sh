@@ -239,7 +239,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      const { data, error } = await withTimeout(
+      const { data, error } = await withTimeout<{ data: { id?: string } | null; error: unknown }>(
         clientAny
           .from('fitness_routine_versions')
           .select('id')
@@ -301,7 +301,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await withTimeout(
+          const { data, error } = await withTimeout<{ data: { workout_definitions?: Record<string, unknown> } | null; error: unknown }>(
             clientAny
               .from('fitness_routine_versions')
               .select('workout_definitions')
@@ -836,7 +836,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await withTimeout(
+          const { data, error } = await withTimeout<{ data: Partial<FitnessRoutineVersionRow>[] | null; error: unknown }>(
             clientAny
               .from('fitness_routine_versions')
               .select('id, version_number, name, change_summary, is_active, is_draft, created_at, activated_at')
@@ -847,7 +847,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           )
 
           if (!error && data && data.length > 0) {
-            const versions: RoutineVersionSummary[] = data.map((row: Partial<FitnessRoutineVersionRow>) => ({
+            const versions: RoutineVersionSummary[] = data.map((row) => ({
               id: row.id!,
               versionNumber: row.version_number!,
               name: row.name!,
@@ -945,7 +945,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      const { data, error } = await withTimeout(
+      const { data, error } = await withTimeout<{ data: FitnessRoutineVersionRow | null; error: unknown }>(
         clientAny
           .from('fitness_routine_versions')
           .select('*')
@@ -1005,7 +1005,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      const { data: versionData } = await withTimeout(
+      const { data: versionData } = await withTimeout<{ data: { version_number?: number }[] | null }>(
         clientAny
           .from('fitness_routine_versions')
           .select('version_number')
@@ -1025,7 +1025,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       }
 
       if (!baseData) {
-        const { data: activeData } = await withTimeout(
+        const { data: activeData } = await withTimeout<{ data: FitnessRoutineVersionRow | null }>(
           clientAny
             .from('fitness_routine_versions')
             .select('*')
@@ -1079,7 +1079,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         updated_at: getCurrentTimestamp(),
       }
 
-      const { data, error } = await withTimeout(
+      const { data, error } = await withTimeout<{ data: FitnessRoutineVersionRow | null; error: unknown }>(
         clientAny
           .from('fitness_routine_versions')
           .insert(insert)
@@ -1187,7 +1187,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
         }
       }
 
-      const { data, error } = await withTimeout(
+      const { data, error } = await withTimeout<{ data: FitnessRoutineVersionRow | null; error: unknown }>(
         clientAny
           .from('fitness_routine_versions')
           .update(updateData)
@@ -1225,7 +1225,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       const version = await this.getVersion(versionId)
       if (!version) return null
 
-      const { data, error } = await withTimeout(
+      const { data, error } = await withTimeout<{ data: FitnessRoutineVersionRow | null; error: unknown }>(
         clientAny
           .from('fitness_routine_versions')
           .update({
@@ -1392,7 +1392,7 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const clientAny = client as any
 
-          const { data, error } = await withTimeout(
+          const { data, error } = await withTimeout<{ data: { workout_definitions?: Record<DayOfWeek, Workout> } | null; error: unknown }>(
             clientAny
               .from('fitness_routine_versions')
               .select('workout_definitions')

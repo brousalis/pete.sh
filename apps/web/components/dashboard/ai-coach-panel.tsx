@@ -13,36 +13,36 @@
  * - Error handling surfaced from stream
  */
 
-import { Button } from "@/components/ui/button"
 import {
   RoutineDismissedBadge,
   RoutineErrorBadge,
   RoutineVersionPreviewCard,
   type RoutineProposal,
 } from "@/components/dashboard/ai-coach-routine-card"
+import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
-import type { FullAnalysis, PostWorkoutAnalysis, TrainingReadiness, RoutineChange, ProgressiveOverload } from "@/lib/types/ai-coach.types"
+import type { FullAnalysis, PostWorkoutAnalysis, ProgressiveOverload, RoutineChange, TrainingReadiness } from "@/lib/types/ai-coach.types"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import {
-    AlertTriangle,
-    ArrowRight,
-    Brain,
-    CheckCircle2,
-    ChevronDown,
-    Clock,
-    Hash,
-    Loader2,
-    Minus,
-    RotateCcw,
-    Send,
-    Sparkles,
-    TrendingDown,
-    TrendingUp,
-    Wrench,
-    X,
-    Zap,
+  AlertTriangle,
+  ArrowRight,
+  Brain,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Hash,
+  Loader2,
+  Minus,
+  RotateCcw,
+  Send,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  Wrench,
+  X,
+  Zap,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
@@ -930,7 +930,6 @@ export function AiCoachButton({
       onClick={onClick}
     >
       <Brain className="h-3.5 w-3.5 text-purple-400" />
-      AI Coach
       {readinessScore !== undefined && (
         <span
           className={`ml-1 tabular-nums font-medium ${

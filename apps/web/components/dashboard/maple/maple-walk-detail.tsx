@@ -197,17 +197,15 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
         </div>
       </div>
 
-      {/* Map */}
-      {route && route.samples.length > 0 && (
-        <MapleRouteMap
-          samples={route.samples}
-          hrSamples={walk.hrSamples}
-          bathroomMarkers={walk.bathroomMarkers}
-          walkStartTime={workout?.startDate}
-          className="h-[400px]"
-          colorByHeartRate
-        />
-      )}
+      {/* Map - shows route + bathroom markers, or markers-only, or empty state */}
+      <MapleRouteMap
+        samples={route?.samples ?? []}
+        hrSamples={walk.hrSamples}
+        bathroomMarkers={walk.bathroomMarkers}
+        walkStartTime={workout?.startDate}
+        className="h-[400px]"
+        colorByHeartRate
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -24,9 +24,8 @@ export interface RecipeFilterState {
   sourceFilter: SourceFilter
   difficultyFilter: string
   favoritesOnly: boolean
-  selectedCategory: string
-  setSelectedCategory: (cat: string) => void
-  excludedCategories: Set<string>
+  selectedCategories: Set<string>
+  setSelectedCategories: (cats: Set<string>) => void
   nutritionFilter: string
 }
 
@@ -68,9 +67,8 @@ export function RecipeList({
     sourceFilter,
     difficultyFilter,
     favoritesOnly,
-    selectedCategory,
-    setSelectedCategory,
-    excludedCategories,
+    selectedCategories,
+    setSelectedCategories,
     nutritionFilter,
   } = filters
 
@@ -114,19 +112,14 @@ export function RecipeList({
         r.nutrition_category?.includes(nutritionFilter)
       )
     }
-    if (selectedCategory) {
-      filtered = filtered.filter(
-        (r) => r.tags?.some((t) => t.toLowerCase() === selectedCategory.toLowerCase())
-      )
-    }
-    if (excludedCategories.size > 0) {
+    if (selectedCategories.size > 0) {
       filtered = filtered.filter((r) => {
         const recipeTags = r.tags?.map((t) => t.toLowerCase()) || []
-        return !recipeTags.some((t) => excludedCategories.has(t))
+        return Array.from(selectedCategories).every((cat) => recipeTags.includes(cat))
       })
     }
     return filtered
-  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly, nutritionFilter, selectedCategory, excludedCategories])
+  }, [recipes, debouncedSearch, sourceFilter, difficultyFilter, favoritesOnly, nutritionFilter, selectedCategories])
 
   // Fridge ingredient matching
   const fridgeMatchScores = useMemo(() => {
@@ -171,7 +164,7 @@ export function RecipeList({
   const isLoading = recipesLoading
   const totalResults = filteredRecipes.length
   const hasActiveFilters =
-    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || fridgeFilterActive
+    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategories.size > 0 || fridgeFilterActive
 
   const visibleRecipes = useMemo(
     () => filteredRecipes.slice(0, displayCount),
@@ -181,7 +174,7 @@ export function RecipeList({
 
   useEffect(() => {
     setDisplayCount(30)
-  }, [debouncedSearch, sourceFilter, selectedCategory, excludedCategories, difficultyFilter, favoritesOnly, fridgeFilterActive])
+  }, [debouncedSearch, sourceFilter, selectedCategories, difficultyFilter, favoritesOnly, fridgeFilterActive])
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const loadMore = useCallback(() => {
@@ -200,12 +193,12 @@ export function RecipeList({
   }, [loadMore])
 
   const showDiscovery =
-    sourceFilter !== 'my-recipes' && !debouncedSearch && !selectedCategory
+    sourceFilter !== 'my-recipes' && !debouncedSearch && selectedCategories.size === 0
 
   return (
     <div className={cn('space-y-2', className)}>
       {/* Active filter pills */}
-      {(debouncedSearch || difficultyFilter !== 'all' || selectedCategory || fridgeFilterActive) && (
+      {(debouncedSearch || difficultyFilter !== 'all' || selectedCategories.size > 0 || fridgeFilterActive) && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {debouncedSearch && (
             <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6">
@@ -217,17 +210,21 @@ export function RecipeList({
               {difficultyFilter}
             </Badge>
           )}
-          {selectedCategory && (
-            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6">
-              {selectedCategory}
+          {Array.from(selectedCategories).map((cat) => (
+            <Badge key={cat} variant="secondary" className="text-xs gap-1 pr-1 h-6">
+              {cat}
               <button
-                onClick={() => setSelectedCategory('')}
+                onClick={() => {
+                  const next = new Set(selectedCategories)
+                  next.delete(cat)
+                  setSelectedCategories(next)
+                }}
                 className="rounded-full p-0.5 hover:bg-muted-foreground/20"
               >
                 <X className="size-3" />
               </button>
             </Badge>
-          )}
+          ))}
           {fridgeFilterActive && (
             <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6 bg-green-500/10 text-green-500 border-green-500/20">
               <Snowflake className="size-3" />
@@ -274,7 +271,7 @@ export function RecipeList({
       {/* Try Something New -- discovery card */}
       {showDiscovery && randomTjRecipe && (
         <div
-          className="group relative overflow-hidden rounded-lg border border-primary/10 bg-gradient-to-r from-orange-500/[0.04] to-amber-500/[0.04] cursor-pointer transition-all hover:shadow-md hover:border-primary/20 "
+          className="group relative overflow-hidden rounded-lg border border-primary/10 bg-gradient-to-r from-orange-500/[0.04] to-amber-500/[0.04] cursor-pointer transition-all hover:shadow-md hover:border-primary/20 mb-4"
           onClick={() => onRecipeClick?.(randomTjRecipe)}
         >
           <div className="flex items-center gap-3 px-3 py-2">

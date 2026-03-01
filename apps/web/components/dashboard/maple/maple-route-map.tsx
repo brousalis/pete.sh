@@ -159,9 +159,14 @@ export function MapleRouteMap({
     }
   }, [apiKey])
 
+  // Support markers-only mode (bathroom pins without route) when samples is empty
+  const hasRouteData = samples.length > 0
+  const hasBathroomMarkers = bathroomMarkers && bathroomMarkers.length > 0
+  const canShowMap = hasRouteData || hasBathroomMarkers
+
   // Initialize map
   const initializeMap = useCallback(() => {
-    if (!mapRef.current || !window.google?.maps || samples.length === 0) return
+    if (!mapRef.current || !window.google?.maps || !canShowMap) return
 
     // Clear existing polylines and markers
     polylinesRef.current.forEach((polyline) => polyline.setMap(null))
@@ -169,13 +174,18 @@ export function MapleRouteMap({
     markersRef.current.forEach((marker) => (marker.map = null))
     markersRef.current = []
 
-    // Calculate bounds
+    // Calculate bounds from route and/or bathroom markers
     const bounds = new google.maps.LatLngBounds()
     const path = samples.map((sample) => {
       const latLng = { lat: sample.latitude, lng: sample.longitude }
       bounds.extend(latLng)
       return latLng
     })
+    if (bathroomMarkers) {
+      for (const bm of bathroomMarkers) {
+        bounds.extend({ lat: bm.latitude, lng: bm.longitude })
+      }
+    }
 
     // Create or update map
     if (!mapInstanceRef.current) {
@@ -197,8 +207,8 @@ export function MapleRouteMap({
     const map = mapInstanceRef.current
     map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 })
 
-    // Create polyline(s)
-    if (colorByHeartRate && hrSamples && hrSamples.length > 0) {
+    // Create polyline(s) only when we have route samples
+    if (path.length >= 2 && colorByHeartRate && hrSamples && hrSamples.length > 0) {
       // Create segments colored by HR
       const hrMap = new Map(hrSamples.map((s) => [new Date(s.timestamp).getTime(), s.bpm]))
 
@@ -229,7 +239,7 @@ export function MapleRouteMap({
         })
         polylinesRef.current.push(segment)
       }
-    } else {
+    } else if (path.length >= 2) {
       // Single color polyline
       const polyline = new google.maps.Polyline({
         path,
@@ -241,9 +251,9 @@ export function MapleRouteMap({
       polylinesRef.current.push(polyline)
     }
 
-    // Add start marker
+    // Add start/end markers when we have route points
     const startPosition = path[0]
-    const endPosition = path[path.length - 1]
+    const endPosition = path.length > 0 ? path[path.length - 1] : null
     if (startPosition && endPosition) {
       const startMarkerContent = document.createElement('div')
       startMarkerContent.innerHTML = `
@@ -331,7 +341,7 @@ export function MapleRouteMap({
       // Refit bounds to include bathroom markers
       map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 })
     }
-  }, [samples, hrSamples, colorByHeartRate, bathroomMarkers, walkStartTime])
+  }, [samples, hrSamples, colorByHeartRate, bathroomMarkers, walkStartTime, canShowMap])
 
   // Initialize map when ready
   useEffect(() => {
@@ -351,13 +361,16 @@ export function MapleRouteMap({
     )
   }
 
-  if (samples.length === 0) {
+  if (!canShowMap) {
     return (
       <div
         className={`flex flex-col items-center justify-center rounded-xl bg-muted/50 p-8 ${className}`}
       >
         <Navigation className="mb-2 size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">No route data available</p>
+        <p className="text-sm text-muted-foreground">No GPS data recorded for this walk</p>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Bring your phone on walks and ensure location is enabled for GPS tracking
+        </p>
       </div>
     )
   }

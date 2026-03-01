@@ -4,39 +4,39 @@
  */
 
 import type {
-    DayCell,
-    EventPosition,
-    TimeSlot,
-    WeekDay,
+  DayCell,
+  EventPosition,
+  TimeSlot,
+  WeekDay,
 } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { DayOfWeek as CookingDayOfWeek, MealPlan, Recipe } from '@/lib/types/cooking.types'
 import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import {
-    addDays,
-    addMonths,
-    addWeeks,
-    differenceInMinutes,
-    eachDayOfInterval,
-    endOfDay,
-    endOfMonth,
-    endOfWeek,
-    format,
-    getHours,
-    isAfter,
-    isBefore,
-    isSameDay,
-    isSameMonth,
-    isToday,
-    isWeekend,
-    isWithinInterval,
-    parseISO,
-    startOfDay,
-    startOfMonth,
-    startOfWeek,
-    subDays,
-    subMonths,
-    subWeeks,
+  addDays,
+  addMonths,
+  addWeeks,
+  differenceInMinutes,
+  eachDayOfInterval,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getHours,
+  isAfter,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  isWeekend,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks,
 } from 'date-fns'
 
 /**
@@ -332,20 +332,20 @@ export function getViewTitle(
 ): string {
   switch (viewMode) {
     case 'month':
-      return format(date, 'MMMM yyyy')
+      return format(date, 'MMMM')
     case 'week':
       const weekStart = startOfWeek(date, { weekStartsOn: 0 })
       const weekEnd = addDays(weekStart, 6)
       if (weekStart.getMonth() === weekEnd.getMonth()) {
-        return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'd, yyyy')}`
+        return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'd')}`
       }
-      return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`
+      return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d')}`
     case 'day':
-      return format(date, 'EEEE, MMMM d, yyyy')
+      return format(date, 'EEEE, MMMM d')
     case 'agenda':
-      return `Upcoming - ${format(date, 'MMMM yyyy')}`
+      return `Upcoming - ${format(date, 'MMMM')}`
     default:
-      return format(date, 'MMMM yyyy')
+      return format(date, 'MMMM')
   }
 }
 

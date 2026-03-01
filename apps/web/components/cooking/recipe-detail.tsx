@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { apiDelete, apiGet } from '@/lib/api/client'
-import type { MealCompletion, RecipeWithIngredients } from '@/lib/types/cooking.types'
+import type { MealCompletion, RecipeStep, RecipeWithIngredients } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
@@ -155,6 +155,15 @@ export function RecipeDetailSheet({
     ? (recipe.prep_time || 0) + (recipe.cook_time || 0)
     : 0
 
+  const parsedInstructions = useMemo((): RecipeStep[] => {
+    if (!recipe?.instructions) return []
+    if (Array.isArray(recipe.instructions)) return recipe.instructions as RecipeStep[]
+    if (typeof recipe.instructions === 'string') {
+      try { return JSON.parse(recipe.instructions) as RecipeStep[] } catch { return [] }
+    }
+    return []
+  }, [recipe?.instructions])
+
   const difficultyColors = {
     easy: 'bg-green-500/10 text-green-600',
     medium: 'bg-yellow-500/10 text-yellow-600',
@@ -169,14 +178,24 @@ export function RecipeDetailSheet({
           className="w-full sm:max-w-xl lg:max-w-2xl p-0 overflow-hidden"
         >
           {loading ? (
-            <RecipeDetailSkeleton />
+            <>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Loading recipe</SheetTitle>
+              </SheetHeader>
+              <RecipeDetailSkeleton />
+            </>
           ) : !recipe ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <ChefHat className="size-10 mx-auto mb-3 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">Recipe not found</p>
+            <>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Recipe not found</SheetTitle>
+              </SheetHeader>
+              <div className="flex h-full items-center justify-center">
+                <div className="text-center">
+                  <ChefHat className="size-10 mx-auto mb-3 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">Recipe not found</p>
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="flex h-full flex-col">
               {/* Header */}
@@ -498,9 +517,9 @@ export function RecipeDetailSheet({
                     </TabsContent>
 
                     <TabsContent value="instructions" className="mt-4">
-                      {recipe.instructions && recipe.instructions.length > 0 ? (
+                      {recipe.instructions && parsedInstructions.length > 0 ? (
                         <ol className="space-y-4">
-                          {recipe.instructions.map((step, index) => (
+                          {parsedInstructions.map((step, index) => (
                             <li key={index} className="flex gap-3">
                               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                                 {step.step_number}

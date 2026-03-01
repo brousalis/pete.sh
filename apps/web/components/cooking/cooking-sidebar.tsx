@@ -4,11 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DateNavigator } from '@/components/ui/date-navigator'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { PageHeader, PageHeaderRow } from '@/components/ui/page-header'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Sheet,
@@ -21,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { ViewToggle } from '@/components/ui/view-toggle'
 import { useCooking } from '@/hooks/use-cooking-data'
 import { useShoppingState } from '@/hooks/use-shopping-state'
 import { useToast } from '@/hooks/use-toast'
@@ -64,7 +61,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { RecipePicker } from './recipe-picker'
+import { RecipePickerDialog } from './recipe-picker'
 
 const DAYS: DayOfWeek[] = [
   'monday',
@@ -353,63 +350,36 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
   }, 0)
 
   return (
-    <div className="px-3">
-      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
-        {/* Header bg-gradient-to-r from-orange-500/[0.04] to-amber-500/[0.04]*/}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 ">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/15">
-              <CalendarDays className="size-3.5 text-orange-500" />
-            </div>
-            <h2 className="text-sm font-bold">Cooking</h2>
+    <div className="">
+      <PageHeader>
+        <PageHeaderRow>
+          <DateNavigator
+            label={weekLabel}
+            onPrev={handlePreviousWeek}
+            onNext={handleNextWeek}
+            onToday={handleThisWeek}
+            isAtToday={isAtCurrentWeek}
+          />
+
+          <div className="flex items-center gap-2">
             {plannedMealsCount > 0 && (
               <Badge variant="secondary" className="h-5 px-2 text-[10px] tabular-nums">
                 {plannedMealsCount} planned
               </Badge>
             )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <DateNavigator
-              label={weekLabel}
-              onPrev={handlePreviousWeek}
-              onNext={handleNextWeek}
-              onToday={handleThisWeek}
-              isAtToday={isAtCurrentWeek}
-              size="sm"
+            <ViewToggle
+              options={[
+                { value: 'dinner-only' as const, label: 'Dinners' },
+                { value: 'all-meals' as const, label: 'All' },
+              ]}
+              value={mealPlanMode}
+              onChange={setMealPlanMode}
             />
-
-            <div className="h-5 w-px bg-border/40" />
-
-            {/* Mode toggle */}
-            <div className="flex items-center rounded-md border border-border/40 p-0.5">
-              <button
-                onClick={() => setMealPlanMode('dinner-only')}
-                className={cn(
-                  'rounded px-2 py-0.5 text-[10px] font-medium transition-all',
-                  mealPlanMode === 'dinner-only'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Dinners
-              </button>
-              <button
-                onClick={() => setMealPlanMode('all-meals')}
-                className={cn(
-                  'rounded px-2 py-0.5 text-[10px] font-medium transition-all',
-                  mealPlanMode === 'all-meals'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                All
-              </button>
-            </div>
-
           </div>
-        </div>
+        </PageHeaderRow>
+      </PageHeader>
 
+      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
         {/* Day columns */}
         {mealPlanLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -427,7 +397,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
               <div
                 key={day}
                 className={cn(
-                  'group relative px-2 py-2 min-h-[80px] transition-colors',
+                  'group relative px-3 py-2 min-h-[80px] transition-colors',
                   isDayToday ? 'bg-primary/[0.04]' : 'hover:bg-muted/20'
                 )}
               >
@@ -642,32 +612,18 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                       }
 
                       return (
-                        <Popover
+                        <button
                           key={mealType}
-                          open={pickerSlot?.day === day && pickerSlot?.meal === mealType}
-                          onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
+                          className="flex w-full items-center gap-1 rounded-md border border-dashed border-border/30 px-1.5 py-1 text-[9px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/20"
+                          onClick={() => setPickerSlot({ day, meal: mealType })}
                         >
-                          <PopoverTrigger asChild>
-                            <button
-                              className="flex w-full items-center gap-1 rounded-md border border-dashed border-border/30 px-1.5 py-1 text-[9px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/20"
-                              onClick={() => setPickerSlot({ day, meal: mealType })}
-                            >
-                              <Plus className="size-2.5" />
-                              {mealPlanMode === 'all-meals' ? (
-                                <span className="capitalize">{mealType}</span>
-                              ) : (
-                                <span>Add dinner</span>
-                              )}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80 p-0" align="start">
-                            <RecipePicker
-                              onSelect={handleMealSelect}
-                              onClose={() => setPickerSlot(null)}
-                              selectedId={typeof recipeId === 'string' ? recipeId : undefined}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                          <Plus className="size-2.5" />
+                          {mealPlanMode === 'all-meals' ? (
+                            <span className="capitalize">{mealType}</span>
+                          ) : (
+                            <span>Add dinner</span>
+                          )}
+                        </button>
                       )
                     })}
                   </div>
@@ -742,6 +698,17 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
           />
         )}
       </AnimatePresence>
+
+      <RecipePickerDialog
+        open={!!pickerSlot}
+        onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
+        onSelect={handleMealSelect}
+        selectedId={pickerSlot ? (() => {
+          const dayMeals = mealPlan?.meals[pickerSlot.day]
+          const recipeId = dayMeals?.[pickerSlot.meal as keyof typeof dayMeals]
+          return typeof recipeId === 'string' ? recipeId : undefined
+        })() : undefined}
+      />
     </div>
   )
 }
@@ -929,31 +896,14 @@ function MealPlanCard({ onRecipeClick }: { onRecipeClick?: (recipeId: string) =>
               </Badge>
             )}
           </div>
-          {/* Mode toggle */}
-          <div className="flex items-center rounded-md border border-border/40 p-0.5">
-            <button
-              onClick={() => setMealPlanMode('dinner-only')}
-              className={cn(
-                'rounded px-1.5 py-0.5 text-[10px] font-medium transition-all',
-                mealPlanMode === 'dinner-only'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Dinners
-            </button>
-            <button
-              onClick={() => setMealPlanMode('all-meals')}
-              className={cn(
-                'rounded px-1.5 py-0.5 text-[10px] font-medium transition-all',
-                mealPlanMode === 'all-meals'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              All
-            </button>
-          </div>
+          <ViewToggle
+            options={[
+              { value: 'dinner-only' as const, label: 'Dinners' },
+              { value: 'all-meals' as const, label: 'All' },
+            ]}
+            value={mealPlanMode}
+            onChange={setMealPlanMode}
+          />
         </div>
         {/* Week navigation */}
         <div className="mt-1.5">
@@ -1060,6 +1010,17 @@ function MealPlanCard({ onRecipeClick }: { onRecipeClick?: (recipeId: string) =>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RecipePickerDialog
+        open={!!pickerSlot}
+        onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
+        onSelect={handleMealSelect}
+        selectedId={pickerSlot ? (() => {
+          const dayMeals = mealPlan?.meals[pickerSlot.day]
+          const recipeId = dayMeals?.[pickerSlot.meal as keyof typeof dayMeals]
+          return typeof recipeId === 'string' ? recipeId : undefined
+        })() : undefined}
+      />
     </div>
   )
 }
@@ -1228,32 +1189,18 @@ function DayRow({
             }
 
             return (
-              <Popover
+              <button
                 key={mealType}
-                open={pickerSlot?.day === day && pickerSlot?.meal === mealType}
-                onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
+                className="flex w-full items-center gap-1.5 rounded-md border border-dashed border-border/30 px-2 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/20"
+                onClick={() => setPickerSlot({ day, meal: mealType })}
               >
-                <PopoverTrigger asChild>
-                  <button
-                    className="flex w-full items-center gap-1.5 rounded-md border border-dashed border-border/30 px-2 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/20"
-                    onClick={() => setPickerSlot({ day, meal: mealType })}
-                  >
-                    <Plus className="size-3" />
-                    {mealPlanMode === 'all-meals' ? (
-                      <span className="capitalize">{mealType}</span>
-                    ) : (
-                      <span>Add dinner</span>
-                    )}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="start" side="right">
-                  <RecipePicker
-                    onSelect={onMealSelect}
-                    onClose={() => setPickerSlot(null)}
-                    selectedId={typeof recipeId === 'string' ? recipeId : undefined}
-                  />
-                </PopoverContent>
-              </Popover>
+                <Plus className="size-3" />
+                {mealPlanMode === 'all-meals' ? (
+                  <span className="capitalize">{mealType}</span>
+                ) : (
+                  <span>Add dinner</span>
+                )}
+              </button>
             )
           })}
         </div>
@@ -1887,30 +1834,14 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
               )}
             </div>
           </div>
-          <div className="flex items-center rounded-lg border border-border/40 p-0.5">
-            <button
-              onClick={() => setMealPlanMode('dinner-only')}
-              className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-all',
-                mealPlanMode === 'dinner-only'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground'
-              )}
-            >
-              Dinners
-            </button>
-            <button
-              onClick={() => setMealPlanMode('all-meals')}
-              className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-all',
-                mealPlanMode === 'all-meals'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground'
-              )}
-            >
-              All
-            </button>
-          </div>
+          <ViewToggle
+            options={[
+              { value: 'dinner-only' as const, label: 'Dinners' },
+              { value: 'all-meals' as const, label: 'All' },
+            ]}
+            value={mealPlanMode}
+            onChange={setMealPlanMode}
+          />
         </div>
 
         {/* Week navigation */}
@@ -2155,25 +2086,11 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
         )}
       </div>
 
-      {/* Recipe picker bottom sheet */}
-      <Sheet
+      <RecipePickerDialog
         open={!!pickerMealType}
-        onOpenChange={(open) => {
-          if (!open) setPickerMealType(null)
-        }}
-      >
-        <SheetContent side="bottom" className="h-[70dvh] p-0 rounded-t-2xl">
-          <SheetHeader className="sr-only">
-            <SheetTitle>Pick a recipe</SheetTitle>
-          </SheetHeader>
-          <RecipePicker
-            onSelect={(id) => {
-              handleMealSelect(id)
-            }}
-            onClose={() => setPickerMealType(null)}
-          />
-        </SheetContent>
-      </Sheet>
+        onOpenChange={(open) => { if (!open) setPickerMealType(null) }}
+        onSelect={handleMealSelect}
+      />
 
       {/* Rating dialog */}
       <AnimatePresence>

@@ -40,7 +40,7 @@ import {
     X,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { RecipePicker } from './recipe-picker'
+import { RecipePickerDialog } from './recipe-picker'
 
 const DAYS: DayOfWeek[] = [
   'monday',
@@ -386,46 +386,20 @@ export function MealPlanCalendar({
                           }
 
                           return (
-                            <Popover
+                            <button
                               key={mealType}
-                              open={
-                                pickerSlot?.day === day &&
-                                pickerSlot?.meal === mealType
+                              className="flex w-full items-center gap-2 rounded-lg border border-dashed p-1.5 text-[10px] text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/50"
+                              onClick={() =>
+                                setPickerSlot({ day, meal: mealType })
                               }
-                              onOpenChange={(open) => {
-                                if (!open) setPickerSlot(null)
-                              }}
                             >
-                              <PopoverTrigger asChild>
-                                <button
-                                  className="flex w-full items-center gap-2 rounded-lg border border-dashed p-1.5 text-[10px] text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/50"
-                                  onClick={() =>
-                                    setPickerSlot({ day, meal: mealType })
-                                  }
-                                >
-                                  <Plus className="size-3" />
-                                  {mealPlanMode === 'all-meals' ? (
-                                    <span className="capitalize">{mealType}</span>
-                                  ) : (
-                                    <span>Add dinner</span>
-                                  )}
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-80 p-0"
-                                align="start"
-                              >
-                                <RecipePicker
-                                  onSelect={handleMealSelect}
-                                  onClose={() => setPickerSlot(null)}
-                                  selectedId={
-                                    typeof recipeId === 'string'
-                                      ? recipeId
-                                      : undefined
-                                  }
-                                />
-                              </PopoverContent>
-                            </Popover>
+                              <Plus className="size-3" />
+                              {mealPlanMode === 'all-meals' ? (
+                                <span className="capitalize">{mealType}</span>
+                              ) : (
+                                <span>Add dinner</span>
+                              )}
+                            </button>
                           )
                         })}
                       </div>
@@ -527,6 +501,17 @@ export function MealPlanCalendar({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RecipePickerDialog
+        open={!!pickerSlot}
+        onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
+        onSelect={handleMealSelect}
+        selectedId={pickerSlot ? (() => {
+          const dayMeals = mealPlan?.meals[pickerSlot.day]
+          const recipeId = dayMeals?.[pickerSlot.meal as keyof typeof dayMeals]
+          return typeof recipeId === 'string' ? recipeId : undefined
+        })() : undefined}
+      />
     </div>
   )
 }

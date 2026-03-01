@@ -11,7 +11,7 @@ import { RecipeList } from '@/components/cooking/recipe-list'
 import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
+import { TagMultiSelect } from '@/components/ui/tag-multi-select'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import type {
   Recipe,
@@ -85,8 +86,7 @@ function CookingPageContent() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set())
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
   const [nutritionFilter, setNutritionFilter] = useState<string>('all')
   const [cardImageSize, setCardImageSize] = useState(160)
   const [showFridgeScanner, setShowFridgeScanner] = useState(false)
@@ -107,15 +107,14 @@ function CookingPageContent() {
   )
 
   const hasActiveFilters =
-    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategory || excludedCategories.size > 0 || fridgeFilterActive || nutritionFilter !== 'all'
+    debouncedSearch || difficultyFilter !== 'all' || favoritesOnly || selectedCategories.size > 0 || fridgeFilterActive || nutritionFilter !== 'all'
 
   const clearAllFilters = useCallback(() => {
     setSearch('')
     setDebouncedSearch('')
     setDifficultyFilter('all')
     setFavoritesOnly(false)
-    setSelectedCategory('')
-    setExcludedCategories(new Set())
+    setSelectedCategories(new Set())
     setNutritionFilter('all')
     setFridgeFilterActive(false)
   }, [setFridgeFilterActive])
@@ -205,9 +204,8 @@ function CookingPageContent() {
     sourceFilter,
     difficultyFilter,
     favoritesOnly,
-    selectedCategory,
-    setSelectedCategory,
-    excludedCategories,
+    selectedCategories,
+    setSelectedCategories,
     nutritionFilter,
   }
 
@@ -229,11 +227,14 @@ function CookingPageContent() {
     }
   }, [recipes, debouncedSearch])
 
-  // Category options with counts (from TJ-sourced recipes' tags)
   const categoriesWithCounts = useMemo(() => {
     const cats = new Map<string, number>()
-    const tjRecipes = recipes.filter((r) => r.source === 'trader_joes')
-    let filtered = tjRecipes
+    let filtered = recipes
+    if (sourceFilter === 'my-recipes') {
+      filtered = filtered.filter((r) => r.source === 'custom')
+    } else if (sourceFilter === 'trader-joes') {
+      filtered = filtered.filter((r) => r.source === 'trader_joes')
+    }
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase()
       filtered = filtered.filter(
@@ -243,12 +244,6 @@ function CookingPageContent() {
           r.tags?.some((t) => t.toLowerCase().includes(lower))
       )
     }
-    if (excludedCategories.size > 0) {
-      filtered = filtered.filter((r) => {
-        const recipeTags = r.tags?.map((t) => t.toLowerCase()) || []
-        return !recipeTags.some((t) => excludedCategories.has(t))
-      })
-    }
     filtered.forEach((r) => {
       r.tags?.forEach((t) => {
         cats.set(t, (cats.get(t) || 0) + 1)
@@ -256,8 +251,8 @@ function CookingPageContent() {
     })
     return Array.from(cats.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-  }, [recipes, debouncedSearch, excludedCategories])
+      .slice(0, 30)
+  }, [recipes, debouncedSearch, sourceFilter])
 
   const totalRecipeCount = recipes.length
 
@@ -268,8 +263,7 @@ function CookingPageContent() {
     nutritionFilter !== 'all',
     favoritesOnly,
     fridgeFilterActive,
-    selectedCategory,
-    excludedCategories.size > 0,
+    selectedCategories.size > 0,
   ].filter(Boolean).length
 
   return (
@@ -376,7 +370,7 @@ function CookingPageContent() {
                 ]).map((source) => (
                   <button
                     key={source.value}
-                    onClick={() => { setSourceFilter(source.value); setSelectedCategory('') }}
+                    onClick={() => { setSourceFilter(source.value); setSelectedCategories(new Set()) }}
                     className={cn(
                       'rounded-md px-2.5 py-1.5 text-xs font-medium transition-all flex items-center gap-1 touch-manipulation',
                       sourceFilter === source.value
@@ -447,45 +441,16 @@ function CookingPageContent() {
                   className="overflow-hidden"
                 >
                   <div className="space-y-2 pt-1 pb-1">
-                    {/* Category chips */}
-                    {categoriesWithCounts.length > 0 && (
-                      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-                        {categoriesWithCounts.map(([cat, count]) => {
-                          const isSelected = selectedCategory === cat
-                          const isExcluded = excludedCategories.has(cat.toLowerCase())
-                          return (
-                            <button
-                              key={cat}
-                              onClick={() => {
-                                if (isExcluded) {
-                                  setExcludedCategories((prev) => {
-                                    const next = new Set(prev)
-                                    next.delete(cat.toLowerCase())
-                                    return next
-                                  })
-                                } else {
-                                  setSelectedCategory(isSelected ? '' : cat)
-                                }
-                              }}
-                              className={cn(
-                                'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 touch-manipulation',
-                                isExcluded
-                                  ? 'bg-red-500/10 text-red-400/70 line-through'
-                                  : isSelected
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-muted/60 text-muted-foreground active:bg-muted'
-                              )}
-                            >
-                              <span>{cat}</span>
-                              <span className="tabular-nums text-[10px] opacity-50">{count}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-
                     {/* Selects row */}
                     <div className="flex items-center gap-2">
+                      {categoriesWithCounts.length > 0 && (
+                        <TagMultiSelect
+                          tags={categoriesWithCounts}
+                          selected={selectedCategories}
+                          onSelectedChange={setSelectedCategories}
+                          triggerClassName="h-9 text-xs"
+                        />
+                      )}
                       <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                         <SelectTrigger className="h-9 flex-1 text-xs bg-card border-border/40 rounded-lg">
                           <SelectValue placeholder="Difficulty" />
@@ -566,7 +531,7 @@ function CookingPageContent() {
           <HorizontalMealPlan onRecipeClick={handleSidebarRecipeClick} />
         </div>
 
-        <div className="hidden md:flex flex-1 overflow-hidden px-3 pt-3">
+        <div className="hidden md:flex flex-1 overflow-hidden pt-3">
           <div className="flex flex-1 overflow-hidden rounded-xl border border-border/50 bg-card">
             {/* Shopping list column - left side */}
             <AnimatePresence>
@@ -690,7 +655,7 @@ function CookingPageContent() {
                     ]).map((source) => (
                       <button
                         key={source.value}
-                        onClick={() => { setSourceFilter(source.value); setSelectedCategory('') }}
+                        onClick={() => { setSourceFilter(source.value); setSelectedCategories(new Set()) }}
                         className={cn(
                           'rounded-md px-2.5 py-1 text-xs font-medium transition-all flex items-center gap-1.5',
                           sourceFilter === source.value
@@ -704,62 +669,17 @@ function CookingPageContent() {
                     ))}
                   </div>
 
-                  <div className="h-5 w-px bg-border/40 shrink-0" />
-
-                  <ScrollArea className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 pb-0.5">
-                      {categoriesWithCounts.map(([cat, count]) => {
-                        const isSelected = selectedCategory === cat
-                        const isExcluded = excludedCategories.has(cat.toLowerCase())
-                        return (
-                          <button
-                            key={cat}
-                            onClick={(e) => {
-                              if (e.shiftKey) {
-                                setExcludedCategories((prev) => {
-                                  const next = new Set(prev)
-                                  const key = cat.toLowerCase()
-                                  if (next.has(key)) next.delete(key)
-                                  else next.add(key)
-                                  return next
-                                })
-                                if (isSelected) setSelectedCategory('')
-                              } else {
-                                if (isExcluded) {
-                                  setExcludedCategories((prev) => {
-                                    const next = new Set(prev)
-                                    next.delete(cat.toLowerCase())
-                                    return next
-                                  })
-                                } else {
-                                  setSelectedCategory(isSelected ? '' : cat)
-                                }
-                              }
-                            }}
-                            className={cn(
-                              'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5',
-                              isExcluded
-                                ? 'bg-red-500/10 text-red-400/70 line-through decoration-red-400/50'
-                                : isSelected
-                                  ? 'bg-primary text-primary-foreground shadow-sm'
-                                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            )}
-                            title={isExcluded ? `Click to include "${cat}" again` : `Shift+click to hide "${cat}"`}
-                          >
-                            {isExcluded && <span className="text-[10px] leading-none">−</span>}
-                            <span>{cat}</span>
-                            <span className={cn(
-                              'tabular-nums text-[10px]',
-                              isExcluded ? 'opacity-50' : isSelected ? 'opacity-70' : 'opacity-50'
-                            )}>
-                              {count}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                    <ScrollBar orientation="horizontal" className="h-1.5" />
-                  </ScrollArea>
+                  {categoriesWithCounts.length > 0 && (
+                    <>
+                      <div className="h-5 w-px bg-border/40 shrink-0" />
+                      <TagMultiSelect
+                        tags={categoriesWithCounts}
+                        selected={selectedCategories}
+                        onSelectedChange={setSelectedCategories}
+                        triggerClassName="h-7 text-xs"
+                      />
+                    </>
+                  )}
 
                   <div className="h-5 w-px bg-border/40 shrink-0" />
 

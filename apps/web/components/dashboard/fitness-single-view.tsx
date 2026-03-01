@@ -1,13 +1,15 @@
 'use client'
 
+import { AiCoachPanel } from '@/components/dashboard/ai-coach-panel'
 import type {
   AppleWorkout,
   DailyMetrics,
 } from '@/components/dashboard/fitness-dashboard'
-import { AiCoachPanel, AiCoachButton } from '@/components/dashboard/ai-coach-panel'
+import { MiniDayProgressRing } from '@/components/dashboard/mini-day-progress-ring'
 import { StretchPanel } from '@/components/dashboard/stretch-panel'
 import { WorkoutCenter } from '@/components/dashboard/workout-center'
 import { Button } from '@/components/ui/button'
+import { DateNavigator } from '@/components/ui/date-navigator'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Popover,
   PopoverContent,
@@ -30,7 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { MiniDayProgressRing } from '@/components/dashboard/mini-day-progress-ring'
+import { ViewToggle } from '@/components/ui/view-toggle'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import type {
   ConsistencyStats,
@@ -47,9 +50,7 @@ import {
   WEEKDAY_LABELS,
   getDayCompletionProgress,
   getFitnessStatusForDay,
-  getWeekNumber,
-  type FitnessStatus,
-  type FitnessStatusDetails,
+  getWeekNumber
 } from '@/lib/utils/fitness-ui'
 import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import {
@@ -75,7 +76,6 @@ import {
   Calendar,
   CalendarDays,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Columns3,
@@ -737,6 +737,12 @@ export function FitnessSingleView({
     navigateToDate(nextDate)
   }, [viewingDate, navigateToDate])
 
+  const handleGoToToday = useCallback(() => {
+    navigateToDate(new Date())
+  }, [navigateToDate])
+
+  const dayNavLabel = format(viewingDate || new Date(), 'EEE, MMM d')
+
   useEffect(() => {
     fetchData()
   }, [fetchData])
@@ -1042,180 +1048,354 @@ export function FitnessSingleView({
     ? todayData?.workout
     : viewingDayData?.workout
 
+  // Pre-compute activity data for inline header layout
+  const headerWorkouts = (() => {
+    const workouts = isViewingToday ? appleWorkouts : selectedDayAppleWorkouts
+    const target = viewingDate || new Date()
+    return workouts.filter(w => {
+      const d = new Date(w.start_date)
+      return d.getDate() === target.getDate() && d.getMonth() === target.getMonth() && d.getFullYear() === target.getFullYear()
+    })
+  })()
+  const headerTotalDuration = headerWorkouts.reduce((sum, w) => sum + w.duration, 0)
+  const headerTotalCalories = headerWorkouts.reduce((sum, w) => sum + w.active_calories, 0)
+  const headerTotalDistance = headerWorkouts.reduce((sum, w) => sum + (w.distance_miles || 0), 0)
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-full min-h-0 flex-col">
         {/* Unified Header - Single cohesive section */}
-        <header className="mb-2 sm:mb-3 shrink-0 px-1 sm:px-0">
-          <div className="bg-card/40 rounded-lg sm:rounded-xl border border-border/50">
-            {/* Standard Header - Tablet and Desktop only (≥640px) */}
-            <div className="hidden sm:flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3">
-              {/* Date Picker */}
-              <Popover open={dayPickerOpen} onOpenChange={(open) => {
-                if (open) {
-                  fetchData()
-                }
-                setDayPickerOpen(open)
-              }}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      'h-auto min-h-[44px] py-1.5 px-2 sm:px-3 hover:bg-muted/50 rounded-xl shrink-0 transition-all touch-manipulation',
-                      !isViewingToday && 'bg-amber-500/10 hover:bg-amber-500/20 ring-1 ring-amber-500/20'
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      {/* Large day number */}
-                      <span className={cn(
-                        'text-2xl sm:text-3xl font-bold tabular-nums leading-none',
-                        !isViewingToday ? 'text-amber-500' : 'text-foreground'
-                      )}>
-                        {format(viewingDate || new Date(), 'd')}
-                      </span>
-                      {/* Weekday and month stacked */}
-                      <div className="flex flex-col items-start leading-tight">
-                        <span className={cn(
-                          'text-[10px] sm:text-xs font-semibold uppercase tracking-wide',
-                          !isViewingToday ? 'text-amber-500' : 'text-foreground'
-                        )}>
-                          {format(viewingDate || new Date(), 'EEE')}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {format(viewingDate || new Date(), 'MMM')}
-                        </span>
-                      </div>
-                      {/* Dropdown indicator */}
-                      <ChevronDown className={cn(
-                        'size-3.5 sm:size-4 ml-0.5 transition-transform',
-                        dayPickerOpen && 'rotate-180',
-                        !isViewingToday ? 'text-amber-500/60' : 'text-muted-foreground'
-                      )} />
+        <PageHeader
+          secondaryRowClassName="sm:border-t-0"
+          secondaryRow={
+            <>
+              {/* Week Strip - Day selector */}
+              <div className="px-3 py-1.5">
+                {/* Desktop: Unified header layout */}
+                <div className="hidden sm:flex">
+                  {/* Left column */}
+                  <div className="flex flex-col justify-between min-w-0 flex-1 gap-1.5">
+                    {/* Top: DateNav + Date Picker */}
+                    <div className="flex items-center gap-1.5">
+                      <DateNavigator
+                        label={dayNavLabel}
+                        onPrev={handlePrevDay}
+                        onNext={handleNextDay}
+                        onToday={handleGoToToday}
+                        onLabelClick={() => setDayPickerOpen(true)}
+                        isAtToday={isViewingToday}
+                        disableNext={isViewingToday}
+                      />
+                      <Popover open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Calendar className="size-4 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        {isSmScreen && (
+                          <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
+                            <FitnessDatePicker
+                              currentDate={new Date()}
+                              selectedDate={viewingDate}
+                              routine={routine}
+                              onSelectDate={navigateToDate}
+                              onClose={() => setDayPickerOpen(false)}
+                            />
+                          </PopoverContent>
+                        )}
+                      </Popover>
+                                            {onSwitchToWeek && (
+                        <ViewToggle
+                          options={[
+                            { value: 'day' as const, label: 'Day', icon: <CalendarDays className="size-3.5" /> },
+                            { value: 'week' as const, label: 'Week', icon: <Columns3 className="size-3.5" /> },
+                          ]}
+                          value="day"
+                          onChange={(val) => { if (val === 'week') onSwitchToWeek() }}
+                        />
+                      )}
                     </div>
-                  </Button>
-                </PopoverTrigger>
-                {isSmScreen && (
-                  <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
-                    <FitnessDatePicker
-                      currentDate={new Date()}
-                      selectedDate={viewingDate}
-                      routine={routine}
-                      onSelectDate={navigateToDate}
-                      onClose={() => setDayPickerOpen(false)}
-                    />
-                  </PopoverContent>
-                )}
-              </Popover>
 
-              {/* Navigation arrows - border-grouped for consistency */}
-              <div className="flex items-center rounded-md border border-border/50 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-r-none touch-manipulation"
-                  onClick={handlePrevDay}
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-l-none touch-manipulation"
-                  onClick={handleNextDay}
-                  disabled={isViewingToday}
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-              </div>
-
-              {/* Week Strip - Desktop: centered, Mobile: horizontal scroll */}
-              <div className="hidden flex-1 md:flex items-center justify-center">
-                <div className="flex items-center gap-1 rounded-xl bg-muted/20 p-1.5">
-                  {DAYS_OF_WEEK.map((day, index) => {
-                    const daySchedule = routine.schedule[day]
-                    const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
-                    const dayDate = addDays(weekStart, index)
-                    const isTodayDay = isDateToday(dayDate)
-                    const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
-                    const isFutureDate = dayDate > new Date() && !isTodayDay
-                    const focus = daySchedule?.focus || 'Rest'
-                    const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
-                    const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
-                    const FocusIcon = focusConfig.icon
-                    const { status, details } = getFitnessStatusForDay(dayDate, routine)
-
-                    // Calculate completion progress for the ring
-                    const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
-                    const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
-
-                    return (
-                      <Tooltip key={day}>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => navigateToDate(dayDate)}
-                            className={cn(
-                              'relative flex flex-col items-center w-12 py-1.5 rounded-lg transition-all',
-                              isSelected
-                                ? 'bg-foreground/10 shadow-md ring-1 ring-foreground/10'
-                                : 'hover:bg-muted/50',
-                              isTodayDay && !isSelected && 'ring-2 ring-inset ring-primary/40',
-                              isFutureDate && !isSelected && 'opacity-40'
-                            )}
-                          >
-                            {/* Day label */}
-                            <span className={cn(
-                              'text-[10px] font-semibold uppercase tracking-wide mb-0.5',
-                              isSelected ? 'text-foreground' : 'text-muted-foreground'
-                            )}>
-                              {DAY_LABELS[day]}
+                    {/* Bottom: Workout pills */}
+                    <div className="flex items-center gap-2">
+                    {headerWorkouts.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-1.5 shrink-0 rounded-lg bg-muted/40 px-2.5 py-1">
+                          <Dumbbell className="size-3.5 text-muted-foreground" />
+                          <span className="text-xs font-bold tabular-nums leading-none">{headerWorkouts.length}</span>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {headerWorkouts.length === 1 ? 'workout' : 'workouts'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0">
+                          {headerWorkouts.slice(0, 3).map(workout => {
+                            const defaultStyle = { icon: Dumbbell, color: 'text-foreground/60', bg: 'bg-muted/50' }
+                            const typeStyle = WORKOUT_TYPE_STYLES[workout.workout_type] ?? defaultStyle
+                            const Icon = typeStyle.icon
+                            const label = getWorkoutDisplayLabel(workout.workout_type)
+                            const borderColor = WORKOUT_BORDER_COLORS[workout.workout_type] || 'border-slate-500'
+                            return (
+                              <Tooltip key={workout.id}>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => router.push(`/fitness/activity?workout=${workout.id}`)}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all whitespace-nowrap',
+                                      'bg-muted/30 hover:bg-muted/50 hover:shadow-sm',
+                                      'border-[1px]',
+                                      `${borderColor}/30`,
+                                      'cursor-pointer'
+                                    )}
+                                  >
+                                    <Icon className={cn('size-3.5', typeStyle.color)} />
+                                    <span className="text-muted-foreground text-xs tabular-nums font-medium">
+                                      {formatWorkoutDuration(workout.duration)}
+                                    </span>
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs">
+                                    <div className="font-semibold">{label}</div>
+                                    <div className="text-muted-foreground">
+                                      {formatWorkoutDuration(workout.duration)} · {Math.round(workout.active_calories)} cal
+                                      {workout.distance_miles && ` · ${workout.distance_miles.toFixed(2)} mi`}
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )
+                          })}
+                          {headerWorkouts.length > 3 && (
+                            <span className="text-[10px] text-muted-foreground font-medium shrink-0 px-1">
+                              +{headerWorkouts.length - 3} more
                             </span>
-
-                            {/* Icon with progress ring */}
-                            <MiniDayProgressRing
-                              progress={completionProgress}
-                              size={26}
-                              strokeWidth={2.5}
-                              color={ringColor}
-                            >
-                              <FocusIcon className={cn(
-                                'size-3.5',
-                                isSelected ? focusConfig.color : 'text-muted-foreground/70'
-                              )} />
-                            </MiniDayProgressRing>
-
-                            {/* Status indicator below ring */}
-                            <div className="h-2 mt-0.5 flex items-center justify-center">
-                              {status === 'complete' && (
-                                <Check className="size-2.5 text-emerald-500" />
-                              )}
-                              {status === 'skipped' && (
-                                <Ban className="size-2.5 text-muted-foreground" />
-                              )}
-                              {status === 'missed' && (
-                                <div className="size-1.5 rounded-full bg-red-400/60" />
-                              )}
-                            </div>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs p-2">
-                          <div className="font-semibold">{format(dayDate, 'EEEE, MMM d')}</div>
-                          <div className="text-muted-foreground">{focus}</div>
-                          {!isFutureDate && completionProgress > 0 && (
-                            <div className="mt-1 text-[10px] text-emerald-500">
-                              {completionProgress}% complete
-                            </div>
                           )}
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  })}
-                </div>
-              </div>
+                        </div>
+                      </>
+                    )}
+                    </div>
+                  </div>
 
-              {/* Mobile Week Strip - Horizontal scroll with snap */}
-              <div className="flex flex-1 md:hidden overflow-x-auto scrollbar-none snap-x snap-mandatory -mx-1">
-                <div className="flex items-center gap-1.5 px-1">
+                  {/* Center: Week strip */}
+                  <div className="flex items-center gap-1 rounded-xl bg-muted/20 p-1.5 shrink-0 self-center mx-3">
+                    {DAYS_OF_WEEK.map((day, index) => {
+                      const daySchedule = routine.schedule[day]
+                      const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
+                      const dayDate = addDays(weekStart, index)
+                      const isTodayDay = isDateToday(dayDate)
+                      const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
+                      const isFutureDate = dayDate > new Date() && !isTodayDay
+                      const focus = daySchedule?.focus || 'Rest'
+                      const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
+                      const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
+                      const FocusIcon = focusConfig.icon
+                      const { status, details } = getFitnessStatusForDay(dayDate, routine)
+                      const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
+                      const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
+
+                      return (
+                        <Tooltip key={day}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => navigateToDate(dayDate)}
+                              className={cn(
+                                'relative flex flex-col items-center w-12 py-1.5 rounded-lg transition-all',
+                                isSelected
+                                  ? 'bg-foreground/10 shadow-md ring-1 ring-foreground/10'
+                                  : 'hover:bg-muted/50',
+                                isTodayDay && !isSelected && 'ring-2 ring-inset ring-primary/40',
+                                isFutureDate && !isSelected && 'opacity-40'
+                              )}
+                            >
+                              <span className={cn(
+                                'text-[10px] font-semibold uppercase tracking-wide mb-0.5',
+                                isSelected ? 'text-foreground' : 'text-muted-foreground'
+                              )}>
+                                {DAY_LABELS[day]}
+                              </span>
+                              <MiniDayProgressRing
+                                progress={completionProgress}
+                                size={26}
+                                strokeWidth={2.5}
+                                color={ringColor}
+                              >
+                                <FocusIcon className={cn(
+                                  'size-3.5',
+                                  isSelected ? focusConfig.color : 'text-muted-foreground/70'
+                                )} />
+                              </MiniDayProgressRing>
+                              <span className={cn(
+                                'text-[9px] font-medium leading-tight truncate w-full text-center mt-0.5',
+                                isSelected ? focusConfig.color : 'text-muted-foreground/60',
+                              )}>
+                                {focus}
+                              </span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs p-2">
+                            <div className="font-semibold">{format(dayDate, 'EEEE, MMM d')}</div>
+                            <div className="text-muted-foreground">{focus}</div>
+                            {!isFutureDate && completionProgress > 0 && (
+                              <div className="mt-1 text-[10px] text-emerald-500">
+                                {completionProgress}% complete
+                              </div>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                  </div>
+
+                  {/* Right column */}
+                  <div className="flex flex-col justify-between min-w-0 flex-1 items-end gap-1.5">
+                    {/* Top: Actions */}
+                    <div className="flex items-center gap-1.5">
+                      <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation">
+                                <Ban className="size-4" />
+                              </Button>
+                            </DialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>Skip Day</TooltipContent>
+                        </Tooltip>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Skip Day</DialogTitle>
+                            <DialogDescription>
+                              Skip all fitness activities for {isViewingToday ? 'today' : format(viewingDate || new Date(), 'EEEE, MMM d')}.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="skip-day-reason">Reason</Label>
+                              <Input
+                                id="skip-day-reason"
+                                placeholder="e.g., Sick, Travel, Rest day..."
+                                value={skipDayReason}
+                                onChange={(e) => setSkipDayReason(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && skipDayReason.trim()) {
+                                    handleSkipDay(skipDayReason.trim())
+                                    setSkipDayDialogOpen(false)
+                                    setSkipDayReason('')
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => { setSkipDayDialogOpen(false); setSkipDayReason('') }}>
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (skipDayReason.trim()) {
+                                  handleSkipDay(skipDayReason.trim())
+                                  setSkipDayDialogOpen(false)
+                                  setSkipDayReason('')
+                                }
+                              }}
+                              disabled={!skipDayReason.trim() || skippingWorkout}
+                            >
+                              {skippingWorkout ? 'Skipping...' : 'Skip Day'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AiCoachButton
+                            onClick={() => setAiCoachOpen(true)}
+                            readinessScore={aiCoachReadiness}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>AI Fitness Coach</TooltipContent>
+                      </Tooltip> */}
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href="/fitness/activity">
+                            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-xs font-medium touch-manipulation">
+                              <Activity className="size-4" />
+                              <span className="hidden sm:inline">Activity</span>
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>Activity Dashboard</TooltipContent>
+                      </Tooltip>
+                      {onSwitchToEdit && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
+                              <Settings className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit Routine</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    {/* Bottom: Stats */}
+                    <div className="flex items-center gap-2">
+                    {headerWorkouts.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-3 rounded-lg bg-muted/20 px-2.5 py-1.5">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1.5 cursor-default">
+                                <Calendar className="size-3.5 text-blue-500/70" />
+                                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                                  {formatWorkoutDuration(headerTotalDuration)}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Total Duration</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1.5 cursor-default">
+                                <Flame className="size-3.5 text-orange-500/70" />
+                                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                                  {Math.round(headerTotalCalories)}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Active Calories</TooltipContent>
+                          </Tooltip>
+                          {headerTotalDistance > 0 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1.5 cursor-default">
+                                <Target className="size-3.5 text-green-500/70" />
+                                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                                  {headerTotalDistance.toFixed(1)} mi
+                                </span>
+                              </div>
+                              </TooltipTrigger>
+                              <TooltipContent>Total Distance</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hidden md:inline-flex h-7 px-2.5 text-xs font-medium"
+                          onClick={() => router.push('/fitness/activity')}
+                        >
+                          Details
+                          <ChevronRight className="size-3.5 ml-1" />
+                        </Button>
+                      </>
+                    )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile week strip */}
+                <div className="sm:hidden flex items-center justify-between gap-1">
                   {DAYS_OF_WEEK.map((day, index) => {
                     const daySchedule = routine.schedule[day]
                     const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
@@ -1228,8 +1408,6 @@ export function FitnessSingleView({
                     const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
                     const FocusIcon = focusConfig.icon
                     const { status, details } = getFitnessStatusForDay(dayDate, routine)
-
-                    // Calculate completion progress for the ring
                     const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
                     const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
 
@@ -1246,15 +1424,12 @@ export function FitnessSingleView({
                           isFutureDate && !isSelected && 'opacity-40'
                         )}
                       >
-                        {/* Day label */}
                         <span className={cn(
                           'text-[10px] font-semibold uppercase tracking-wide mb-0.5',
                           isSelected ? 'text-foreground' : 'text-muted-foreground'
                         )}>
                           {DAY_LABELS[day]}
                         </span>
-
-                        {/* Icon with progress ring */}
                         <MiniDayProgressRing
                           progress={completionProgress}
                           size={24}
@@ -1266,233 +1441,62 @@ export function FitnessSingleView({
                             isSelected ? focusConfig.color : 'text-muted-foreground/70'
                           )} />
                         </MiniDayProgressRing>
-
-                        {/* Status indicator */}
-                        <div className="h-2 mt-0.5 flex items-center justify-center">
-                          {status === 'complete' && (
-                            <Check className="size-2.5 text-emerald-500" />
-                          )}
-                          {status === 'skipped' && (
-                            <Ban className="size-2.5 text-muted-foreground" />
-                          )}
-                          {status === 'missed' && (
-                            <div className="size-1.5 rounded-full bg-red-400/60" />
-                          )}
-                        </div>
+                        <span className={cn(
+                          'text-[8px] font-medium leading-tight truncate w-full text-center mt-0.5',
+                          isSelected ? focusConfig.color : 'text-muted-foreground/60',
+                        )}>
+                          {focus}
+                        </span>
                       </button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Actions - Grouped with consistent sizing */}
-              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                {/* Today button - consistent outline style */}
-                {!isViewingToday && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-3 text-xs touch-manipulation"
-                    onClick={() => {
-                      setSelectedDay(null)
-                      setSelectedDayWorkout(null)
-                      setViewingDate(null)
-                      window.history.replaceState(null, '', '/fitness')
-                    }}
-                  >
-                    Today
-                  </Button>
-                )}
-
-                {/* Skip Day button */}
-                <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground touch-manipulation">
-                          <Ban className="size-4" />
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Skip Day</TooltipContent>
-                  </Tooltip>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Skip Day</DialogTitle>
-                      <DialogDescription>
-                        Skip all fitness activities for {isViewingToday ? 'today' : format(viewingDate || new Date(), 'EEEE, MMM d')}.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="skip-day-reason">Reason</Label>
-                        <Input
-                          id="skip-day-reason"
-                          placeholder="e.g., Sick, Travel, Rest day..."
-                          value={skipDayReason}
-                          onChange={(e) => setSkipDayReason(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && skipDayReason.trim()) {
-                              handleSkipDay(skipDayReason.trim())
-                              setSkipDayDialogOpen(false)
-                              setSkipDayReason('')
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => { setSkipDayDialogOpen(false); setSkipDayReason('') }}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (skipDayReason.trim()) {
-                            handleSkipDay(skipDayReason.trim())
-                            setSkipDayDialogOpen(false)
-                            setSkipDayReason('')
-                          }
-                        }}
-                        disabled={!skipDayReason.trim() || skippingWorkout}
-                      >
-                        {skippingWorkout ? 'Skipping...' : 'Skip Day'}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* AI Coach button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AiCoachButton
-                      onClick={() => setAiCoachOpen(true)}
-                      readinessScore={aiCoachReadiness}
+              {/* Activity Summary - mobile only (desktop shows inline with week strip) */}
+              <div className="sm:hidden">
+                {((isViewingToday && (appleWorkouts.length > 0 || dailyMetrics)) ||
+                  (!isViewingToday && selectedDayAppleWorkouts.length > 0) ||
+                  consistencyStats) && (
+                  <div className="border-t border-border/30">
+                    <UnifiedActivitySummary
+                      workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
+                      metrics={isViewingToday ? dailyMetrics : null}
+                      consistencyStats={consistencyStats}
+                      viewingDate={viewingDate}
+                      onWorkoutClick={id => router.push(`/fitness/activity?workout=${id}`)}
+                      onViewAll={() => router.push('/fitness/activity')}
                     />
-                  </TooltipTrigger>
-                  <TooltipContent>AI Fitness Coach</TooltipContent>
-                </Tooltip>
-
-                {/* View toggle: Day / Week */}
-                {onSwitchToWeek && (
-                  <div className="flex items-center rounded-lg bg-muted/40 p-0.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2.5 text-xs font-medium bg-background shadow-sm touch-manipulation"
-                      disabled
-                    >
-                      <CalendarDays className="size-3.5" />
-                      <span className="hidden sm:inline">Day</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground touch-manipulation"
-                      onClick={onSwitchToWeek}
-                    >
-                      <Columns3 className="size-3.5" />
-                      <span className="hidden sm:inline">Week</span>
-                    </Button>
                   </div>
                 )}
-
-                {/* Activity Dashboard link */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link href="/fitness/activity">
-                      <Button variant="outline" size="sm" className="h-8 sm:h-9 gap-1.5 px-2.5 sm:px-3 text-xs font-medium touch-manipulation">
-                        <Activity className="size-4" />
-                        <span className="hidden sm:inline">Activity</span>
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Activity Dashboard</TooltipContent>
-                </Tooltip>
-
-                {/* Settings/Edit button */}
-                {onSwitchToEdit && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
-                        <Settings className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit Routine</TooltipContent>
-                  </Tooltip>
-                )}
               </div>
-            </div>
-
+            </>
+          }
+        >
             {/* ============================================
                 COMPACT HEADER FOR ALL MOBILE DEVICES
                 Optimized 2-row layout for screens < 640px (sm breakpoint)
                 ============================================ */}
             <div className="sm:hidden">
               {/* Row 1: Date + Nav + Actions */}
-              <div className="flex items-center justify-between gap-1.5 px-2 py-2">
-                {/* Left: Compact Date Picker with integrated nav */}
+              <div className="flex items-center justify-between gap-1.5 px-3 py-2">
+                {/* Left: Date Navigator + Date Picker */}
                 <div className="flex items-center gap-1">
-                  {/* Prev button */}
-                  <div className="flex items-center rounded-md border border-border/50">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-r-none touch-manipulation"
-                      onClick={handlePrevDay}
-                    >
-                      <ChevronLeft className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-l-none touch-manipulation"
-                      onClick={handleNextDay}
-                      disabled={isViewingToday}
-                    >
-                      <ChevronRight className="size-4" />
-                    </Button>
-                  </div>
+                  <DateNavigator
+                    label={dayNavLabel}
+                    onPrev={handlePrevDay}
+                    onNext={handleNextDay}
+                    onToday={handleGoToToday}
+                    onLabelClick={() => setDayPickerOpen(true)}
+                    isAtToday={isViewingToday}
+                    disableNext={isViewingToday}
+                    size="sm"
+                  />
 
-                  {/* Date Picker - Compact but readable */}
-                  <Popover open={dayPickerOpen} onOpenChange={(open) => {
-                    if (open) fetchData()
-                    setDayPickerOpen(open)
-                  }}>
+                  <Popover open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                          'h-10 px-2.5 hover:bg-muted/50 rounded-xl shrink-0 transition-all touch-manipulation',
-                          !isViewingToday && 'bg-amber-500/10 hover:bg-amber-500/20 ring-1 ring-amber-500/20'
-                        )}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          {/* Day number */}
-                          <span className={cn(
-                            'text-xl font-bold tabular-nums leading-none',
-                            !isViewingToday ? 'text-amber-500' : 'text-foreground'
-                          )}>
-                            {format(viewingDate || new Date(), 'd')}
-                          </span>
-                          {/* Weekday and month stacked */}
-                          <div className="flex flex-col items-start leading-tight">
-                            <span className={cn(
-                              'text-[10px] font-semibold uppercase tracking-wide',
-                              !isViewingToday ? 'text-amber-500' : 'text-foreground'
-                            )}>
-                              {format(viewingDate || new Date(), 'EEE')}
-                            </span>
-                            <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-                              {format(viewingDate || new Date(), 'MMM')}
-                            </span>
-                          </div>
-                          <ChevronDown className={cn(
-                            'size-3.5 transition-transform',
-                            dayPickerOpen && 'rotate-180',
-                            !isViewingToday ? 'text-amber-500/60' : 'text-muted-foreground'
-                          )} />
-                        </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Calendar className="size-3.5 text-muted-foreground" />
                       </Button>
                     </PopoverTrigger>
                     {!isSmScreen && (
@@ -1507,41 +1511,24 @@ export function FitnessSingleView({
                       </PopoverContent>
                     )}
                   </Popover>
-                </div>
 
-                {/* Right: Actions */}
-                <div className="flex items-center gap-0.5">
-                  {/* Today button - consistent outline style */}
-                  {!isViewingToday && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs touch-manipulation"
-                      onClick={() => {
-                        setSelectedDay(null)
-                        setSelectedDayWorkout(null)
-                        setViewingDate(null)
-                        window.history.replaceState(null, '', '/fitness')
-                      }}
-                    >
-                      Today
-                    </Button>
-                  )}
-
-                  {/* Skip Day */}
+                  {/* Skip Day - on left side so right actions match Week view */}
                   <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation">
                         <Ban className="size-4" />
                       </Button>
                     </DialogTrigger>
                   </Dialog>
+                </div>
 
+                {/* Right: Actions - identical to Week view */}
+                <div className="flex items-center gap-0.5">
                   {/* Week view toggle */}
                   {onSwitchToWeek && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToWeek}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToWeek}>
                           <Columns3 className="size-4" />
                         </Button>
                       </TooltipTrigger>
@@ -1551,108 +1538,22 @@ export function FitnessSingleView({
 
                   {/* Activity link */}
                   <Link href="/fitness/activity">
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation">
                       <Activity className="size-4" />
                     </Button>
                   </Link>
 
                   {/* Settings */}
                   {onSwitchToEdit && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
                       <Settings className="size-4" />
                     </Button>
                   )}
                 </div>
               </div>
-
-              {/* Row 2: Full-width Week Strip */}
-              <div className="border-t border-border/30 px-1.5 py-1.5">
-                <div className="flex items-center justify-between gap-1">
-                  {DAYS_OF_WEEK.map((day, index) => {
-                    const daySchedule = routine.schedule[day]
-                    const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
-                    const dayDate = addDays(weekStart, index)
-                    const isTodayDay = isDateToday(dayDate)
-                    const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
-                    const isFutureDate = dayDate > new Date() && !isTodayDay
-                    const focus = daySchedule?.focus || 'Rest'
-                    const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
-                    const focusConfig = FOCUS_CONFIG[focus] || FOCUS_CONFIG_FALLBACK
-                    const FocusIcon = focusConfig.icon
-                    const { status, details } = getFitnessStatusForDay(dayDate, routine)
-                    const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
-                    const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
-
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => navigateToDate(dayDate)}
-                        className={cn(
-                          'relative flex flex-col items-center justify-center flex-1 min-h-[52px] py-1.5 rounded-xl transition-all touch-manipulation',
-                          isSelected
-                            ? 'bg-foreground/10 shadow-sm ring-1 ring-foreground/10'
-                            : 'active:bg-muted/50',
-                          isTodayDay && !isSelected && 'ring-1.5 ring-inset ring-primary/40',
-                          isFutureDate && !isSelected && 'opacity-40'
-                        )}
-                      >
-                        {/* 2-letter day label */}
-                        <span className={cn(
-                          'text-[10px] font-semibold uppercase tracking-tight mb-0.5',
-                          isSelected ? 'text-foreground' : 'text-muted-foreground'
-                        )}>
-                          {DAY_LABELS[day].slice(0, 2)}
-                        </span>
-
-                        {/* Progress ring with icon */}
-                        <MiniDayProgressRing
-                          progress={completionProgress}
-                          size={22}
-                          strokeWidth={2}
-                          color={ringColor}
-                        >
-                          <FocusIcon className={cn(
-                            'size-2.5',
-                            isSelected ? focusConfig.color : 'text-muted-foreground/70'
-                          )} />
-                        </MiniDayProgressRing>
-
-                        {/* Status indicator */}
-                        <div className="h-2 mt-0.5 flex items-center justify-center">
-                          {status === 'complete' && (
-                            <Check className="size-2.5 text-emerald-500" />
-                          )}
-                          {status === 'skipped' && (
-                            <Ban className="size-2.5 text-muted-foreground" />
-                          )}
-                          {status === 'missed' && (
-                            <div className="size-1.5 rounded-full bg-red-400/60" />
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
 
-            {/* Bottom Row: Activity Summary - Seamlessly integrated */}
-            {((isViewingToday && (appleWorkouts.length > 0 || dailyMetrics)) ||
-              (!isViewingToday && selectedDayAppleWorkouts.length > 0) ||
-              consistencyStats) && (
-              <div className="border-t border-border/30">
-                <UnifiedActivitySummary
-                  workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
-                  metrics={isViewingToday ? dailyMetrics : null}
-                  consistencyStats={consistencyStats}
-                  viewingDate={viewingDate}
-                  onWorkoutClick={id => router.push(`/fitness/activity?workout=${id}`)}
-                  onViewAll={() => router.push('/fitness/activity')}
-                />
-              </div>
-            )}
-          </div>
-        </header>
+        </PageHeader>
 
         {/* Main 3-Panel Layout - Stacks vertically on mobile, workout first */}
         <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[230px_1fr_230px] xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px] md:overflow-hidden">
@@ -1781,6 +1682,23 @@ function formatWorkoutDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`
 }
 
+const WORKOUT_BORDER_COLORS: Record<string, string> = {
+  running: 'border-green-500',
+  walking: 'border-teal-500',
+  hiking: 'border-amber-500',
+  cycling: 'border-blue-500',
+  swimming: 'border-cyan-500',
+  functionalStrengthTraining: 'border-purple-500',
+  traditionalStrengthTraining: 'border-purple-500',
+  coreTraining: 'border-pink-500',
+  hiit: 'border-red-500',
+  rowing: 'border-cyan-500',
+  stairClimbing: 'border-amber-500',
+  elliptical: 'border-teal-500',
+  yoga: 'border-pink-500',
+  other: 'border-slate-500',
+}
+
 function UnifiedActivitySummary({
   workouts,
   metrics,
@@ -1827,7 +1745,7 @@ function UnifiedActivitySummary({
       {/* Row 1 (mobile) / Left (desktop): Rings + workout pills */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none min-w-0 flex-1">
         {/* Activity Rings */}
-        {metrics && (
+        {/* {metrics && (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 cursor-default shrink-0 rounded-lg bg-muted/30 p-1">
@@ -1873,12 +1791,12 @@ function UnifiedActivitySummary({
               </div>
             </TooltipContent>
           </Tooltip>
-        )}
+        )} */}
 
         {/* Separator - desktop only */}
-        {metrics && dateWorkouts.length > 0 && (
+        {/* {metrics && dateWorkouts.length > 0 && (
           <div className="hidden sm:block h-6 w-px bg-border/30 shrink-0" />
-        )}
+        )} */}
 
         {/* Workout count and pills - with visual grouping */}
         {dateWorkouts.length > 0 ? (
@@ -1902,22 +1820,22 @@ function UnifiedActivitySummary({
 
                 // Get hex color for border from type style (hiking = Maple Walk)
                 const borderColorMap: Record<string, string> = {
-                  running: 'border-l-green-500',
-                  walking: 'border-l-teal-500',
-                  hiking: 'border-l-amber-500',
-                  cycling: 'border-l-blue-500',
-                  swimming: 'border-l-cyan-500',
-                  functionalStrengthTraining: 'border-l-purple-500',
-                  traditionalStrengthTraining: 'border-l-purple-500',
-                  coreTraining: 'border-l-pink-500',
-                  hiit: 'border-l-red-500',
-                  rowing: 'border-l-cyan-500',
-                  stairClimbing: 'border-l-amber-500',
-                  elliptical: 'border-l-teal-500',
-                  yoga: 'border-l-pink-500',
-                  other: 'border-l-slate-500',
+                  running: 'border-green-500',
+                  walking: 'border-tea500',
+                  hiking: 'border-amber-500',
+                  cycling: 'border-blue-500',
+                  swimming: 'border-cyan-500',
+                  functionalStrengthTraining: 'border-purple-500',
+                  traditionalStrengthTraining: 'border-purple-500',
+                  coreTraining: 'border-pink-500',
+                  hiit: 'border-red-500',
+                  rowing: 'border-cyan-500',
+                  stairClimbing: 'border-amber-500',
+                  elliptical: 'border-tea500',
+                  yoga: 'border-pink-500',
+                  other: 'border-slate-500',
                 }
-                const borderColor = borderColorMap[workout.workout_type] || 'border-l-slate-500'
+                const borderColor = borderColorMap[workout.workout_type] || 'border-slate-500'
 
                 return (
                   <Tooltip key={workout.id}>
@@ -1925,15 +1843,15 @@ function UnifiedActivitySummary({
                       <button
                         onClick={() => onWorkoutClick?.(workout.id)}
                         className={cn(
-                          'flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs transition-all whitespace-nowrap touch-manipulation',
+                          'flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs transition-all whitespace-nowrap touch-manipulation',
                           'bg-muted/30 hover:bg-muted/50 active:bg-muted/60 hover:shadow-sm',
-                          'border-l-[3px]',
-                          borderColor,
+                          'border-[1px]',
+                          `${borderColor}/30`,
                           onWorkoutClick && 'cursor-pointer'
                         )}
                       >
                         <Icon className={cn('size-3 sm:size-3.5', typeStyle.color)} />
-                        <span className="font-semibold">{label}</span>
+                        {/* <span className="font-semibold">{label}</span> */}
                         {/* Hide per-pill duration on mobile when multiple workouts — totals row covers it */}
                         <span className={cn(
                           'text-muted-foreground text-[9px] sm:text-[10px] tabular-nums font-medium',
@@ -2130,7 +2048,6 @@ function ActivityRings({ move, exercise, stand, size = 44, metrics, animate = fa
             animate && !mounted && 'opacity-0',
             animate && mounted && 'opacity-100'
           )}>
-            {overallProgress}%
           </span>
         </div>
       )}

@@ -157,6 +157,10 @@ final class LocationManager: NSObject {
     var onArriveAtGym: (() -> Void)?
     var onLeaveGymAndArriveHome: (() -> Void)?
     
+    /// Optional callback for raw location updates (e.g. Maple Walk route building).
+    /// Called on main actor when a valid location update is received.
+    var onLocationUpdate: ((CLLocation) -> Void)?
+    
     // MARK: - Private
     
     private let locationManager = CLLocationManager()
@@ -580,6 +584,9 @@ extension LocationManager: CLLocationManagerDelegate {
         Task { @MainActor in
             currentLocation = location
             lastLocationError = nil
+            
+            // Notify route builders (e.g. Maple Walk)
+            onLocationUpdate?(location)
             
             // Determine if this is the initial location update
             let isInitial = isInitialLocationUpdate && !hasProcessedInitialLocation

@@ -1507,6 +1507,19 @@ final class HealthKitManager {
     func queryRoute(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
         guard isHealthKitAvailable else { return nil }
 
+        // Route data can be delayed on watchOS - retry for outdoor workouts (Maple walks, runs, etc.)
+        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .other]
+        let isOutdoor = outdoorTypes.contains(workout.workoutActivityType)
+
+        var result = try await queryRouteOnce(for: workout)
+        if result == nil && isOutdoor {
+            try await Task.sleep(nanoseconds: 4_000_000_000) // 4 seconds
+            result = try await queryRouteOnce(for: workout)
+        }
+        return result
+    }
+
+    private func queryRouteOnce(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
         let routeType = HKSeriesType.workoutRoute()
         let predicate = HKQuery.predicateForObjects(from: workout)
 

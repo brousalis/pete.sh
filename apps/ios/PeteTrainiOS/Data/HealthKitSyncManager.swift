@@ -1492,7 +1492,20 @@ final class HealthKitSyncManager {
 
     // MARK: - Route
 
+    /// Route data can be delayed on iOS - retry for outdoor workouts (Maple walks, runs, etc.)
     private func queryRoute(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
+        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .other]
+        let isOutdoor = outdoorTypes.contains(workout.workoutActivityType)
+
+        var result = try await queryRouteOnce(for: workout)
+        if result == nil && isOutdoor {
+            try await Task.sleep(nanoseconds: 4_000_000_000) // 4 seconds
+            result = try await queryRouteOnce(for: workout)
+        }
+        return result
+    }
+
+    private func queryRouteOnce(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
         let routeType = HKSeriesType.workoutRoute()
         let predicate = HKQuery.predicateForObjects(from: workout)
 

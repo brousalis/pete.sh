@@ -2,6 +2,7 @@ import Foundation
 import HealthKit
 import Observation
 import WatchKit
+import CoreLocation
 
 // MARK: - Walk State
 
@@ -42,10 +43,14 @@ final class MapleWalkManager: NSObject {
     private let healthStore = HKHealthStore()
     private var workoutSession: HKWorkoutSession?
     private var workoutBuilder: HKLiveWorkoutBuilder?
+    private var routeBuilder: HKWorkoutRouteBuilder?
     private var sessionStartDate: Date?
 
     /// Session ID for persisting markers across crashes
     private var currentSessionId: String?
+
+    /// Count of location points added to route (for deciding whether to finish route)
+    private var routePointCount: Int = 0
 
     private static let markersKeyPrefix = "petehome.mapleMarkers."
 
@@ -107,10 +112,23 @@ final class MapleWalkManager: NSObject {
             session.startActivity(with: Date())
             try await builder.beginCollection(at: Date())
 
-            // Ensure LocationManager is providing GPS updates
+            // Create route builder to capture GPS - system may not add route for third-party workouts
+            let routeBuilder = builder.seriesBuilder(for: HKSeriesType.workoutRoute()) as? HKWorkoutRouteBuilder
+            self.routeBuilder = routeBuilder
+
+            // Ensure LocationManager is providing GPS updates and feed locations to route builder
             let locationManager = LocationManager.shared
             if locationManager.isAuthorized && !locationManager.isMonitoring {
                 locationManager.startMonitoring()
+            }
+            self.routePointCount = 0
+            locationManager.onLocationUpdate = { [weak self] location in
+                guard let self, self.isActive, let rb = self.routeBuilder else { return }
+                rb.insertRouteData([location]) { [weak self] _, _ in
+                    Task { @MainActor in
+                        self?.routePointCount += 1
+                    }
+                }
             }
 
             walkState = .active
@@ -151,10 +169,30 @@ final class MapleWalkManager: NSObject {
 
         session.end()
 
+        // Clear location callback before ending
+        LocationManager.shared.onLocationUpdate = nil
+
         do {
             try await builder.endCollection(at: Date())
             let workout = try await builder.finishWorkout()
             self.finishedWorkout = workout
+
+            // Finish route builder so GPS data is saved to HealthKit (must be after finishWorkout)
+            if let workout, let rb = routeBuilder, routePointCount > 0 {
+                try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    rb.finishRoute(with: workout, metadata: nil) { _, error in
+                        if let error {
+                            print("🐾 Route finish error: \(error.localizedDescription)")
+                        } else {
+                            print("🐾 Route saved with \(routePointCount) points")
+                        }
+                        continuation.resume()
+                    }
+                }
+            }
+
+            self.routeBuilder = nil
+            self.routePointCount = 0
 
             if let workout = workout {
                 print("🐾 Maple Walk ended: \(Int(workout.duration / 60))m")
@@ -197,12 +235,15 @@ final class MapleWalkManager: NSObject {
 
     /// Reset to idle after sync or discard
     func resetState() {
+        LocationManager.shared.onLocationUpdate = nil
         bathroomMarkers = []
         finishedWorkout = nil
         workoutSession = nil
         workoutBuilder = nil
+        routeBuilder = nil
         sessionStartDate = nil
         currentSessionId = nil
+        routePointCount = 0
         elapsedTime = 0
         heartRate = 0
         distance = 0
@@ -327,11 +368,21 @@ extension MapleWalkManager: HKWorkoutSessionDelegate {
                 if self.walkState != .ending && self.walkState != .summary {
                     print("🐾 Walk ended externally")
                     self.stopElapsedTimer()
+                    LocationManager.shared.onLocationUpdate = nil
                     if let builder = self.workoutBuilder {
                         do {
                             try await builder.endCollection(at: date)
                             let workout = try await builder.finishWorkout()
                             self.finishedWorkout = workout
+                            if let workout, let rb = self.routeBuilder, self.routePointCount > 0 {
+                                try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                                    rb.finishRoute(with: workout, metadata: nil) { _, _ in
+                                        continuation.resume()
+                                    }
+                                }
+                            }
+                            self.routeBuilder = nil
+                            self.routePointCount = 0
                         } catch {
                             print("🐾 Error finishing externally ended workout: \(error)")
                         }

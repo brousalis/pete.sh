@@ -1,25 +1,33 @@
 'use client'
 
-import { AiCoachPanel, AiCoachButton } from '@/components/dashboard/ai-coach-panel'
+import { AiCoachPanel } from '@/components/dashboard/ai-coach-panel'
 import { MiniDayProgressRing } from '@/components/dashboard/mini-day-progress-ring'
 import { Button } from '@/components/ui/button'
+import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import { DateNavigator } from '@/components/ui/date-navigator'
+import { PageHeader, PageHeaderRow } from '@/components/ui/page-header'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { ViewToggle } from '@/components/ui/view-toggle'
 import { useDateNavigation } from '@/hooks/use-date-navigation'
 import { apiGet } from '@/lib/api/client'
 import type {
   DailyRoutine,
   DayOfWeek,
   Exercise,
+  RoutineCompletion,
   WeeklyRoutine,
   Workout,
   WorkoutCompletion,
-  RoutineCompletion,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
@@ -38,11 +46,13 @@ import {
   addDays,
   format,
   isToday as isDateToday,
+  startOfWeek,
 } from 'date-fns'
 import {
   Activity,
   ArrowRight,
   Ban,
+  Calendar,
   CalendarDays,
   Check,
   ChevronDown,
@@ -69,6 +79,7 @@ export function FitnessKanbanView({
   const [workoutDefs, setWorkoutDefs] = useState<Record<string, Workout> | null>(null)
   const [loading, setLoading] = useState(true)
   const weekNav = useDateNavigation({ granularity: 'week', weekStartsOn: 1, constrainFuture: true })
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [aiCoachOpen, setAiCoachOpen] = useState(false)
   const [aiCoachReadiness, setAiCoachReadiness] = useState<number | null>(null)
 
@@ -140,123 +151,134 @@ export function FitnessKanbanView({
     <TooltipProvider delayDuration={200}>
       <div className="flex h-full min-h-0 flex-col">
         {/* Header */}
-        <header className="mb-2 sm:mb-3 shrink-0 px-1 sm:px-0">
-          <div className="bg-card/40 rounded-lg sm:rounded-xl border border-border/50">
-            <div className="flex items-center justify-between gap-2 px-2 py-2 sm:gap-3 sm:px-3">
-              {/* Left: Week navigation */}
-              <DateNavigator
-                label={weekNav.label}
-                onPrev={weekNav.goToPrev}
-                onNext={weekNav.goToNext}
-                onToday={weekNav.goToToday}
-                isAtToday={weekNav.isAtToday}
-                disableNext={!weekNav.canGoNext}
-              />
+        <PageHeader
+          // secondaryRow={
+          //   <div className="px-0 py-0">
+          //     <div className="flex items-center gap-3">
+          //       {/* <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          //         <span className="font-medium text-foreground">{completedDays}/7</span>
+          //         <span>days completed</span>
+          //       </div> */}
+          //       <div className="flex-1 flex items-center gap-2">
+          //         {weekDays.map(d => (
+          //           <div
+          //             key={d.day}
+          //             className={cn(
+          //               'h-1.5 flex-1 rounded-full transition-colors',
+          //               d.status === 'complete' && 'bg-emerald-500',
+          //               d.status === 'partial' && 'bg-amber-500',
+          //               d.status === 'skipped' && 'bg-slate-400',
+          //               d.status === 'missed' && 'bg-red-400/60',
+          //               (d.status === 'future' || d.status === 'rest') && 'bg-muted/50',
+          //               d.isToday && d.status !== 'complete' && d.status !== 'partial' && 'bg-primary/30',
+          //             )}
+          //           />
+          //         ))}
+          //       </div>
+          //       {/* <span className="text-xs font-medium tabular-nums text-muted-foreground">
+          //         {weeklyProgress}%
+          //       </span> */}
+          //     </div>
+          //   </div>
+          // }
+        >
+          <PageHeaderRow>
+          {/* Left: Week navigation */}
+          <div className="flex items-center gap-1.5">
+            <DateNavigator
+              label={weekNav.label}
+              onPrev={weekNav.goToPrev}
+              onNext={weekNav.goToNext}
+              onToday={weekNav.goToToday}
+              onLabelClick={() => setDatePickerOpen(true)}
+              isAtToday={weekNav.isAtToday}
+              disableNext={!weekNav.canGoNext}
+            />
 
-              {/* Right: Actions */}
-              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                {/* View toggle: Day / Week */}
-                <div className="hidden sm:flex items-center rounded-lg bg-muted/40 p-0.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground touch-manipulation"
-                    onClick={() => onSwitchToDay()}
-                  >
-                    <CalendarDays className="size-3.5" />
-                    <span>Day</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 px-2.5 text-xs font-medium bg-background shadow-sm touch-manipulation"
-                    disabled
-                  >
-                    <Columns3 className="size-3.5" />
-                    <span>Week</span>
-                  </Button>
-                </div>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Calendar className="size-4 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarPicker
+                  mode="single"
+                  selected={weekNav.currentDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      weekNav.setDate(startOfWeek(date, { weekStartsOn: 1 }))
+                      setDatePickerOpen(false)
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
 
-                {/* Mobile: Day view button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="sm:hidden h-9 w-9 text-muted-foreground hover:text-foreground touch-manipulation"
-                      onClick={() => onSwitchToDay()}
-                    >
-                      <CalendarDays className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Day View</TooltipContent>
-                </Tooltip>
+            <ViewToggle
+              options={[
+                { value: 'day' as const, label: 'Day', icon: <CalendarDays className="size-3.5" /> },
+                { value: 'week' as const, label: 'Week', icon: <Columns3 className="size-3.5" /> },
+              ]}
+              value="week"
+              onChange={(val) => { if (val === 'day') onSwitchToDay() }}
+              className="hidden sm:flex"
+            />
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AiCoachButton
-                      onClick={() => setAiCoachOpen(true)}
-                      readinessScore={aiCoachReadiness ?? undefined}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>AI Fitness Coach</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link href="/fitness/activity">
-                      <Button variant="outline" size="sm" className="h-8 sm:h-9 gap-1.5 px-2.5 sm:px-3 text-xs font-medium touch-manipulation">
-                        <Activity className="size-4" />
-                        <span className="hidden sm:inline">Activity</span>
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Activity Dashboard</TooltipContent>
-                </Tooltip>
-
-                {onSwitchToEdit && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
-                        <Settings className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit Routine</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </div>
-
-            {/* Weekly Progress Strip */}
-            <div className="border-t border-border/30 px-3 py-2">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{completedDays}/7</span>
-                  <span>days completed</span>
-                </div>
-                <div className="flex-1 flex items-center gap-0.5">
-                  {weekDays.map(d => (
-                    <div
-                      key={d.day}
-                      className={cn(
-                        'h-1.5 flex-1 rounded-full transition-colors',
-                        d.status === 'complete' && 'bg-emerald-500',
-                        d.status === 'partial' && 'bg-amber-500',
-                        d.status === 'skipped' && 'bg-slate-400',
-                        d.status === 'missed' && 'bg-red-400/60',
-                        (d.status === 'future' || d.status === 'rest') && 'bg-muted/50',
-                        d.isToday && d.status !== 'complete' && d.status !== 'partial' && 'bg-primary/30',
-                      )}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                  {weeklyProgress}%
-                </span>
-              </div>
-            </div>
           </div>
-        </header>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* <Tooltip>
+              <TooltipTrigger asChild>
+                <AiCoachButton
+                  onClick={() => setAiCoachOpen(true)}
+                  readinessScore={aiCoachReadiness ?? undefined}
+                />
+              </TooltipTrigger>
+              <TooltipContent>AI Fitness Coach</TooltipContent>
+            </Tooltip> */}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="sm:hidden h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation"
+                  onClick={() => onSwitchToDay()}
+                >
+                  <CalendarDays className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Day View</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/fitness/activity">
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-xs font-medium touch-manipulation">
+                    <Activity className="size-4" />
+                    <span className="hidden sm:inline">Activity</span>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Activity Dashboard</TooltipContent>
+            </Tooltip>
+
+            {onSwitchToEdit && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground touch-manipulation" onClick={onSwitchToEdit}>
+                    <Settings className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Routine</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          </PageHeaderRow>
+        </PageHeader>
 
         {/* Desktop Kanban Grid (>=768px) */}
         <div className="hidden md:grid md:grid-cols-7 md:gap-2 md:flex-1 md:min-h-0 md:overflow-hidden px-0 sm:px-0">
@@ -323,44 +345,35 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-xl border transition-all min-h-0 overflow-hidden',
+        'flex flex-col rounded-xl transition-all min-h-0 overflow-hidden',
         isToday && 'border-primary/30 bg-gradient-to-b from-primary/[0.06] to-primary/[0.02] shadow-[0_0_12px_-3px] shadow-primary/20',
         !isToday && status === 'complete' && 'bg-emerald-500/[0.03]',
         isFuture && !isToday && 'opacity-50',
         !isToday && !isFuture && 'border-border/50',
+        status === 'complete' && 'border-emerald-500/30',
       )}
     >
       {/* Column Header */}
       <button
         onClick={() => onDayClick(date)}
-        className="flex flex-col items-center gap-1 px-2 py-2.5 border-b border-border/30 hover:bg-muted/30 transition-colors touch-manipulation"
+        className="flex flex-col items-center gap-0.5 px-2 py-2 border-b border-border/30 hover:bg-muted/30 transition-colors touch-manipulation"
       >
-        <div className="flex items-center gap-1.5 w-full justify-center">
-          <MiniDayProgressRing
-            progress={completionProgress}
-            size={24}
-            strokeWidth={2}
-            color={ringColor}
-          >
-            <FocusIcon className={cn('size-2.5', focusConfig.color)} />
-          </MiniDayProgressRing>
-          <div className="flex flex-col items-start min-w-0">
-            <span className={cn(
-              'text-[11px] font-bold uppercase tracking-wide leading-none',
-              isToday ? 'text-primary' : 'text-foreground',
-            )}>
-              {DAY_LABELS[day]}
-            </span>
-            <span className={cn(
-              'text-[10px] leading-none mt-0.5',
-              isToday ? 'text-primary/70' : 'text-muted-foreground',
-            )}>
-              {format(date, 'd')}
-            </span>
-          </div>
-        </div>
         <span className={cn(
-          'text-[10px] font-medium leading-tight truncate w-full text-center',
+          'text-[10px] font-semibold uppercase tracking-wide',
+          isToday ? 'text-primary' : 'text-muted-foreground',
+        )}>
+          {DAY_LABELS[day]}
+        </span>
+        <MiniDayProgressRing
+          progress={completionProgress}
+          size={26}
+          strokeWidth={2.5}
+          color={ringColor}
+        >
+          <FocusIcon className={cn('size-3.5', focusConfig.color)} />
+        </MiniDayProgressRing>
+        <span className={cn(
+          'text-[9px] font-medium leading-tight truncate w-full text-center',
           focusConfig.color,
         )}>
           {focus}
@@ -456,7 +469,7 @@ function KanbanCard({
   type, label, duration, exerciseCount, routineExercises,
   completed, skipped, completion, isFuture, isToday, onNavigate,
 }: KanbanCardProps) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const isMorning = type === 'morning'
   const Icon = isMorning ? Sun : Moon
 

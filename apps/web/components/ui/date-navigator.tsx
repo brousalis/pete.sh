@@ -9,6 +9,7 @@ interface DateNavigatorProps {
   onPrev: () => void
   onNext: () => void
   onToday: () => void
+  onLabelClick?: () => void
   isAtToday?: boolean
   disableNext?: boolean
   disablePrev?: boolean
@@ -40,6 +41,7 @@ export function DateNavigator({
   onPrev,
   onNext,
   onToday,
+  onLabelClick,
   isAtToday = true,
   disableNext,
   disablePrev,
@@ -47,6 +49,7 @@ export function DateNavigator({
   className,
 }: DateNavigatorProps) {
   const cfg = sizeConfig[size]
+  const handleLabelClick = onLabelClick ?? (isAtToday ? undefined : onToday)
 
   return (
     <div className={cn('flex items-center', cfg.gap, className)}>
@@ -72,14 +75,16 @@ export function DateNavigator({
       </div>
 
       <button
-        onClick={isAtToday ? undefined : onToday}
+        onClick={handleLabelClick}
         className={cn(
           'font-semibold tabular-nums transition-colors text-center',
           cfg.label,
           cfg.minLabel,
-          isAtToday
-            ? 'text-foreground cursor-default'
-            : 'text-amber-500 hover:text-amber-400 cursor-pointer'
+          onLabelClick
+            ? 'text-foreground hover:text-foreground/80 cursor-pointer'
+            : isAtToday
+              ? 'text-foreground cursor-default'
+              : 'text-amber-500 hover:text-amber-400 cursor-pointer'
         )}
       >
         {label}
