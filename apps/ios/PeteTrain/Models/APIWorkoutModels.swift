@@ -13,6 +13,7 @@ struct APIWorkoutDefinitionsResponse: Codable {
 struct APIWorkoutDefinitionsData: Codable {
     let definitions: [String: APIWorkout]
     let version: APIVersionInfo?
+    let trainingTime: String?
 }
 
 /// Version info from the active routine version

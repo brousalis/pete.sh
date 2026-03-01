@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import WatchKit
 
 /// Consolidated Settings + History view (Page 3)
 /// Contains all settings in one place - no duplicates

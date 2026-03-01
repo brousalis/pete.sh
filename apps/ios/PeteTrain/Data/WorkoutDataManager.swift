@@ -104,6 +104,11 @@ final class WorkoutDataManager {
 
                 // Save to cache
                 await cache.save(result.definitions, version: result.version)
+
+                // Update notification timing from routine's training time
+                if let trainingTime = result.trainingTime {
+                    NotificationManager.shared.updateFromTrainingTime(trainingTime)
+                }
             }
 
         } catch {

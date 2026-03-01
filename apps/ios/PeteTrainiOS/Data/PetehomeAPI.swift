@@ -184,6 +184,67 @@ final class PetehomeAPI {
         return Set(listResponse.data.map { $0.healthkit_id })
     }
 
+    // MARK: - Shopping List API
+
+    /// Fetch the current week's meal plan
+    func fetchCurrentMealPlan() async throws -> MealPlanResponse {
+        let url = baseURL.appendingPathComponent("api/cooking/meal-plans")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled { logRequest(request, body: nil) }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled { logResponse(response, data: data) }
+
+        try handleResponse(response, data: data)
+
+        return try decoder.decode(MealPlanResponse.self, from: data)
+    }
+
+    /// Fetch the shopping list for a given meal plan
+    func fetchShoppingList(mealPlanId: String) async throws -> ShoppingListResponse {
+        let url = baseURL.appendingPathComponent("api/cooking/meal-plans/\(mealPlanId)/shopping-list")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled { logRequest(request, body: nil) }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled { logResponse(response, data: data) }
+
+        try handleResponse(response, data: data)
+
+        return try decoder.decode(ShoppingListResponse.self, from: data)
+    }
+
+    /// Update shopping list state (checked items, hidden items, manual items, trips)
+    func updateShoppingListState(listId: String, patch: ShoppingListStatePatch) async throws {
+        let url = baseURL.appendingPathComponent("api/cooking/shopping-lists/\(listId)/state")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        let body = try encoder.encode(patch)
+        request.httpBody = body
+
+        if debugLoggingEnabled { logRequest(request, body: body) }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled { logResponse(response, data: data) }
+
+        try handleResponse(response, data: data)
+    }
+
     /// Test the API connection and credentials
     func testConnection() async throws -> Bool {
         print("Testing connection to \(baseURL.absoluteString)...")

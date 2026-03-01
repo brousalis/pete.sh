@@ -188,6 +188,7 @@ final class PetehomeAPI {
     struct WorkoutDefinitionsResult {
         let definitions: [String: APIWorkout]
         let version: APIVersionInfo?
+        let trainingTime: String?
     }
 
     /// Fetch workout definitions from the API
@@ -225,7 +226,8 @@ final class PetehomeAPI {
 
         return WorkoutDefinitionsResult(
             definitions: responseData.definitions,
-            version: responseData.version
+            version: responseData.version,
+            trainingTime: responseData.trainingTime
         )
     }
 

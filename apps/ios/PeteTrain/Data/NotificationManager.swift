@@ -443,6 +443,45 @@ final class NotificationManager: NSObject {
 
 extension NotificationManager {
     
+    /// Update reminder time from the routine's training time string (e.g. "12:00 PM")
+    /// Called when workout definitions are fetched from the API
+    func updateFromTrainingTime(_ timeString: String) {
+        guard let (hour, minute) = Self.parseTimeString(timeString) else {
+            print("🔔 Could not parse training time: \(timeString)")
+            return
+        }
+
+        let changed = hour != reminderHour || minute != reminderMinute
+        guard changed else { return }
+
+        print("🔔 Updating reminder time from routine: \(timeString) → \(hour):\(String(format: "%02d", minute))")
+        // Set both without triggering reschedule twice
+        UserDefaults.standard.set(hour, forKey: "reminderHour")
+        UserDefaults.standard.set(minute, forKey: "reminderMinute")
+        if remindersEnabled {
+            scheduleWorkoutReminders()
+        }
+    }
+
+    /// Parse a time string like "12:00 PM" or "2:30 PM" into (hour24, minute)
+    static func parseTimeString(_ timeString: String) -> (hour: Int, minute: Int)? {
+        let trimmed = timeString.trimmingCharacters(in: .whitespaces)
+        let parts = trimmed.split(separator: " ")
+        guard parts.count == 2 else { return nil }
+
+        let timeParts = parts[0].split(separator: ":")
+        guard timeParts.count == 2,
+              var hour = Int(timeParts[0]),
+              let minute = Int(timeParts[1]) else { return nil }
+
+        let period = parts[1].uppercased()
+        if period == "PM" && hour != 12 { hour += 12 }
+        if period == "AM" && hour == 12 { hour = 0 }
+
+        guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+        return (hour, minute)
+    }
+
     static let availableHours = Array(5...22) // 5 AM to 10 PM
     
     static func formatHour(_ hour: Int) -> String {

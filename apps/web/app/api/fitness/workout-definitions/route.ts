@@ -19,6 +19,10 @@ export async function GET(request: NextRequest) {
     const versions = await adapter.getVersions(routineId)
     const activeVersion = versions.activeVersion
 
+    // Get training time from routine for watch notification scheduling
+    const routine = await adapter.getRoutine()
+    const trainingTime = routine?.userProfile?.schedule?.trainingTime ?? null
+
     return successResponse({
       definitions,
       version: activeVersion ? {
@@ -26,6 +30,7 @@ export async function GET(request: NextRequest) {
         name: activeVersion.name,
         activatedAt: activeVersion.activatedAt,
       } : null,
+      trainingTime,
     })
   } catch (error) {
     return handleApiError(error)

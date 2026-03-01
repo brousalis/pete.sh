@@ -20,6 +20,11 @@ struct MainTabView: View {
                     Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                 }
 
+            ShoppingListView()
+                .tabItem {
+                    Label("List", systemImage: "list.clipboard")
+                }
+
             WebViewTab()
                 .tabItem {
                     Label("Home", systemImage: "globe")

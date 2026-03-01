@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import CoreLocation
 import Observation
 import WatchKit
 import CoreLocation
@@ -44,6 +45,11 @@ final class MapleWalkManager: NSObject {
     private var workoutSession: HKWorkoutSession?
     private var workoutBuilder: HKLiveWorkoutBuilder?
     private var routeBuilder: HKWorkoutRouteBuilder?
+<<<<<<< Updated upstream
+=======
+    private var routeLocationManager: CLLocationManager?
+    private var routeLocationDelegate: RouteLocationDelegate?
+>>>>>>> Stashed changes
     private var sessionStartDate: Date?
 
     /// Session ID for persisting markers across crashes
@@ -112,11 +118,18 @@ final class MapleWalkManager: NSObject {
             session.startActivity(with: Date())
             try await builder.beginCollection(at: Date())
 
+<<<<<<< Updated upstream
             // Create route builder to capture GPS - system may not add route for third-party workouts
             let routeBuilder = builder.seriesBuilder(for: HKSeriesType.workoutRoute()) as? HKWorkoutRouteBuilder
             self.routeBuilder = routeBuilder
 
             // Ensure LocationManager is providing GPS updates and feed locations to route builder
+=======
+            // Create route builder to record GPS track
+            self.routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
+
+            // Ensure LocationManager is providing GPS updates
+>>>>>>> Stashed changes
             let locationManager = LocationManager.shared
             if locationManager.isAuthorized && !locationManager.isMonitoring {
                 locationManager.startMonitoring()
@@ -130,6 +143,9 @@ final class MapleWalkManager: NSObject {
                     }
                 }
             }
+
+            // Start dedicated high-accuracy GPS for route recording
+            startRouteTracking()
 
             walkState = .active
             startElapsedTimer()
@@ -168,6 +184,7 @@ final class MapleWalkManager: NSObject {
         }
 
         session.end()
+        stopRouteTracking()
 
         // Clear location callback before ending
         LocationManager.shared.onLocationUpdate = nil
@@ -177,6 +194,7 @@ final class MapleWalkManager: NSObject {
             let workout = try await builder.finishWorkout()
             self.finishedWorkout = workout
 
+<<<<<<< Updated upstream
             // Finish route builder so GPS data is saved to HealthKit (must be after finishWorkout)
             if let workout, let rb = routeBuilder, routePointCount > 0 {
                 try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -194,6 +212,18 @@ final class MapleWalkManager: NSObject {
             self.routeBuilder = nil
             self.routePointCount = 0
 
+=======
+            // Finalize the route and attach it to the workout
+            if let workout = workout, let routeBuilder = self.routeBuilder {
+                do {
+                    try await routeBuilder.finishRoute(with: workout, metadata: nil)
+                    print("🐾 Route saved with workout")
+                } catch {
+                    print("🐾 Failed to save route: \(error)")
+                }
+            }
+
+>>>>>>> Stashed changes
             if let workout = workout {
                 print("🐾 Maple Walk ended: \(Int(workout.duration / 60))m")
             }
@@ -241,6 +271,10 @@ final class MapleWalkManager: NSObject {
         workoutSession = nil
         workoutBuilder = nil
         routeBuilder = nil
+<<<<<<< Updated upstream
+=======
+        stopRouteTracking()
+>>>>>>> Stashed changes
         sessionStartDate = nil
         currentSessionId = nil
         routePointCount = 0
@@ -307,6 +341,45 @@ final class MapleWalkManager: NSObject {
         }
     }
 
+    // MARK: - Route GPS Tracking
+
+    /// Start a dedicated high-accuracy CLLocationManager for GPS route recording
+    private func startRouteTracking() {
+        let delegate = RouteLocationDelegate { [weak self] locations in
+            await self?.insertRouteLocations(locations)
+        }
+        let clManager = CLLocationManager()
+        clManager.delegate = delegate
+        clManager.desiredAccuracy = kCLLocationAccuracyBest
+        clManager.distanceFilter = 5 // Update every 5 meters for smooth track
+        clManager.startUpdatingLocation()
+
+        self.routeLocationDelegate = delegate
+        self.routeLocationManager = clManager
+        print("🐾 Route GPS tracking started (best accuracy, 5m filter)")
+    }
+
+    private func stopRouteTracking() {
+        routeLocationManager?.stopUpdatingLocation()
+        routeLocationManager?.delegate = nil
+        routeLocationManager = nil
+        routeLocationDelegate = nil
+    }
+
+    private func insertRouteLocations(_ locations: [CLLocation]) {
+        guard walkState == .active, let routeBuilder = routeBuilder else { return }
+
+        // Filter to reasonable accuracy for route data
+        let good = locations.filter { $0.horizontalAccuracy >= 0 && $0.horizontalAccuracy < 50 }
+        guard !good.isEmpty else { return }
+
+        routeBuilder.insertRouteData(good) { success, error in
+            if let error = error {
+                print("🐾 Route insert error: \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Elapsed Timer
 
     private func startElapsedTimer() {
@@ -368,12 +441,17 @@ extension MapleWalkManager: HKWorkoutSessionDelegate {
                 if self.walkState != .ending && self.walkState != .summary {
                     print("🐾 Walk ended externally")
                     self.stopElapsedTimer()
+<<<<<<< Updated upstream
                     LocationManager.shared.onLocationUpdate = nil
+=======
+                    self.stopRouteTracking()
+>>>>>>> Stashed changes
                     if let builder = self.workoutBuilder {
                         do {
                             try await builder.endCollection(at: date)
                             let workout = try await builder.finishWorkout()
                             self.finishedWorkout = workout
+<<<<<<< Updated upstream
                             if let workout, let rb = self.routeBuilder, self.routePointCount > 0 {
                                 try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                                     rb.finishRoute(with: workout, metadata: nil) { _, _ in
@@ -383,6 +461,13 @@ extension MapleWalkManager: HKWorkoutSessionDelegate {
                             }
                             self.routeBuilder = nil
                             self.routePointCount = 0
+=======
+
+                            if let workout = workout, let routeBuilder = self.routeBuilder {
+                                try await routeBuilder.finishRoute(with: workout, metadata: nil)
+                                print("🐾 Route saved with externally ended workout")
+                            }
+>>>>>>> Stashed changes
                         } catch {
                             print("🐾 Error finishing externally ended workout: \(error)")
                         }
@@ -430,5 +515,27 @@ extension MapleWalkManager: HKLiveWorkoutBuilderDelegate {
         Task { @MainActor in
             self.updateMetrics()
         }
+    }
+}
+
+// MARK: - Route Location Delegate
+
+/// Dedicated CLLocationManager delegate for high-accuracy GPS route recording.
+/// Separate from LocationManager (which is configured for coarse geofencing).
+private final class RouteLocationDelegate: NSObject, CLLocationManagerDelegate {
+    private let onLocations: @Sendable ([CLLocation]) async -> Void
+
+    init(onLocations: @escaping @Sendable ([CLLocation]) async -> Void) {
+        self.onLocations = onLocations
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        Task {
+            await onLocations(locations)
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("🐾 Route location error: \(error.localizedDescription)")
     }
 }
