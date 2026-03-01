@@ -642,6 +642,11 @@ async function autoImportNewRecipes() {
       instruction,
     }))
 
+    // Merge TJ tags + categories into recipe tags (categories enable dinner-appropriate filtering)
+    const tjTags = rd.tags || []
+    const tjCategories = rd.categories || (tj.category ? [tj.category] : [])
+    const allTags = [...tjTags, ...tjCategories].filter(Boolean)
+
     recipeRows.push({
       id: tj.id,
       name: tj.name,
@@ -652,7 +657,7 @@ async function autoImportNewRecipes() {
       cook_time: rd.cook_time || null,
       servings: rd.servings || null,
       difficulty: null,
-      tags: rd.tags || [],
+      tags: allTags,
       image_url: tj.image_url || null,
       instructions: JSON.stringify(instructions),
       notes: null,

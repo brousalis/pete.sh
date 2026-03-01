@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast'
 import { apiDelete, apiGet, apiPost, apiPut } from '@/lib/api/client'
 import type {
     CreateMealCompletionInput,
+    DayMeals,
     DayOfWeek,
     FridgeScan,
     MealCompletion,
@@ -12,6 +13,7 @@ import type {
     Recipe,
     RecipeWithIngredients,
     ShoppingList,
+    WeeklyMeals,
 } from '@/lib/types/cooking.types'
 import { startOfWeek } from 'date-fns'
 import type { ReactNode } from 'react'
@@ -38,6 +40,7 @@ interface CookingContextValue {
     mealType: string,
     recipeId: string | null
   ) => Promise<void>
+  updateMealPlanBulk: (updates: Partial<Record<DayOfWeek, Partial<DayMeals>>>) => Promise<void>
   refreshMealPlan: () => Promise<void>
 
   shoppingList: ShoppingList | null
@@ -254,6 +257,58 @@ export function CookingProvider({ children }: { children: ReactNode }) {
             variant: 'destructive',
           })
         }
+      }
+    },
+    [mealPlan, currentWeek, toast]
+  )
+
+  const updateMealPlanBulk = useCallback(
+    async (updates: Partial<Record<DayOfWeek, Partial<DayMeals>>>) => {
+      const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      const existingMeals: WeeklyMeals = mealPlan?.meals ? { ...mealPlan.meals } : {}
+
+      for (const day of DAYS) {
+        const dayUpdate = updates[day]
+        if (!dayUpdate) continue
+
+        const currentDay = { ...(existingMeals[day] || {}) }
+        if (dayUpdate.breakfast !== undefined) currentDay.breakfast = dayUpdate.breakfast
+        if (dayUpdate.lunch !== undefined) currentDay.lunch = dayUpdate.lunch
+        if (dayUpdate.dinner !== undefined) currentDay.dinner = dayUpdate.dinner
+        if (dayUpdate.snack !== undefined) currentDay.snack = dayUpdate.snack
+        if (dayUpdate.skipped !== undefined) currentDay.skipped = dayUpdate.skipped
+        if (dayUpdate.skip_note !== undefined) currentDay.skip_note = dayUpdate.skip_note
+
+        existingMeals[day] = Object.keys(currentDay).length > 0 ? currentDay : undefined
+      }
+
+      try {
+        if (!mealPlan) {
+          const response = await apiPost<MealPlan>('/api/cooking/meal-plans', {
+            week_start_date: currentWeek.toISOString(),
+            meals: existingMeals,
+          })
+          if (response.success && response.data) {
+            setMealPlan(response.data)
+            setMealPlanVersion((v) => v + 1)
+            toast({ title: 'Meal plan created' })
+          }
+        } else {
+          const response = await apiPut<MealPlan>(`/api/cooking/meal-plans/${mealPlan.id}`, {
+            meals: existingMeals,
+          })
+          if (response.success && response.data) {
+            setMealPlan(response.data)
+            setMealPlanVersion((v) => v + 1)
+            toast({ title: 'Meal plan updated' })
+          }
+        }
+      } catch {
+        toast({
+          title: 'Error',
+          description: 'Failed to update meal plan',
+          variant: 'destructive',
+        })
       }
     },
     [mealPlan, currentWeek, toast]
@@ -553,6 +608,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       mealPlan,
       mealPlanLoading,
       updateMealSlot,
+      updateMealPlanBulk,
       refreshMealPlan,
       shoppingList,
       shoppingListLoading,
@@ -602,6 +658,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       mealPlan,
       mealPlanLoading,
       updateMealSlot,
+      updateMealPlanBulk,
       refreshMealPlan,
       shoppingList,
       shoppingListLoading,
