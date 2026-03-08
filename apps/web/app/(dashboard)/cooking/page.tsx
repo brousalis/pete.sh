@@ -272,8 +272,8 @@ function CookingPageContent() {
         {/* ═══════════════════════════════════════════════════════ */}
         {/* ── MOBILE: Tab Navigation ── */}
         {/* ═══════════════════════════════════════════════════════ */}
-        <div className="md:hidden shrink-0 px-3 pt-2 pb-1">
-          <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1">
+        <div className="md:hidden shrink-0 pt-2 pb-1">
+          <div className="flex items-center gap-1 rounded-xl bg-muted/60">
             {([
               { key: 'plan' as MobileTab, label: 'Plan', icon: CalendarDays },
               { key: 'shopping' as MobileTab, label: 'Shop', icon: ShoppingCart, badge: shoppingItemCount > 0 ? shoppingItemCount : undefined },

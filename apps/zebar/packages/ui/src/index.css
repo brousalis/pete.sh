@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body,
+#root {
+  @apply text-sm;
+  overflow: hidden;
+  --sb-track-color: var(--background);
+  --sb-thumb-color: var(--button);
+  --sb-size: 4px;
+}
+
+#root {
+  isolation: isolate;
+}
+
+@layer utilities {
+  .touch-hitbox {
+    position: relative;
+    isolation: isolate;
+  }
+  .touch-hitbox::before {
+    content: '';
+    position: absolute;
+    display: block;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    min-height: 44px;
+    min-width: 44px;
+    z-index: 9999;
+  }
+}
+
+*::-webkit-scrollbar {
+  width: var(--sb-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--sb-track-color);
+  border-radius: calc(var(--radius) * 0.375);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb-color);
+  border-radius: calc(var(--radius) * 0.375);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+  }
+}

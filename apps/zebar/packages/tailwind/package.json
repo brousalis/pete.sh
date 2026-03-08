@@ -1,0 +1,19 @@
+{
+  "name": "@petehome/tailwind",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./tailwind.config.ts",
+      "import": "./tailwind.config.ts",
+      "default": "./tailwind.config.ts"
+    }
+  },
+  "types": "./tailwind.config.ts",
+  "devDependencies": {
+    "@petehome/typescript": "*",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.8.3"
+  }
+}

@@ -8,10 +8,12 @@ import {
 } from '@/components/dashboard/ai-coach-routine-card'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
-import type { DayOfWeek, Workout } from '@/lib/types/fitness.types'
+import type { DayOfWeek, Workout, DailyRoutine } from '@/lib/types/fitness.types'
 import {
   applyRoutineChanges,
+  applyDailyRoutineChanges,
   type RoutineChangeDiffEntry,
+  type DailyRoutineChangeDiffEntry,
 } from '@/lib/utils/routine-change-utils'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
@@ -149,9 +151,12 @@ export interface AiCoachInlineProps {
   onApplyChanges: (
     updatedDefs: Record<DayOfWeek, Workout>,
     commitMessage: string,
-    diff: RoutineChangeDiffEntry[]
+    diff: RoutineChangeDiffEntry[],
+    updatedDailyRoutines?: { morning: DailyRoutine; night: DailyRoutine },
+    dailyRoutineDiff?: DailyRoutineChangeDiffEntry[],
   ) => void
   currentWorkoutDefs: Record<DayOfWeek, Workout>
+  currentDailyRoutines?: { morning: DailyRoutine; night: DailyRoutine }
   undoAvailable: boolean
   onUndo: () => void
 }
@@ -161,6 +166,7 @@ export function AiCoachInline({
   onClose,
   onApplyChanges,
   currentWorkoutDefs,
+  currentDailyRoutines,
   undoAvailable,
   onUndo,
 }: AiCoachInlineProps) {
@@ -244,14 +250,31 @@ export function AiCoachInline({
     (toolResult: RoutineProposal, toolCallId: string) => {
       setRoutineApplying(toolCallId)
       try {
+        let totalChanges = 0
+
         const clonedDefs = structuredClone(currentWorkoutDefs)
         const { updatedDefs, changesApplied, diff } = applyRoutineChanges(
           clonedDefs,
           toolResult.routineChanges ?? [],
           toolResult.progressiveOverload
         )
+        totalChanges += changesApplied
 
-        if (changesApplied === 0) {
+        let updatedDailyRoutines: { morning: DailyRoutine; night: DailyRoutine } | undefined
+        let dailyDiff: DailyRoutineChangeDiffEntry[] | undefined
+
+        if (toolResult.dailyRoutineChanges?.length && currentDailyRoutines) {
+          const clonedRoutines = structuredClone(currentDailyRoutines)
+          const dailyResult = applyDailyRoutineChanges(
+            clonedRoutines,
+            toolResult.dailyRoutineChanges
+          )
+          totalChanges += dailyResult.changesApplied
+          updatedDailyRoutines = dailyResult.updatedRoutines
+          dailyDiff = dailyResult.diff
+        }
+
+        if (totalChanges === 0) {
           toast({
             title: 'No changes applied',
             description:
@@ -264,11 +287,13 @@ export function AiCoachInline({
         onApplyChanges(
           updatedDefs as Record<DayOfWeek, Workout>,
           toolResult.commitMessage ?? 'AI Coach changes',
-          diff
+          diff,
+          updatedDailyRoutines,
+          dailyDiff,
         )
         setApplied((prev) => new Set(prev).add(toolCallId))
         sendMessage({
-          text: `Applied ${changesApplied} change${changesApplied !== 1 ? 's' : ''} to the routine. The editor has been updated.`,
+          text: `Applied ${totalChanges} change${totalChanges !== 1 ? 's' : ''} to the routine. The editor has been updated.`,
         })
       } catch (err) {
         toast({
@@ -280,7 +305,7 @@ export function AiCoachInline({
         setRoutineApplying(null)
       }
     },
-    [currentWorkoutDefs, onApplyChanges, sendMessage, toast]
+    [currentWorkoutDefs, currentDailyRoutines, onApplyChanges, sendMessage, toast]
   )
 
   if (!open) return null

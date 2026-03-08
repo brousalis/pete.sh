@@ -39,9 +39,10 @@ import {
     type TrainingReadiness,
     type TrainingReadinessInput,
 } from '@/lib/types/ai-coach.types'
-import type { Workout } from '@/lib/types/fitness.types'
+import type { Workout, DailyRoutine } from '@/lib/types/fitness.types'
 import type { Recipe } from '@/lib/types/cooking.types'
-import { applyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
+import { applyRoutineChanges, applyDailyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
+import type { DailyRoutineChange } from '@/lib/types/ai-coach.types'
 
 // ============================================
 // LANGUAGE MODEL MIDDLEWARE
@@ -481,7 +482,7 @@ ${JSON.stringify(r.injuryProtocol, null, 2)}
 ## Weekly Schedule
 ${JSON.stringify(r.schedule, null, 2)}
 
-## Daily Routines (Morning & Night)
+## Daily Routines (Morning & Night) — MODIFIABLE via proposeRoutineVersion dailyRoutineChanges
 ${JSON.stringify(r.dailyRoutines, null, 2)}`)
   }
 
@@ -796,7 +797,14 @@ export async function createChatStream(
     model,
     system: `You are an expert AI fitness coach embedded in the athlete's training dashboard. You have full access to their workout data, body composition, and health metrics. Be conversational but specific — always back up recommendations with data. Follow the coaching knowledge base principles.
 
-When the user asks you to change, swap, add, remove, or modify exercises in their routine, or to adjust weights/reps/sets, use the proposeRoutineVersion tool. Include all related changes in a single tool call. Do not narrate what you plan to change before calling the tool — just call it directly. Never modify the routine without using this tool.
+TOOL USAGE — MANDATORY:
+When the user asks you to change, swap, add, remove, or modify ANY part of their routine, you MUST use the proposeRoutineVersion tool. This applies to:
+- Workout exercises (use the routineChanges / progressiveOverload parameters)
+- Morning and night daily routines (use the dailyRoutineChanges parameter)
+Include all related changes in a single tool call. Do not narrate what you plan to change before calling the tool — just call it directly. NEVER list out changes in text and tell the user to "implement them manually." Always use the tool.
+
+DAILY ROUTINE CHANGES:
+The proposeRoutineVersion tool fully supports modifying morning and night daily routines via the dailyRoutineChanges array. Daily routine exercises are duration-based stretches/mobility with fields: routineType ("morning" | "night"), exerciseName, duration (seconds), description, why, actionCue. This is different from workout exercises which use sets/reps/weight in the routineChanges array. When the user asks to update their morning stretch, night stretch, mobility, or rehab routine — use dailyRoutineChanges. Do NOT say you cannot modify daily routines.
 
 Today's date: ${getLocalDateString()}
 
@@ -869,7 +877,7 @@ ${systemContext}`,
       }),
       proposeRoutineVersion: tool({
         description:
-          'Propose changes to the workout routine. Shows the user a preview card with the changes for them to review and apply. Use this whenever the user asks to change, swap, add, remove, or modify exercises. Include all related changes in a single call.',
+          'Propose changes to workouts and/or daily routines (morning/night stretches). Shows the user a preview card with the changes for them to review and apply. Use this whenever the user asks to change, swap, add, remove, or modify exercises in workouts OR daily routines. Include all related changes in a single call.',
         inputSchema: z.object({
           commitMessage: z.string().describe('Brief description of what changed, e.g. "Swapped bench press for incline DB press on Monday"'),
           routineChanges: z.array(z.object({
@@ -885,7 +893,7 @@ ${systemContext}`,
             rest: z.number().optional().describe('Rest in seconds'),
             form: z.string().optional().describe('Form cues'),
             reasoning: z.string().describe('Why this change is recommended'),
-          })).optional().default([]).describe('Structural changes to the routine (add/remove/modify/swap exercises)'),
+          })).optional().default([]).describe('Structural changes to workout exercises (add/remove/modify/swap)'),
           progressiveOverload: z.array(z.object({
             exerciseName: z.string().describe('Exercise name to adjust'),
             suggestedWeight: z.number().optional().describe('New weight in lbs'),
@@ -893,8 +901,20 @@ ${systemContext}`,
             suggestedSets: z.number().optional().describe('New set count'),
             reasoning: z.string().describe('Why this progression is recommended'),
           })).optional().default([]).describe('Weight/rep/set progression adjustments'),
+          dailyRoutineChanges: z.array(z.object({
+            routineType: z.enum(['morning', 'night']).describe('Which daily routine to modify'),
+            action: z.enum(['add', 'remove', 'modify', 'swap']).describe('Type of change'),
+            exerciseName: z.string().describe('Name of the existing exercise (for remove/modify/swap) or new exercise (for add)'),
+            newExerciseName: z.string().optional().describe('Name of replacement exercise (for swap)'),
+            duration: z.number().optional().describe('Duration in seconds'),
+            description: z.string().optional().describe('Exercise description'),
+            why: z.string().optional().describe('Why this exercise is included'),
+            actionCue: z.string().optional().describe('Step-by-step action / how-to instructions'),
+            youtubeDemo: z.string().optional().describe('YouTube demo URL'),
+            reasoning: z.string().describe('Why this change is recommended'),
+          })).optional().default([]).describe('Changes to morning/night daily routines (stretches, mobility, rehab)'),
         }),
-        execute: async ({ commitMessage, routineChanges, progressiveOverload }) => {
+        execute: async ({ commitMessage, routineChanges, progressiveOverload, dailyRoutineChanges }) => {
           try {
             const supabase = getSupabaseClientForOperation('read')
             if (!supabase) {
@@ -907,7 +927,7 @@ ${systemContext}`,
 
             const { data: activeVersion, error: activeError } = await db
               .from('fitness_routine_versions')
-              .select('workout_definitions')
+              .select('workout_definitions, daily_routines')
               .eq('routine_id', routineId)
               .eq('is_active', true)
               .single()
@@ -916,9 +936,9 @@ ${systemContext}`,
               return { status: 'error' as const, message: 'No active routine version found' }
             }
 
-            const workoutDefs: Record<string, Workout> = JSON.parse(
-              JSON.stringify(activeVersion.workout_definitions || {})
-            )
+            let totalChanges = 0
+            let workoutDiff: import('@/lib/utils/routine-change-utils').RoutineChangeDiffEntry[] = []
+            let dailyRoutineDiff: import('@/lib/utils/routine-change-utils').DailyRoutineChangeDiffEntry[] = []
 
             const mappedChanges: RoutineChange[] = routineChanges.map((c) => ({
               ...c,
@@ -933,13 +953,29 @@ ${systemContext}`,
               reasoning: o.reasoning,
             }))
 
-            const { changesApplied, diff } = applyRoutineChanges(
-              workoutDefs,
-              mappedChanges,
-              mappedOverload,
-            )
+            if (mappedChanges.length > 0 || mappedOverload.length > 0) {
+              const workoutDefs: Record<string, Workout> = JSON.parse(
+                JSON.stringify(activeVersion.workout_definitions || {})
+              )
+              const result = applyRoutineChanges(workoutDefs, mappedChanges, mappedOverload)
+              totalChanges += result.changesApplied
+              workoutDiff = result.diff
+            }
 
-            if (changesApplied === 0) {
+            const mappedDailyChanges: DailyRoutineChange[] = (dailyRoutineChanges || []).map((c) => ({
+              ...c,
+            }))
+
+            if (mappedDailyChanges.length > 0) {
+              const dailyRoutines: { morning: DailyRoutine; night: DailyRoutine } = JSON.parse(
+                JSON.stringify(activeVersion.daily_routines || {})
+              )
+              const result = applyDailyRoutineChanges(dailyRoutines, mappedDailyChanges)
+              totalChanges += result.changesApplied
+              dailyRoutineDiff = result.diff
+            }
+
+            if (totalChanges === 0) {
               return {
                 status: 'error' as const,
                 message: 'No matching exercises found for the proposed changes. Check the exercise names match what\'s in the routine.',
@@ -952,8 +988,10 @@ ${systemContext}`,
               routineId,
               routineChanges: mappedChanges,
               progressiveOverload: mappedOverload,
-              diff,
-              changesApplied,
+              dailyRoutineChanges: mappedDailyChanges,
+              diff: workoutDiff,
+              dailyRoutineDiff,
+              changesApplied: totalChanges,
             }
           } catch (error) {
             return {

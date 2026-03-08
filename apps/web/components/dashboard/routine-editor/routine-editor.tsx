@@ -19,13 +19,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ToastAction } from '@/components/ui/toast'
 import { useToast } from '@/hooks/use-toast'
 import { apiGet, apiPost, apiPut } from '@/lib/api/client'
-import type { DayOfWeek, Workout } from '@/lib/types/fitness.types'
+import type { DayOfWeek, Workout, DailyRoutine } from '@/lib/types/fitness.types'
 import type {
   RoutineVersion,
   VersionsListResponse,
 } from '@/lib/types/routine-editor.types'
 import { cn } from '@/lib/utils'
-import type { RoutineChangeDiffEntry } from '@/lib/utils/routine-change-utils'
+import type { RoutineChangeDiffEntry, DailyRoutineChangeDiffEntry } from '@/lib/utils/routine-change-utils'
 import {
   AlertCircle,
   ArrowLeft,
@@ -133,6 +133,7 @@ export function RoutineEditor({
   const [undoStack, setUndoStack] = useState<
     Array<{
       workoutDefinitions: Record<DayOfWeek, Workout>
+      dailyRoutines?: { morning: DailyRoutine; night: DailyRoutine }
       commitMessage: string
       timestamp: number
     }>
@@ -369,7 +370,9 @@ export function RoutineEditor({
     (
       updatedDefs: Record<DayOfWeek, Workout>,
       commitMessage: string,
-      diff: RoutineChangeDiffEntry[]
+      diff: RoutineChangeDiffEntry[],
+      updatedDailyRoutines?: { morning: DailyRoutine; night: DailyRoutine },
+      dailyRoutineDiff?: DailyRoutineChangeDiffEntry[],
     ) => {
       if (!currentVersion) return
 
@@ -378,6 +381,9 @@ export function RoutineEditor({
           workoutDefinitions: structuredClone(
             currentVersion.workoutDefinitions
           ),
+          dailyRoutines: currentVersion.dailyRoutines
+            ? structuredClone(currentVersion.dailyRoutines)
+            : undefined,
           commitMessage,
           timestamp: Date.now(),
         }
@@ -387,6 +393,10 @@ export function RoutineEditor({
 
       handleUpdate('workoutDefinitions', updatedDefs)
 
+      if (updatedDailyRoutines) {
+        handleUpdate('dailyRoutines', updatedDailyRoutines)
+      }
+
       const firstChanged = diff[0]
       if (firstChanged) {
         const day = firstChanged.day as DayOfWeek
@@ -394,6 +404,8 @@ export function RoutineEditor({
           setSelectedDay(day)
           setActiveSection('workout')
         }
+      } else if (dailyRoutineDiff?.length) {
+        setActiveSection('daily-routines')
       }
 
       toast({
@@ -408,6 +420,9 @@ export function RoutineEditor({
                 const next = [...prev]
                 const entry = next.pop()!
                 handleUpdate('workoutDefinitions', entry.workoutDefinitions)
+                if (entry.dailyRoutines) {
+                  handleUpdate('dailyRoutines', entry.dailyRoutines)
+                }
                 return next
               })
               toast({ title: 'Undo successful', description: 'Reverted to previous state.' })
@@ -428,6 +443,9 @@ export function RoutineEditor({
       const next = [...prev]
       const entry = next.pop()!
       handleUpdate('workoutDefinitions', entry.workoutDefinitions)
+      if (entry.dailyRoutines) {
+        handleUpdate('dailyRoutines', entry.dailyRoutines)
+      }
       toast({
         title: 'Undo successful',
         description: `Reverted: ${entry.commitMessage}`,
@@ -809,6 +827,7 @@ export function RoutineEditor({
           onClose={() => setAiCoachOpen(false)}
           onApplyChanges={handleAiApply}
           currentWorkoutDefs={currentVersion.workoutDefinitions}
+          currentDailyRoutines={currentVersion.dailyRoutines}
           undoAvailable={undoStack.length > 0}
           onUndo={handleAiUndo}
         />
