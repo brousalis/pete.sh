@@ -116,7 +116,7 @@ function DashboardContent() {
         </div>
 
         {/* Right: Context Panel */}
-        <div className="hidden md:block border-l border-white/[0.04] overflow-hidden">
+        <div className="hidden md:flex md:flex-col border-l border-white/[0.04] overflow-hidden min-w-0">
           <ContextPanel />
         </div>
       </div>

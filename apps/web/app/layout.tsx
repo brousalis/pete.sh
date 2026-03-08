@@ -1,6 +1,8 @@
 import { Providers } from '@/components/providers'
 import { SyncManager } from '@/components/sync-manager'
 import { Analytics } from '@vercel/analytics/next'
+import { GeistMono } from 'geist/font/mono'
+import { GeistSans } from 'geist/font/sans'
 import type { Metadata } from 'next'
 import type React from 'react'
 import { Suspense } from 'react'
@@ -21,7 +23,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className="antialiased"
+      className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       data-brand="yellow"
     >
       <body className="font-sans">

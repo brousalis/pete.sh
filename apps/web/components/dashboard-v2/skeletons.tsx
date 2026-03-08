@@ -64,11 +64,11 @@ export function WorkoutStageSkeleton() {
         <Skeleton className="h-10 w-full mb-2" />
       </div>
       <div className="px-5 space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {[72, 65, 80, 60, 75].map((w, i) => (
           <div key={i} className="flex items-start gap-3 py-3">
             <Skeleton className="size-5 rounded-md" />
             <div className="flex-1">
-              <Skeleton className="h-4 mb-1" style={{ width: `${60 + Math.random() * 30}%` }} />
+              <Skeleton className="h-4 mb-1" style={{ width: `${w}%` }} />
               <Skeleton className="h-3 w-32" />
             </div>
           </div>

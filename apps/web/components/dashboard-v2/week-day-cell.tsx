@@ -50,37 +50,32 @@ export function WeekDayCell({
     : [morningDone, workoutDone, nightDone]
 
   const allDone = completionDots.every(Boolean) && completionDots.length > 0
-  const someDone = completionDots.some(Boolean)
 
   return (
     <motion.button
       onClick={onClick}
-      whileHover={!isActive ? { scale: 1.03 } : undefined}
-      whileTap={{ scale: 0.97 }}
+      whileHover={!isActive ? { backgroundColor: 'rgba(255,255,255,0.04)' } : undefined}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        'relative flex flex-col items-center justify-center gap-1 rounded-xl py-2.5 px-1 transition-all duration-200 min-w-0',
-        isActive
-          ? 'bg-white/[0.06] shadow-lg shadow-white/[0.02]'
-          : 'hover:bg-white/[0.03]',
-        allDone && isPast && !isActive && 'bg-green-500/[0.04]',
-        isToday && !isActive && 'bg-white/[0.03]'
+        'relative flex flex-col items-center justify-center gap-1 py-3 px-1 transition-colors duration-150 min-w-0',
+        isActive && 'bg-white/[0.07]',
+        allDone && isPast && !isActive && 'bg-green-500/[0.03]',
       )}
-      layout
     >
-      {/* Active bottom accent */}
+      {/* Active top accent line */}
       {isActive && (
         <motion.div
-          className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full bg-white/20"
-          layoutId="activeDay"
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className="absolute top-0 inset-x-0 h-[2px] bg-white/30"
+          layoutId="activeDayBar"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
         />
       )}
 
       {/* Day abbreviation */}
       <span
         className={cn(
-          'text-[10px] font-medium uppercase tracking-wide leading-none',
-          isActive ? 'text-white/60' : 'text-white/40'
+          'text-[10px] font-medium uppercase tracking-wider leading-none',
+          isActive ? 'text-white/70' : 'text-white/35'
         )}
       >
         {format(date, 'EEE')}
@@ -89,8 +84,8 @@ export function WeekDayCell({
       {/* Date number */}
       <span
         className={cn(
-          'text-xl font-semibold tabular-nums leading-none',
-          isActive ? 'text-white' : isToday ? 'text-white/80' : 'text-white/55'
+          'text-[22px] font-semibold tabular-nums leading-none',
+          isActive ? 'text-white' : isToday ? 'text-white/80' : 'text-white/50'
         )}
       >
         {format(date, 'd')}
@@ -99,16 +94,16 @@ export function WeekDayCell({
       {/* Focus badge */}
       <span
         className={cn(
-          'text-[8px] font-bold px-2 py-0.5 rounded-full leading-none uppercase tracking-wider',
+          'text-[7px] font-bold px-1.5 py-[2px] rounded-sm leading-none uppercase tracking-wider',
           isActive
             ? cn(focusConfig.bgStrong, focusConfig.color)
-            : cn(focusConfig.bg, focusConfig.color, 'opacity-80')
+            : cn(focusConfig.bg, focusConfig.color, 'opacity-75')
         )}
       >
         {focus === 'Core/Posture' ? 'Core' : focus === 'Active Recovery' ? 'Recov' : focus}
       </span>
 
-      {/* Bottom row: temp + dots */}
+      {/* Temp + dots */}
       <div className="flex items-center gap-1.5 mt-0.5">
         {tempF != null && (
           <span className={cn('text-[10px] font-medium leading-none', getTempColor(tempF))}>
@@ -124,7 +119,7 @@ export function WeekDayCell({
                 done
                   ? 'bg-green-400'
                   : isPast
-                    ? 'bg-red-400/50'
+                    ? 'bg-red-400/40'
                     : 'bg-white/10'
               )}
             />

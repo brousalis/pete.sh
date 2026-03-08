@@ -180,7 +180,7 @@ export function ActivitySummary() {
           </div>
 
           {/* Stats grid */}
-          <div className="flex-1 grid grid-cols-2 gap-x-3 gap-y-1.5">
+          <div className="flex-1 min-w-0 grid grid-cols-2 gap-x-3 gap-y-1.5">
             <StatItem
               icon={Flame}
               label="Move"

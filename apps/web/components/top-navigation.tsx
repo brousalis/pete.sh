@@ -16,14 +16,12 @@ import { apiGet, apiPost } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Bus,
   Calendar,
   ChefHat,
   Dog,
   Dumbbell,
   Grid3x3,
   Home,
-  Lightbulb,
   Loader2,
   Menu,
   Monitor,
@@ -31,10 +29,9 @@ import {
   Music,
   RefreshCw,
   Settings,
-  Ticket,
   Tv,
   User,
-  X,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -50,17 +47,21 @@ type NavItem = {
 
 // All navigation items
 const navItems: NavItem[] = [
+  { href: '/', label: 'Home', icon: Home, shortcut: '`' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
-  { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
-  { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
-  { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '7' },
+  // CTA sunset – hidden from nav, code kept
+  // { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
+  // Concerts sunset – hidden from nav, code kept
+  // { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
+  // Lights sunset – hidden from nav, code kept
+  // { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '4' },
   // Coffee sunset – hidden from nav, code kept
-  // { href: '/coffee', label: 'Coffee', icon: Coffee, shortcut: '7' },
-  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '8' },
-  { href: '/me', label: 'Me', icon: User, shortcut: '9' },
+  // { href: '/coffee', label: 'Coffee', icon: Coffee },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '5' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '6' },
 ]
 
 // Mobile bottom nav items
@@ -69,8 +70,11 @@ const mobileBottomItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
-  { href: '/transit', label: 'CTA', icon: Bus },
-  { href: '/lights', label: 'Lights', icon: Lightbulb },
+  { href: '/music', label: 'Music', icon: Music },
+  // CTA sunset – hidden from nav, code kept
+  // { href: '/transit', label: 'CTA', icon: Bus },
+  // Lights sunset – hidden from nav, code kept
+  // { href: '/lights', label: 'Lights', icon: Lightbulb },
   // Coffee sunset – hidden from nav
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]

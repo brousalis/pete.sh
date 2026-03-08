@@ -8,7 +8,6 @@ import { NowPlayingBar } from '@/components/dashboard-v2/now-playing-bar'
 import { ProgressRing } from '@/components/dashboard-v2/progress-ring'
 import { QuickActions } from '@/components/dashboard-v2/quick-actions'
 import { ShoppingSummary } from '@/components/dashboard-v2/shopping-summary'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { motion } from 'framer-motion'
 import { staggerContainerVariants, staggerItemVariants } from '@/lib/animations'
 
@@ -50,7 +49,7 @@ export function ContextPanel() {
   ]
 
   return (
-    <ScrollArea className="h-full">
+    <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide">
       <motion.div
         className="flex flex-col gap-2.5 p-2.5"
         initial="hidden"
@@ -85,6 +84,6 @@ export function ContextPanel() {
           <NowPlayingBar />
         </motion.div>
       </motion.div>
-    </ScrollArea>
+    </div>
   )
 }

@@ -58,7 +58,7 @@ export function WeekHorizon() {
 
   return (
     <div className="border-b border-white/[0.04]">
-      <div className="grid grid-cols-7 px-2 py-1">
+      <div className="grid grid-cols-7 divide-x divide-white/[0.04]">
         {weekDays.map((date, i) => {
           const dayKey = DAY_KEYS[i]!
           const dateKey = format(date, 'yyyy-MM-dd')
