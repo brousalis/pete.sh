@@ -39,8 +39,8 @@ final class ActivityDetailViewModel {
         )
     }
 
-    var isRunning: Bool { workout?.workoutType == "running" ?? false }
-    var isCycling: Bool { workout?.workoutType == "cycling" ?? false }
+    var isRunning: Bool { workout?.workoutType == "running" }
+    var isCycling: Bool { workout?.workoutType == "cycling" }
     var isOutdoor: Bool {
         guard let w = workout else { return false }
         if w.isIndoor == false { return true }

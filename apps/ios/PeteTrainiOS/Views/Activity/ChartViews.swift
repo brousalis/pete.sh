@@ -28,7 +28,7 @@ struct ZoneColoredHrChartView: View {
         .chartXAxis {
             AxisMarks(values: .stride(by: 300)) { _ in
                 AxisGridLine()
-                AxisValueLabel(format: .number)
+                AxisValueLabel(format: IntegerFormatStyle<Int>.number)
             }
         }
         .chartYAxis {
@@ -127,7 +127,7 @@ struct TimeSeriesChartView: View {
         .chartXAxis {
             AxisMarks(values: .stride(by: 300)) { _ in
                 AxisGridLine()
-                AxisValueLabel(format: .number)
+                AxisValueLabel(format: IntegerFormatStyle<Int>.number)
             }
         }
         .chartYAxis {

@@ -31,9 +31,9 @@ final class ActivityListViewModel {
             workouts = try await api.fetchWorkouts(limit: 50)
         } catch let err as PetehomeAPIError {
             error = err.localizedDescription
-        } catch {
-            error = error.localizedDescription
-            print("[ActivityListViewModel] Failed to load workouts: \(error)")
+        } catch let err {
+            self.error = err.localizedDescription
+            print("[ActivityListViewModel] Failed to load workouts: \(err)")
         }
 
         isLoading = false

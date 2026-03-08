@@ -3,7 +3,6 @@ import HealthKit
 import CoreLocation
 import Observation
 import WatchKit
-import CoreLocation
 
 // MARK: - Walk State
 
@@ -45,11 +44,8 @@ final class MapleWalkManager: NSObject {
     private var workoutSession: HKWorkoutSession?
     private var workoutBuilder: HKLiveWorkoutBuilder?
     private var routeBuilder: HKWorkoutRouteBuilder?
-<<<<<<< Updated upstream
-=======
     private var routeLocationManager: CLLocationManager?
     private var routeLocationDelegate: RouteLocationDelegate?
->>>>>>> Stashed changes
     private var sessionStartDate: Date?
 
     /// Session ID for persisting markers across crashes
@@ -118,33 +114,17 @@ final class MapleWalkManager: NSObject {
             session.startActivity(with: Date())
             try await builder.beginCollection(at: Date())
 
-<<<<<<< Updated upstream
-            // Create route builder to capture GPS - system may not add route for third-party workouts
-            let routeBuilder = builder.seriesBuilder(for: HKSeriesType.workoutRoute()) as? HKWorkoutRouteBuilder
-            self.routeBuilder = routeBuilder
-
-            // Ensure LocationManager is providing GPS updates and feed locations to route builder
-=======
-            // Create route builder to record GPS track
+            // Create standalone route builder to record GPS track
             self.routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
+            self.routePointCount = 0
 
-            // Ensure LocationManager is providing GPS updates
->>>>>>> Stashed changes
+            // Ensure LocationManager is running so currentLocation is available for bathroom markers
             let locationManager = LocationManager.shared
             if locationManager.isAuthorized && !locationManager.isMonitoring {
                 locationManager.startMonitoring()
             }
-            self.routePointCount = 0
-            locationManager.onLocationUpdate = { [weak self] location in
-                guard let self, self.isActive, let rb = self.routeBuilder else { return }
-                rb.insertRouteData([location]) { [weak self] _, _ in
-                    Task { @MainActor in
-                        self?.routePointCount += 1
-                    }
-                }
-            }
 
-            // Start dedicated high-accuracy GPS for route recording
+            // Start dedicated high-accuracy GPS for route recording (sole source for route data)
             startRouteTracking()
 
             walkState = .active
@@ -186,44 +166,23 @@ final class MapleWalkManager: NSObject {
         session.end()
         stopRouteTracking()
 
-        // Clear location callback before ending
-        LocationManager.shared.onLocationUpdate = nil
-
         do {
             try await builder.endCollection(at: Date())
             let workout = try await builder.finishWorkout()
             self.finishedWorkout = workout
 
-<<<<<<< Updated upstream
-            // Finish route builder so GPS data is saved to HealthKit (must be after finishWorkout)
-            if let workout, let rb = routeBuilder, routePointCount > 0 {
-                try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    rb.finishRoute(with: workout, metadata: nil) { _, error in
-                        if let error {
-                            print("🐾 Route finish error: \(error.localizedDescription)")
-                        } else {
-                            print("🐾 Route saved with \(routePointCount) points")
-                        }
-                        continuation.resume()
-                    }
-                }
-            }
-
-            self.routeBuilder = nil
-            self.routePointCount = 0
-
-=======
-            // Finalize the route and attach it to the workout
-            if let workout = workout, let routeBuilder = self.routeBuilder {
+            // Finalize the route and attach it to the workout (must be after finishWorkout)
+            if let workout = workout, let rb = self.routeBuilder, routePointCount > 0 {
                 do {
-                    try await routeBuilder.finishRoute(with: workout, metadata: nil)
-                    print("🐾 Route saved with workout")
+                    try await rb.finishRoute(with: workout, metadata: nil)
+                    print("🐾 Route saved with \(routePointCount) points")
                 } catch {
                     print("🐾 Failed to save route: \(error)")
                 }
             }
+            self.routeBuilder = nil
+            self.routePointCount = 0
 
->>>>>>> Stashed changes
             if let workout = workout {
                 print("🐾 Maple Walk ended: \(Int(workout.duration / 60))m")
             }
@@ -265,16 +224,12 @@ final class MapleWalkManager: NSObject {
 
     /// Reset to idle after sync or discard
     func resetState() {
-        LocationManager.shared.onLocationUpdate = nil
         bathroomMarkers = []
         finishedWorkout = nil
         workoutSession = nil
         workoutBuilder = nil
         routeBuilder = nil
-<<<<<<< Updated upstream
-=======
         stopRouteTracking()
->>>>>>> Stashed changes
         sessionStartDate = nil
         currentSessionId = nil
         routePointCount = 0
@@ -373,9 +328,13 @@ final class MapleWalkManager: NSObject {
         let good = locations.filter { $0.horizontalAccuracy >= 0 && $0.horizontalAccuracy < 50 }
         guard !good.isEmpty else { return }
 
-        routeBuilder.insertRouteData(good) { success, error in
+        routeBuilder.insertRouteData(good) { [weak self] _, error in
             if let error = error {
                 print("🐾 Route insert error: \(error.localizedDescription)")
+            } else {
+                Task { @MainActor in
+                    self?.routePointCount += good.count
+                }
             }
         }
     }
@@ -441,33 +400,22 @@ extension MapleWalkManager: HKWorkoutSessionDelegate {
                 if self.walkState != .ending && self.walkState != .summary {
                     print("🐾 Walk ended externally")
                     self.stopElapsedTimer()
-<<<<<<< Updated upstream
-                    LocationManager.shared.onLocationUpdate = nil
-=======
                     self.stopRouteTracking()
->>>>>>> Stashed changes
                     if let builder = self.workoutBuilder {
                         do {
                             try await builder.endCollection(at: date)
                             let workout = try await builder.finishWorkout()
                             self.finishedWorkout = workout
-<<<<<<< Updated upstream
-                            if let workout, let rb = self.routeBuilder, self.routePointCount > 0 {
-                                try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                                    rb.finishRoute(with: workout, metadata: nil) { _, _ in
-                                        continuation.resume()
-                                    }
+                            if let workout = workout, let rb = self.routeBuilder, self.routePointCount > 0 {
+                                do {
+                                    try await rb.finishRoute(with: workout, metadata: nil)
+                                    print("🐾 Route saved with externally ended workout (\(self.routePointCount) points)")
+                                } catch {
+                                    print("🐾 Route finish error: \(error.localizedDescription)")
                                 }
                             }
                             self.routeBuilder = nil
                             self.routePointCount = 0
-=======
-
-                            if let workout = workout, let routeBuilder = self.routeBuilder {
-                                try await routeBuilder.finishRoute(with: workout, metadata: nil)
-                                print("🐾 Route saved with externally ended workout")
-                            }
->>>>>>> Stashed changes
                         } catch {
                             print("🐾 Error finishing externally ended workout: \(error)")
                         }
