@@ -58,6 +58,12 @@ export const WeekPlanSuggestionSchema = z.object({
   estimatedPrepTime: z.string().describe('Total estimated prep time for the week'),
 })
 
+export const RecipeHintsSchema = z.object({
+  prioritizedIds: z.array(z.string()).describe('Recipe IDs to boost/prioritize (must be from candidates)'),
+  excludedIds: z.array(z.string()).optional().describe('Recipe IDs to exclude (must be from candidates)'),
+  reasoning: z.string().optional().describe('Brief reasoning for the suggestions'),
+})
+
 // ============================================
 // TYPESCRIPT TYPES (inferred from Zod)
 // ============================================
@@ -66,6 +72,7 @@ export type CookingPreferences = z.infer<typeof CookingPreferencesSchema>
 export type CookingTimePreference = z.infer<typeof CookingTimePreferenceSchema>
 export type WeekPlanSuggestion = z.infer<typeof WeekPlanSuggestionSchema>
 export type WeekPlanDaySuggestion = z.infer<typeof WeekPlanDaySuggestionSchema>
+export type RecipeHints = z.infer<typeof RecipeHintsSchema>
 
 // ============================================
 // SERVICE TYPES

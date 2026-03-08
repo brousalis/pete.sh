@@ -116,8 +116,8 @@ export function MapleAddWalkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="text-2xl">🐕</span>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <span className="text-xl">🐕</span>
             Add Maple Walk
           </DialogTitle>
           <DialogDescription>
@@ -125,26 +125,27 @@ export function MapleAddWalkDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Available Workouts Selection */}
-          <div className="space-y-3">
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
             <Label>Select a Walk</Label>
-
+            <p className="text-xs text-muted-foreground">
+              Select a workout to continue. Record as &quot;Hiking&quot; on your Apple Watch and sync first.
+            </p>
             {loading ? (
               <div className="space-y-2">
                 {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
+                  <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
             ) : availableWorkouts.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-muted-foreground">No workouts available to link.</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed p-4 text-center">
+                <p className="text-sm text-muted-foreground">No workouts available to link.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Record a walk as &quot;Hiking&quot; on your Apple Watch and sync it first.
                 </p>
               </div>
             ) : (
-              <div className="max-h-48 space-y-2 overflow-y-auto pr-2">
+              <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1">
                 {availableWorkouts.map((workout) => (
                   <WorkoutOption
                     key={workout.id}
@@ -157,8 +158,7 @@ export function MapleAddWalkDialog({
             )}
           </div>
 
-          {/* Title */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="title">Title (optional)</Label>
             <Input
               id="title"
@@ -168,26 +168,24 @@ export function MapleAddWalkDialog({
             />
           </div>
 
-          {/* Mood Rating */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label>How was Maple?</Label>
             <MapleMoodRatingSelector
               value={moodRating}
               onChange={setMoodRating}
-              size="lg"
+              size="md"
               showLabels
             />
           </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
               id="notes"
               placeholder="Any notes about the walk..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
+              rows={2}
             />
           </div>
 
@@ -232,29 +230,26 @@ function WorkoutOption({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all',
+        'flex w-full items-center gap-2.5 rounded-lg border p-2.5 text-left transition-all',
         selected
           ? 'border-primary bg-primary/5 ring-1 ring-primary'
           : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50'
       )}
     >
-      {/* Selection indicator */}
       <div
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-full border-2',
+          'flex size-4 shrink-0 items-center justify-center rounded-full border-2',
           selected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
         )}
       >
-        {selected && <Check className="size-3" />}
+        {selected && <Check className="size-2.5" />}
       </div>
-
-      {/* Workout info */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{format(date, 'EEEE, MMM d')}</span>
-          <span className="text-sm text-muted-foreground">{format(date, 'h:mm a')}</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">{format(date, 'EEE, MMM d')}</span>
+          <span className="text-xs text-muted-foreground">{format(date, 'h:mm a')}</span>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {workout.duration && (
             <span className="flex items-center gap-1">
               <Clock className="size-3" />

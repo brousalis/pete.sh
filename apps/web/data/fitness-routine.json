@@ -1531,6 +1531,26 @@
       }
     },
     {
+      "weekNumber": 10,
+      "startDate": "2026-03-02T06:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-03-01T19:46:53.071Z",
+            "routineVersionId": "326d8c0d-1dc4-4054-aaa4-624b1140f9e1"
+          }
+        }
+      }
+    },
+    {
       "weekNumber": 48,
       "startDate": "2026-11-23T06:00:00.000Z",
       "days": {
@@ -1809,5 +1829,5 @@
       }
     }
   ],
-  "updatedAt": "2026-02-27T22:43:34.117Z"
+  "updatedAt": "2026-03-01T19:46:53.071Z"
 }

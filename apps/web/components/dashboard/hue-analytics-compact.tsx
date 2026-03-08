@@ -1,16 +1,22 @@
 'use client'
 
-import { useConnectivity } from '@/components/connectivity-provider'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { Button } from '@/components/ui/button'
+import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import type { HueAnalyticsData, HueInsight } from '@/lib/types/hue-analytics.types'
 import { format } from 'date-fns'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   Activity,
   BarChart3,
@@ -20,6 +26,7 @@ import {
   Home,
   Lightbulb,
   Moon,
+  RefreshCw,
   Sun,
   TrendingDown,
   TrendingUp,
@@ -27,6 +34,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const INSIGHT_ICONS: Record<string, React.ReactNode> = {
   Clock: <Clock className="size-3.5" />,
@@ -51,36 +59,38 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
   const [data, setData] = useState<HueAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(true)
+  const isMobile = useIsMobile()
+  const [expanded, setExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'pattern' | 'rooms'>('overview')
-  const { apiBaseUrl, isInitialized } = useConnectivity()
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const res = await fetch(`${apiBaseUrl}/api/hue/analytics?days=7`)
-      if (!res.ok) throw new Error('Failed to fetch analytics')
-
-      const json = await res.json()
-      if (json.success && json.data) {
-        setData(json.data)
+      const res = await apiGet<HueAnalyticsData>('/api/hue/analytics?days=7')
+      if (res.success && res.data) {
+        setData(res.data)
       } else {
-        throw new Error(json.error || 'Unknown error')
+        throw new Error(res.error || 'Failed to load analytics')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load analytics')
     } finally {
       setLoading(false)
     }
-  }, [apiBaseUrl])
+  }, [])
 
   useEffect(() => {
-    if (isInitialized) {
-      fetchAnalytics()
+    fetchAnalytics()
+  }, [fetchAnalytics])
+
+  // Default expanded on desktop, collapsed on mobile
+  useEffect(() => {
+    if (!isMobile) {
+      setExpanded(true)
     }
-  }, [fetchAnalytics, isInitialized])
+  }, [isMobile])
 
   if (!loading && !data && !error) {
     return null
@@ -88,39 +98,44 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
 
   return (
     <div className={cn('rounded-xl bg-muted/20', className)}>
-      {/* Header */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between p-3 text-left transition-colors hover:bg-muted/30"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15">
-            <BarChart3 className="size-4 text-amber-500" strokeWidth={2.5} />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold">Usage Insights</h2>
-            <p className="text-[10px] text-muted-foreground">Last 7 days</p>
-          </div>
-        </div>
-        <div className="text-muted-foreground">
-          {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-        </div>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
+        <CollapsibleTrigger asChild>
+          <button
+            className="flex w-full items-center justify-between p-3 text-left transition-colors hover:bg-muted/30"
+            type="button"
           >
-            <div className="border-t border-border/30 p-3">
-              {loading ? (
-                <AnalyticsSkeleton />
-              ) : error ? (
-                <div className="py-6 text-center text-xs text-muted-foreground">{error}</div>
-              ) : data ? (
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15">
+                <BarChart3 className="size-4 text-amber-500" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold">Usage Insights</h2>
+                <p className="text-[10px] text-muted-foreground">Last 7 days</p>
+              </div>
+            </div>
+            <div className="text-muted-foreground">
+              {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-border/30 p-3">
+            {loading ? (
+              <AnalyticsSkeleton />
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-6">
+                <p className="text-center text-xs text-muted-foreground">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchAnalytics}
+                  className="gap-1.5"
+                >
+                  <RefreshCw className="size-3.5" />
+                  Retry
+                </Button>
+              </div>
+            ) : data ? (
                 <div className="space-y-3">
                   {/* Quick Stats Grid */}
                   <div className="grid grid-cols-2 gap-2">
@@ -206,10 +221,9 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
                   )}
                 </div>
               ) : null}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   )
 }

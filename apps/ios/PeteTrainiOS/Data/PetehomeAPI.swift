@@ -245,6 +245,58 @@ final class PetehomeAPI {
         try handleResponse(response, data: data)
     }
 
+    // MARK: - Activity Workouts
+
+    /// Fetch recent workouts for Activity list view
+    func fetchWorkouts(limit: Int = 50) async throws -> [ActivityWorkoutSummary] {
+        var components = URLComponents(url: baseURL.appendingPathComponent("api/apple-health/workout"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled {
+            logRequest(request, body: nil)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled {
+            logResponse(response, data: data)
+        }
+
+        try handleResponse(response, data: data)
+
+        let listResponse = try decoder.decode(ActivityWorkoutsResponse.self, from: data)
+        return listResponse.data
+    }
+
+    /// Fetch full workout detail for Activity detail view
+    func fetchWorkoutDetail(id: String) async throws -> WorkoutDetailData {
+        let url = baseURL.appendingPathComponent("api/apple-health/workout").appendingPathComponent(id)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled {
+            logRequest(request, body: nil)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled {
+            logResponse(response, data: data)
+        }
+
+        try handleResponse(response, data: data)
+
+        let detailResponse = try decoder.decode(WorkoutDetailResponse.self, from: data)
+        return detailResponse.data
+    }
+
     /// Test the API connection and credentials
     func testConnection() async throws -> Bool {
         print("Testing connection to \(baseURL.absoluteString)...")

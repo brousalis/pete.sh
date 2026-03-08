@@ -58,9 +58,12 @@ import {
   Thermometer,
   Trash2,
   Undo2,
+  Wand2,
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MealPlanSwipeDialog } from './meal-plan-swipe-dialog'
+import { MealPlanWizardDialog } from './meal-plan-wizard-dialog'
 import { RecipePickerDialog } from './recipe-picker'
 
 const DAYS: DayOfWeek[] = [
@@ -238,6 +241,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
     createCompletion,
     updateCompletionRating,
     deleteCompletion,
+    recipesLoading,
   } = useCooking()
 
   const [pickerSlot, setPickerSlot] = useState<{ day: DayOfWeek; meal: string } | null>(null)
@@ -246,6 +250,8 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
   const [randomizing, setRandomizing] = useState<DayOfWeek | null>(null)
   const [dayForecasts, setDayForecasts] = useState<Map<string, DayForecast>>(new Map())
   const [ratingSlot, setRatingSlot] = useState<{ day: DayOfWeek; meal: string; recipeId: string } | null>(null)
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [swipeOpen, setSwipeOpen] = useState(false)
 
   useEffect(() => {
     apiGet<WeatherForecast>('/api/weather/forecast').then((res) => {
@@ -375,9 +381,42 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
               value={mealPlanMode}
               onChange={setMealPlanMode}
             />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0"
+                  onClick={() => setSwipeOpen(true)}
+                  disabled={recipesLoading}
+                  aria-label="Swipe to plan"
+                >
+                  <Dices className="size-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Swipe to plan</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0"
+                  onClick={() => setWizardOpen(true)}
+                  disabled={recipesLoading}
+                  aria-label="Plan my week"
+                >
+                  <Wand2 className="size-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Plan my week</TooltipContent>
+            </Tooltip>
           </div>
         </PageHeaderRow>
       </PageHeader>
+
+      <MealPlanSwipeDialog open={swipeOpen} onOpenChange={setSwipeOpen} />
+      <MealPlanWizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
 
       <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
         {/* Day columns */}
@@ -439,7 +478,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                   </div>
 
                   {!isSkipped && (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity [@media(hover:none)]:opacity-100">
                       {(() => {
                         const dinnerRecipeId = dayMeals?.dinner
                         if (!dinnerRecipeId || typeof dinnerRecipeId !== 'string') return null
@@ -586,7 +625,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                                     'rounded p-0.5 transition-all',
                                     completion
                                       ? 'text-green-500 hover:text-green-600'
-                                      : 'opacity-0 group-hover/meal:opacity-100 text-muted-foreground hover:text-green-500 hover:bg-green-500/10'
+                                      : 'opacity-70 group-hover/meal:opacity-100 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 [@media(hover:none)]:opacity-100'
                                   )}
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -597,7 +636,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                                   <Check className="size-3" />
                                 </button>
                                 <button
-                                  className="opacity-0 group-hover/meal:opacity-100 transition-opacity rounded p-0.5 hover:bg-card shrink-0"
+                                  className="opacity-70 group-hover/meal:opacity-100 transition-opacity rounded p-0.5 hover:bg-card shrink-0 [@media(hover:none)]:opacity-100"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleRemoveMeal(day, mealType)
@@ -1097,7 +1136,7 @@ function DayRow({
 
         {/* Hover actions */}
         {!isSkipped && (
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity [@media(hover:none)]:opacity-100">
             <button
               className={cn(
                 'rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors',
@@ -1720,24 +1759,16 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
     isSlotCompleted,
     createCompletion,
     deleteCompletion,
+    recipesLoading,
   } = useCooking()
 
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(() => {
-    const todayIndex = (new Date().getDay() + 6) % 7
-    return DAYS[todayIndex] ?? 'monday'
-  })
-  const [pickerMealType, setPickerMealType] = useState<string | null>(null)
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [swipeOpen, setSwipeOpen] = useState(false)
+  const [pickerSlot, setPickerSlot] = useState<{ day: DayOfWeek; mealType: string } | null>(null)
   const [ratingSlot, setRatingSlot] = useState<{ day: DayOfWeek; meal: string; recipeId: string } | null>(null)
   const [skipNoteDay, setSkipNoteDay] = useState<DayOfWeek | null>(null)
   const [skipNoteText, setSkipNoteText] = useState('')
-  const [randomizing, setRandomizing] = useState(false)
-  const dayScrollRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node) return
-    const idx = DAYS.indexOf(selectedDay)
-    const el = node.children[idx] as HTMLElement | undefined
-    el?.scrollIntoView({ inline: 'center', block: 'nearest' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const [randomizing, setRandomizing] = useState<DayOfWeek | null>(null)
 
   const activeMealTypes = mealPlanMode === 'dinner-only' ? DINNER_ONLY : ALL_MEAL_TYPES
 
@@ -1745,8 +1776,6 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
   const handleNextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1))
   const handleThisWeek = () => {
     setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
-    const todayIndex = (new Date().getDay() + 6) % 7
-    setSelectedDay(DAYS[todayIndex] ?? 'monday')
   }
   const isAtCurrentWeek = isSameWeek(currentWeek, new Date(), { weekStartsOn: 1 })
   const weekEnd = addDays(currentWeek, 6)
@@ -1755,33 +1784,33 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
     : `${format(currentWeek, 'MMM d')} – ${format(weekEnd, 'MMM d')}`
 
   const handleMealSelect = async (recipeId: string) => {
-    if (pickerMealType) {
-      await updateMealSlot(selectedDay, pickerMealType, recipeId || null)
-      setPickerMealType(null)
+    if (pickerSlot) {
+      await updateMealSlot(pickerSlot.day, pickerSlot.mealType, recipeId || null)
+      setPickerSlot(null)
     }
   }
 
-  const handleRemoveMeal = async (mealType: string) => {
-    await updateMealSlot(selectedDay, mealType, null)
-  }
+  const handleRemoveMeal = useCallback(async (day: DayOfWeek, mealType: string) => {
+    await updateMealSlot(day, mealType, null)
+  }, [updateMealSlot])
 
-  const handleRandomFill = useCallback(async () => {
-    setRandomizing(true)
+  const handleRandomFill = useCallback(async (day: DayOfWeek) => {
+    setRandomizing(day)
     try {
-      await randomFillDinner(selectedDay)
+      await randomFillDinner(day)
     } finally {
-      setRandomizing(false)
+      setRandomizing(null)
     }
-  }, [randomFillDinner, selectedDay])
+  }, [randomFillDinner])
 
-  const handleMarkCooked = useCallback(async (mealType: string, recipeId: string) => {
-    const existing = isSlotCompleted(selectedDay, mealType)
+  const handleMarkCooked = useCallback(async (day: DayOfWeek, mealType: string, recipeId: string) => {
+    const existing = isSlotCompleted(day, mealType)
     if (existing) {
       await deleteCompletion(existing.id)
     } else {
-      setRatingSlot({ day: selectedDay, meal: mealType, recipeId })
+      setRatingSlot({ day, meal: mealType, recipeId })
     }
-  }, [selectedDay, isSlotCompleted, deleteCompletion])
+  }, [isSlotCompleted, deleteCompletion])
 
   const handleRatingSubmit = useCallback(async (rating?: number, notes?: string) => {
     if (!ratingSlot) return
@@ -1796,8 +1825,8 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
     setRatingSlot(null)
   }, [ratingSlot, createCompletion, mealPlan?.id])
 
-  const handleSkipDay = () => {
-    setSkipNoteDay(selectedDay)
+  const handleSkipDay = (day: DayOfWeek) => {
+    setSkipNoteDay(day)
     setSkipNoteText('')
   }
 
@@ -1808,9 +1837,6 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
     setSkipNoteText('')
   }
 
-  const dayDate = addDays(currentWeek, DAYS.indexOf(selectedDay))
-  const dayMeals = mealPlan?.meals[selectedDay]
-  const isSkipped = dayMeals?.skipped === true
 
   const plannedMealsCount = DAYS.reduce((count, day) => {
     const dm = mealPlan?.meals[day]
@@ -1834,14 +1860,46 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
               )}
             </div>
           </div>
-          <ViewToggle
-            options={[
-              { value: 'dinner-only' as const, label: 'Dinners' },
-              { value: 'all-meals' as const, label: 'All' },
-            ]}
-            value={mealPlanMode}
-            onChange={setMealPlanMode}
-          />
+          <div className="flex items-center gap-1.5">
+            <ViewToggle
+              options={[
+                { value: 'dinner-only' as const, label: 'Dinners' },
+                { value: 'all-meals' as const, label: 'All' },
+              ]}
+              value={mealPlanMode}
+              onChange={setMealPlanMode}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 shrink-0"
+                  onClick={() => setSwipeOpen(true)}
+                  disabled={recipesLoading}
+                  aria-label="Swipe to plan"
+                >
+                  <Dices className="size-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Swipe to plan</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 shrink-0"
+                  onClick={() => setWizardOpen(true)}
+                  disabled={recipesLoading}
+                  aria-label="Plan my week"
+                >
+                  <Wand2 className="size-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Plan my week</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Week navigation */}
@@ -1852,243 +1910,200 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
           onToday={handleThisWeek}
           isAtToday={isAtCurrentWeek}
         />
-
-        {/* Day selector */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1" ref={dayScrollRef}>
-          {DAYS.map((day, i) => {
-            const dd = addDays(currentWeek, i)
-            const isDayToday = isToday(dd)
-            const isSelected = selectedDay === day
-            const dm = mealPlan?.meals[day]
-            const isDaySkipped = dm?.skipped
-            const filledMeals = activeMealTypes.filter(
-              (mt) => dm?.[mt as keyof typeof dm]
-            ).length
-
-            return (
-              <button
-                key={day}
-                onClick={() => setSelectedDay(day)}
-                className={cn(
-                  'flex flex-col items-center gap-0.5 rounded-xl px-3.5 py-2 min-w-[52px] shrink-0 transition-all touch-manipulation',
-                  isSelected
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : isDayToday
-                      ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                      : 'text-muted-foreground active:bg-muted/60',
-                  isDaySkipped && !isSelected && 'opacity-40'
-                )}
-              >
-                <span className="text-[10px] font-semibold uppercase tracking-wider">
-                  {format(dd, 'EEE')}
-                </span>
-                <span className="text-lg font-bold tabular-nums leading-none">
-                  {format(dd, 'd')}
-                </span>
-                {filledMeals > 0 && !isDaySkipped && (
-                  <div className="flex gap-0.5 mt-0.5">
-                    {Array.from({ length: filledMeals }).map((_, j) => (
-                      <div
-                        key={j}
-                        className={cn(
-                          'size-1 rounded-full',
-                          isSelected ? 'bg-primary-foreground/60' : 'bg-primary/50'
-                        )}
-                      />
-                    ))}
-                  </div>
-                )}
-                {isDaySkipped && (
-                  <SkipForward
-                    className={cn(
-                      'size-2.5 mt-0.5',
-                      isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground/40'
-                    )}
-                  />
-                )}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
-      {/* Selected day content */}
+      {/* All days' meals at once */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         {mealPlanLoading ? (
           <div className="flex items-center justify-center py-16">
             <span className="text-sm text-muted-foreground">Loading meal plan...</span>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Day header */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">
-                {format(dayDate, 'EEEE, MMM d')}
-                {isToday(dayDate) && (
-                  <span className="text-primary ml-1.5 text-xs font-medium">Today</span>
-                )}
-              </h3>
-              {!isSkipped && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn('h-8 gap-1.5 text-xs', randomizing && 'animate-pulse')}
-                    onClick={handleRandomFill}
-                    disabled={randomizing}
-                  >
-                    <Dices className="size-3.5" />
-                    Random
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={handleSkipDay}>
-                    <SkipForward className="size-3.5" />
-                    Skip
-                  </Button>
-                </div>
-              )}
-            </div>
+          <div className="space-y-6">
+            {DAYS.map((day) => {
+              const dayDate = addDays(currentWeek, DAYS.indexOf(day))
+              const dayMeals = mealPlan?.meals[day]
+              const isSkipped = dayMeals?.skipped === true
 
-            {isSkipped ? (
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
-                <SkipForward className="size-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Day skipped</p>
-                {dayMeals?.skip_note && (
-                  <p className="text-xs text-muted-foreground/60 mt-1">{dayMeals.skip_note}</p>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 gap-1.5"
-                  onClick={() => unskipDay(selectedDay)}
-                >
-                  <Undo2 className="size-3.5" />
-                  Restore
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {activeMealTypes.map((mealType) => {
-                  const recipeId = dayMeals?.[mealType as keyof typeof dayMeals]
-                  const recipe =
-                    recipeId && typeof recipeId === 'string'
-                      ? getRecipeById(recipeId)
-                      : null
-                  const completion = recipe
-                    ? isSlotCompleted(selectedDay, mealType)
-                    : null
-
-                  if (recipe) {
-                    return (
-                      <div
-                        key={mealType}
-                        className={cn(
-                          'rounded-xl border overflow-hidden transition-colors',
-                          completion
-                            ? 'border-green-500/30 bg-green-500/5'
-                            : 'border-border/50 bg-card'
-                        )}
-                      >
-                        <div
-                          className="flex items-center gap-3 p-3 cursor-pointer active:bg-muted/30 transition-colors"
-                          onClick={() => onRecipeClick?.(recipe.id)}
+              return (
+                <div key={day} className="space-y-2">
+                  {/* Day header */}
+                  <div className="flex items-center justify-between sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur-sm">
+                    <h3 className="text-sm font-semibold">
+                      {format(dayDate, 'EEEE, MMM d')}
+                      {isToday(dayDate) && (
+                        <span className="text-primary ml-1.5 text-xs font-medium">Today</span>
+                      )}
+                    </h3>
+                    {!isSkipped && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn('h-8 gap-1.5 text-xs', randomizing === day && 'animate-pulse')}
+                          onClick={() => handleRandomFill(day)}
+                          disabled={randomizing !== null}
                         >
-                          {resolveRecipeImageUrl(recipe.image_url) ? (
-                            <img
-                              src={resolveRecipeImageUrl(recipe.image_url)}
-                              alt=""
-                              className="size-14 rounded-lg object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="size-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                              <ChefHat className="size-5 text-muted-foreground/30" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            {mealPlanMode === 'all-meals' && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                {mealType}
-                              </span>
-                            )}
-                            <h4 className="text-sm font-semibold leading-tight line-clamp-2">
-                              {recipe.name}
-                            </h4>
-                            {completion?.rating && (
-                              <div className="flex items-center gap-0.5 mt-1">
-                                {[1, 2, 3, 4, 5, 6, 7].map((s) => (
-                                  <Star
-                                    key={s}
-                                    className={cn(
-                                      'size-3',
-                                      s <= completion.rating!
-                                        ? 'fill-amber-400 text-amber-400'
-                                        : 'text-muted-foreground/20'
-                                    )}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          {completion && (
-                            <div className="shrink-0">
-                              <div className="size-7 rounded-full bg-green-500 flex items-center justify-center">
-                                <Check className="size-4 text-white" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center border-t border-border/30 divide-x divide-border/30">
-                          <button
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
-                            onClick={() => handleMarkCooked(mealType, recipe.id)}
-                          >
-                            <Check
-                              className={cn('size-3.5', completion && 'text-green-500')}
-                            />
-                            {completion ? 'Undo' : 'Cooked'}
-                          </button>
-                          <button
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
-                            onClick={() => onRecipeClick?.(recipe.id)}
-                          >
-                            <ChefHat className="size-3.5" />
-                            View
-                          </button>
-                          <button
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-destructive/70 active:bg-destructive/5 transition-colors touch-manipulation"
-                            onClick={() => handleRemoveMeal(mealType)}
-                          >
-                            <X className="size-3.5" />
-                            Remove
-                          </button>
-                        </div>
+                          <Dices className="size-3.5" />
+                          Random
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={() => handleSkipDay(day)}
+                        >
+                          <SkipForward className="size-3.5" />
+                          Skip
+                        </Button>
                       </div>
-                    )
-                  }
+                    )}
+                  </div>
 
-                  return (
-                    <button
-                      key={mealType}
-                      onClick={() => setPickerMealType(mealType)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border/50 p-4 text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
-                    >
-                      <div className="size-10 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                        <Plus className="size-4" />
-                      </div>
-                      <span className="text-sm font-medium capitalize">
-                        {mealPlanMode === 'all-meals' ? `Add ${mealType}` : 'Add dinner'}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+                  {isSkipped ? (
+                    <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4 text-center">
+                      <SkipForward className="size-6 text-muted-foreground/30 mx-auto mb-1.5" />
+                      <p className="text-xs text-muted-foreground">Day skipped</p>
+                      {dayMeals?.skip_note && (
+                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">{dayMeals.skip_note}</p>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 gap-1 text-xs h-7"
+                        onClick={() => unskipDay(day)}
+                      >
+                        <Undo2 className="size-3" />
+                        Restore
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {activeMealTypes.map((mealType) => {
+                        const recipeId = dayMeals?.[mealType as keyof typeof dayMeals]
+                        const recipe =
+                          recipeId && typeof recipeId === 'string'
+                            ? getRecipeById(recipeId)
+                            : null
+                        const completion = recipe
+                          ? isSlotCompleted(day, mealType)
+                          : null
+
+                        if (recipe) {
+                          return (
+                            <div
+                              key={mealType}
+                              className={cn(
+                                'rounded-xl border overflow-hidden transition-colors',
+                                completion
+                                  ? 'border-green-500/30 bg-green-500/5'
+                                  : 'border-border/50 bg-card'
+                              )}
+                            >
+                              <div
+                                className="flex items-center gap-3 p-3 cursor-pointer active:bg-muted/30 transition-colors"
+                                onClick={() => onRecipeClick?.(recipe.id)}
+                              >
+                                {resolveRecipeImageUrl(recipe.image_url) ? (
+                                  <img
+                                    src={resolveRecipeImageUrl(recipe.image_url)}
+                                    alt=""
+                                    className="size-14 rounded-lg object-cover shrink-0"
+                                  />
+                                ) : (
+                                  <div className="size-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                    <ChefHat className="size-5 text-muted-foreground/30" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  {mealPlanMode === 'all-meals' && (
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                      {mealType}
+                                    </span>
+                                  )}
+                                  <h4 className="text-sm font-semibold leading-tight line-clamp-2">
+                                    {recipe.name}
+                                  </h4>
+                                  {completion?.rating && (
+                                    <div className="flex items-center gap-0.5 mt-1">
+                                      {[1, 2, 3, 4, 5, 6, 7].map((s) => (
+                                        <Star
+                                          key={s}
+                                          className={cn(
+                                            'size-3',
+                                            s <= completion.rating!
+                                              ? 'fill-amber-400 text-amber-400'
+                                              : 'text-muted-foreground/20'
+                                          )}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {completion && (
+                                  <div className="shrink-0">
+                                    <div className="size-7 rounded-full bg-green-500 flex items-center justify-center">
+                                      <Check className="size-4 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center border-t border-border/30 divide-x divide-border/30">
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
+                                  onClick={() => handleMarkCooked(day, mealType, recipe.id)}
+                                >
+                                  <Check
+                                    className={cn('size-3.5', completion && 'text-green-500')}
+                                  />
+                                  {completion ? 'Undo' : 'Cooked'}
+                                </button>
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
+                                  onClick={() => onRecipeClick?.(recipe.id)}
+                                >
+                                  <ChefHat className="size-3.5" />
+                                  View
+                                </button>
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-destructive/70 active:bg-destructive/5 transition-colors touch-manipulation"
+                                  onClick={() => handleRemoveMeal(day, mealType)}
+                                >
+                                  <X className="size-3.5" />
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <button
+                            key={mealType}
+                            onClick={() => setPickerSlot({ day, mealType })}
+                            className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border/50 p-3 text-muted-foreground active:bg-muted/30 transition-colors touch-manipulation"
+                          >
+                            <div className="size-10 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                              <Plus className="size-4" />
+                            </div>
+                            <span className="text-sm font-medium capitalize">
+                              {mealPlanMode === 'all-meals' ? `Add ${mealType}` : 'Add dinner'}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
 
       <RecipePickerDialog
-        open={!!pickerMealType}
-        onOpenChange={(open) => { if (!open) setPickerMealType(null) }}
+        open={!!pickerSlot}
+        onOpenChange={(open) => { if (!open) setPickerSlot(null) }}
         onSelect={handleMealSelect}
       />
 
@@ -2156,6 +2171,9 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
           </motion.div>
         )}
       </AnimatePresence>
+
+      <MealPlanSwipeDialog open={swipeOpen} onOpenChange={setSwipeOpen} />
+      <MealPlanWizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   )
 }

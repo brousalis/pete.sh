@@ -60,6 +60,7 @@
 		CBCC38F22F2D7D720013DFC7 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F12F2D7D720013DFC7 /* WebKit.framework */; };
 		CBCC38F42F2D7D790013DFC7 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */; };
 		CBCC38F62F2D7D7E0013DFC7 /* HealthKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */; };
+		CBCC38F82F2D7D7E0013DFC8 /* Charts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F72F2D7D7E0013DFC8 /* Charts.framework */; };
 		CBEB93D52EEB33AC008E365D /* WorkoutSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */; };
 /* End PBXBuildFile section */
 
@@ -144,6 +145,7 @@
 		CBCC38F12F2D7D720013DFC7 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
 		CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKit.framework; sourceTree = DEVELOPER_DIR; };
 		CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKitUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKitUI.framework; sourceTree = DEVELOPER_DIR; };
+		CBCC38F72F2D7D7E0013DFC8 /* Charts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Charts.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/Charts.framework; sourceTree = DEVELOPER_DIR; };
 		CBEB93D32EEB1B87008E365D /* PeteTrain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PeteTrain.entitlements; sourceTree = "<group>"; };
 		CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSection.swift; sourceTree = "<group>"; };
 		CCC00001 /* PeteTrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeteTrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -187,6 +189,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBCC38F82F2D7D7E0013DFC8 /* Charts.framework in Frameworks */,
 				CBCC38F22F2D7D720013DFC7 /* WebKit.framework in Frameworks */,
 				CBCC38F42F2D7D790013DFC7 /* HealthKit.framework in Frameworks */,
 				CBCC38F62F2D7D7E0013DFC7 /* HealthKitUI.framework in Frameworks */,
@@ -208,6 +211,7 @@
 		CBB3A3C32F0C2CCB00D10471 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CBCC38F72F2D7D7E0013DFC8 /* Charts.framework */,
 				CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */,
 				CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */,
 				CBCC38F12F2D7D720013DFC7 /* WebKit.framework */,

@@ -8,6 +8,8 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import {
   convertToModelMessages,
   defaultSettingsMiddleware,
+  generateText,
+  Output,
   smoothStream,
   stepCountIs,
   streamText,
@@ -24,9 +26,11 @@ import { mealPlanningService } from '@/lib/services/meal-planning.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
   CookingPreferencesSchema,
+  RecipeHintsSchema,
   WeekPlanSuggestionSchema,
   type ConversationSummary,
   type CookingPreferences,
+  type RecipeHints,
 } from '@/lib/types/ai-chef.types'
 import type { DayMeals, DayOfWeek, MealPlan, Recipe, WeeklyMeals } from '@/lib/types/cooking.types'
 
@@ -174,6 +178,60 @@ export async function updatePreferences(
   }
 
   return validated
+}
+
+// ============================================
+// RECIPE HINTS (Meal Plan Wizard AI Filter)
+// ============================================
+
+export interface RecipeHintCandidate {
+  id: string
+  name: string
+  tags?: string[]
+  prep_time?: number
+  cook_time?: number
+  difficulty?: string
+  description?: string
+}
+
+export async function getRecipeHints(
+  prompt: string,
+  candidates: RecipeHintCandidate[]
+): Promise<RecipeHints | null> {
+  if (!config.aiCoach.isConfigured) return null
+  if (candidates.length === 0) return null
+
+  try {
+    const preferences = await getPreferences()
+    const prefsContext = `Dislikes: ${preferences.dislikes.join(', ') || 'none'}. Allergies: ${preferences.allergies.join(', ') || 'none'}. Dietary: ${preferences.dietary.join(', ') || 'no restrictions'}.`
+
+    const candidateList = candidates
+      .map(
+        (r) =>
+          `- [${r.id}] "${r.name}"${r.tags?.length ? ` tags: ${r.tags.join(', ')}` : ''}${r.prep_time || r.cook_time ? ` time: ${(r.prep_time || 0) + (r.cook_time || 0)}min` : ''}${r.difficulty ? ` (${r.difficulty})` : ''}${r.description ? ` — ${r.description.slice(0, 80)}` : ''}`
+      )
+      .join('\n')
+
+    const model = getModel()
+    const { experimental_output } = await generateText({
+      model,
+      output: Output.object({ schema: RecipeHintsSchema }),
+      system: `You are an AI Chef helping filter recipes for a weekly meal plan. The user has typed a free-form request. Your job is to return recipe IDs to PRIORITIZE (boost in selection) and optionally to EXCLUDE. Only use IDs from the candidate list — never invent IDs. Respect dislikes, allergies, and dietary restrictions. If the user asks for "light meals", prioritize lower-calorie recipes. If they say "use chicken", prioritize chicken recipes. If they say "avoid dairy", exclude recipes with dairy. Return empty arrays if no strong signals.`,
+      prompt: `User preferences: ${prefsContext}
+
+Candidate recipes:
+${candidateList}
+
+User's request: "${prompt}"
+
+Return prioritizedIds (recipes that match well) and optionally excludedIds (recipes to avoid). Only use IDs from the list above.`,
+    })
+
+    return experimental_output ?? null
+  } catch (error) {
+    console.error('[AI Chef] getRecipeHints failed:', error)
+    return null
+  }
 }
 
 // ============================================

@@ -14,7 +14,7 @@ export default function FitnessPage() {
   const tabParam = searchParams.get('tab')
   const dayParam = searchParams.get('day')
   const [activeTab, setActiveTab] = useState<FitnessTab>(
-    tabParam === 'edit' ? 'edit' : tabParam === 'today' || dayParam ? 'today' : 'week'
+    tabParam === 'edit' ? 'edit' : tabParam === 'week' ? 'week' : 'today'
   )
 
   const initialDate = useMemo((): Date | null => {
