@@ -1847,7 +1847,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 pt-3 pb-2 space-y-3 shrink-0">
+      <div className="pt-3 pb-2 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500/15">
@@ -1928,7 +1928,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
               return (
                 <div key={day} className="space-y-2">
                   {/* Day header */}
-                  <div className="flex items-center justify-between sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur-sm">
+                  <div className="flex items-center justify-between sticky top-0 z-10 px-3 py-1 bg-background/95 backdrop-blur-sm rounded-xl">
                     <h3 className="text-sm font-semibold">
                       {format(dayDate, 'EEEE, MMM d')}
                       {isToday(dayDate) && (

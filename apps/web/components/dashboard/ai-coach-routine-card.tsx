@@ -6,8 +6,8 @@
  */
 
 import { Button } from "@/components/ui/button"
-import type { RoutineChange } from "@/lib/types/ai-coach.types"
-import type { RoutineChangeDiffEntry, ProgressiveOverloadEntry } from "@/lib/utils/routine-change-utils"
+import type { RoutineChange, DailyRoutineChange } from "@/lib/types/ai-coach.types"
+import type { RoutineChangeDiffEntry, ProgressiveOverloadEntry, DailyRoutineChangeDiffEntry } from "@/lib/utils/routine-change-utils"
 import {
     AlertTriangle,
     ArrowRight,
@@ -15,7 +15,9 @@ import {
     Dumbbell,
     Loader2,
     Minus,
+    Moon,
     Plus,
+    Sun,
     X,
 } from "lucide-react"
 
@@ -30,7 +32,9 @@ export interface RoutineProposal {
   routineId?: string
   routineChanges?: RoutineChange[]
   progressiveOverload?: ProgressiveOverloadEntry[]
+  dailyRoutineChanges?: DailyRoutineChange[]
   diff?: RoutineChangeDiffEntry[]
+  dailyRoutineDiff?: DailyRoutineChangeDiffEntry[]
   changesApplied?: number
 }
 
@@ -41,6 +45,58 @@ const SECTION_LABELS: Record<string, string> = {
   metabolicFlush: "Metabolic Flush",
   mobility: "Mobility",
   "progressive-overload": "Progressive Overload",
+}
+
+const DAILY_ROUTINE_LABELS: Record<string, string> = {
+  morning: "Morning Routine",
+  night: "Night Routine",
+}
+
+// ============================================
+// SHARED DIFF ENTRY RENDERER
+// ============================================
+
+function DiffEntryRow({ entry }: { entry: { action: string; exerciseName: string; field?: string; before?: string; after?: string } }) {
+  if (entry.action === "add") {
+    return (
+      <div className="text-[11px] text-green-300/80 flex items-center gap-1.5">
+        <Plus className="h-2.5 w-2.5 text-green-400 flex-shrink-0" />
+        <span>
+          {entry.exerciseName}
+          {entry.after && <span className="text-white/40"> — {entry.after}</span>}
+        </span>
+      </div>
+    )
+  }
+  if (entry.action === "remove") {
+    return (
+      <div className="text-[11px] text-red-300/80 flex items-center gap-1.5 line-through">
+        <Minus className="h-2.5 w-2.5 text-red-400 flex-shrink-0" />
+        <span>{entry.exerciseName}</span>
+      </div>
+    )
+  }
+  if (entry.action === "swap") {
+    return (
+      <div className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
+        <span className="text-blue-400 flex-shrink-0">~</span>
+        <span>{entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}</span>
+      </div>
+    )
+  }
+  return (
+    <div className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
+      <span className="text-blue-400 flex-shrink-0">~</span>
+      <span>
+        {entry.exerciseName}
+        {entry.field && (
+          <span className="text-white/40">
+            {" "}{entry.field}: {entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}
+          </span>
+        )}
+      </span>
+    </div>
+  )
 }
 
 // ============================================
@@ -61,11 +117,18 @@ export function RoutineVersionPreviewCard({
   appliedVersion?: { versionNumber: number }
 }) {
   const diff = proposal.diff || []
+  const dailyDiff = proposal.dailyRoutineDiff || []
 
   const grouped = diff.reduce<Record<string, Record<string, RoutineChangeDiffEntry[]>>>((acc, entry) => {
     const dayObj = acc[entry.day] ?? (acc[entry.day] = {})
     const sectionArr = dayObj[entry.section] ?? (dayObj[entry.section] = [])
     sectionArr.push(entry)
+    return acc
+  }, {})
+
+  const dailyGrouped = dailyDiff.reduce<Record<string, DailyRoutineChangeDiffEntry[]>>((acc, entry) => {
+    const arr = acc[entry.routineType] ?? (acc[entry.routineType] = [])
+    arr.push(entry)
     return acc
   }, {})
 
@@ -101,6 +164,7 @@ export function RoutineVersionPreviewCard({
       <div className="p-3 space-y-2.5">
         <p className="text-xs font-medium text-white/90">{proposal.commitMessage}</p>
 
+        {/* Workout changes */}
         {Object.entries(grouped).map(([day, sections]) => (
           <div key={day} className="space-y-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-white/40 capitalize">
@@ -111,50 +175,31 @@ export function RoutineVersionPreviewCard({
                 <span className="text-[10px] text-white/30">
                   {SECTION_LABELS[section] || section}
                 </span>
-                {entries.map((entry, i) => {
-                  if (entry.action === "add") {
-                    return (
-                      <div key={i} className="text-[11px] text-green-300/80 flex items-center gap-1.5">
-                        <Plus className="h-2.5 w-2.5 text-green-400 flex-shrink-0" />
-                        <span>
-                          {entry.exerciseName}
-                          {entry.after && <span className="text-white/40"> — {entry.after}</span>}
-                        </span>
-                      </div>
-                    )
-                  }
-                  if (entry.action === "remove") {
-                    return (
-                      <div key={i} className="text-[11px] text-red-300/80 flex items-center gap-1.5 line-through">
-                        <Minus className="h-2.5 w-2.5 text-red-400 flex-shrink-0" />
-                        <span>{entry.exerciseName}</span>
-                      </div>
-                    )
-                  }
-                  if (entry.action === "swap") {
-                    return (
-                      <div key={i} className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-                        <span className="text-blue-400 flex-shrink-0">~</span>
-                        <span>{entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}</span>
-                      </div>
-                    )
-                  }
-                  return (
-                    <div key={i} className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-                      <span className="text-blue-400 flex-shrink-0">~</span>
-                      <span>
-                        {entry.exerciseName}
-                        {entry.field && (
-                          <span className="text-white/40">
-                            {" "}{entry.field}: {entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  )
-                })}
+                {entries.map((entry, i) => (
+                  <DiffEntryRow key={i} entry={entry} />
+                ))}
               </div>
             ))}
+          </div>
+        ))}
+
+        {/* Daily routine changes */}
+        {Object.entries(dailyGrouped).map(([routineType, entries]) => (
+          <div key={routineType} className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              {routineType === 'morning'
+                ? <Sun className="h-2.5 w-2.5 text-amber-400" />
+                : <Moon className="h-2.5 w-2.5 text-indigo-400" />
+              }
+              <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+                {DAILY_ROUTINE_LABELS[routineType] || routineType}
+              </span>
+            </div>
+            <div className="space-y-0.5 ml-2">
+              {entries.map((entry, i) => (
+                <DiffEntryRow key={i} entry={entry} />
+              ))}
+            </div>
           </div>
         ))}
 

@@ -138,3 +138,18 @@ When suggesting changes to the routine:
 - Respect the training philosophy: density, not bulk
 - Suggest exercise swaps when current exercises plateau (same sets/reps/weight for 4+ weeks)
 - When suggesting new exercises, include form cues and YouTube video IDs when possible
+
+### Daily Routine Modifications (Morning & Night)
+
+You can and SHOULD modify the morning and night daily routines using the proposeRoutineVersion tool's `dailyRoutineChanges` parameter. Daily routine exercises are duration-based stretches, mobility, and rehab movements — NOT workout exercises with sets/reps/weight.
+
+When modifying daily routines:
+- Use `dailyRoutineChanges` (not `routineChanges`) — they have different schemas
+- Each daily routine exercise has: name, duration (seconds), description, why, actionCue
+- Include the `routineType` field: "morning" or "night"
+- You can add, remove, modify, or swap daily routine exercises
+- Always provide a `description` (what it is), `why` (purpose), and `actionCue` (how to do it)
+- Duration is in seconds (e.g. 45s isometric hold, 120s per-side stretch)
+- Combine daily routine changes with workout changes in a single tool call when both are needed
+- Morning routines focus on activation, Achilles prehab, mobility priming
+- Night routines focus on recovery stretches, hip flexor release, tension reduction

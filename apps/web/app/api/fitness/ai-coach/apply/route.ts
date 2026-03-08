@@ -5,14 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
-import type { RoutineChange } from '@/lib/types/ai-coach.types'
-import type { Workout } from '@/lib/types/fitness.types'
-import { applyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
+import type { RoutineChange, DailyRoutineChange } from '@/lib/types/ai-coach.types'
+import type { Workout, DailyRoutine } from '@/lib/types/fitness.types'
+import { applyRoutineChanges, applyDailyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
 
 interface ApplyRequest {
   routineId?: string
   routineChanges: RoutineChange[]
   progressiveOverload?: ProgressiveOverloadEntry[]
+  dailyRoutineChanges?: DailyRoutineChange[]
   changeSummary: string
 }
 
@@ -25,10 +26,13 @@ export async function POST(request: NextRequest) {
     const body: ApplyRequest = await request.json()
     const routineId = body.routineId || 'climber-physique'
 
-    if (
-      (!body.routineChanges || body.routineChanges.length === 0) &&
-      (!body.progressiveOverload || body.progressiveOverload.length === 0)
-    ) {
+    const hasWorkoutChanges =
+      (body.routineChanges && body.routineChanges.length > 0) ||
+      (body.progressiveOverload && body.progressiveOverload.length > 0)
+    const hasDailyRoutineChanges =
+      body.dailyRoutineChanges && body.dailyRoutineChanges.length > 0
+
+    if (!hasWorkoutChanges && !hasDailyRoutineChanges) {
       return NextResponse.json(
         { success: false, error: 'No changes to apply' },
         { status: 400 }
@@ -72,30 +76,49 @@ export async function POST(request: NextRequest) {
 
     const newVersionNumber = (latestVersion?.version_number || 0) + 1
 
-    // 3. Deep clone and apply changes via shared utility
+    // 3. Deep clone and apply workout changes
+    let totalChanges = 0
+
     const workoutDefs: Record<string, Workout> = JSON.parse(
       JSON.stringify(activeVersion.workout_definitions || {})
     )
 
-    const { updatedDefs, changesApplied } = applyRoutineChanges(
-      workoutDefs,
-      body.routineChanges,
-      body.progressiveOverload,
+    if (hasWorkoutChanges) {
+      const { updatedDefs, changesApplied } = applyRoutineChanges(
+        workoutDefs,
+        body.routineChanges,
+        body.progressiveOverload,
+      )
+      Object.assign(workoutDefs, updatedDefs)
+      totalChanges += changesApplied
+    }
+
+    // 4. Deep clone and apply daily routine changes
+    const dailyRoutines: { morning: DailyRoutine; night: DailyRoutine } = JSON.parse(
+      JSON.stringify(activeVersion.daily_routines || {})
     )
 
-    // 4. Create new draft version
+    if (hasDailyRoutineChanges) {
+      const { changesApplied } = applyDailyRoutineChanges(
+        dailyRoutines,
+        body.dailyRoutineChanges!,
+      )
+      totalChanges += changesApplied
+    }
+
+    // 5. Create new draft version
     const { data: newVersion, error: createError } = await db
       .from('fitness_routine_versions')
       .insert({
         routine_id: routineId,
         version_number: newVersionNumber,
         name: `AI Coach Suggestion v${newVersionNumber}`,
-        change_summary: body.changeSummary || `AI Coach: ${changesApplied} change(s) applied`,
+        change_summary: body.changeSummary || `AI Coach: ${totalChanges} change(s) applied`,
         user_profile: activeVersion.user_profile,
         injury_protocol: activeVersion.injury_protocol,
         schedule: activeVersion.schedule,
-        daily_routines: activeVersion.daily_routines,
-        workout_definitions: updatedDefs,
+        daily_routines: dailyRoutines,
+        workout_definitions: workoutDefs,
         is_active: false,
         is_draft: true,
       })
@@ -115,8 +138,8 @@ export async function POST(request: NextRequest) {
       data: {
         versionId: newVersion.id,
         versionNumber: newVersion.version_number,
-        changesApplied,
-        message: `Created draft version v${newVersion.version_number} with ${changesApplied} change(s). Review and activate when ready.`,
+        changesApplied: totalChanges,
+        message: `Created draft version v${newVersion.version_number} with ${totalChanges} change(s). Review and activate when ready.`,
       },
     })
   } catch (error) {

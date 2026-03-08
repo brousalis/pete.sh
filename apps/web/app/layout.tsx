@@ -1,8 +1,6 @@
 import { Providers } from '@/components/providers'
 import { SyncManager } from '@/components/sync-manager'
 import { Analytics } from '@vercel/analytics/next'
-import { GeistMono } from 'geist/font/mono'
-import { GeistSans } from 'geist/font/sans'
 import type { Metadata } from 'next'
 import type React from 'react'
 import { Suspense } from 'react'
@@ -23,9 +21,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      // Put font variables and antialiasing on html so they apply before hydration.
-      className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
-      // Ensure a default brand so color theming is active before hydration.
+      className="antialiased"
       data-brand="yellow"
     >
       <body className="font-sans">
@@ -33,7 +29,6 @@ export default function RootLayout({
           <Suspense fallback={null}>
             {children}
             <Analytics />
-            {/* Background sync for local mode - syncs data to Supabase every 30s */}
             <SyncManager interval={30000} debug={false} />
           </Suspense>
         </Providers>

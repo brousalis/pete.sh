@@ -1,0 +1,13 @@
+import type { Config } from 'tailwindcss';
+import sharedConfig from '@petehome/tailwind';
+
+const config: Pick<Config, 'prefix' | 'presets' | 'content'> = {
+  content: [
+    './src/**/*.tsx',
+    '../../packages/ui/src/**/*.tsx',
+    '../config-widget/src/**/*.tsx',
+  ],
+  presets: [sharedConfig],
+};
+
+export default config;

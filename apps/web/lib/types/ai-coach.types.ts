@@ -121,6 +121,45 @@ export const RoutineChangeSchema = z.object({
     .describe('How urgently this change should be applied'),
 })
 
+export const DailyRoutineChangeSchema = z.object({
+  routineType: z
+    .enum(['morning', 'night'])
+    .describe('Which daily routine to modify'),
+  action: z
+    .enum(['add', 'remove', 'modify', 'swap'])
+    .describe('Type of change'),
+  exerciseName: z
+    .string()
+    .describe('Name of the existing exercise (for remove/modify/swap) or new exercise (for add)'),
+  newExerciseName: z
+    .string()
+    .optional()
+    .describe('Name of replacement exercise (for swap)'),
+  duration: z
+    .number()
+    .optional()
+    .describe('Duration in seconds'),
+  description: z
+    .string()
+    .optional()
+    .describe('Exercise description'),
+  why: z
+    .string()
+    .optional()
+    .describe('Why this exercise is included'),
+  actionCue: z
+    .string()
+    .optional()
+    .describe('Step-by-step action / how-to instructions'),
+  youtubeDemo: z
+    .string()
+    .optional()
+    .describe('YouTube demo URL'),
+  reasoning: z
+    .string()
+    .describe('Why this change is recommended'),
+})
+
 export const ProgressiveOverloadSchema = z.object({
   exerciseName: z.string().describe('Exercise name'),
   exerciseId: z.string().optional().describe('Exercise ID'),
@@ -206,6 +245,7 @@ export type BodyCompositionAnalysis = z.infer<
 >
 export type TrainingReadiness = z.infer<typeof TrainingReadinessSchema>
 export type RoutineChange = z.infer<typeof RoutineChangeSchema>
+export type DailyRoutineChange = z.infer<typeof DailyRoutineChangeSchema>
 export type ProgressiveOverload = z.infer<typeof ProgressiveOverloadSchema>
 export type InjuryUpdate = z.infer<typeof InjuryUpdateSchema>
 export type FullAnalysis = z.infer<typeof FullAnalysisSchema>

@@ -7,14 +7,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useCooking } from '@/hooks/use-cooking-data'
 import { useReducedMotionPreference } from '@/hooks/use-animation'
+import { useCooking } from '@/hooks/use-cooking-data'
 import { useToast } from '@/hooks/use-toast'
 import { apiGet } from '@/lib/api/client'
-import {
-  getEligibleDinnerRecipes,
-  type MealPlanDiscoveryFilters,
-} from '@/lib/utils/meal-plan-discovery'
 import type {
   DayOfWeek,
   Recipe,
@@ -23,18 +19,15 @@ import type {
   RecipeWithIngredients,
 } from '@/lib/types/cooking.types'
 import { cn, resolveRecipeImageUrl } from '@/lib/utils'
-import { transitions } from '@/lib/animations'
-import { addDays, format } from 'date-fns'
 import {
-  animate,
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useTransform,
-} from 'framer-motion'
-import { Check, ChefHat, Clock, Dices, Info, ListOrdered, Star, Users, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+  getEligibleDinnerRecipes,
+  type MealPlanDiscoveryFilters,
+} from '@/lib/utils/meal-plan-discovery'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { addDays, format } from 'date-fns'
+import useEmblaCarousel from 'embla-carousel-react'
+import { Check, ChefHat, Clock, Dices, ListOrdered, Star, Users, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const DAYS: DayOfWeek[] = [
   'monday',
@@ -45,9 +38,6 @@ const DAYS: DayOfWeek[] = [
   'saturday',
   'sunday',
 ]
-
-const SWIPE_VELOCITY_THRESHOLD = 200
-const SWIPE_OFFSET_THRESHOLD_RATIO = 0.2
 
 function triggerHaptic() {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -185,14 +175,6 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
     }
   }, [currentIndex, candidates])
 
-  const handlePrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      triggerHaptic()
-      setCurrentIndex((i) => Math.max(0, i - 1))
-      setShowSwipeHint(false)
-    }
-  }, [currentIndex])
-
   const handleReshuffle = useCallback(() => {
     const assignedIds = new Set(Object.values(assignments).filter(Boolean))
     const eligible = getEligibleDinnerRecipes(recipes, filters).filter(
@@ -262,14 +244,15 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               </Button>
             </div>
 
-            {/* Day picker + Quick filter */}
-            <div className="mt-3 flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
-              <div className="flex gap-1.5 shrink-0">
+            {/* Day picker + Quick filter — all visible, no scroll */}
+            <div className="mt-3 space-y-2">
+              {/* Row 1: Mode + filter */}
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setTargetDay('next-empty')}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                    'flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                     targetDay === 'next-empty'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -277,46 +260,53 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
                 >
                   Next empty
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickFilter((v) => !v)}
+                  className={cn(
+                    'shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+                    quickFilter ? 'bg-amber-500/15 text-amber-600' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  Quick &lt;30m
+                </button>
+              </div>
+              {/* Row 2: All 7 days in a compact grid */}
+              <div className="grid grid-cols-7 gap-1">
                 {DAYS.map((day) => {
                   const dayDate = addDays(currentWeek, DAYS.indexOf(day))
                   const isFilled = assignments[day] || mealPlan?.meals[day]?.dinner
                   const isSkipped = mealPlan?.meals[day]?.skipped
-                  if (isSkipped) return null
                   return (
                     <button
                       key={day}
                       type="button"
-                      onClick={() => setTargetDay(day)}
+                      onClick={() => (isSkipped ? undefined : setTargetDay(day))}
+                      disabled={isSkipped}
                       className={cn(
-                        'flex flex-col items-center rounded-lg px-2.5 py-1.5 min-w-[44px] text-xs transition-colors',
-                        targetDay === day
-                          ? 'bg-primary text-primary-foreground'
-                          : isFilled
-                            ? 'bg-green-500/15 text-green-600'
-                            : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                        'flex flex-col items-center justify-center rounded-lg py-2 min-w-0 text-[10px] transition-colors',
+                        isSkipped
+                          ? 'opacity-40 cursor-not-allowed bg-muted/30'
+                          : targetDay === day
+                            ? 'bg-primary text-primary-foreground font-semibold'
+                            : isFilled
+                              ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       )}
                     >
-                      <span className="font-medium">{format(dayDate, 'EEE')}</span>
-                      <span className="text-[10px] tabular-nums">{format(dayDate, 'd')}</span>
+                      <span className="font-medium truncate w-full text-center">
+                        {format(dayDate, 'EEE')}
+                      </span>
+                      <span className="tabular-nums">{format(dayDate, 'd')}</span>
                     </button>
                   )
                 })}
               </div>
-              <button
-                type="button"
-                onClick={() => setQuickFilter((v) => !v)}
-                className={cn(
-                  'shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium',
-                  quickFilter ? 'bg-amber-500/15 text-amber-600' : 'bg-muted/50 text-muted-foreground'
-                )}
-              >
-                Quick &lt;30m
-              </button>
             </div>
           </div>
 
-          {/* Body */}
-          <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-4 py-4">
+          {/* Body — scrollable when expanded cards overflow */}
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-4 py-4 overflow-y-auto">
             {pendingClose ? (
               <div className="flex flex-col items-center gap-4 py-8">
                 <p className="text-sm font-medium">Save {Object.keys(assignments).length} meals to your plan?</p>
@@ -388,10 +378,7 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               <SwipeCardStack
                 candidates={candidates}
                 currentIndex={currentIndex}
-                onLike={handleLike}
-                onPass={handlePass}
-                onNext={handlePass}
-                onPrevious={handlePrevious}
+                onIndexChange={setCurrentIndex}
                 reducedMotion={reducedMotion}
                 showHint={showSwipeHint}
               />
@@ -453,271 +440,10 @@ function formatIngredientAmount(amount?: number | null, unit?: string | null): s
   return unit ?? ''
 }
 
-interface ExpandedRecipeOverlayProps {
-  recipeId: string
-  onClose: () => void
-  onLike: () => void
-  onPass: () => void
-  reducedMotion: boolean
-}
-
-function ExpandedRecipeOverlay({
-  recipeId,
-  onClose,
-  onLike,
-  onPass,
-  reducedMotion,
-}: ExpandedRecipeOverlayProps) {
-  const [recipe, setRecipe] = useState<RecipeWithIngredients | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setRecipe(null)
-    apiGet<RecipeWithIngredients>(`/api/cooking/recipes/${recipeId}`)
-      .then((res) => {
-        if (!cancelled && res.success && res.data) setRecipe(res.data)
-      })
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [recipeId])
-
-  const instructions = useMemo(
-    () => (recipe ? parseInstructions(recipe.instructions) : []),
-    [recipe]
-  )
-
-  const totalTime = recipe ? (recipe.prep_time || 0) + (recipe.cook_time || 0) : 0
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex flex-col bg-background"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={reducedMotion ? { duration: 0.05 } : { duration: 0.2, ease: 'easeOut' }}
-    >
-      {/* Backdrop - tap to close */}
-      <button
-        type="button"
-        className="absolute inset-0 z-0 bg-black/60"
-        onClick={onClose}
-        aria-label="Close"
-      />
-
-      <motion.div
-        className="relative z-10 flex flex-1 flex-col overflow-hidden rounded-t-2xl bg-card shadow-2xl mx-4 mt-12 mb-4 max-h-[85dvh]"
-        initial={{ scale: 0.94, y: 24, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.94, y: 24, opacity: 0 }}
-        transition={
-          reducedMotion
-            ? { duration: 0.05 }
-            : { type: 'spring', stiffness: 400, damping: 30 }
-        }
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="shrink-0 flex items-center justify-between gap-2 p-3 border-b border-border/50">
-          <Button variant="ghost" size="icon" className="size-10" onClick={onClose} aria-label="Close">
-            <X className="size-5" />
-          </Button>
-          <span className="text-sm font-medium text-muted-foreground">Tap outside to close</span>
-          <div className="size-10" />
-        </div>
-
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain -mb-16 pb-20">
-          {loading ? (
-            <div className="p-4 space-y-4">
-              <Skeleton className="aspect-[4/3] w-full rounded-lg" />
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <div className="space-y-2 pt-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-              </div>
-            </div>
-          ) : recipe ? (
-            <div className="p-4 space-y-4">
-              {/* Image */}
-              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden shrink-0">
-                {resolveRecipeImageUrl(recipe.image_url) ? (
-                  <img
-                    src={resolveRecipeImageUrl(recipe.image_url)!}
-                    alt={recipe.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-muted/50">
-                    <ChefHat className="size-16 text-muted-foreground/30" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute top-2 left-2 right-2 flex justify-between">
-                  {recipe.source === 'trader_joes' && (
-                    <span className="rounded px-2 py-0.5 bg-red-600/90 text-xs font-semibold text-white">
-                      TJ&apos;s
-                    </span>
-                  )}
-                  {recipe.is_favorite && (
-                    <Star className="size-5 fill-amber-400 text-amber-400" />
-                  )}
-                </div>
-              </div>
-
-              {/* Name + stats */}
-              <div>
-                <h3 className="text-xl font-bold leading-tight">{recipe.name}</h3>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  {totalTime > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3.5" />
-                      {totalTime} min
-                    </span>
-                  )}
-                  {recipe.servings != null && recipe.servings > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Users className="size-3.5" />
-                      {recipe.servings} servings
-                    </span>
-                  )}
-                  {recipe.difficulty && (
-                    <span className="capitalize">{recipe.difficulty}</span>
-                  )}
-                  {instructions.length > 0 && (
-                    <span className="flex items-center gap-1">
-                      <ListOrdered className="size-3.5" />
-                      {instructions.length} steps
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Description */}
-              {recipe.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {recipe.description}
-                </p>
-              )}
-
-              {/* Ingredients */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">Ingredients</h4>
-                {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                  <ul className="space-y-1.5">
-                    {recipe.ingredients
-                      .sort((a, b) => a.order_index - b.order_index)
-                      .map((ing: RecipeIngredient, idx: number) => (
-                        <li key={ing.id || idx} className="flex gap-2 text-sm">
-                          <span className="size-5 shrink-0 rounded-full border-2 mt-0.5" />
-                          <span>
-                            {formatIngredientAmount(ing.amount, ing.unit) && (
-                              <span className="text-muted-foreground">
-                                {formatIngredientAmount(ing.amount, ing.unit)}{' '}
-                              </span>
-                            )}
-                            <span className="font-medium">{ing.name}</span>
-                            {ing.notes && (
-                              <span className="text-muted-foreground"> ({ing.notes})</span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No ingredients listed</p>
-                )}
-              </div>
-
-              {/* Instructions */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">Instructions</h4>
-                {instructions.length > 0 ? (
-                  <ol className="space-y-3">
-                    {instructions.map((step, idx) => (
-                      <li key={idx} className="flex gap-3">
-                        <div className="size-6 shrink-0 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                          {step.step_number}
-                        </div>
-                        <p className="text-sm leading-relaxed pt-0.5">{step.instruction}</p>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No instructions listed</p>
-                )}
-              </div>
-
-              {/* Nutrition + tags */}
-              <div className="flex flex-wrap items-center gap-2">
-                {(recipe.tags || []).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-md bg-muted/60 px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                  >
-                    {tag}
-                  </span>
-                ))}
-                {(recipe.nutrition_category || []).slice(0, 3).map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-md bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400"
-                  >
-                    {c.replace(/-/g, ' ')}
-                  </span>
-                ))}
-                {recipe.calories_per_serving != null && recipe.calories_per_serving > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    ~{Math.round(recipe.calories_per_serving)} cal/serving
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              Failed to load recipe
-            </div>
-          )}
-        </div>
-
-        {/* Sticky action buttons */}
-        {!loading && recipe && (
-          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-4 p-4 bg-gradient-to-t from-card to-card/95 border-t border-border/50">
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-12 rounded-full border-2 border-red-500/50 text-red-500"
-              onClick={onPass}
-              aria-label="Skip"
-            >
-              <X className="size-6" />
-            </Button>
-            <Button
-              size="icon"
-              className="size-12 rounded-full bg-green-500 hover:bg-green-600"
-              onClick={onLike}
-              aria-label="Add to plan"
-            >
-              <Check className="size-6" />
-            </Button>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
-  )
-}
-
 interface SwipeCardStackProps {
   candidates: Recipe[]
   currentIndex: number
-  onLike: () => void
-  onPass: () => void
-  onNext: () => void
-  onPrevious: () => void
+  onIndexChange: (index: number) => void
   reducedMotion: boolean
   showHint: boolean
 }
@@ -725,150 +451,90 @@ interface SwipeCardStackProps {
 function SwipeCardStack({
   candidates,
   currentIndex,
-  onLike,
-  onPass,
-  onNext,
-  onPrevious,
+  onIndexChange,
   reducedMotion,
   showHint,
 }: SwipeCardStackProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [expandedRecipeId, setExpandedRecipeId] = useState<string | null>(null)
-  const x = useMotionValue(0)
-  const cardWidth = 320
-  const exitDistance = typeof window !== 'undefined' ? Math.max(400, window.innerWidth) : 500
-
-  const rotate = useTransform(x, [-cardWidth, cardWidth], [-8, 8])
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    axis: 'x',
+    align: 'center',
+    containScroll: 'trimSnaps',
+    dragFree: false,
+    skipSnaps: false,
+    loop: false,
+    watchDrag: (_, evt) => {
+      const target = evt?.target as HTMLElement | null
+      if (!target) return true
+      return !target.closest('[data-swipe-skip]')
+    },
+  })
 
   useEffect(() => {
-    x.set(0)
-  }, [currentIndex, x])
+    if (!emblaApi) return
+    const onSelect = () => {
+      onIndexChange(emblaApi.selectedScrollSnap())
+    }
+    emblaApi.on('select', onSelect)
+    onSelect()
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
+  }, [emblaApi, onIndexChange])
 
-  const handleExpandClose = useCallback(() => setExpandedRecipeId(null), [])
+  useEffect(() => {
+    if (!emblaApi) return
+    emblaApi.scrollTo(currentIndex, true)
+  }, [emblaApi, currentIndex])
 
-  const handleExpandLike = useCallback(() => {
-    onLike()
-    setExpandedRecipeId(null)
-  }, [onLike])
-
-  const handleExpandPass = useCallback(() => {
-    onPass()
-    setExpandedRecipeId(null)
-  }, [onPass])
-
-  const handleDragEnd = useCallback(
-    (_: unknown, info: { offset: { x: number }; velocity: { x: number } }) => {
-      const threshold = Math.min(120, (typeof window !== 'undefined' ? window.innerWidth : 400) * SWIPE_OFFSET_THRESHOLD_RATIO)
-      const wentRight = info.offset.x > threshold || info.velocity.x > SWIPE_VELOCITY_THRESHOLD
-      const wentLeft = info.offset.x < -threshold || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD
-
-      if (wentRight) {
-        animate(x, exitDistance, { type: 'spring', stiffness: 300, damping: 25 })
-        setTimeout(() => {
-          onNext()
-          x.set(0)
-        }, reducedMotion ? 50 : 200)
-      } else if (wentLeft) {
-        animate(x, -exitDistance, { type: 'spring', stiffness: 300, damping: 25 })
-        setTimeout(() => {
-          onPrevious()
-          x.set(0)
-        }, reducedMotion ? 50 : 200)
-      } else {
-        animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 })
-      }
-    },
-    [x, onNext, onPrevious, reducedMotion, exitDistance]
-  )
-
-  const recipe = candidates[currentIndex]
-  const prevRecipe = candidates[currentIndex - 1]
-  const nextRecipe = candidates[currentIndex + 1]
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi])
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi])
 
   return (
     <div
-      ref={containerRef}
-      className="relative w-full max-w-[340px] min-h-[420px] max-h-[65dvh] flex items-center justify-center"
+      className="relative w-full max-w-[340px] min-h-[420px] flex flex-col items-center"
       tabIndex={0}
       role="group"
       aria-label="Recipe cards - swipe or use arrows to browse, use buttons to add or skip"
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') {
           e.preventDefault()
-          onPrevious()
+          scrollPrev()
         } else if (e.key === 'ArrowRight') {
           e.preventDefault()
-          onNext()
+          scrollNext()
         }
       }}
     >
-      {showHint && (
+      {/* {showHint && (
         <p className="absolute top-2 left-0 right-0 text-center text-xs text-muted-foreground z-10">
           Swipe left for previous, right for next
         </p>
-      )}
+      )} */}
 
-      {/* Preloaded neighbor cards — visible when swiping */}
-      {prevRecipe && (
-        <SwipeCard
-          recipe={prevRecipe}
-          index={-1}
-          style={{ x: -72, scale: 0.88, y: 12, zIndex: 0 }}
-          reducedMotion={reducedMotion}
-        />
-      )}
-      {nextRecipe && (
-        <SwipeCard
-          recipe={nextRecipe}
-          index={1}
-          style={{ x: 72, scale: 0.88, y: 12, zIndex: 0 }}
-          reducedMotion={reducedMotion}
-        />
-      )}
-
-      {/* Current card — draggable, on top */}
-      {recipe && (
-        <SwipeCard
-          recipe={recipe}
-          index={0}
-          drag
-          x={x}
-          rotate={rotate}
-          onDragEnd={handleDragEnd}
-          onExpand={() => setExpandedRecipeId(recipe.id)}
-          reducedMotion={reducedMotion}
-          cardWidth={cardWidth}
-        />
-      )}
-
-      {/* Expanded recipe overlay */}
-      <AnimatePresence mode="wait">
-        {expandedRecipeId && (
-          <ExpandedRecipeOverlay
-            key={expandedRecipeId}
-            recipeId={expandedRecipeId}
-            onClose={handleExpandClose}
-            onLike={handleExpandLike}
-            onPass={handleExpandPass}
-            reducedMotion={reducedMotion}
-          />
-        )}
-      </AnimatePresence>
+      <div ref={emblaRef} className="overflow-hidden w-full max-w-[320px] flex-1 cursor-grab active:cursor-grabbing">
+        <div className="flex">
+          {candidates.map((recipe, index) => (
+            <div
+              key={recipe.id}
+              className="flex-[0_0_100%] min-w-0"
+            >
+              <SwipeCard
+                recipe={recipe}
+                isCurrent={index === currentIndex}
+                reducedMotion={reducedMotion}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
 interface SwipeCardProps {
   recipe: Recipe
-  index: number
-  style?: React.CSSProperties
+  isCurrent: boolean
   reducedMotion: boolean
-  drag?: boolean
-  x?: import('framer-motion').MotionValue<number>
-  rotate?: import('framer-motion').MotionValue<number>
-  onDragEnd?: (event: unknown, info: { offset: { x: number }; velocity: { x: number } }) => void
-  onExpand?: () => void
-  cardWidth?: number
 }
 
 /** TJ/category tags to hide from display (show fun tags only) */
@@ -879,16 +545,26 @@ const HIDE_TAGS = new Set([
 
 function SwipeCard({
   recipe,
-  index,
-  style,
+  isCurrent,
   reducedMotion,
-  drag = false,
-  x,
-  rotate,
-  onDragEnd,
-  onExpand,
-  cardWidth = 320,
 }: SwipeCardProps) {
+  const [fullRecipe, setFullRecipe] = useState<RecipeWithIngredients | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isCurrent) return
+    setLoading(true)
+    apiGet<RecipeWithIngredients>(`/api/cooking/recipes/${recipe.id}`)
+      .then((res) => {
+        if (res.success && res.data) setFullRecipe(res.data)
+      })
+      .finally(() => setLoading(false))
+  }, [isCurrent, recipe.id])
+
+  const instructions = useMemo(
+    () => (fullRecipe ? parseInstructions(fullRecipe.instructions) : []),
+    [fullRecipe]
+  )
   const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
   const stepCount = (() => {
     const i = recipe.instructions
@@ -899,32 +575,21 @@ function SwipeCard({
     return 0
   })()
   const imageUrl = resolveRecipeImageUrl(recipe.image_url)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const displayTags = (recipe.tags || [])
     .filter((t) => !HIDE_TAGS.has(t.toLowerCase()))
-    .slice(0, 4)
+    .slice(0, 6)
 
   const nutritionHints = (recipe.nutrition_category || []).filter((c) =>
     ['high-protein', 'low-carb', 'low-calorie', 'high-fiber', 'balanced'].includes(c)
-  ).slice(0, 2)
+  ).slice(0, 3)
+
+  const showFullContent = isCurrent
+  const data = fullRecipe ?? recipe
 
   return (
-    <motion.div
-      ref={containerRef}
-      className="absolute w-full max-w-[320px] rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card flex flex-col"
-      style={{
-        ...style,
-        touchAction: drag ? 'none' : undefined,
-        ...(drag && x && rotate ? { x, rotate } : {}),
-      }}
-      drag={drag ? 'x' : false}
-      dragConstraints={drag ? { left: -cardWidth, right: cardWidth } : undefined}
-      dragElastic={0.2}
-      onDragEnd={onDragEnd}
-      transition={reducedMotion ? { duration: 0.05 } : transitions.springGentle}
-    >
-      {/* Image — compact to leave room for decision info */}
+    <div className="w-full max-w-[320px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card flex flex-col max-h-[70dvh]">
+      {/* Image — fixed at top */}
       <div className="relative aspect-[4/3] w-full shrink-0">
         {imageUrl ? (
           <img
@@ -951,29 +616,14 @@ function SwipeCard({
         </div>
       </div>
 
-      {/* Info panel — scannable decision aid */}
-      <div className="flex flex-col gap-2 p-3 min-h-0 shrink-0">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-bold leading-tight line-clamp-2 flex-1 min-w-0">
-            {recipe.name}
-          </h3>
-          {onExpand && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onExpand()
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="shrink-0 size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors -mr-1"
-              aria-label="View full recipe details"
-            >
-              <Info className="size-4" />
-            </button>
-          )}
-        </div>
+      {/* Scrollable content — everything at once */}
+      <div
+        data-swipe-skip
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 space-y-3"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <h3 className="text-base font-bold leading-tight">{recipe.name}</h3>
 
-        {/* Quick stats row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
           {totalTime > 0 && (
             <span className="flex items-center gap-0.5">
@@ -998,14 +648,12 @@ function SwipeCard({
           )}
         </div>
 
-        {/* Description snippet */}
-        {recipe.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">
-            {recipe.description}
+        {data.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {data.description}
           </p>
         )}
 
-        {/* Tags + nutrition hints */}
         <div className="flex flex-wrap items-center gap-1.5">
           {displayTags.map((tag) => (
             <span
@@ -1023,15 +671,70 @@ function SwipeCard({
               {hint.replace(/-/g, ' ')}
             </span>
           ))}
+          {recipe.calories_per_serving != null && recipe.calories_per_serving > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              ~{Math.round(recipe.calories_per_serving)} cal/serving
+            </span>
+          )}
         </div>
 
-        {/* Calories if available */}
-        {recipe.calories_per_serving != null && recipe.calories_per_serving > 0 && (
-          <span className="text-[10px] text-muted-foreground">
-            ~{Math.round(recipe.calories_per_serving)} cal/serving
-          </span>
+        {showFullContent && (
+          <>
+            {loading ? (
+              <div className="space-y-2 pt-2 border-t border-border/50">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : fullRecipe ? (
+              <>
+                {fullRecipe.ingredients && fullRecipe.ingredients.length > 0 && (
+                  <div className="pt-2 border-t border-border/50">
+                    <h4 className="text-xs font-semibold mb-1.5">Ingredients</h4>
+                    <ul className="space-y-1">
+                      {fullRecipe.ingredients
+                        .sort((a, b) => a.order_index - b.order_index)
+                        .map((ing: RecipeIngredient, idx: number) => (
+                          <li key={ing.id || idx} className="flex gap-2 text-xs">
+                            <span className="size-4 shrink-0 rounded-full border-2 mt-0.5" />
+                            <span>
+                              {formatIngredientAmount(ing.amount, ing.unit) && (
+                                <span className="text-muted-foreground">
+                                  {formatIngredientAmount(ing.amount, ing.unit)}{' '}
+                                </span>
+                              )}
+                              <span className="font-medium">{ing.name}</span>
+                              {ing.notes && (
+                                <span className="text-muted-foreground"> ({ing.notes})</span>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+                {instructions.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold mb-1.5">Instructions</h4>
+                    <ol className="space-y-2">
+                      {instructions.map((step, idx) => (
+                        <li key={idx} className="flex gap-2 text-xs">
+                          <div className="size-5 shrink-0 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
+                            {step.step_number}
+                          </div>
+                          <p className="leading-relaxed pt-0.5">{step.instruction}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }

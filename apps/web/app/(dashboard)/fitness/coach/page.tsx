@@ -583,6 +583,7 @@ export default function AiCoachPage() {
         body: JSON.stringify({
           routineChanges: toolResult.routineChanges ?? [],
           progressiveOverload: toolResult.progressiveOverload ?? [],
+          dailyRoutineChanges: toolResult.dailyRoutineChanges ?? [],
           changeSummary: `AI Coach: ${toolResult.commitMessage}`,
         }),
       })
