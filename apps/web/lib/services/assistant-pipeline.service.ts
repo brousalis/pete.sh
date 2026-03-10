@@ -44,10 +44,10 @@ export interface RunPipelineInput {
   userId?: string | null
 }
 
-export interface RunPipelineResult {
-  stream: Awaited<ReturnType<typeof createChefChatStream>>
-  intent: AssistantIntent
-}
+export type RunPipelineResult =
+  | { stream: Awaited<ReturnType<typeof createFitnessPlanStream>>; intent: 'fitness_plan' }
+  | { stream: Awaited<ReturnType<typeof createChefChatStream>>; intent: 'chef' }
+  | { stream: Awaited<ReturnType<typeof createCoachChatStream>>; intent: 'coach' }
 
 /**
  * Run the assistant pipeline: load_memory → route → agent (chef | coach | fitness_plan).

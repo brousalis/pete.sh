@@ -6,9 +6,9 @@ import { setSpotifyTokens } from "@/lib/services/token-storage"
 /**
  * OAuth callback handler for Spotify
  * Exchanges the authorization code for access and refresh tokens
- * 
+ *
  * Derives redirect URI from request origin to match what was used during auth initiation.
- * 
+ *
  * Stores tokens in:
  * 1. File-based storage (for cross-origin requests from pete.sh to localhost)
  * 2. httpOnly cookies (for same-origin requests as backup)

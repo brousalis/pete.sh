@@ -1,10 +1,10 @@
 /**
  * Spotify Adapter
  * Handles Spotify playback data with write-through caching to Supabase
- * 
+ *
  * Spotify requires OAuth authentication, so availability depends on
  * whether the user is authenticated. Supabase cache is used as fallback.
- * 
+ *
  * Sync Strategy:
  * - Only writes when track changes or playback state changes (play/pause)
  * - Does NOT write on every progress update (that would be excessive)
@@ -15,10 +15,10 @@ import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
 import { SpotifyService, loadSpotifyTokensFromCookies } from '@/lib/services/spotify.service'
 import { cookies } from 'next/headers'
 import { config } from '@/lib/config'
-import type { 
-  SpotifyPlaybackState, 
-  SpotifyDevice, 
-  SpotifyUser 
+import type {
+  SpotifyPlaybackState,
+  SpotifyDevice,
+  SpotifyUser
 } from '@/lib/types/spotify.types'
 import type { SpotifyStateRow, SpotifyStateInsert } from '@/lib/supabase/types'
 
@@ -46,7 +46,7 @@ export interface SpotifyCachedState {
 
 /**
  * Spotify Adapter - manages Spotify playback data
- * 
+ *
  * Uses change detection to minimize writes:
  * - Writes on track change (different URI)
  * - Writes on playback state change (play/pause)
@@ -230,19 +230,19 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    */
   async getPlaybackState(): Promise<SpotifyPlaybackState | null> {
     const isLocal = await this.isLocal()
-    
+
     if (isLocal) {
       try {
         const state = await this.spotifyService.getPlaybackState()
-        
+
         // Only write to cache if track or playback state actually changed
         if (this.isSupabaseAvailable() && state) {
           const fullState: SpotifyFullState = { playbackState: state, devices: [], user: null }
-          
+
           if (this.shouldWriteToCache(fullState)) {
             const devices = await this.spotifyService.getDevices().catch(() => [])
             fullState.devices = devices
-            
+
             this.writeToCache(fullState)
               .then(result => {
                 if (result.success) {
@@ -271,7 +271,7 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    */
   async getDevices(): Promise<SpotifyDevice[]> {
     const isLocal = await this.isLocal()
-    
+
     if (isLocal) {
       return this.spotifyService.getDevices()
     }
@@ -286,7 +286,7 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
    */
   async getCurrentUser(): Promise<SpotifyUser | null> {
     const isLocal = await this.isLocal()
-    
+
     if (isLocal) {
       try {
         return await this.spotifyService.getCurrentUser()
@@ -317,10 +317,10 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
     recordedAt?: string
   }> {
     const isLocal = await this.isLocal()
-    
+
     if (isLocal) {
       const state = await this.getPlaybackState()
-      
+
       if (!state?.item) {
         return { isPlaying: false, track: null, progressMs: 0, durationMs: 0 }
       }
@@ -340,7 +340,7 @@ export class SpotifyAdapter extends BaseAdapter<SpotifyFullState, SpotifyCachedS
 
     // Production mode - read from cache
     const cached = await this.fetchFromCache()
-    
+
     if (!cached) {
       return { isPlaying: false, track: null, progressMs: 0, durationMs: 0 }
     }

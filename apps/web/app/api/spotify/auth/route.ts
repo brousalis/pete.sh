@@ -6,11 +6,11 @@ import { getSpotifyTokens } from "@/lib/services/token-storage"
 /**
  * Initiate Spotify OAuth flow
  * Redirects user to Spotify's authorization page
- * 
+ *
  * Dynamically determines the redirect URI from the request origin so that:
  * - From pete.sh → redirect goes back to pete.sh/spotify/callback
  * - From localhost → redirect goes back to localhost:3000/spotify/callback
- * 
+ *
  * Supports a `returnTo` query param to redirect back after OAuth
  * (useful when initiating from pete.sh via localhost)
  */
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
     }
 
     const cookieStore = await cookies()
-    
+
     // Check if we already have valid tokens (in file storage or cookies)
     const fileTokens = getSpotifyTokens()
     const cookieAccessToken = cookieStore.get("spotify_access_token")?.value
     const cookieExpiresAt = cookieStore.get("spotify_expires_at")?.value
-    
+
     const hasValidToken = (fileTokens.accessToken && fileTokens.expiryDate && fileTokens.expiryDate > Date.now()) ||
                           (cookieAccessToken && cookieExpiresAt && parseInt(cookieExpiresAt, 10) > Date.now())
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Generate a state parameter for CSRF protection
     const state = Math.random().toString(36).substring(2, 15)
-    
+
     // Store state in cookie for verification
     cookieStore.set("spotify_auth_state", state, {
       httpOnly: true,

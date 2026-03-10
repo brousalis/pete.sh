@@ -1,22 +1,22 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import Image from "next/image"
-import {
-  Music,
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  RefreshCw,
-  AlertCircle,
-  Database,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { SpotifyUser, SpotifyPlaybackState } from "@/lib/types/spotify.types"
-import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
 import { useConnectivity } from "@/components/connectivity-provider"
+import { Button } from "@/components/ui/button"
 import { useSmoothProgress } from "@/hooks/use-smooth-progress"
+import { apiGet, apiPost, getApiBaseUrl } from "@/lib/api/client"
+import type { SpotifyPlaybackState, SpotifyUser } from "@/lib/types/spotify.types"
+import {
+    AlertCircle,
+    Database,
+    Music,
+    Pause,
+    Play,
+    RefreshCw,
+    SkipBack,
+    SkipForward,
+} from "lucide-react"
+import Image from "next/image"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 interface SpotifyUserResponse {
   user: SpotifyUser | null
@@ -207,7 +207,7 @@ export function DeckMusic() {
 
   // Check if we should show controls
   const showControls = isAuthenticated && source === 'live'
-  
+
   // Get display track info from cached playback
   const displayTrack = cachedPlayback?.track
 

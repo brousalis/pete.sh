@@ -1,10 +1,17 @@
 'use client'
 
+import { useAssistantModal } from '@/components/assistant-modal-provider'
 import {
   CommandPalette,
   useCommandPalette,
 } from '@/components/command-palette'
 import { useConnectivity } from '@/components/connectivity-provider'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Tooltip,
   TooltipContent,
@@ -46,30 +53,28 @@ type NavItem = {
   shortcut?: string
 }
 
-// All navigation items
+// All navigation items (Assistant is in the nav bar as a modal trigger, not a route link)
 const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home, shortcut: '`' },
-  { href: '/assistant', label: 'Assistant', icon: Sparkles, shortcut: '1' },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
-  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '4' },
+  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
   // CTA sunset – hidden from nav, code kept
   // { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
   // Concerts sunset – hidden from nav, code kept
   // { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
   // Lights sunset – hidden from nav, code kept
   // { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '5' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '4' },
   // Coffee sunset – hidden from nav, code kept
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
-  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '6' },
-  { href: '/me', label: 'Me', icon: User, shortcut: '7' },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '5' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '6' },
 ]
 
-// Mobile bottom nav items
+// Mobile bottom nav items (Assistant opens modal from bar, not listed here as route)
 const mobileBottomItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/assistant', label: 'Assistant', icon: Sparkles },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
@@ -96,6 +101,7 @@ export function TopNavigation() {
   const { isLocalAvailable, isInitialized } = useConnectivity()
   const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
   const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette()
+  const { setOpen: setAssistantOpen } = useAssistantModal()
 
   // Fetch current display input when local is available
   useEffect(() => {
@@ -373,69 +379,73 @@ export function TopNavigation() {
               </button>
             )}
 
-            {/* Display Input Switch Buttons */}
+            {/* Assistant - full-screen modal */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setAssistantOpen(true)}
+                  className={cn(
+                    'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                    'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                  )}
+                  aria-label="Open Assistant"
+                >
+                  <Sparkles className="size-5" aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Assistant
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Display input - dropdown (HDMI / DisplayPort) */}
             {mounted && isLocalAvailable && (
-              <div className="hidden lg:flex">
+              <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleDisplaySwitch('hdmi')}
-                      disabled={
-                        displaySwitching !== null || currentInput === 'hdmi'
-                      }
-                      className={cn(
-                        'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
-                        currentInput === 'hdmi'
-                          ? 'bg-brand/10 text-brand'
-                          : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
-                        displaySwitching === 'hdmi' &&
-                          'cursor-not-allowed opacity-50'
-                      )}
-                      aria-label="Switch display to HDMI"
-                    >
-                      {displaySwitching === 'hdmi' ? (
-                        <Loader2 className="size-5 animate-spin" aria-hidden />
-                      ) : (
-                        <Tv className="size-5" aria-hidden />
-                      )}
-                    </button>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={cn(
+                          'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
+                          'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                        )}
+                        aria-label="Display input"
+                      >
+                        <Monitor className="size-5" aria-hidden />
+                      </button>
+                    </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    {currentInput === 'hdmi' ? 'HDMI (active)' : 'Switch to HDMI'}
+                    Display input
                   </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleDisplaySwitch('displayport')}
-                      disabled={
-                        displaySwitching !== null ||
-                        currentInput === 'displayport'
-                      }
-                      className={cn(
-                        'focus:ring-ring/50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:ring-2 focus:outline-none',
-                        currentInput === 'displayport'
-                          ? 'bg-brand/10 text-brand'
-                          : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground',
-                        displaySwitching === 'displayport' &&
-                          'cursor-not-allowed opacity-50'
-                      )}
-                      aria-label="Switch display to DisplayPort"
-                    >
-                      {displaySwitching === 'displayport' ? (
-                        <Loader2 className="size-5 animate-spin" aria-hidden />
-                      ) : (
-                        <Monitor className="size-5" aria-hidden />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
+                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                  <DropdownMenuItem
+                    onClick={() => handleDisplaySwitch('hdmi')}
+                    disabled={displaySwitching !== null || currentInput === 'hdmi'}
+                  >
+                    {displaySwitching === 'hdmi' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Tv className="size-4" />
+                    )}
+                    {currentInput === 'hdmi' ? 'HDMI (active)' : 'Switch to HDMI'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDisplaySwitch('displayport')}
+                    disabled={displaySwitching !== null || currentInput === 'displayport'}
+                  >
+                    {displaySwitching === 'displayport' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Monitor className="size-4" />
+                    )}
                     {currentInput === 'displayport'
                       ? 'DisplayPort (active)'
                       : 'Switch to DisplayPort'}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             {/* Settings Link */}
@@ -734,6 +744,7 @@ export function MobileBottomNavigation() {
   const [moreOpen, setMoreOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const { open: commandOpen, setOpen: setCommandOpen } = useCommandPalette()
+  const { setOpen: setAssistantOpen } = useAssistantModal()
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname?.startsWith(href))
@@ -902,6 +913,20 @@ export function MobileBottomNavigation() {
                 </li>
               )
             })}
+
+            {/* Assistant - opens full-screen modal */}
+            <li className="flex min-w-0 flex-1">
+              <button
+                onClick={() => setAssistantOpen(true)}
+                className={cn(
+                  'relative flex w-full flex-col items-center justify-center gap-0.5 transition-colors',
+                  'touch-manipulation active:opacity-70 text-muted-foreground'
+                )}
+                aria-label="Open Assistant"
+              >
+                <Sparkles className="size-[21px] shrink-0" />
+              </button>
+            </li>
 
             {/* More button */}
             <li className="flex min-w-0 flex-1">

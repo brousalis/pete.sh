@@ -1,5 +1,6 @@
 'use client'
 
+import { useOnAssistantClosed } from '@/components/assistant-modal-provider'
 import { CookingMode } from '@/components/cooking/cooking-mode'
 import { HorizontalMealPlan, MobileMealPlanView, ShoppingCard } from '@/components/cooking/cooking-sidebar'
 import { FridgeManager } from '@/components/cooking/fridge-manager'
@@ -68,6 +69,7 @@ function CookingPageContent() {
     editingRecipe,
     setEditingRecipe,
     refreshRecipes,
+    refreshMealPlan,
     showCookingMode,
     setShowCookingMode,
     cookingRecipe,
@@ -76,6 +78,9 @@ function CookingPageContent() {
     fridgeFilterActive,
     setFridgeFilterActive,
   } = useCooking()
+
+  // Refetch meal plan when user closes Assistant (e.g. after applying changes there)
+  useOnAssistantClosed(refreshMealPlan)
 
   const searchParams = useSearchParams()
   const hydratedFromUrl = useRef(false)

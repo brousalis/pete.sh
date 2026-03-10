@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const adapter = getSpotifyAdapter()
-    
+
     if (!adapter.isConfigured()) {
       return errorResponse("Spotify not configured", 400)
     }

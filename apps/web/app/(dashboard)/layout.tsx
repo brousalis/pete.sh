@@ -1,5 +1,6 @@
 'use client'
 
+import { AssistantModalProvider } from '@/components/assistant-modal-provider'
 import { useRoundedLayout } from '@/components/settings-provider'
 import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
 import { cn } from '@/lib/utils'
@@ -13,6 +14,7 @@ export default function DashboardLayout({
   const isRounded = useRoundedLayout()
 
   return (
+    <AssistantModalProvider>
     <div className="bg-background fixed inset-0 flex flex-col">
       {/* Outer container with padding (only when rounded) */}
       <div
@@ -44,6 +46,7 @@ export default function DashboardLayout({
         </div>
       </div>
     </div>
+    </AssistantModalProvider>
   )
 }
 

@@ -1671,7 +1671,34 @@
       "weekNumber": 11,
       "startDate": "2026-03-09T05:00:00.000Z",
       "days": {
-        "monday": {},
+        "monday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-03-10T04:01:57.306Z",
+            "routineVersionId": "f19333cc-2c31-40d1-bcc7-5e3e17b4f680"
+          },
+          "workout": {
+            "workoutId": "monday-density-strength",
+            "completed": true,
+            "completedAt": "2026-03-10T04:01:58.380Z",
+            "exercisesCompleted": [
+              "mon-w1",
+              "mon-5",
+              "monday-a2",
+              "monday-b1",
+              "monday-b2",
+              "monday-c",
+              "m",
+              "mon-met2",
+              "monday-ai-1772844419192-0",
+              "monday-ai-1772844419192-1",
+              "monday-ai-1772844419192-2",
+              "monday-ai-1772844419192-3"
+            ],
+            "routineVersionId": "f19333cc-2c31-40d1-bcc7-5e3e17b4f680"
+          }
+        },
         "tuesday": {},
         "wednesday": {},
         "thursday": {},
@@ -1959,5 +1986,5 @@
       }
     }
   ],
-  "updatedAt": "2026-03-08T20:39:36.740Z"
+  "updatedAt": "2026-03-10T04:01:58.380Z"
 }

@@ -157,8 +157,9 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
     try {
       const updates: Record<string, Record<string, string>> = {}
       for (const suggestion of plan.days) {
-        if (!updates[suggestion.day]) updates[suggestion.day] = {}
-        updates[suggestion.day][suggestion.mealType] = suggestion.recipeId
+        const dayKey = suggestion.day
+        if (!updates[dayKey]) updates[dayKey] = {}
+        updates[dayKey][suggestion.mealType] = suggestion.recipeId
       }
       await updateMealPlanBulk(updates)
       setApplied(true)

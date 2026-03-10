@@ -202,8 +202,29 @@ export async function saveAssistantChatMessages(
 }
 
 export async function loadAssistantChatMessages(chatId: string): Promise<UIMessage[]> {
+  const result = await loadAssistantChatMessagesWindow(chatId)
+  return result.messages
+}
+
+export interface LoadMessagesResult {
+  messages: UIMessage[]
+  hasMore: boolean
+  totalCount: number
+}
+
+/**
+ * Load a window of messages for pagination. Messages are in chronological order (oldest first).
+ * - No options: returns last `limit` messages (default 50).
+ * - beforeMessageId: returns the `limit` messages before that message (older), and hasMore if more exist.
+ */
+export async function loadAssistantChatMessagesWindow(
+  chatId: string,
+  options?: { limit?: number; beforeMessageId?: string }
+): Promise<LoadMessagesResult> {
   const supabase = getSupabaseClientForOperation('read')
-  if (!supabase) return []
+  if (!supabase) {
+    return { messages: [], hasMore: false, totalCount: 0 }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any
@@ -213,8 +234,37 @@ export async function loadAssistantChatMessages(chatId: string): Promise<UIMessa
     .eq('id', chatId)
     .single()
 
-  if (error || !data) return []
-  return (data.messages as UIMessage[]) || []
+  if (error || !data) {
+    return { messages: [], hasMore: false, totalCount: 0 }
+  }
+
+  const all = (data.messages as UIMessage[]) || []
+  const totalCount = all.length
+  const limit = options?.limit ?? 50
+  const beforeId = options?.beforeMessageId
+
+  if (beforeId) {
+    const idx = all.findIndex((m) => m.id === beforeId)
+    if (idx <= 0) {
+      return { messages: [], hasMore: false, totalCount }
+    }
+    const start = Math.max(0, idx - limit)
+    const messages = all.slice(start, idx)
+    return {
+      messages,
+      hasMore: start > 0,
+      totalCount,
+    }
+  }
+
+  // No beforeId: return last `limit` messages (tail)
+  const start = Math.max(0, totalCount - limit)
+  const messages = all.slice(start)
+  return {
+    messages,
+    hasMore: start > 0,
+    totalCount,
+  }
 }
 
 export async function getLatestAssistantChatId(userId?: string | null): Promise<string | null> {

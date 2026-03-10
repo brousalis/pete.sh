@@ -1,37 +1,36 @@
 'use client'
 
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
+    CommandDialog,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
 } from '@/components/ui/command'
 import { transitions } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import type { LucideIcon } from 'lucide-react'
 import {
-  Bus,
-  Calendar,
-  ChefHat,
-  Dog,
-  Dumbbell,
-  Grid3x3,
-  Home,
-  Lightbulb,
-  Music,
-  NotebookPen,
-  Settings,
-  Sparkles,
-  Ticket,
-  User,
+    Bus,
+    Calendar,
+    ChefHat,
+    Dog,
+    Dumbbell,
+    Grid3x3,
+    Home,
+    Lightbulb,
+    Music,
+    NotebookPen,
+    Settings,
+    Sparkles,
+    Ticket,
+    User,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
-import type { LucideIcon } from 'lucide-react'
 
 // Define NavItem type
 export type NavItem = {

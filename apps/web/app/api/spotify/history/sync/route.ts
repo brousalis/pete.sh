@@ -1,7 +1,7 @@
 /**
  * Spotify History Sync API
  * POST - Sync recent plays from Spotify to Supabase
- * 
+ *
  * This endpoint fetches the user's recent plays from Spotify and stores them
  * in Supabase for persistent history tracking.
  */

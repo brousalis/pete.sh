@@ -8,7 +8,7 @@ import { successResponse } from "@/lib/api/utils"
 export async function POST() {
   try {
     const cookieStore = await cookies()
-    
+
     // Clear all Spotify cookies
     cookieStore.delete("spotify_access_token")
     cookieStore.delete("spotify_refresh_token")

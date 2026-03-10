@@ -1,34 +1,34 @@
 'use client'
 
+import { ConcertMemoryCard } from '@/components/dashboard/concerts/concert-memory-card'
+import { ConcertPhotoGallery } from '@/components/dashboard/concerts/concert-photo-gallery'
+import { ConcertSetlist } from '@/components/dashboard/concerts/concert-setlist'
+import { ConcertSpotifySection } from '@/components/dashboard/concerts/concert-spotify-section'
+import { ConcertVenueMap } from '@/components/dashboard/concerts/concert-venue-map'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { ConcertPhotoGallery } from '@/components/dashboard/concerts/concert-photo-gallery'
-import { ConcertSetlist } from '@/components/dashboard/concerts/concert-setlist'
-import { ConcertSpotifySection } from '@/components/dashboard/concerts/concert-spotify-section'
-import { ConcertVenueMap } from '@/components/dashboard/concerts/concert-venue-map'
-import { apiGet, apiPut } from '@/lib/api/client'
 import { fadeUpVariants } from '@/lib/animations'
+import { apiGet, apiPut } from '@/lib/api/client'
 import type { Concert, ConcertPhoto, SetlistData } from '@/lib/types/concerts.types'
 import { cn } from '@/lib/utils'
 import { differenceInDays, format, parseISO } from 'date-fns'
 import { motion } from 'framer-motion'
-import { ConcertMemoryCard } from '@/components/dashboard/concerts/concert-memory-card'
 import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  DollarSign,
-  MapPin,
-  Pencil,
-  Plus,
-  Star,
-  Tag,
-  Ticket,
-  Users,
-  X,
+    ArrowLeft,
+    Calendar,
+    Clock,
+    DollarSign,
+    MapPin,
+    Pencil,
+    Plus,
+    Star,
+    Tag,
+    Ticket,
+    Users,
+    X,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'

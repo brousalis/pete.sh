@@ -4,19 +4,19 @@ import { useConnectivity } from '@/components/connectivity-provider'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type {
-  MealPlan,
-  Recipe,
-  ShoppingList,
+    MealPlan,
+    Recipe,
+    ShoppingList,
 } from '@/lib/types/cooking.types'
 import type {
-  ConsistencyStats,
-  DayOfWeek,
-  WeeklyRoutine,
-  Workout,
+    ConsistencyStats,
+    DayOfWeek,
+    WeeklyRoutine,
+    Workout,
 } from '@/lib/types/fitness.types'
 import type {
-  WeatherForecast,
-  WeatherObservation,
+    WeatherForecast,
+    WeatherObservation,
 } from '@/lib/types/weather.types'
 import { format, startOfWeek } from 'date-fns'
 import { useCallback, useEffect, useRef, useState } from 'react'
