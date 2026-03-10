@@ -52,7 +52,7 @@ final class MapleWalkManager: NSObject {
     private var currentSessionId: String?
 
     /// Count of location points added to route (for deciding whether to finish route)
-    private var routePointCount: Int = 0
+    private(set) var routePointCount: Int = 0
 
     private static let markersKeyPrefix = "petehome.mapleMarkers."
 
@@ -118,19 +118,44 @@ final class MapleWalkManager: NSObject {
             self.routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
             self.routePointCount = 0
 
-            // Ensure LocationManager is running so currentLocation is available for bathroom markers
+            // Ensure LocationManager is running and boost accuracy for route recording
             let locationManager = LocationManager.shared
+            print("🐾 LocationManager authorized=\(locationManager.isAuthorized) monitoring=\(locationManager.isMonitoring)")
             if locationManager.isAuthorized && !locationManager.isMonitoring {
                 locationManager.startMonitoring()
             }
+            locationManager.enableHighAccuracy()
 
-            // Start dedicated high-accuracy GPS for route recording (sole source for route data)
+            // Feed LocationManager's GPS updates into route builder (primary GPS source on watchOS)
+            locationManager.onLocationUpdate = { [weak self] location in
+                guard let self, self.walkState == .active, let rb = self.routeBuilder else { return }
+                // Filter to reasonable accuracy
+                guard location.horizontalAccuracy >= 0 && location.horizontalAccuracy < 50 else {
+                    print("🐾 Route: skipping location (accuracy: \(Int(location.horizontalAccuracy))m)")
+                    return
+                }
+                rb.insertRouteData([location]) { [weak self] _, error in
+                    if let error = error {
+                        print("🐾 Route insert error: \(error.localizedDescription)")
+                    } else {
+                        Task { @MainActor in
+                            guard let self else { return }
+                            self.routePointCount += 1
+                            if self.routePointCount % 10 == 0 || self.routePointCount <= 3 {
+                                print("🐾 Route GPS: \(self.routePointCount) points collected")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Also start dedicated high-accuracy CLLocationManager as backup
             startRouteTracking()
 
             walkState = .active
             startElapsedTimer()
 
-            print("🐾 Maple Walk started")
+            print("🐾 Maple Walk started (session=\(session.state.rawValue), routeBuilder=\(self.routeBuilder != nil))")
         } catch {
             lastError = error.localizedDescription
             print("🐾 Failed to start Maple Walk: \(error)")
@@ -154,43 +179,51 @@ final class MapleWalkManager: NSObject {
     }
 
     func endWalk() async {
-        guard isActive else { return }
+        guard isActive else {
+            print("🐾 endWalk called but walkState=\(walkState.rawValue), ignoring")
+            return
+        }
         walkState = .ending
         stopElapsedTimer()
 
         guard let session = workoutSession, let builder = workoutBuilder else {
+            print("🐾 endWalk: no session or builder — skipping workout finalization")
             walkState = .summary
             return
         }
 
+        print("🐾 Ending walk: routePointCount=\(routePointCount), markers=\(bathroomMarkers.count)")
+
         session.end()
         stopRouteTracking()
+        LocationManager.shared.onLocationUpdate = nil
+        LocationManager.shared.restoreDefaultAccuracy()
 
         do {
             try await builder.endCollection(at: Date())
             let workout = try await builder.finishWorkout()
             self.finishedWorkout = workout
+            print("🐾 Workout finished: id=\(workout?.uuid.uuidString ?? "nil"), duration=\(Int((workout?.duration ?? 0) / 60))m")
 
             // Finalize the route and attach it to the workout (must be after finishWorkout)
             if let workout = workout, let rb = self.routeBuilder, routePointCount > 0 {
                 do {
                     try await rb.finishRoute(with: workout, metadata: nil)
-                    print("🐾 Route saved with \(routePointCount) points")
+                    print("🐾 Route saved with \(routePointCount) GPS points")
                 } catch {
                     print("🐾 Failed to save route: \(error)")
                 }
+            } else {
+                print("🐾 Route skipped: workout=\(workout != nil), routeBuilder=\(self.routeBuilder != nil), routePointCount=\(routePointCount)")
             }
             self.routeBuilder = nil
             self.routePointCount = 0
-
-            if let workout = workout {
-                print("🐾 Maple Walk ended: \(Int(workout.duration / 60))m")
-            }
         } catch {
             print("🐾 Error finishing workout: \(error)")
             lastError = error.localizedDescription
         }
 
+        print("🐾 endWalk complete: finishedWorkout=\(finishedWorkout != nil)")
         walkState = .summary
     }
 
@@ -224,6 +257,8 @@ final class MapleWalkManager: NSObject {
 
     /// Reset to idle after sync or discard
     func resetState() {
+        LocationManager.shared.onLocationUpdate = nil
+        LocationManager.shared.restoreDefaultAccuracy()
         bathroomMarkers = []
         finishedWorkout = nil
         workoutSession = nil
@@ -315,17 +350,31 @@ final class MapleWalkManager: NSObject {
     }
 
     private func stopRouteTracking() {
+        let wasTracking = routeLocationManager != nil
         routeLocationManager?.stopUpdatingLocation()
         routeLocationManager?.delegate = nil
         routeLocationManager = nil
         routeLocationDelegate = nil
+        if wasTracking {
+            print("🐾 Route GPS tracking stopped")
+        }
     }
 
     private func insertRouteLocations(_ locations: [CLLocation]) {
-        guard walkState == .active, let routeBuilder = routeBuilder else { return }
+        guard walkState == .active, let routeBuilder = routeBuilder else {
+            if routeBuilder == nil {
+                print("🐾 Route insert skipped: routeBuilder is nil")
+            }
+            return
+        }
 
         // Filter to reasonable accuracy for route data
         let good = locations.filter { $0.horizontalAccuracy >= 0 && $0.horizontalAccuracy < 50 }
+        let rejected = locations.count - good.count
+        if rejected > 0 {
+            let worstAccuracy = locations.map { $0.horizontalAccuracy }.max() ?? 0
+            print("🐾 Route: \(rejected)/\(locations.count) locations rejected (worst accuracy: \(Int(worstAccuracy))m)")
+        }
         guard !good.isEmpty else { return }
 
         routeBuilder.insertRouteData(good) { [weak self] _, error in
@@ -333,7 +382,12 @@ final class MapleWalkManager: NSObject {
                 print("🐾 Route insert error: \(error.localizedDescription)")
             } else {
                 Task { @MainActor in
-                    self?.routePointCount += good.count
+                    guard let self else { return }
+                    self.routePointCount += good.count
+                    // Log periodically (every 10 points) to avoid spam
+                    if self.routePointCount % 10 == 0 || self.routePointCount <= 3 {
+                        print("🐾 Route GPS: \(self.routePointCount) points collected")
+                    }
                 }
             }
         }
@@ -401,6 +455,8 @@ extension MapleWalkManager: HKWorkoutSessionDelegate {
                     print("🐾 Walk ended externally")
                     self.stopElapsedTimer()
                     self.stopRouteTracking()
+                    LocationManager.shared.onLocationUpdate = nil
+                    LocationManager.shared.restoreDefaultAccuracy()
                     if let builder = self.workoutBuilder {
                         do {
                             try await builder.endCollection(at: date)

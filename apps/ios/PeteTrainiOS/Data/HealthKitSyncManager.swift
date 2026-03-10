@@ -256,6 +256,11 @@ final class HealthKitSyncManager {
                 log("Server has \(alreadySynced.count) workouts")
             } catch {
                 log("Can't check server: \(error.localizedDescription)")
+                log("Aborting sync — cannot verify what's already synced")
+                isHistoricalSyncInProgress = false
+                syncStatus = .failed
+                lastSyncError = "Cannot reach server to check synced workouts"
+                return HistoricalSyncResult(total: 0, synced: 0, skipped: 0, failed: 0, errors: ["Cannot reach server"])
             }
         }
 

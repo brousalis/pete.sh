@@ -57,8 +57,7 @@ final class WorkoutDataManager {
 
     // MARK: - Public API
 
-    /// Load workouts from cache only
-    /// Call this on app launch - use refreshFromAPI() to fetch latest from server
+    /// Load workouts from cache, then auto-fetch from API if cache is empty
     func loadWorkouts() async {
         print("📚 WorkoutDataManager: Loading workouts from cache...")
 
@@ -69,10 +68,13 @@ final class WorkoutDataManager {
                 self.versionInfo = cached.version
                 self.dataSource = .cache
                 print("📚 WorkoutDataManager: Loaded \(mappedDays.count) days from cache (\(versionString))")
+                return
             }
-        } else {
-            print("📚 WorkoutDataManager: No cached routine found. Use Settings to fetch.")
         }
+
+        // No cache — auto-fetch from API
+        print("📚 WorkoutDataManager: No cached routine found, fetching from API...")
+        await refreshFromAPI()
     }
 
     /// Force refresh from API

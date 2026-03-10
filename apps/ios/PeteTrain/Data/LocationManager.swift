@@ -295,12 +295,26 @@ final class LocationManager: NSObject {
     
     func stopMonitoring() {
         guard isMonitoring else { return }
-        
+
         locationManager.stopUpdatingLocation()
         isMonitoring = false
         print("📍 Stopped location monitoring")
     }
-    
+
+    /// Boost accuracy for active GPS route recording (Maple walks)
+    func enableHighAccuracy() {
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 5
+        print("📍 High accuracy enabled (best, 5m filter)")
+    }
+
+    /// Restore default coarse accuracy for geofencing
+    func restoreDefaultAccuracy() {
+        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        locationManager.distanceFilter = 50
+        print("📍 Default accuracy restored (100m, 50m filter)")
+    }
+
     // MARK: - Set Current Location
     
     func setCurrentAsGym() {

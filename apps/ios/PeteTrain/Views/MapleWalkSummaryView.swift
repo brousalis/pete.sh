@@ -14,6 +14,7 @@ struct MapleWalkSummaryView: View {
                 headerSection
                 statsSection
                 bathroomSection
+                debugSection
                 actionButtons
             }
             .padding(.horizontal, 4)
@@ -119,6 +120,26 @@ struct MapleWalkSummaryView: View {
         }
     }
 
+    // MARK: - Debug Info
+
+    private var debugSection: some View {
+        VStack(spacing: 2) {
+            let hasWorkout = walkManager.finishedWorkout != nil
+            let workoutId = walkManager.finishedWorkout?.uuid.uuidString.prefix(8) ?? "none"
+
+            Text("GPS: \(walkManager.routePointCount) pts | HK: \(hasWorkout ? "✓" : "✗") \(workoutId)")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            if let error = walkManager.lastError {
+                Text("err: \(error)")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.red)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Actions
 
     private var actionButtons: some View {
@@ -178,10 +199,14 @@ struct MapleWalkSummaryView: View {
 
     private func syncAndDismiss() async {
         guard let workout = walkManager.finishedWorkout else {
-            // No HK workout -- just save markers for later
-            walkManager.resetState()
+            print("🐾 SYNC: finishedWorkout is nil — cannot sync")
+            syncError = "Workout not saved — try syncing from iPhone later"
+            WKInterfaceDevice.current().play(.failure)
             return
         }
+
+        let markers = walkManager.bathroomMarkers
+        print("🐾 SYNC: starting — workout=\(workout.uuid.uuidString.prefix(8)), markers=\(markers.count), duration=\(Int(workout.duration / 60))m")
 
         isSyncing = true
         syncError = nil
@@ -189,20 +214,24 @@ struct MapleWalkSummaryView: View {
         // Persist markers keyed by workout UUID for retry survival
         walkManager.persistMarkersForWorkout(workoutUUID: workout.uuid.uuidString)
 
-        await syncManager.syncMapleWalk(workout, markers: walkManager.bathroomMarkers)
+        await syncManager.syncMapleWalk(workout, markers: markers)
 
         if syncManager.syncStatus == .success {
+            print("🐾 SYNC: success!")
             MapleWalkManager.clearPersistedMarkers(workoutUUID: workout.uuid.uuidString)
             walkManager.clearPersistedMarkers()
             syncComplete = true
+            isSyncing = false
             WKInterfaceDevice.current().play(.success)
 
-            // Auto-dismiss after brief delay
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            // Auto-dismiss after delay so user can see success
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
             walkManager.resetState()
         } else {
-            syncError = syncManager.lastSyncError ?? "Sync failed"
+            print("🐾 SYNC: failed — \(syncManager.lastSyncError ?? "unknown error")")
+            syncError = syncManager.lastSyncError ?? "Sync failed — try again"
             isSyncing = false
+            WKInterfaceDevice.current().play(.failure)
         }
     }
 

@@ -120,6 +120,16 @@ struct MapleWalkView: View {
                 }
             }
             .foregroundStyle(walkManager.walkState == .paused ? .secondary : .primary)
+
+            // GPS point counter for debugging
+            HStack(spacing: 4) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(walkManager.routePointCount > 0 ? .green : .red)
+                Text("\(walkManager.routePointCount) GPS pts")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

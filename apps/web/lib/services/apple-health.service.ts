@@ -149,6 +149,25 @@ export class AppleHealthService {
 
     const { workout, linkedWorkoutId, linkedDay } = payload
 
+    const routeSamples = workout.route?.samples?.length ?? 0
+    const markerCount = workout.bathroomMarkers?.length ?? 0
+    console.log(`[AppleHealth] Saving workout ${workout.id.slice(0, 8)} type=${workout.workoutType} source=${workout.source} route=${routeSamples}pts markers=${markerCount}`)
+
+    // Check if this workout already exists with a watch source — don't let iOS overwrite it
+    if (workout.source === 'PeteTrain-iOS') {
+      const { data: existing } = await (supabase as any)
+        .from('apple_health_workouts')
+        .select('id, source')
+        .eq('healthkit_id', workout.id)
+        .single()
+
+      if (existing?.source === 'PeteTrain') {
+        // Watch already synced this workout — preserve watch source
+        workout.source = 'PeteTrain'
+        console.log(`[AppleHealth] Preserving watch source for workout ${workout.id}`)
+      }
+    }
+
     // Calculate HR zones if not provided
     const hrZones = workout.heartRate.zones.length > 0
       ? workout.heartRate.zones
@@ -252,6 +271,8 @@ export class AppleHealthService {
     // Save route if available
     if (workout.route) {
       await this.saveRoute(workoutId, workout.route)
+    } else {
+      console.log(`[AppleHealth] No route data in payload for workout ${workoutId}`)
     }
 
     // Save workout events if available
@@ -288,11 +309,10 @@ export class AppleHealthService {
       await this.saveBathroomMarkers(workoutId, workout.bathroomMarkers)
     }
 
-    // Auto-create Maple Walk for hiking workouts from PeteTrain with bathroom markers
+    // Auto-create Maple Walk for hiking workouts from PeteTrain (watch or iOS)
     if (
       workout.workoutType === 'hiking' &&
-      workout.source === 'PeteTrain' &&
-      workout.bathroomMarkers?.length
+      (workout.source === 'PeteTrain' || workout.source === 'PeteTrain-iOS')
     ) {
       await this.autoCreateMapleWalk(workoutId, workout)
     }
@@ -436,10 +456,17 @@ export class AppleHealthService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
 
-    await db
+    const sampleCount = route.samples?.length ?? 0
+    console.log(`[AppleHealth] Saving route for workout ${workoutId}: ${sampleCount} samples, elevGain=${route.totalElevationGain ?? 0}m`)
+
+    const { error: deleteError } = await db
       .from('apple_health_routes')
       .delete()
       .eq('workout_id', workoutId)
+
+    if (deleteError) {
+      console.error('[AppleHealth] Error deleting old route:', deleteError)
+    }
 
     const routeInsert: AppleHealthRouteInsert = {
       workout_id: workoutId,
@@ -449,7 +476,13 @@ export class AppleHealthService {
       samples: route.samples,
     }
 
-    await db.from('apple_health_routes').insert(routeInsert)
+    const { error: insertError } = await db.from('apple_health_routes').insert(routeInsert)
+
+    if (insertError) {
+      console.error('[AppleHealth] Error saving route:', insertError)
+    } else {
+      console.log(`[AppleHealth] Route saved: ${sampleCount} samples for workout ${workoutId}`)
+    }
   }
 
   /**

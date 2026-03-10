@@ -142,7 +142,8 @@ final class SyncManager {
     /// Sync a Maple Walk workout with bathroom markers to Petehome
     func syncMapleWalk(_ workout: HKWorkout, markers: [BathroomMarker]) async {
         guard canSync else {
-            print("⚠️ Petehome sync not configured, skipping Maple Walk")
+            print("🐾 SYNC: API not configured — canSync=false")
+            print("🐾 SYNC: API config: \(api.configurationSummary)")
             return
         }
 
@@ -150,9 +151,20 @@ final class SyncManager {
         lastSyncError = nil
 
         do {
+            print("🐾 SYNC: building payload for \(workout.uuid.uuidString.prefix(8))...")
             var payload = try await healthKit.buildWorkoutPayload(workout: workout, linkedDay: nil)
-            payload.workout.bathroomMarkers = markers.map { $0.toPetehomeMarker() }
 
+            let routeSamples = payload.workout.route?.samples.count ?? 0
+            print("🐾 SYNC: payload built — route=\(routeSamples) samples, type=\(payload.workout.workoutType), source=\(payload.workout.source)")
+
+            payload.workout.bathroomMarkers = markers.map { $0.toPetehomeMarker() }
+            print("🐾 SYNC: attached \(markers.count) bathroom markers")
+
+            for marker in markers {
+                print("🐾 SYNC:   \(marker.type.emoji) at \(marker.latitude), \(marker.longitude)")
+            }
+
+            print("🐾 SYNC: uploading to server...")
             try await api.syncWorkoutWithRetry(payload)
 
             lastSyncTimestamp = Date()
@@ -160,10 +172,10 @@ final class SyncManager {
             syncStatus = .success
 
             MapleWalkManager.clearPersistedMarkers(workoutUUID: workout.uuid.uuidString)
-            print("✅ Maple Walk synced: \(workout.uuid.uuidString) with \(markers.count) markers")
+            print("🐾 SYNC: ✅ success! route=\(routeSamples) pts, markers=\(markers.count)")
 
         } catch {
-            print("❌ Failed to sync Maple Walk: \(error.localizedDescription)")
+            print("🐾 SYNC: ❌ failed — \(error.localizedDescription)")
             lastSyncError = error.localizedDescription
             syncStatus = .failed
 
@@ -348,6 +360,11 @@ final class SyncManager {
             log("📦 Server has \(alreadySynced.count) workouts")
         } catch {
             log("⚠️ Can't check server: \(error.localizedDescription)")
+            log("❌ Aborting sync — cannot verify what's already synced")
+            isHistoricalSyncInProgress = false
+            syncStatus = .failed
+            lastSyncError = "Cannot reach server to check synced workouts"
+            return HistoricalSyncResult(total: 0, synced: 0, skipped: 0, failed: 0, errors: ["Cannot reach server"])
         }
 
         // Fetch all workouts from HealthKit
