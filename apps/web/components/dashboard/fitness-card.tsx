@@ -134,7 +134,7 @@ export function FitnessCard() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Flame className="size-5 text-orange-500" />
+          <Flame className="size-5 text-accent-ember" />
           <h3 className="text-sm font-semibold text-foreground">Fitness</h3>
         </div>
         <Link href="/fitness">
@@ -153,7 +153,7 @@ export function FitnessCard() {
         </div>
         {consistency && (
           <div className="flex items-center gap-2">
-            <Flame className="size-4 text-orange-500" />
+            <Flame className="size-4 text-accent-ember" />
             <div className="text-right">
               <p className="text-lg font-bold leading-none">
                 {consistency.currentStreak}
@@ -172,19 +172,19 @@ export function FitnessCard() {
           disabled={morningCompleted}
           className={`flex items-center gap-2 rounded-lg border p-3 text-left transition-all ${
             morningCompleted
-              ? 'border-green-500/30 bg-green-500/10'
-              : 'border-border hover:border-amber-500/50 hover:bg-amber-500/5'
+              ? 'border-accent-sage/30 bg-accent-sage/10'
+              : 'border-border hover:border-accent-gold/50 hover:bg-accent-gold/5'
           }`}
         >
           <div
             className={`rounded-md p-1.5 ${
-              morningCompleted ? 'bg-green-500/20' : 'bg-amber-100 dark:bg-amber-900/20'
+              morningCompleted ? 'bg-accent-sage/20' : 'bg-accent-gold/10'
             }`}
           >
             {morningCompleted ? (
-              <CheckCircle2 className="size-4 text-green-500" />
+              <CheckCircle2 className="size-4 text-accent-sage" />
             ) : (
-              <Sun className="size-4 text-amber-600 dark:text-amber-400" />
+              <Sun className="size-4 text-accent-gold" />
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -203,21 +203,21 @@ export function FitnessCard() {
           disabled={nightCompleted}
           className={`flex items-center gap-2 rounded-lg border p-3 text-left transition-all ${
             nightCompleted
-              ? 'border-green-500/30 bg-green-500/10'
-              : 'border-border hover:border-indigo-500/50 hover:bg-indigo-500/5'
+              ? 'border-accent-sage/30 bg-accent-sage/10'
+              : 'border-border hover:border-accent-violet/50 hover:bg-accent-violet/5'
           }`}
         >
           <div
             className={`rounded-md p-1.5 ${
               nightCompleted
-                ? 'bg-green-500/20'
-                : 'bg-indigo-100 dark:bg-indigo-900/20'
+                ? 'bg-accent-sage/20'
+                : 'bg-accent-violet/10'
             }`}
           >
             {nightCompleted ? (
-              <CheckCircle2 className="size-4 text-green-500" />
+              <CheckCircle2 className="size-4 text-accent-sage" />
             ) : (
-              <Moon className="size-4 text-indigo-600 dark:text-indigo-400" />
+              <Moon className="size-4 text-accent-violet" />
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -237,17 +237,17 @@ export function FitnessCard() {
           href={`/fitness/workout/${today}`}
           className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
             workoutCompleted
-              ? 'border-green-500/30 bg-green-500/10'
+              ? 'border-accent-sage/30 bg-accent-sage/10'
               : 'border-border hover:border-brand/50 hover:bg-brand/5'
           }`}
         >
           <div
             className={`rounded-lg p-2 ${
-              workoutCompleted ? 'bg-green-500/20' : 'bg-brand/10'
+              workoutCompleted ? 'bg-accent-sage/20' : 'bg-brand/10'
             }`}
           >
             {workoutCompleted ? (
-              <CheckCircle2 className="size-5 text-green-500" />
+              <CheckCircle2 className="size-5 text-accent-sage" />
             ) : (
               <Dumbbell className="size-5 text-brand" />
             )}
@@ -275,7 +275,7 @@ export function FitnessCard() {
 
       {/* Active Recovery */}
       {scheduleInfo?.focus === 'Active Recovery' && (
-        <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-center">
+        <div className="rounded-lg border border-accent-azure/30 bg-accent-azure/5 p-3 text-center">
           <p className="text-sm font-medium">Active Recovery</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {scheduleInfo.goal}
@@ -285,10 +285,10 @@ export function FitnessCard() {
 
       {/* Injury Protocol */}
       {routine.injuryProtocol.status === 'active' && (
-        <div className="flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 p-2.5">
-          <AlertTriangle className="size-4 text-orange-500" />
+        <div className="flex items-center gap-2 rounded-lg border border-accent-ember/30 bg-accent-ember/5 p-2.5">
+          <AlertTriangle className="size-4 text-accent-ember" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-orange-700 dark:text-orange-300">
+            <p className="text-xs font-medium text-accent-ember">
               Injury Protocol: {routine.injuryProtocol.name}
             </p>
           </div>

@@ -72,7 +72,7 @@ export function BlogPostCard({
         {showActions && (
           <div className="flex items-center gap-2">
             {isPublished ? (
-              <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
+              <Badge className="bg-accent-sage/10 text-accent-sage hover:bg-accent-sage/20">
                 <Globe className="mr-1 h-3 w-3" />
                 Published
               </Badge>

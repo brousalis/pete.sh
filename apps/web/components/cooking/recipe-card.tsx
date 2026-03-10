@@ -23,9 +23,9 @@ interface RecipeCardProps {
 }
 
 const difficultyColors = {
-  easy: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
-  medium: 'bg-amber-500/15 text-amber-500 border-amber-500/20',
-  hard: 'bg-red-500/15 text-red-500 border-red-500/20',
+  easy: 'bg-accent-sage/15 text-accent-sage border-accent-sage/20',
+  medium: 'bg-accent-gold/15 text-accent-gold border-accent-gold/20',
+  hard: 'bg-accent-rose/15 text-accent-rose border-accent-rose/20',
 }
 
 function NutritionRow({ recipe }: { recipe: Recipe }) {
@@ -39,23 +39,23 @@ function NutritionRow({ recipe }: { recipe: Recipe }) {
   return (
     <div className="flex items-center gap-2 text-[11px] tabular-nums">
       {cal != null && (
-        <span className="flex items-center gap-0.5 text-orange-400">
+        <span className="flex items-center gap-0.5 text-accent-ember">
           <Flame className="size-3" />
           {Math.round(cal)}
         </span>
       )}
       {protein != null && (
-        <span className="text-sky-400">
+        <span className="text-accent-azure">
           P {Math.round(protein)}g
         </span>
       )}
       {carbs != null && (
-        <span className="text-amber-400">
+        <span className="text-accent-gold">
           C {Math.round(carbs)}g
         </span>
       )}
       {fat != null && (
-        <span className="text-rose-400">
+        <span className="text-accent-rose">
           F {Math.round(fat)}g
         </span>
       )}
@@ -106,7 +106,7 @@ export function RecipeCard({
 
             <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
               {recipe.source === 'trader_joes' && (
-                <Badge className="bg-red-600 text-white text-[9px] h-4 px-1 border-0 shadow-md">
+                <Badge className="bg-accent-rose text-white text-[9px] h-4 px-1 border-0 shadow-md">
                   TJ&apos;s
                 </Badge>
               )}
@@ -115,7 +115,7 @@ export function RecipeCard({
               )}
               {recipe.is_favorite && (
                 <div className="rounded-full bg-black/40 p-0.5 backdrop-blur-sm">
-                  <Star className="size-2.5 fill-yellow-400 text-yellow-400" />
+                  <Star className="size-2.5 fill-accent-gold text-accent-gold" />
                 </div>
               )}
             </div>
@@ -179,7 +179,7 @@ export function RecipeCard({
                 </Badge>
               )}
               {cookCount != null && cookCount > 0 && (
-                <span className="flex items-center gap-0.5 text-[10px] text-green-500/80">
+                <span className="flex items-center gap-0.5 text-[10px] text-accent-sage/80">
                   <CalendarCheck className="size-2" />
                   {cookCount}×
                 </span>
@@ -212,8 +212,8 @@ export function RecipeCard({
 
 function FridgeMatchBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100)
-  const color = pct >= 80 ? 'text-green-400' : pct >= 50 ? 'text-amber-400' : 'text-muted-foreground'
-  const bgColor = pct >= 80 ? 'bg-green-900/80' : pct >= 50 ? 'bg-amber-900/80' : 'bg-black/50'
+  const color = pct >= 80 ? 'text-accent-sage' : pct >= 50 ? 'text-accent-gold' : 'text-muted-foreground'
+  const bgColor = pct >= 80 ? 'bg-accent-sage/80' : pct >= 50 ? 'bg-accent-gold/80' : 'bg-black/50'
 
   return (
     <div className={cn('flex items-center gap-1 rounded-full px-1.5 py-0.5 backdrop-blur-sm shadow-sm', bgColor)}>
@@ -282,7 +282,7 @@ export function RecipeCardCompact({
         {/* Top-right badges */}
         <div className="absolute top-1.5 right-1.5 flex flex-col items-end gap-1">
           {recipe.source === 'trader_joes' && (
-            <Badge className="bg-red-600 text-white text-[9px] h-4 px-1.5 border-0 shadow-md">
+            <Badge className="bg-accent-rose text-white text-[9px] h-4 px-1.5 border-0 shadow-md">
               TJ&apos;s
             </Badge>
           )}
@@ -311,7 +311,7 @@ export function RecipeCardCompact({
             </h3>
             <div className="flex items-center gap-1 shrink-0">
               {recipe.is_favorite && (
-                <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+                <Star className="size-3.5 fill-accent-gold text-accent-gold" />
               )}
               <div
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -348,7 +348,7 @@ export function RecipeCardCompact({
             </Badge>
           )}
           {cookCount != null && cookCount > 0 && (
-            <span className="flex items-center gap-0.5 text-[11px] text-green-500/80">
+            <span className="flex items-center gap-0.5 text-[11px] text-accent-sage/80">
               <CalendarCheck className="size-3" />
               {cookCount}×
             </span>

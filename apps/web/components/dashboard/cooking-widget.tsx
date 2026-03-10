@@ -110,8 +110,8 @@ export function CookingWidget() {
   return (
     <div>
       <DashboardCardHeader
-        icon={<ChefHat className="size-5 text-orange-500" />}
-        iconContainerClassName="bg-orange-500/10"
+        icon={<ChefHat className="size-5 text-accent-ember" />}
+        iconContainerClassName="bg-accent-ember/10"
         title="Cooking"
         viewHref="/cooking"
         viewLabel="View"
@@ -124,24 +124,24 @@ export function CookingWidget() {
             <MealRow
               label="Breakfast"
               name={getRecipeName(todayMeals.breakfast)}
-              colorClass="border-amber-500/20 bg-amber-500/5"
-              iconColor="text-amber-500"
+              colorClass="border-accent-gold/20 bg-accent-gold/5"
+              iconColor="text-accent-gold"
             />
           )}
           {todayMeals.lunch && (
             <MealRow
               label="Lunch"
               name={getRecipeName(todayMeals.lunch)}
-              colorClass="border-blue-500/20 bg-blue-500/5"
-              iconColor="text-blue-500"
+              colorClass="border-accent-azure/20 bg-accent-azure/5"
+              iconColor="text-accent-azure"
             />
           )}
           {todayMeals.dinner && (
             <MealRow
               label="Dinner"
               name={getRecipeName(todayMeals.dinner)}
-              colorClass="border-purple-500/20 bg-purple-500/5"
-              iconColor="text-purple-500"
+              colorClass="border-accent-violet/20 bg-accent-violet/5"
+              iconColor="text-accent-violet"
             />
           )}
         </div>

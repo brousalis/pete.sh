@@ -289,8 +289,8 @@ export function SpotifyWidget() {
     return (
       <div className="space-y-4">
         <DashboardCardHeader
-          icon={<Music className="size-5 text-green-600 dark:text-green-400" />}
-          iconContainerClassName="bg-green-500/10"
+          icon={<Music className="size-5 text-accent-sage" />}
+          iconContainerClassName="bg-accent-sage/10"
           title="Spotify"
           viewHref={fullAuthUrl ?? '/music'}
           viewLabel={authAvailable ? 'Connect' : 'View'}
@@ -324,12 +324,12 @@ export function SpotifyWidget() {
           <Music
             className={`size-5 transition-colors ${
               isPlaying
-                ? 'text-green-600 dark:text-green-400'
+                ? 'text-accent-sage'
                 : 'text-muted-foreground'
             }`}
           />
         }
-        iconContainerClassName={isPlaying ? 'bg-green-500/15' : 'bg-muted'}
+        iconContainerClassName={isPlaying ? 'bg-accent-sage/15' : 'bg-muted'}
         title="Spotify"
         badge={
           source === 'cache' ? (
@@ -348,7 +348,7 @@ export function SpotifyWidget() {
         <div
           className={`bg-card/80 ring-border/50 relative overflow-hidden rounded-xl border shadow-sm ring-1 transition-all duration-300 ${
             isSkipping && showControls ? 'scale-[0.99]' : ''
-          } ${isPlaying ? 'ring-green-500/10' : ''}`}
+          } ${isPlaying ? 'ring-accent-sage/10' : ''}`}
         >
           {/* Skip animation overlay */}
           {isSkipping && showControls && (
@@ -377,7 +377,7 @@ export function SpotifyWidget() {
               {displayTrack.imageUrl ? (
                 <div
                   className={`overflow-hidden rounded-lg ${
-                    isPlaying ? 'shadow-md ring-2 ring-green-500/20' : ''
+                    isPlaying ? 'shadow-md ring-2 ring-accent-sage/20' : ''
                   }`}
                 >
                   <Image
@@ -448,7 +448,7 @@ export function SpotifyWidget() {
                   <div className="ml-auto max-w-20 flex-1 px-1">
                     <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                       <div
-                        className="h-full rounded-full bg-green-500 transition-[width] duration-100 ease-linear"
+                        className="h-full rounded-full bg-accent-sage transition-[width] duration-100 ease-linear"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -458,7 +458,7 @@ export function SpotifyWidget() {
                 <div className="mt-2">
                   <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                     <div
-                      className="h-full rounded-full bg-green-500/50 transition-[width] duration-100 ease-linear"
+                      className="h-full rounded-full bg-accent-sage/50 transition-[width] duration-100 ease-linear"
                       style={{ width: `${progress}%` }}
                     />
                   </div>

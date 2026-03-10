@@ -68,25 +68,25 @@ export function FullscreenTimer({
   // Theme configuration
   const themes = {
     morning: {
-      gradient: "from-amber-500/20 via-orange-500/10 to-transparent",
-      ring: "text-amber-500",
-      ringGlow: "drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]",
-      accent: "bg-amber-500 hover:bg-amber-600",
-      badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+      gradient: "from-accent-gold/20 via-accent-ember/10 to-transparent",
+      ring: "text-accent-gold",
+      ringGlow: "drop-shadow-[0_0_20px_rgba(212,168,67,0.5)]",
+      accent: "bg-accent-gold hover:bg-accent-gold/90",
+      badge: "bg-accent-gold/10 text-accent-gold border-accent-gold/20",
     },
     night: {
-      gradient: "from-indigo-500/20 via-purple-500/10 to-transparent",
-      ring: "text-indigo-500",
-      ringGlow: "drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]",
-      accent: "bg-indigo-500 hover:bg-indigo-600",
-      badge: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+      gradient: "from-accent-violet/20 via-accent-violet/10 to-transparent",
+      ring: "text-accent-violet",
+      ringGlow: "drop-shadow-[0_0_20px_rgba(155,93,229,0.5)]",
+      accent: "bg-accent-violet hover:bg-accent-violet/90",
+      badge: "bg-accent-violet/10 text-accent-violet border-accent-violet/20",
     },
     workout: {
-      gradient: "from-blue-500/20 via-cyan-500/10 to-transparent",
-      ring: "text-blue-500",
-      ringGlow: "drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]",
-      accent: "bg-blue-500 hover:bg-blue-600",
-      badge: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      gradient: "from-accent-azure/20 via-accent-teal/10 to-transparent",
+      ring: "text-accent-azure",
+      ringGlow: "drop-shadow-[0_0_20px_rgba(91,143,217,0.5)]",
+      accent: "bg-accent-azure hover:bg-accent-azure/90",
+      badge: "bg-accent-azure/10 text-accent-azure border-accent-azure/20",
     },
   }
 
@@ -260,16 +260,16 @@ export function FullscreenTimer({
 
   // Determine color based on state
   const getProgressColor = () => {
-    if (isCompleted) return "text-emerald-500"
-    if (timeRemaining <= 5) return "text-red-500"
-    if (timeRemaining <= 10) return "text-orange-500"
+    if (isCompleted) return "text-accent-sage"
+    if (timeRemaining <= 5) return "text-accent-rose"
+    if (timeRemaining <= 10) return "text-accent-ember"
     return theme.ring
   }
 
   const getGlowEffect = () => {
-    if (isCompleted) return "drop-shadow-[0_0_25px_rgba(16,185,129,0.6)]"
-    if (timeRemaining <= 5) return "drop-shadow-[0_0_25px_rgba(239,68,68,0.6)]"
-    if (timeRemaining <= 10) return "drop-shadow-[0_0_25px_rgba(249,115,22,0.6)]"
+    if (isCompleted) return "drop-shadow-[0_0_25px_rgba(77,186,138,0.6)]"
+    if (timeRemaining <= 5) return "drop-shadow-[0_0_25px_rgba(217,107,107,0.6)]"
+    if (timeRemaining <= 10) return "drop-shadow-[0_0_25px_rgba(201,122,58,0.6)]"
     return theme.ringGlow
   }
 
@@ -380,12 +380,12 @@ export function FullscreenTimer({
               <span className={cn(
                 "font-mono font-bold tabular-nums tracking-tight transition-all duration-300",
                 timeRemaining <= 5 && isRunning ? "text-7xl sm:text-8xl scale-110" : "text-6xl sm:text-7xl",
-                isCompleted ? "text-emerald-500" : "text-foreground"
+                isCompleted ? "text-accent-sage" : "text-foreground"
               )}>
                 {formatTime(timeRemaining)}
               </span>
               {isCompleted ? (
-                <span className="mt-2 text-lg font-semibold text-emerald-500 animate-pulse">
+                <span className="mt-2 text-lg font-semibold text-accent-sage animate-pulse">
                   Complete!
                 </span>
               ) : (
@@ -415,7 +415,7 @@ export function FullscreenTimer({
               className={cn(
                 "h-20 w-20 rounded-full text-white shadow-lg transition-all",
                 isCompleted
-                  ? "bg-emerald-500 hover:bg-emerald-600"
+                  ? "bg-accent-sage hover:bg-accent-sage/90"
                   : isRunning
                     ? "bg-muted hover:bg-muted/80 text-foreground"
                     : theme.accent,

@@ -44,25 +44,25 @@ export function MapleStatsStrip({
   return (
     <div className={cn('flex flex-wrap items-center gap-4 text-sm', className)}>
       <span className="flex items-center gap-1.5">
-        <Footprints className="size-4 text-blue-500" />
+        <Footprints className="size-4 text-accent-azure" />
         <strong>{stats.totalWalks}</strong>
         <span className="text-muted-foreground">walks</span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span className="flex items-center gap-1.5">
-        <Route className="size-4 text-green-500" />
+        <Route className="size-4 text-accent-sage" />
         <strong>{stats.totalDistanceMiles.toFixed(1)}</strong>
         <span className="text-muted-foreground">mi</span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span className="flex items-center gap-1.5">
-        <Clock className="size-4 text-purple-500" />
+        <Clock className="size-4 text-accent-violet" />
         <strong>{Math.round(stats.avgDurationMinutes)}</strong>
         <span className="text-muted-foreground">m avg</span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span className="flex items-center gap-1.5">
-        <Calendar className="size-4 text-orange-500" />
+        <Calendar className="size-4 text-accent-ember" />
         <strong>{stats.thisWeekWalks}</strong>
         <span className="text-muted-foreground">this week</span>
       </span>
@@ -116,7 +116,7 @@ export function MapleStatsCards({
     <div className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-4', className)}>
       <Card>
         <CardContent className="flex items-center gap-3 p-3">
-          <div className="rounded-lg bg-blue-500/10 p-2 text-blue-500">
+          <div className="rounded-lg bg-accent-azure/10 p-2 text-accent-azure">
             <Footprints className="size-5" />
           </div>
           <div>
@@ -127,7 +127,7 @@ export function MapleStatsCards({
       </Card>
       <Card>
         <CardContent className="flex items-center gap-3 p-3">
-          <div className="rounded-lg bg-green-500/10 p-2 text-green-500">
+          <div className="rounded-lg bg-accent-sage/10 p-2 text-accent-sage">
             <Route className="size-5" />
           </div>
           <div>
@@ -138,7 +138,7 @@ export function MapleStatsCards({
       </Card>
       <Card>
         <CardContent className="flex items-center gap-3 p-3">
-          <div className="rounded-lg bg-purple-500/10 p-2 text-purple-500">
+          <div className="rounded-lg bg-accent-violet/10 p-2 text-accent-violet">
             <Clock className="size-5" />
           </div>
           <div>
@@ -149,7 +149,7 @@ export function MapleStatsCards({
       </Card>
       <Card>
         <CardContent className="flex items-center gap-3 p-3">
-          <div className="rounded-lg bg-orange-500/10 p-2 text-orange-500">
+          <div className="rounded-lg bg-accent-ember/10 p-2 text-accent-ember">
             <Calendar className="size-5" />
           </div>
           <div>
@@ -231,9 +231,9 @@ export function MapleMoodBreakdown({
                 key={mood.key}
                 className={cn(
                   'flex items-center justify-center transition-all',
-                  mood.key === 'happy' && 'bg-green-500',
-                  mood.key === 'neutral' && 'bg-yellow-500',
-                  mood.key === 'sad' && 'bg-orange-500'
+                  mood.key === 'happy' && 'bg-accent-sage',
+                  mood.key === 'neutral' && 'bg-accent-gold',
+                  mood.key === 'sad' && 'bg-accent-ember'
                 )}
                 style={{ width: `${percentage}%` }}
                 title={`${mood.key}: ${mood.count} walks (${Math.round(percentage)}%)`}

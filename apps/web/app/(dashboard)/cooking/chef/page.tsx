@@ -55,10 +55,6 @@ interface ConversationSummary {
 
 const TOOL_LABELS: Record<string, { label: string }> = {
   searchRecipes: { label: 'Searching Recipes' },
-  getCurrentMealPlan: { label: "Checking This Week's Plan" },
-  getRecentMealPlans: { label: 'Reviewing Recent Weeks' },
-  getFoodPreferences: { label: 'Checking Your Preferences' },
-  getFridgeContents: { label: 'Checking the Fridge' },
   suggestWeekPlan: { label: 'Planning Your Week' },
   setMealSlot: { label: 'Updating Meal Plan' },
 }
@@ -86,12 +82,12 @@ function ToolInvocationBadge({
   if (toolName === 'setMealSlot' && isComplete && result) {
     const r = result as { success: boolean; message: string }
     return (
-      <div className="my-1.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs">
+      <div className="my-1.5 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-3 py-2 text-xs">
         <div className="flex items-center gap-2">
           {r.success ? (
-            <Check className="h-3 w-3 text-green-400" />
+            <Check className="h-3 w-3 text-accent-sage" />
           ) : (
-            <X className="h-3 w-3 text-red-400" />
+            <X className="h-3 w-3 text-accent-rose" />
           )}
           <span className="font-medium text-white/80">{r.message}</span>
         </div>
@@ -108,9 +104,9 @@ function ToolInvocationBadge({
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-accent-gold" />
         ) : (
-          <Wrench className="h-3 w-3 text-green-400" />
+          <Wrench className="h-3 w-3 text-accent-sage" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
         {Object.keys(args).length > 0 && toolName !== 'suggestWeekPlan' && (
@@ -122,9 +118,9 @@ function ToolInvocationBadge({
           </span>
         )}
         {isRunning ? (
-          <span className="ml-auto text-amber-400/70">working...</span>
+          <span className="ml-auto text-accent-gold/70">working...</span>
         ) : (
-          <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
+          <CheckCircle2 className="ml-auto h-3 w-3 text-accent-sage/70" />
         )}
       </div>
     </div>
@@ -136,7 +132,7 @@ function ToolInvocationBadge({
 // ============================================
 
 function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
-  const { updateMealSlot } = useCooking()
+  const { updateMealPlanBulk } = useCooking()
   const [applying, setApplying] = useState(false)
   const [applied, setApplied] = useState(false)
 
@@ -159,24 +155,27 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
   const handleApplyAll = useCallback(async () => {
     setApplying(true)
     try {
+      const updates: Record<string, Record<string, string>> = {}
       for (const suggestion of plan.days) {
-        await updateMealSlot(suggestion.day, suggestion.mealType, suggestion.recipeId)
+        if (!updates[suggestion.day]) updates[suggestion.day] = {}
+        updates[suggestion.day][suggestion.mealType] = suggestion.recipeId
       }
+      await updateMealPlanBulk(updates)
       setApplied(true)
     } catch (err) {
       console.error('Failed to apply meal plan:', err)
     } finally {
       setApplying(false)
     }
-  }, [plan.days, updateMealSlot])
+  }, [plan.days, updateMealPlanBulk])
 
   return (
-    <div className="my-3 rounded-lg border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent overflow-hidden">
+    <div className="my-3 rounded-lg border border-accent-gold/20 bg-gradient-to-b from-accent-gold/5 to-transparent overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div>
           <div className="flex items-center gap-2">
-            <UtensilsCrossed className="h-4 w-4 text-amber-400" />
+            <UtensilsCrossed className="h-4 w-4 text-accent-gold" />
             <span className="text-sm font-semibold text-white/90">
               {plan.weekTheme || 'Suggested Meal Plan'}
             </span>
@@ -184,14 +183,14 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
           <span className="text-xs text-white/40 mt-0.5">{plan.estimatedPrepTime}</span>
         </div>
         {applied ? (
-          <div className="flex items-center gap-1.5 text-xs text-green-400">
+          <div className="flex items-center gap-1.5 text-xs text-accent-sage">
             <Check className="h-3.5 w-3.5" />
             Applied
           </div>
         ) : (
           <Button
             size="sm"
-            className="h-7 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+            className="h-7 gap-1.5 bg-accent-gold hover:bg-accent-gold/90 text-white text-xs"
             onClick={handleApplyAll}
             disabled={applying}
           >
@@ -371,10 +370,10 @@ function PreferencesPanel({
               {preferences.dislikes.map((d) => (
                 <span
                   key={d}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-red-500/10 text-red-300 px-2 py-0.5 text-[10px]"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-accent-rose/10 text-accent-rose px-2 py-0.5 text-[10px]"
                 >
                   {d}
-                  <button onClick={() => removeChip('dislikes', d)} className="hover:text-red-200">
+                  <button onClick={() => removeChip('dislikes', d)} className="hover:text-accent-rose/70">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -392,7 +391,7 @@ function PreferencesPanel({
                 value={newDislike}
                 onChange={(e) => setNewDislike(e.target.value)}
                 placeholder="Add dislike..."
-                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
               />
             </form>
           </div>
@@ -406,10 +405,10 @@ function PreferencesPanel({
               {preferences.allergies.map((a) => (
                 <span
                   key={a}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-orange-500/10 text-orange-300 px-2 py-0.5 text-[10px]"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-accent-ember/10 text-accent-ember px-2 py-0.5 text-[10px]"
                 >
                   {a}
-                  <button onClick={() => removeChip('allergies', a)} className="hover:text-orange-200">
+                  <button onClick={() => removeChip('allergies', a)} className="hover:text-accent-ember/70">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -427,7 +426,7 @@ function PreferencesPanel({
                 value={newAllergy}
                 onChange={(e) => setNewAllergy(e.target.value)}
                 placeholder="Add allergy..."
-                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
               />
             </form>
           </div>
@@ -444,7 +443,7 @@ function PreferencesPanel({
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.dietary.includes(d)
-                      ? 'bg-green-500/15 text-green-300 border-green-500/30'
+                      ? 'bg-accent-sage/15 text-accent-sage border-accent-sage/30'
                       : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
                   )}
                   onClick={() => toggleChip('dietary', d)}
@@ -467,7 +466,7 @@ function PreferencesPanel({
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.cuisinePreferences.includes(c)
-                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                      ? 'bg-accent-gold/15 text-accent-gold border-accent-gold/30'
                       : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
                   )}
                   onClick={() => toggleChip('cuisinePreferences', c)}
@@ -525,7 +524,7 @@ function PreferencesPanel({
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.cookingTimePreference === t.value
-                      ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                      ? 'bg-accent-azure/15 text-accent-azure border-accent-azure/30'
                       : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
                   )}
                   onClick={() =>
@@ -548,7 +547,7 @@ function PreferencesPanel({
               onChange={(e) => onUpdate({ ...preferences, notes: e.target.value })}
               placeholder="Any other preferences..."
               rows={2}
-              className="mt-1 w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-amber-500/30 resize-none"
+              className="mt-1 w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30 resize-none"
             />
           </div>
         </div>
@@ -627,7 +626,7 @@ function ChatHistorySidebar({
   if (!isOpen) return null
 
   return (
-    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-zinc-900/50">
+    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-card/50">
       {/* Preferences */}
       <PreferencesPanel
         preferences={preferences}
@@ -681,7 +680,7 @@ function ChatHistorySidebar({
                           className={cn(
                             'group relative flex items-center rounded-md px-2 py-2 cursor-pointer transition-all',
                             isActive
-                              ? 'bg-white/10 border-l-2 border-amber-500 pl-1.5'
+                              ? 'bg-white/10 border-l-2 border-accent-gold pl-1.5'
                               : 'hover:bg-white/5 border-l-2 border-transparent'
                           )}
                           onClick={() => onSelect(conv.id)}
@@ -702,7 +701,7 @@ function ChatHistorySidebar({
                           {isConfirming ? (
                             <div className="flex items-center gap-1 ml-1">
                               <button
-                                className="rounded px-1.5 py-0.5 text-[10px] font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                                className="rounded px-1.5 py-0.5 text-[10px] font-medium text-accent-rose bg-accent-rose/10 hover:bg-accent-rose/20 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   onDelete(conv.id)
@@ -723,7 +722,7 @@ function ChatHistorySidebar({
                             </div>
                           ) : (
                             <button
-                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-red-400 hover:bg-red-500/10 transition-all"
+                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setConfirmDeleteId(conv.id)
@@ -1004,7 +1003,7 @@ function AiChefPageContent() {
   )
 
   return (
-    <div className="flex h-full bg-zinc-950">
+    <div className="flex h-full bg-card">
       {/* Sidebar */}
       <ChatHistorySidebar
         conversations={conversations}
@@ -1041,7 +1040,7 @@ function AiChefPageContent() {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <ChefHat className="h-5 w-5 text-amber-400" />
+            <ChefHat className="h-5 w-5 text-accent-gold" />
             <h1 className="text-lg font-semibold text-white">AI Chef</h1>
           </div>
           <div className="flex-1" />
@@ -1067,7 +1066,7 @@ function AiChefPageContent() {
           {messages.length === 0 && (
             <div className="mx-auto max-w-2xl mt-8">
               <div className="text-center mb-8">
-                <ChefHat className="h-12 w-12 text-amber-400/50 mx-auto mb-3" />
+                <ChefHat className="h-12 w-12 text-accent-gold/50 mx-auto mb-3" />
                 <h2 className="text-xl font-medium text-white/70 mb-1">
                   What should we cook?
                 </h2>
@@ -1084,7 +1083,7 @@ function AiChefPageContent() {
                     className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
                     onClick={() => handleQuickAction(action.prompt)}
                   >
-                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-amber-400/70" />
+                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-accent-gold/70" />
                     {action.label}
                   </Button>
                 ))}
@@ -1105,7 +1104,7 @@ function AiChefPageContent() {
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-3 text-sm ${
                       message.role === 'user'
-                        ? 'bg-amber-600/30 text-white'
+                        ? 'bg-accent-gold/30 text-white'
                         : 'bg-white/5 text-white/80 border border-white/10'
                     }`}
                   >
@@ -1144,7 +1143,7 @@ function AiChefPageContent() {
                                     </strong>
                                   ),
                                   em: ({ children }) => (
-                                    <em className="text-amber-300">
+                                    <em className="text-accent-gold/70">
                                       {children}
                                     </em>
                                   ),
@@ -1164,7 +1163,7 @@ function AiChefPageContent() {
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-amber-300">
+                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-gold/70">
                                       {children}
                                     </code>
                                   ),
@@ -1249,7 +1248,7 @@ function AiChefPageContent() {
                 ) && (
                   <div className="flex justify-start">
                     <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-gold" />
                     </div>
                   </div>
                 )}
@@ -1258,7 +1257,7 @@ function AiChefPageContent() {
 
           {/* Error */}
           {(chatError || error) && (
-            <div className="mx-auto max-w-2xl mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mx-auto max-w-2xl mt-4 rounded-lg border border-accent-rose/20 bg-accent-rose/10 px-4 py-3 text-sm text-accent-rose">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 <span>
@@ -1286,13 +1285,13 @@ function AiChefPageContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI chef..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent-gold/50"
               disabled={status !== 'ready'}
             />
             <Button
               type="submit"
               disabled={status !== 'ready' || !input.trim()}
-              className="bg-amber-600 hover:bg-amber-700 text-white px-6"
+              className="bg-accent-gold hover:bg-accent-gold/90 text-white px-6"
             >
               <Send className="h-4 w-4" />
             </Button>

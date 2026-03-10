@@ -46,7 +46,7 @@ export function ProgressRing({
             height={size}
             className={cn(
               'transition-all duration-500',
-              allDone && 'drop-shadow-[0_0_10px_rgba(74,222,128,0.2)]'
+              allDone && 'drop-shadow-[0_0_10px_rgba(77,186,138,0.2)]'
             )}
             style={{ transform: 'rotate(-90deg)' }}
           >
@@ -101,7 +101,7 @@ export function ProgressRing({
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
-                <Check className="size-5 text-green-400" />
+                <Check className="size-5 text-accent-sage" />
               </motion.div>
             ) : (
               <span className="text-base font-bold tabular-nums text-white">

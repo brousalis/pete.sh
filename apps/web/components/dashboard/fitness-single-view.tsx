@@ -41,6 +41,7 @@ import type {
   WeeklyRoutine,
   Workout,
 } from '@/lib/types/fitness.types'
+import { HEX } from '@/lib/constants/colors'
 import { cn } from '@/lib/utils'
 import {
   DAYS_OF_WEEK,
@@ -233,17 +234,17 @@ function FitnessDatePicker({
                           !isToday &&
                           isCurrentMonth &&
                           status === 'complete' &&
-                          'bg-green-500/15',
+                          'bg-accent-sage/15',
                         !isSelected &&
                           !isToday &&
                           isCurrentMonth &&
                           status === 'partial' &&
-                          'bg-amber-500/15',
+                          'bg-accent-gold/15',
                         !isSelected &&
                           !isToday &&
                           isCurrentMonth &&
                           status === 'missed' &&
-                          'bg-red-500/10',
+                          'bg-accent-rose/10',
                         !isSelected &&
                           !isToday &&
                           isCurrentMonth &&
@@ -265,25 +266,25 @@ function FitnessDatePicker({
                       {isCurrentMonth && !isFutureDate && (
                         <div className="mt-0.5 flex items-center justify-center">
                           {status === 'complete' && (
-                            <div className="flex size-3 items-center justify-center rounded-full bg-green-500">
+                            <div className="flex size-3 items-center justify-center rounded-full bg-accent-sage">
                               <Check className="size-2 text-white" />
                             </div>
                           )}
                           {status === 'partial' && (
                             <div className="flex gap-0.5">
                               {details.morning && (
-                                <div className="size-1.5 rounded-full bg-amber-400" />
+                                <div className="size-1.5 rounded-full bg-accent-gold" />
                               )}
                               {details.workout && !details.isRest && (
-                                <div className="size-1.5 rounded-full bg-orange-400" />
+                                <div className="size-1.5 rounded-full bg-accent-ember" />
                               )}
                               {details.night && (
-                                <div className="size-1.5 rounded-full bg-indigo-400" />
+                                <div className="size-1.5 rounded-full bg-accent-violet" />
                               )}
                             </div>
                           )}
                           {status === 'missed' && (
-                            <div className="size-1.5 rounded-full bg-red-400/60" />
+                            <div className="size-1.5 rounded-full bg-accent-rose/60" />
                           )}
                           {status === 'skipped' && (
                             <div className="flex size-3 items-center justify-center rounded-full bg-slate-500">
@@ -345,18 +346,18 @@ function FitnessDatePicker({
                                 className={cn(
                                   'size-2.5',
                                   details.workout
-                                    ? 'text-green-500'
+                                    ? 'text-accent-sage'
                                     : details.workoutSkipped
-                                      ? 'text-slate-500'
+                                      ? 'text-accent-slate'
                                       : 'text-muted-foreground'
                                 )}
                               />
                               <span
                                 className={
                                   details.workout
-                                    ? 'text-green-600 dark:text-green-400'
+                                    ? 'text-accent-sage'
                                     : details.workoutSkipped
-                                      ? 'text-slate-600 dark:text-slate-400'
+                                      ? 'text-accent-slate'
                                       : ''
                                 }
                               >
@@ -365,7 +366,7 @@ function FitnessDatePicker({
                             </div>
                           )}
                           {details.skipped && details.skippedReason && (
-                            <div className="text-[10px] text-slate-500 italic pl-4">
+                            <div className="text-[10px] text-accent-slate italic pl-4">
                               "{details.skippedReason}"
                             </div>
                           )}
@@ -374,18 +375,18 @@ function FitnessDatePicker({
                               className={cn(
                                 'size-2.5',
                                 details.morning
-                                  ? 'text-green-500'
+                                  ? 'text-accent-sage'
                                   : details.morningSkipped
-                                    ? 'text-slate-500'
+                                    ? 'text-accent-slate'
                                     : 'text-muted-foreground'
                               )}
                             />
                             <span
                               className={
                                 details.morning
-                                  ? 'text-green-600 dark:text-green-400'
+                                  ? 'text-accent-sage'
                                   : details.morningSkipped
-                                    ? 'text-slate-600 dark:text-slate-400'
+                                    ? 'text-accent-slate'
                                     : ''
                               }
                             >
@@ -397,18 +398,18 @@ function FitnessDatePicker({
                               className={cn(
                                 'size-2.5',
                                 details.night
-                                  ? 'text-green-500'
+                                  ? 'text-accent-sage'
                                   : details.nightSkipped
-                                    ? 'text-slate-500'
+                                    ? 'text-accent-slate'
                                     : 'text-muted-foreground'
                               )}
                             />
                             <span
                               className={
                                 details.night
-                                  ? 'text-green-600 dark:text-green-400'
+                                  ? 'text-accent-sage'
                                   : details.nightSkipped
-                                    ? 'text-slate-600 dark:text-slate-400'
+                                    ? 'text-accent-slate'
                                     : ''
                               }
                             >
@@ -440,17 +441,17 @@ function FitnessDatePicker({
       {/* Legend */}
       <div className="mt-3 flex flex-wrap items-center justify-center gap-3 border-t border-border/50 pt-3">
         <div className="flex items-center gap-1">
-          <div className="flex size-3 items-center justify-center rounded-full bg-green-500">
+          <div className="flex size-3 items-center justify-center rounded-full bg-accent-sage">
             <Check className="size-2 text-white" />
           </div>
           <span className="text-muted-foreground text-[10px]">Complete</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-amber-400" />
+          <div className="size-2 rounded-full bg-accent-gold" />
           <span className="text-muted-foreground text-[10px]">Partial</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-red-400/60" />
+          <div className="size-2 rounded-full bg-accent-rose/60" />
           <span className="text-muted-foreground text-[10px]">Missed</span>
         </div>
         <div className="flex items-center gap-1">
@@ -1191,7 +1192,7 @@ export function FitnessSingleView({
                       const FocusIcon = focusConfig.icon
                       const { status, details } = getFitnessStatusForDay(dayDate, routine)
                       const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
-                      const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
+                      const ringColor = status === 'complete' ? HEX.sage : status === 'partial' ? HEX.gold : status === 'skipped' ? HEX.slate : HEX.sage
 
                       return (
                         <Tooltip key={day}>
@@ -1236,7 +1237,7 @@ export function FitnessSingleView({
                             <div className="font-semibold">{format(dayDate, 'EEEE, MMM d')}</div>
                             <div className="text-muted-foreground">{focus}</div>
                             {!isFutureDate && completionProgress > 0 && (
-                              <div className="mt-1 text-[10px] text-emerald-500">
+                              <div className="mt-1 text-[10px] text-accent-sage">
                                 {completionProgress}% complete
                               </div>
                             )}
@@ -1346,7 +1347,7 @@ export function FitnessSingleView({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-1.5 cursor-default">
-                                <Calendar className="size-3.5 text-blue-500/70" />
+                                <Calendar className="size-3.5 text-accent-azure/70" />
                                 <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                                   {formatWorkoutDuration(headerTotalDuration)}
                                 </span>
@@ -1357,7 +1358,7 @@ export function FitnessSingleView({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-1.5 cursor-default">
-                                <Flame className="size-3.5 text-orange-500/70" />
+                                <Flame className="size-3.5 text-accent-ember/70" />
                                 <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                                   {Math.round(headerTotalCalories)}
                                 </span>
@@ -1369,7 +1370,7 @@ export function FitnessSingleView({
                             <Tooltip>
                               <TooltipTrigger asChild>
                               <div className="flex items-center gap-1.5 cursor-default">
-                                <Target className="size-3.5 text-green-500/70" />
+                                <Target className="size-3.5 text-accent-sage/70" />
                                 <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                                   {headerTotalDistance.toFixed(1)} mi
                                 </span>
@@ -1409,7 +1410,7 @@ export function FitnessSingleView({
                     const FocusIcon = focusConfig.icon
                     const { status, details } = getFitnessStatusForDay(dayDate, routine)
                     const completionProgress = isFutureDate ? 0 : getDayCompletionProgress(details, isRestDay)
-                    const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
+                    const ringColor = status === 'complete' ? HEX.sage : status === 'partial' ? HEX.gold : status === 'skipped' ? HEX.slate : HEX.sage
 
                     return (
                       <button
@@ -1655,20 +1656,20 @@ interface UnifiedActivitySummaryProps {
 
 // Workout type styling (hiking = Maple Walk, distinct style)
 const WORKOUT_TYPE_STYLES: Record<string, { icon: typeof Dumbbell; color: string; bg: string }> = {
-  running: { icon: Flame, color: 'text-green-500', bg: 'bg-green-500/15' },
-  cycling: { icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/15' },
+  running: { icon: Flame, color: 'text-accent-sage', bg: 'bg-accent-sage/15' },
+  cycling: { icon: Zap, color: 'text-accent-azure', bg: 'bg-accent-azure/15' },
   walking: { icon: Target, color: 'text-teal-500', bg: 'bg-teal-500/15' },
-  hiking: { icon: Footprints, color: 'text-amber-600 dark:text-amber-500', bg: 'bg-amber-500/15' },
-  swimming: { icon: Zap, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
-  functionalStrengthTraining: { icon: Dumbbell, color: 'text-purple-500', bg: 'bg-purple-500/15' },
-  traditionalStrengthTraining: { icon: Dumbbell, color: 'text-purple-500', bg: 'bg-purple-500/15' },
+  hiking: { icon: Footprints, color: 'text-accent-gold', bg: 'bg-accent-gold/15' },
+  swimming: { icon: Zap, color: 'text-accent-teal', bg: 'bg-accent-teal/15' },
+  functionalStrengthTraining: { icon: Dumbbell, color: 'text-accent-violet', bg: 'bg-accent-violet/15' },
+  traditionalStrengthTraining: { icon: Dumbbell, color: 'text-accent-violet', bg: 'bg-accent-violet/15' },
   coreTraining: { icon: Target, color: 'text-pink-500', bg: 'bg-pink-500/15' },
-  hiit: { icon: Flame, color: 'text-red-500', bg: 'bg-red-500/15' },
-  rowing: { icon: Zap, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
-  stairClimbing: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/15' },
+  hiit: { icon: Flame, color: 'text-accent-rose', bg: 'bg-accent-rose/15' },
+  rowing: { icon: Zap, color: 'text-accent-teal', bg: 'bg-accent-teal/15' },
+  stairClimbing: { icon: Zap, color: 'text-accent-gold', bg: 'bg-accent-gold/15' },
   elliptical: { icon: Zap, color: 'text-teal-500', bg: 'bg-teal-500/15' },
   yoga: { icon: Sun, color: 'text-pink-500', bg: 'bg-pink-500/15' },
-  other: { icon: Dumbbell, color: 'text-slate-500', bg: 'bg-slate-500/15' },
+  other: { icon: Dumbbell, color: 'text-accent-slate', bg: 'bg-slate-500/15' },
 }
 
 function formatWorkoutDuration(seconds: number): string {
@@ -1683,17 +1684,17 @@ function formatWorkoutDuration(seconds: number): string {
 }
 
 const WORKOUT_BORDER_COLORS: Record<string, string> = {
-  running: 'border-green-500',
+  running: 'border-accent-sage',
   walking: 'border-teal-500',
-  hiking: 'border-amber-500',
-  cycling: 'border-blue-500',
-  swimming: 'border-cyan-500',
-  functionalStrengthTraining: 'border-purple-500',
-  traditionalStrengthTraining: 'border-purple-500',
+  hiking: 'border-accent-gold',
+  cycling: 'border-accent-azure',
+  swimming: 'border-accent-teal',
+  functionalStrengthTraining: 'border-accent-violet',
+  traditionalStrengthTraining: 'border-accent-violet',
   coreTraining: 'border-pink-500',
-  hiit: 'border-red-500',
-  rowing: 'border-cyan-500',
-  stairClimbing: 'border-amber-500',
+  hiit: 'border-accent-rose',
+  rowing: 'border-accent-teal',
+  stairClimbing: 'border-accent-gold',
   elliptical: 'border-teal-500',
   yoga: 'border-pink-500',
   other: 'border-slate-500',
@@ -1820,17 +1821,17 @@ function UnifiedActivitySummary({
 
                 // Get hex color for border from type style (hiking = Maple Walk)
                 const borderColorMap: Record<string, string> = {
-                  running: 'border-green-500',
+                  running: 'border-accent-sage',
                   walking: 'border-tea500',
-                  hiking: 'border-amber-500',
-                  cycling: 'border-blue-500',
-                  swimming: 'border-cyan-500',
-                  functionalStrengthTraining: 'border-purple-500',
-                  traditionalStrengthTraining: 'border-purple-500',
+                  hiking: 'border-accent-gold',
+                  cycling: 'border-accent-azure',
+                  swimming: 'border-accent-teal',
+                  functionalStrengthTraining: 'border-accent-violet',
+                  traditionalStrengthTraining: 'border-accent-violet',
                   coreTraining: 'border-pink-500',
-                  hiit: 'border-red-500',
-                  rowing: 'border-cyan-500',
-                  stairClimbing: 'border-amber-500',
+                  hiit: 'border-accent-rose',
+                  rowing: 'border-accent-teal',
+                  stairClimbing: 'border-accent-gold',
                   elliptical: 'border-tea500',
                   yoga: 'border-pink-500',
                   other: 'border-slate-500',
@@ -1900,7 +1901,7 @@ function UnifiedActivitySummary({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1.5 cursor-default">
-                  <Calendar className="size-3.5 text-blue-500/70" />
+                  <Calendar className="size-3.5 text-accent-azure/70" />
                   <span className="font-semibold tabular-nums text-foreground">
                     {formatWorkoutDuration(totalDuration)}
                   </span>
@@ -1912,7 +1913,7 @@ function UnifiedActivitySummary({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1.5 cursor-default">
-                  <Flame className="size-3.5 text-orange-500/70" />
+                  <Flame className="size-3.5 text-accent-ember/70" />
                   <span className="font-semibold tabular-nums text-foreground">
                     {Math.round(totalCalories)}
                   </span>
@@ -1925,7 +1926,7 @@ function UnifiedActivitySummary({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 cursor-default">
-                    <Target className="size-3.5 text-green-500/70" />
+                    <Target className="size-3.5 text-accent-sage/70" />
                     <span className="font-semibold tabular-nums text-foreground">
                       {totalDistance.toFixed(1)} mi
                     </span>

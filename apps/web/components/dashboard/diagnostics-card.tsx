@@ -149,7 +149,7 @@ function formatRelativeTime(date: Date | string | null): string {
 function StatusDot({ ok }: { ok: boolean }) {
   return (
     <span
-      className={`inline-block size-2 rounded-full ${ok ? 'bg-green-500' : 'bg-red-500'}`}
+      className={`inline-block size-2 rounded-full ${ok ? 'bg-accent-sage' : 'bg-accent-rose'}`}
     />
   )
 }
@@ -173,11 +173,11 @@ function DiagRow({
           mono ? 'font-mono' : ''
         } ${
           status === 'ok'
-            ? 'text-green-600 dark:text-green-400'
+            ? 'text-accent-sage'
             : status === 'error'
-              ? 'text-red-600 dark:text-red-400'
+              ? 'text-accent-rose'
               : status === 'warn'
-                ? 'text-amber-600 dark:text-amber-400'
+                ? 'text-accent-gold'
                 : 'text-foreground'
         }`}
       >
@@ -402,9 +402,9 @@ export function DiagnosticsCard() {
               value={
                 <span className="flex items-center gap-1.5">
                   {connectivity.isLocalAvailable ? (
-                    <Wifi className="size-3 text-green-500" />
+                    <Wifi className="size-3 text-accent-sage" />
                   ) : (
-                    <WifiOff className="size-3 text-red-500" />
+                    <WifiOff className="size-3 text-accent-rose" />
                   )}
                   {connectivity.statusLabel}
                 </span>
@@ -517,10 +517,10 @@ export function DiagnosticsCard() {
                         <Loader2 className="size-3 animate-spin" />
                       )}
                       {check.status === 'success' && (
-                        <CheckCircle2 className="size-3 text-green-500" />
+                        <CheckCircle2 className="size-3 text-accent-sage" />
                       )}
                       {check.status === 'error' && (
-                        <XCircle className="size-3 text-red-500" />
+                        <XCircle className="size-3 text-accent-rose" />
                       )}
                       {check.latencyMs !== undefined && (
                         <span className="text-muted-foreground font-mono">
@@ -554,7 +554,7 @@ export function DiagnosticsCard() {
                     </div>
                   )}
                   {check.error && (
-                    <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
+                    <p className="mt-1 text-[11px] text-accent-rose">
                       {check.error}
                     </p>
                   )}
@@ -589,7 +589,7 @@ export function DiagnosticsCard() {
           </div>
 
           {serverError && (
-            <p className="text-xs text-red-600 dark:text-red-400">
+            <p className="text-xs text-accent-rose">
               Failed to fetch: {serverError}
             </p>
           )}
@@ -678,7 +678,7 @@ export function DiagnosticsCard() {
                               ? formatRelativeTime(svc.checkedAt)
                               : 'Never'}
                           </td>
-                          <td className="px-3 py-1.5 text-red-600 dark:text-red-400">
+                          <td className="px-3 py-1.5 text-accent-rose">
                             {svc.error ?? '—'}
                           </td>
                         </tr>

@@ -59,7 +59,7 @@ export function WeekDayCell({
       className={cn(
         'relative flex flex-col items-center justify-center gap-1 py-3 px-1 transition-colors duration-150 min-w-0',
         isActive && 'bg-white/[0.07]',
-        allDone && isPast && !isActive && 'bg-green-500/[0.03]',
+        allDone && isPast && !isActive && 'bg-accent-sage/[0.03]',
       )}
     >
       {/* Active top accent line */}
@@ -117,9 +117,9 @@ export function WeekDayCell({
               className={cn(
                 'size-[5px] rounded-full transition-colors',
                 done
-                  ? 'bg-green-400'
+                  ? 'bg-accent-sage'
                   : isPast
-                    ? 'bg-red-400/40'
+                    ? 'bg-accent-rose/40'
                     : 'bg-white/10'
               )}
             />

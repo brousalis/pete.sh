@@ -61,9 +61,9 @@ export function MapleMoodRatingSelector({
                 isSelected
                   ? `${colors.bg} ${colors.border} ring-2 ring-offset-2 ring-offset-background`
                   : 'border-border bg-background hover:border-muted-foreground/50',
-                isSelected && mood === 'happy' && 'ring-green-500/50',
-                isSelected && mood === 'neutral' && 'ring-yellow-500/50',
-                isSelected && mood === 'sad' && 'ring-orange-500/50',
+                isSelected && mood === 'happy' && 'ring-accent-sage/50',
+                isSelected && mood === 'neutral' && 'ring-accent-gold/50',
+                isSelected && mood === 'sad' && 'ring-accent-ember/50',
                 disabled && 'cursor-not-allowed opacity-50'
               )}
               whileHover={disabled ? {} : { scale: 1.1 }}
@@ -78,9 +78,9 @@ export function MapleMoodRatingSelector({
                 <motion.div
                   className={cn(
                     'absolute -bottom-1 left-1/2 h-1 w-4 -translate-x-1/2 rounded-full',
-                    mood === 'happy' && 'bg-green-500',
-                    mood === 'neutral' && 'bg-yellow-500',
-                    mood === 'sad' && 'bg-orange-500'
+                    mood === 'happy' && 'bg-accent-sage',
+                    mood === 'neutral' && 'bg-accent-gold',
+                    mood === 'sad' && 'bg-accent-ember'
                   )}
                   layoutId="mood-indicator"
                   initial={{ opacity: 0 }}

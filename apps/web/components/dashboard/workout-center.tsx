@@ -486,12 +486,12 @@ export function WorkoutCenter({
     return (
       <Card
         className={cn(
-          'flex flex-col border-blue-500/20 bg-blue-500/5 py-0 md:h-full',
+          'flex flex-col border-accent-azure/20 bg-accent-azure/5 py-0 md:h-full',
           className
         )}
       >
         <CardContent className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 text-center">
-          <div className="mb-3 sm:mb-4 rounded-full bg-blue-500/10 p-3 sm:p-4 text-blue-500">
+          <div className="mb-3 sm:mb-4 rounded-full bg-accent-azure/10 p-3 sm:p-4 text-accent-azure">
             <Footprints className="size-6 sm:size-8" />
           </div>
           <h2 className="mb-1 text-lg sm:text-xl font-semibold">{dayName} - Rest Day</h2>
@@ -514,8 +514,8 @@ export function WorkoutCenter({
       id: 'warmup',
       title: workout.warmup.name || 'Warm-up',
       icon: RotateCcw,
-      iconColor: 'text-blue-500',
-      bgColor: 'bg-blue-500/5',
+      iconColor: 'text-accent-azure',
+      bgColor: 'bg-accent-azure/5',
       exercises: workout.warmup.exercises,
       duration: workout.warmup.duration,
       defaultOpen: false,
@@ -537,8 +537,8 @@ export function WorkoutCenter({
       id: 'finisher',
       title: 'Finisher',
       icon: Zap,
-      iconColor: 'text-red-500',
-      bgColor: 'bg-red-500/5',
+      iconColor: 'text-accent-rose',
+      bgColor: 'bg-accent-rose/5',
       exercises: workout.finisher,
       defaultOpen: false,
     })
@@ -549,8 +549,8 @@ export function WorkoutCenter({
       id: 'metabolic',
       title: workout.metabolicFlush.name || 'Metabolic Flush',
       icon: PersonStanding,
-      iconColor: 'text-orange-500',
-      bgColor: 'bg-orange-500/5',
+      iconColor: 'text-accent-ember',
+      bgColor: 'bg-accent-ember/5',
       exercises: workout.metabolicFlush.exercises,
       duration: workout.metabolicFlush.duration,
       defaultOpen: false,
@@ -562,8 +562,8 @@ export function WorkoutCenter({
       id: 'mobility',
       title: workout.mobility.name || 'Mobility',
       icon: StretchVertical,
-      iconColor: 'text-purple-500',
-      bgColor: 'bg-purple-500/5',
+      iconColor: 'text-accent-violet',
+      bgColor: 'bg-accent-violet/5',
       exercises: workout.mobility.exercises,
       duration: workout.mobility.duration,
       defaultOpen: false,
@@ -596,7 +596,7 @@ export function WorkoutCenter({
           <div
             className={cn(
               'rounded-md p-1.5 sm:p-2 shrink-0',
-              isWorkoutCompleted ? 'bg-muted/30 text-foreground/60' : isWorkoutSkipped ? 'bg-muted/20 text-muted-foreground' : 'bg-blue-500/10 text-blue-500'
+              isWorkoutCompleted ? 'bg-muted/30 text-foreground/60' : isWorkoutSkipped ? 'bg-muted/20 text-muted-foreground' : 'bg-accent-azure/10 text-accent-azure'
             )}
           >
             <Dumbbell className="size-4 sm:size-5" />
@@ -617,7 +617,7 @@ export function WorkoutCenter({
               )}
               {hasInjuryProtocol && (
                 <Badge
-                  className="h-4 sm:h-5 shrink-0 gap-0.5 text-[9px] sm:text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-500 border-0"
+                  className="h-4 sm:h-5 shrink-0 gap-0.5 text-[9px] sm:text-[10px] bg-accent-gold/15 text-accent-gold border-0"
                 >
                   <AlertTriangle className="size-2.5" />
                   Injury
@@ -625,7 +625,7 @@ export function WorkoutCenter({
               )}
               {isWorkoutCompleted && (
                 <Badge
-                  className="h-4 sm:h-5 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[9px] sm:text-[10px] font-medium"
+                  className="h-4 sm:h-5 shrink-0 bg-accent-sage/15 text-accent-sage border-0 text-[9px] sm:text-[10px] font-medium"
                 >
                   Done
                 </Badge>
@@ -807,7 +807,7 @@ export function WorkoutCenter({
                     )}
                     {isWorkoutCompleted ? (
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium hidden sm:inline">
+                        <span className="text-[10px] text-accent-sage font-medium hidden sm:inline">
                           Completed
                         </span>
                         {onUncomplete && (
@@ -934,7 +934,7 @@ function WorkoutSection({
             {hasLinkedWorkouts && isWorkoutCompleted && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Watch className="size-3.5 text-green-500" />
+                  <Watch className="size-3.5 text-accent-sage" />
                 </TooltipTrigger>
                 <TooltipContent>
                   {mainWorkoutSectionWorkout
@@ -970,9 +970,9 @@ function WorkoutSection({
                   className={cn(
                     "w-full h-9 sm:h-8 text-xs gap-1.5 touch-manipulation",
                     section.iconColor,
-                    section.id === 'warmup' && "hover:bg-blue-500/10 border-blue-500/30",
-                    section.id === 'metabolic' && "hover:bg-orange-500/10 border-orange-500/30",
-                    section.id === 'mobility' && "hover:bg-purple-500/10 border-purple-500/30"
+                    section.id === 'warmup' && "hover:bg-accent-azure/10 border-accent-azure/30",
+                    section.id === 'metabolic' && "hover:bg-accent-ember/10 border-accent-ember/30",
+                    section.id === 'mobility' && "hover:bg-accent-violet/10 border-accent-violet/30"
                   )}
                   onClick={() => onOpenFullscreenTimer(firstTimedExercise, section.exercises)}
                 >
@@ -1136,7 +1136,7 @@ function ExerciseRow({
             {useAlternative && (
               <Badge
                 variant="outline"
-                className="h-4 border-amber-500/30 bg-amber-500/10 py-0 text-[9px] text-amber-600"
+                className="h-4 border-accent-gold/30 bg-accent-gold/10 py-0 text-[9px] text-accent-gold"
               >
                 Alt
               </Badge>
@@ -1144,7 +1144,7 @@ function ExerciseRow({
             {exercise.isElbowSafe && (
               <Badge
                 variant="outline"
-                className="h-4 border-green-500/30 bg-green-500/10 py-0 text-[9px] text-green-600"
+                className="h-4 border-accent-sage/30 bg-accent-sage/10 py-0 text-[9px] text-accent-sage"
               >
                 Safe
               </Badge>
@@ -1155,7 +1155,7 @@ function ExerciseRow({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="h-4 gap-0.5 border-green-500/30 bg-green-500/10 py-0 text-[9px] text-green-600"
+                      className="h-4 gap-0.5 border-accent-sage/30 bg-accent-sage/10 py-0 text-[9px] text-accent-sage"
                     >
                       <Watch className="size-2.5" />
                       Tracked
@@ -1206,7 +1206,7 @@ function ExerciseRow({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 sm:h-6 shrink-0 gap-1 px-2 text-[11px] sm:text-[10px] touch-manipulation text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+            className="h-8 sm:h-6 shrink-0 gap-1 px-2 text-[11px] sm:text-[10px] touch-manipulation text-accent-azure hover:text-accent-azure hover:bg-accent-azure/10"
             onClick={e => {
               e.stopPropagation()
               onOpenFullscreenTimer()

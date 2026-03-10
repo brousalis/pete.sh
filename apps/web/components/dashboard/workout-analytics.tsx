@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { apiGet } from "@/lib/api/client"
 import { format, formatDistanceToNow } from "date-fns"
+import { HR_ZONE_COLORS, HEX } from "@/lib/constants/colors"
 
 // ============================================
 // TYPES
@@ -95,11 +96,11 @@ interface DailyMetrics {
 // ============================================
 
 const ZONE_COLORS: Record<HeartRateZone['name'], { bg: string; text: string; bar: string }> = {
-  rest: { bg: 'bg-gray-100', text: 'text-gray-600', bar: 'bg-gray-400' },
-  warmup: { bg: 'bg-blue-100', text: 'text-blue-600', bar: 'bg-blue-400' },
-  fatBurn: { bg: 'bg-green-100', text: 'text-green-600', bar: 'bg-green-500' },
-  cardio: { bg: 'bg-orange-100', text: 'text-orange-600', bar: 'bg-orange-500' },
-  peak: { bg: 'bg-red-100', text: 'text-red-600', bar: 'bg-red-500' },
+  rest: { bg: HR_ZONE_COLORS.rest.tw.bg, text: HR_ZONE_COLORS.rest.tw.text, bar: HR_ZONE_COLORS.rest.tw.bg },
+  warmup: { bg: HR_ZONE_COLORS.warmup.tw.bg, text: HR_ZONE_COLORS.warmup.tw.text, bar: HR_ZONE_COLORS.warmup.tw.bg },
+  fatBurn: { bg: HR_ZONE_COLORS.fatBurn.tw.bg, text: HR_ZONE_COLORS.fatBurn.tw.text, bar: HR_ZONE_COLORS.fatBurn.tw.bg },
+  cardio: { bg: HR_ZONE_COLORS.cardio.tw.bg, text: HR_ZONE_COLORS.cardio.tw.text, bar: HR_ZONE_COLORS.cardio.tw.bg },
+  peak: { bg: HR_ZONE_COLORS.peak.tw.bg, text: HR_ZONE_COLORS.peak.tw.text, bar: HR_ZONE_COLORS.peak.tw.bg },
 }
 
 const ZONE_LABELS: Record<HeartRateZone['name'], string> = {
@@ -251,8 +252,8 @@ export function HrChart({ samples, height = 60, className }: HrChartProps) {
         {/* Gradient fill under line */}
         <defs>
           <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(239 68 68)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="rgb(239 68 68)" stopOpacity="0" />
+            <stop offset="0%" stopColor={HEX.rose} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={HEX.rose} stopOpacity="0" />
           </linearGradient>
         </defs>
         
@@ -266,7 +267,7 @@ export function HrChart({ samples, height = 60, className }: HrChartProps) {
         <path
           d={pathD}
           fill="none"
-          stroke="rgb(239 68 68)"
+          stroke={HEX.rose}
           strokeWidth="1.5"
           vectorEffect="non-scaling-stroke"
         />
@@ -323,14 +324,14 @@ export function WorkoutCard({ workout, onClick, compact = false }: WorkoutCardPr
 
               {/* Calories */}
               <div className="flex items-center gap-1">
-                <Flame className="size-3.5 text-orange-500" />
+                <Flame className="size-3.5 text-accent-ember" />
                 <span>{Math.round(workout.active_calories)} cal</span>
               </div>
 
               {/* Heart rate */}
               {workout.hr_average && (
                 <div className="flex items-center gap-1">
-                  <Heart className="size-3.5 text-red-500" />
+                  <Heart className="size-3.5 text-accent-rose" />
                   <span>{workout.hr_average} avg</span>
                 </div>
               )}
@@ -338,7 +339,7 @@ export function WorkoutCard({ workout, onClick, compact = false }: WorkoutCardPr
               {/* Distance (cardio only) */}
               {isCardio && workout.distance_miles && (
                 <div className="flex items-center gap-1">
-                  <Activity className="size-3.5 text-blue-500" />
+                  <Activity className="size-3.5 text-accent-azure" />
                   <span>{workout.distance_miles.toFixed(2)} mi</span>
                 </div>
               )}
@@ -346,7 +347,7 @@ export function WorkoutCard({ workout, onClick, compact = false }: WorkoutCardPr
               {/* Pace (running) */}
               {workout.workout_type === 'running' && workout.pace_average && (
                 <div className="flex items-center gap-1">
-                  <Footprints className="size-3.5 text-green-500" />
+                  <Footprints className="size-3.5 text-accent-sage" />
                   <span>{formatPace(workout.pace_average)}</span>
                 </div>
               )}
@@ -454,7 +455,7 @@ export function WorkoutDetailView({ workoutId, onClose }: WorkoutDetailViewProps
 
         <Card>
           <CardContent className="p-3 text-center">
-            <Flame className="size-5 mx-auto mb-1 text-orange-500" />
+            <Flame className="size-5 mx-auto mb-1 text-accent-ember" />
             <div className="text-lg font-semibold">{Math.round(workout.active_calories)}</div>
             <div className="text-xs text-muted-foreground">Active Cal</div>
           </CardContent>
@@ -463,7 +464,7 @@ export function WorkoutDetailView({ workoutId, onClose }: WorkoutDetailViewProps
         {workout.distance_miles && (
           <Card>
             <CardContent className="p-3 text-center">
-              <Activity className="size-5 mx-auto mb-1 text-blue-500" />
+              <Activity className="size-5 mx-auto mb-1 text-accent-azure" />
               <div className="text-lg font-semibold">{workout.distance_miles.toFixed(2)}</div>
               <div className="text-xs text-muted-foreground">Miles</div>
             </CardContent>
@@ -473,7 +474,7 @@ export function WorkoutDetailView({ workoutId, onClose }: WorkoutDetailViewProps
         {workout.hr_average && (
           <Card>
             <CardContent className="p-3 text-center">
-              <Heart className="size-5 mx-auto mb-1 text-red-500" />
+              <Heart className="size-5 mx-auto mb-1 text-accent-rose" />
               <div className="text-lg font-semibold">{workout.hr_average}</div>
               <div className="text-xs text-muted-foreground">Avg BPM</div>
             </CardContent>
@@ -486,7 +487,7 @@ export function WorkoutDetailView({ workoutId, onClose }: WorkoutDetailViewProps
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Heart className="size-4 text-red-500" />
+              <Heart className="size-4 text-accent-rose" />
               Heart Rate
             </CardTitle>
           </CardHeader>
@@ -574,28 +575,28 @@ export function DailyMetricsCard({ metrics, className }: DailyMetricsCardProps) 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Steps */}
           <div className="text-center">
-            <Footprints className="size-5 mx-auto mb-1 text-green-500" />
+            <Footprints className="size-5 mx-auto mb-1 text-accent-sage" />
             <div className="text-lg font-semibold">{metrics.steps.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">Steps</div>
           </div>
 
           {/* Active calories */}
           <div className="text-center">
-            <Flame className="size-5 mx-auto mb-1 text-orange-500" />
+            <Flame className="size-5 mx-auto mb-1 text-accent-ember" />
             <div className="text-lg font-semibold">{Math.round(metrics.active_calories)}</div>
             <div className="text-xs text-muted-foreground">Move</div>
           </div>
 
           {/* Exercise minutes */}
           <div className="text-center">
-            <Activity className="size-5 mx-auto mb-1 text-lime-500" />
+            <Activity className="size-5 mx-auto mb-1 text-accent-sage" />
             <div className="text-lg font-semibold">{metrics.exercise_minutes}</div>
             <div className="text-xs text-muted-foreground">Exercise</div>
           </div>
 
           {/* Stand hours */}
           <div className="text-center">
-            <TrendingUp className="size-5 mx-auto mb-1 text-cyan-500" />
+            <TrendingUp className="size-5 mx-auto mb-1 text-accent-teal" />
             <div className="text-lg font-semibold">{metrics.stand_hours}/12</div>
             <div className="text-xs text-muted-foreground">Stand</div>
           </div>
@@ -606,7 +607,7 @@ export function DailyMetricsCard({ metrics, className }: DailyMetricsCardProps) 
           <div className="flex gap-4 mt-4 pt-3 border-t">
             {metrics.resting_heart_rate && (
               <div className="flex items-center gap-2">
-                <Heart className="size-4 text-red-500" />
+                <Heart className="size-4 text-accent-rose" />
                 <div>
                   <div className="text-sm font-medium">{metrics.resting_heart_rate} bpm</div>
                   <div className="text-xs text-muted-foreground">Resting HR</div>
@@ -615,7 +616,7 @@ export function DailyMetricsCard({ metrics, className }: DailyMetricsCardProps) 
             )}
             {metrics.heart_rate_variability && (
               <div className="flex items-center gap-2">
-                <Activity className="size-4 text-purple-500" />
+                <Activity className="size-4 text-accent-violet" />
                 <div>
                   <div className="text-sm font-medium">{Math.round(metrics.heart_rate_variability)} ms</div>
                   <div className="text-xs text-muted-foreground">HRV</div>
@@ -624,7 +625,7 @@ export function DailyMetricsCard({ metrics, className }: DailyMetricsCardProps) 
             )}
             {metrics.vo2_max && (
               <div className="flex items-center gap-2">
-                <TrendingUp className="size-4 text-blue-500" />
+                <TrendingUp className="size-4 text-accent-azure" />
                 <div>
                   <div className="text-sm font-medium">{metrics.vo2_max.toFixed(1)}</div>
                   <div className="text-xs text-muted-foreground">VO2 Max</div>
@@ -662,8 +663,8 @@ export function WeeklySummaryCard({ summary, previousSummary, className }: Weekl
   const trend = (current: number, previous: number | undefined) => {
     if (!previous) return null
     const diff = current - previous
-    if (diff > 0) return { icon: TrendingUp, color: 'text-green-500', value: `+${diff}` }
-    if (diff < 0) return { icon: TrendingDown, color: 'text-red-500', value: diff.toString() }
+    if (diff > 0) return { icon: TrendingUp, color: 'text-accent-sage', value: `+${diff}` }
+    if (diff < 0) return { icon: TrendingDown, color: 'text-accent-rose', value: diff.toString() }
     return { icon: Minus, color: 'text-muted-foreground', value: '0' }
   }
 

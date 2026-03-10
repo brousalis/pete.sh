@@ -293,8 +293,8 @@ function CurrentTimeIndicator() {
         width: `${100 / 7}%`,
       }}
     >
-      <div className="size-2 rounded-full bg-red-500" />
-      <div className="h-0.5 flex-1 bg-red-500" />
+      <div className="size-2 rounded-full bg-accent-rose" />
+      <div className="h-0.5 flex-1 bg-accent-rose" />
     </div>
   )
 }

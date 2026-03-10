@@ -148,7 +148,7 @@ export function WeatherDisplay() {
           {humidity !== null && (
             <div className="rounded-xl bg-background/50 backdrop-blur-sm border border-border/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Droplets className="size-4 text-blue-500" />
+                <Droplets className="size-4 text-accent-azure" />
                 <span className="text-xs font-medium text-muted-foreground uppercase">Humidity</span>
               </div>
               <p className="text-2xl font-bold text-foreground">{Math.round(humidity)}%</p>
@@ -158,7 +158,7 @@ export function WeatherDisplay() {
           {windSpeedMph !== null && (
             <div className="rounded-xl bg-background/50 backdrop-blur-sm border border-border/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Wind className="size-4 text-slate-500" />
+                <Wind className="size-4 text-accent-slate" />
                 <span className="text-xs font-medium text-muted-foreground uppercase">Wind</span>
               </div>
               <p className="text-2xl font-bold text-foreground">{windSpeedMph} mph</p>
@@ -168,7 +168,7 @@ export function WeatherDisplay() {
           {pressureInHg !== null && (
             <div className="rounded-xl bg-background/50 backdrop-blur-sm border border-border/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Gauge className="size-4 text-purple-500" />
+                <Gauge className="size-4 text-accent-violet" />
                 <span className="text-xs font-medium text-muted-foreground uppercase">Pressure</span>
               </div>
               <p className="text-2xl font-bold text-foreground">{pressureInHg}"</p>
@@ -178,7 +178,7 @@ export function WeatherDisplay() {
           {visibilityMiles !== null && (
             <div className="rounded-xl bg-background/50 backdrop-blur-sm border border-border/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Eye className="size-4 text-cyan-500" />
+                <Eye className="size-4 text-accent-teal" />
                 <span className="text-xs font-medium text-muted-foreground uppercase">Visibility</span>
               </div>
               <p className="text-2xl font-bold text-foreground">{visibilityMiles} mi</p>

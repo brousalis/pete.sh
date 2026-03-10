@@ -1,5 +1,6 @@
 'use client'
 
+import { HEX } from '@/lib/constants/colors'
 import type React from 'react'
 
 interface MiniDayProgressRingProps {
@@ -14,7 +15,7 @@ export function MiniDayProgressRing({
   progress,
   size = 28,
   strokeWidth = 2,
-  color = '#10b981',
+  color = HEX.sage,
   children,
 }: MiniDayProgressRingProps) {
   const radius = (size - strokeWidth) / 2

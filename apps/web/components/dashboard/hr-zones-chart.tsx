@@ -6,6 +6,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart'
+import { HEX, HR_ZONE_HEX_ARRAY } from '@/lib/constants/colors'
 import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts'
 
 interface HeartRateZone {
@@ -21,13 +22,12 @@ interface HrZonesChartProps {
   className?: string
 }
 
-// Zone colors matching typical HR zone conventions
 const ZONE_COLORS: Record<string, string> = {
-  rest: '#94a3b8',      // slate-400
-  warmup: '#22c55e',    // green-500
-  fatBurn: '#eab308',   // yellow-500
-  cardio: '#f97316',    // orange-500
-  peak: '#ef4444',      // red-500
+  rest: HR_ZONE_HEX_ARRAY[0],
+  warmup: HR_ZONE_HEX_ARRAY[1],
+  fatBurn: HR_ZONE_HEX_ARRAY[2],
+  cardio: HR_ZONE_HEX_ARRAY[3],
+  peak: HR_ZONE_HEX_ARRAY[4],
 }
 
 const ZONE_LABELS: Record<string, string> = {
@@ -118,7 +118,7 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={ZONE_COLORS[entry.zoneName] || '#6b7280'}
+                fill={ZONE_COLORS[entry.zoneName] || HEX.slate}
               />
             ))}
           </Bar>
@@ -131,7 +131,7 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
           <div key={zone.name} className="flex items-center gap-1.5">
             <div
               className="size-2.5 rounded-full"
-              style={{ backgroundColor: ZONE_COLORS[zone.name] || '#6b7280' }}
+              style={{ backgroundColor: ZONE_COLORS[zone.name] || HEX.slate }}
             />
             <span className="text-muted-foreground text-xs">
               {ZONE_LABELS[zone.name] || zone.name}: {zone.percentage}%
@@ -165,7 +165,7 @@ export function HrZonesBar({ zones, className }: HrZonesChartProps) {
             className="h-full transition-all"
             style={{
               width: `${zone.percentage}%`,
-              backgroundColor: ZONE_COLORS[zone.name] || '#6b7280',
+              backgroundColor: ZONE_COLORS[zone.name] || HEX.slate,
             }}
             title={`${ZONE_LABELS[zone.name] || zone.name}: ${zone.percentage}%`}
           />

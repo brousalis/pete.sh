@@ -92,17 +92,17 @@ function ToolBadge({
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-accent-gold" />
         ) : isComplete ? (
-          <Wrench className="h-3 w-3 text-green-400" />
+          <Wrench className="h-3 w-3 text-accent-sage" />
         ) : (
           <Wrench className="h-3 w-3 text-white/30" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
         {isRunning ? (
-          <span className="ml-auto text-amber-400/70">working...</span>
+          <span className="ml-auto text-accent-gold/70">working...</span>
         ) : isComplete ? (
-          <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
+          <CheckCircle2 className="ml-auto h-3 w-3 text-accent-sage/70" />
         ) : null}
       </div>
     </div>
@@ -151,11 +151,11 @@ function VersionPreviewCard({
   if (proposed.servings !== current.servings) metaChanges.push(`Servings: ${current.servings ?? '?'} → ${proposed.servings ?? '?'}`)
 
   return (
-    <div className="my-2 rounded-lg border border-amber-500/30 bg-amber-500/5 overflow-hidden">
+    <div className="my-2 rounded-lg border border-accent-gold/30 bg-accent-gold/5 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-amber-500/20 bg-amber-500/10">
-        <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-        <span className="text-xs font-semibold text-amber-300">Proposed Changes</span>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-accent-gold/20 bg-accent-gold/10">
+        <Sparkles className="h-3.5 w-3.5 text-accent-gold" />
+        <span className="text-xs font-semibold text-accent-gold">Proposed Changes</span>
       </div>
 
       <div className="p-3 space-y-2.5">
@@ -166,8 +166,8 @@ function VersionPreviewCard({
         {metaChanges.length > 0 && (
           <div className="space-y-0.5">
             {metaChanges.map((c) => (
-              <div key={c} className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-                <span className="text-blue-400">~</span> {c}
+              <div key={c} className="text-[11px] text-accent-azure/80 flex items-center gap-1.5">
+                <span className="text-accent-azure">~</span> {c}
               </div>
             ))}
           </div>
@@ -178,22 +178,22 @@ function VersionPreviewCard({
           <div className="space-y-0.5">
             <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">Ingredients</span>
             {addedIngredients.map((ing) => (
-              <div key={`add-${ing.name}`} className="text-[11px] text-green-300/80 flex items-center gap-1.5">
-                <Plus className="h-2.5 w-2.5 text-green-400" />
+              <div key={`add-${ing.name}`} className="text-[11px] text-accent-sage/80 flex items-center gap-1.5">
+                <Plus className="h-2.5 w-2.5 text-accent-sage" />
                 {ing.name}{ing.amount ? ` — ${ing.amount} ${ing.unit || ''}` : ''}{ing.notes ? ` (${ing.notes})` : ''}
               </div>
             ))}
             {removedIngredients.map((ing) => (
-              <div key={`rem-${ing.name}`} className="text-[11px] text-red-300/80 flex items-center gap-1.5 line-through">
-                <Minus className="h-2.5 w-2.5 text-red-400" />
+              <div key={`rem-${ing.name}`} className="text-[11px] text-accent-rose/80 flex items-center gap-1.5 line-through">
+                <Minus className="h-2.5 w-2.5 text-accent-rose" />
                 {ing.name}
               </div>
             ))}
             {modifiedIngredients.map((ing) => {
               const orig = current.ingredients.find((ci) => ci.name.toLowerCase() === ing.name.toLowerCase())
               return (
-                <div key={`mod-${ing.name}`} className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-                  <span className="text-blue-400">~</span>
+                <div key={`mod-${ing.name}`} className="text-[11px] text-accent-azure/80 flex items-center gap-1.5">
+                  <span className="text-accent-azure">~</span>
                   {ing.name}: {orig?.amount ?? '?'} {orig?.unit ?? ''} → {ing.amount ?? '?'} {ing.unit ?? ''}
                 </div>
               )
@@ -205,7 +205,7 @@ function VersionPreviewCard({
         {instructionsChanged && (
           <div className="space-y-0.5">
             <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">Instructions</span>
-            <div className="text-[11px] text-blue-300/80">
+            <div className="text-[11px] text-accent-azure/80">
               {proposed.instructions.length} steps (was {current.instructions.length})
             </div>
           </div>
@@ -215,7 +215,7 @@ function VersionPreviewCard({
         <div className="flex items-center gap-2 pt-1">
           <Button
             size="sm"
-            className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5"
+            className="h-7 text-xs bg-accent-sage hover:bg-accent-sage text-white gap-1.5"
             onClick={onApply}
             disabled={applying}
           >
@@ -357,7 +357,7 @@ export function RecipeChatSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg p-0 flex flex-col bg-zinc-950 border-l border-white/10"
+        className="w-full sm:max-w-lg p-0 flex flex-col bg-card border-l border-white/10"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>AI Chef — {recipe.name}</SheetTitle>
@@ -366,7 +366,7 @@ export function RecipeChatSheet({
 
         {/* Header */}
         <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3 shrink-0">
-          <ChefHat className="h-4 w-4 text-amber-400 shrink-0" />
+          <ChefHat className="h-4 w-4 text-accent-gold shrink-0" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-white truncate">AI Chef</h2>
             <p className="text-[11px] text-white/40 truncate">Discussing: {recipe.name}</p>
@@ -390,7 +390,7 @@ export function RecipeChatSheet({
           {messages.length === 0 && (
             <div className="mt-4">
               <div className="text-center mb-5">
-                <ChefHat className="h-8 w-8 text-amber-400/40 mx-auto mb-2" />
+                <ChefHat className="h-8 w-8 text-accent-gold/40 mx-auto mb-2" />
                 <p className="text-xs text-white/30">
                   Ask me anything about this recipe — improvements, substitutions, or variations.
                 </p>
@@ -405,7 +405,7 @@ export function RecipeChatSheet({
                     onClick={() => handleSend(action.prompt)}
                     disabled={isLoading}
                   >
-                    <Sparkles className="h-3 w-3 mr-1.5 flex-shrink-0 text-amber-400/60" />
+                    <Sparkles className="h-3 w-3 mr-1.5 flex-shrink-0 text-accent-gold/60" />
                     {action.label}
                   </Button>
                 ))}
@@ -425,7 +425,7 @@ export function RecipeChatSheet({
                     className={cn(
                       'max-w-[85%] rounded-lg px-3 py-2.5 text-sm',
                       message.role === 'user'
-                        ? 'bg-amber-600/30 text-white'
+                        ? 'bg-accent-gold/30 text-white'
                         : 'bg-white/5 text-white/80 border border-white/10'
                     )}
                   >
@@ -442,11 +442,11 @@ export function RecipeChatSheet({
                                 h3: ({ children }) => <h3 className="text-[13px] font-medium text-white/90 mt-2 mb-0.5 first:mt-0">{children}</h3>,
                                 p: ({ children }) => <p className="text-[13px] text-white/80 mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
                                 strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-                                em: ({ children }) => <em className="text-amber-300">{children}</em>,
+                                em: ({ children }) => <em className="text-accent-gold">{children}</em>,
                                 ul: ({ children }) => <ul className="list-disc list-inside text-[13px] text-white/80 mb-1.5 space-y-0.5">{children}</ul>,
                                 ol: ({ children }) => <ol className="list-decimal list-inside text-[13px] text-white/80 mb-1.5 space-y-0.5">{children}</ol>,
                                 li: ({ children }) => <li className="text-white/80">{children}</li>,
-                                code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-amber-300">{children}</code>,
+                                code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-gold">{children}</code>,
                                 hr: () => <hr className="border-white/10 my-2" />,
                               }}
                             >
@@ -503,7 +503,7 @@ export function RecipeChatSheet({
                           }
                           if (result.status === 'error') {
                             return (
-                              <div key={index} className="my-1.5 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-300">
+                              <div key={index} className="my-1.5 rounded-md border border-accent-rose/20 bg-accent-rose/5 px-3 py-2 text-xs text-accent-rose">
                                 <div className="flex items-center gap-2">
                                   <AlertTriangle className="h-3 w-3" />
                                   <span>{(result as unknown as { message: string }).message}</span>
@@ -542,7 +542,7 @@ export function RecipeChatSheet({
                 ) && (
                   <div className="flex justify-start">
                     <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-accent-gold" />
                     </div>
                   </div>
                 )}
@@ -551,7 +551,7 @@ export function RecipeChatSheet({
 
           {/* Error */}
           {error && (
-            <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-300">
+            <div className="mt-3 rounded-lg border border-accent-rose/20 bg-accent-rose/10 px-3 py-2.5 text-xs text-accent-rose">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                 <span>{error.message || 'An error occurred'}</span>
@@ -573,14 +573,14 @@ export function RecipeChatSheet({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={`Ask about ${recipe.name}...`}
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent-gold/50"
               disabled={status !== 'ready'}
             />
             <Button
               type="submit"
               disabled={status !== 'ready' || !input.trim()}
               size="sm"
-              className="bg-amber-600 hover:bg-amber-700 text-white px-3 h-auto"
+              className="bg-accent-gold hover:bg-accent-gold text-white px-3 h-auto"
             >
               <Send className="h-3.5 w-3.5" />
             </Button>

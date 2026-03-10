@@ -30,7 +30,7 @@ export function FitnessWorkoutCard({
         <div className="flex-1">
           <div className="flex items-center gap-2">
             {isCompleted ? (
-              <CheckCircle2 className="size-5 text-green-500" />
+              <CheckCircle2 className="size-5 text-accent-sage" />
             ) : (
               <Circle className="text-muted-foreground size-5" />
             )}

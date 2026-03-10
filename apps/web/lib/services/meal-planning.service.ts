@@ -419,6 +419,100 @@ export class MealPlanningService {
   }
 
   /**
+   * Add a single recipe's ingredients to an existing shopping list (or create one).
+   * Merges with existing items, deduplicating and summing amounts.
+   */
+  async addRecipeToShoppingList(mealPlanId: string, recipeId: string): Promise<ShoppingList> {
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) throw new Error('Supabase not configured')
+
+    const recipe = await cookingService.getRecipe(recipeId)
+    if (!recipe) throw new Error('Recipe not found')
+
+    const newIngredients: Array<{ name: string; amount?: number; unit?: string }> = recipe.ingredients.map((ing) => ({
+      name: ing.name,
+      amount: ing.amount,
+      unit: ing.unit,
+    }))
+
+    const existingList = await this.getShoppingList(mealPlanId)
+    const existingItems: ShoppingListItem[] = existingList?.items || []
+
+    const itemMap = new Map<string, ShoppingListItem & { _normUnit: string }>()
+    for (const item of existingItems) {
+      const normName = normalizeIngredientName(item.ingredient)
+      itemMap.set(normName, {
+        ...item,
+        _normUnit: normalizeUnit(item.unit),
+      })
+    }
+
+    for (const ing of newIngredients) {
+      const normName = normalizeIngredientName(ing.name)
+      const normUnit = normalizeUnit(ing.unit)
+      const amount = ing.amount || 0
+
+      const existing = itemMap.get(normName)
+      if (existing) {
+        if (!existing.recipes.includes(recipe.name)) {
+          existing.recipes.push(recipe.name)
+        }
+        if (amount && existing._normUnit === normUnit) {
+          existing.amount += amount
+        } else if (amount && !existing._normUnit && normUnit) {
+          existing.amount += amount
+          existing._normUnit = normUnit
+          existing.unit = normUnit
+        } else if (amount) {
+          existing.amount += amount
+        }
+      } else {
+        itemMap.set(normName, {
+          ingredient: ing.name,
+          amount,
+          unit: normUnit || '',
+          recipes: [recipe.name],
+          _normUnit: normUnit,
+        })
+      }
+    }
+
+    const items: ShoppingListItem[] = Array.from(itemMap.values()).map(({ _normUnit, ...item }) => item)
+
+    const writeSupabase = getSupabaseClientForOperation('write')
+    if (!writeSupabase) throw new Error('Supabase not configured')
+
+    if (existingList) {
+      const { data, error } = await writeSupabase
+        .from('shopping_lists')
+        .update({
+          items: items as unknown as Record<string, unknown>[],
+          updated_at: new Date().toISOString(),
+        } as never)
+        .eq('id', existingList.id)
+        .select()
+        .single()
+
+      if (error) throw new Error(`Failed to update shopping list: ${error.message}`)
+      return { ...(data as ShoppingList), items }
+    } else {
+      const { data, error } = await writeSupabase
+        .from('shopping_lists')
+        .insert({
+          meal_plan_id: mealPlanId,
+          items: items as unknown as Record<string, unknown>[],
+          status: 'draft',
+          updated_at: new Date().toISOString(),
+        } as never)
+        .select()
+        .single()
+
+      if (error) throw new Error(`Failed to create shopping list: ${error.message}`)
+      return { ...(data as ShoppingList), items }
+    }
+  }
+
+  /**
    * Get shopping list for a meal plan
    */
   async getShoppingList(mealPlanId: string): Promise<ShoppingList | null> {

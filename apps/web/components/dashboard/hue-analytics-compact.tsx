@@ -35,6 +35,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { HUE_CHART_COLORS } from '@/lib/constants/colors'
 
 const INSIGHT_ICONS: Record<string, React.ReactNode> = {
   Clock: <Clock className="size-3.5" />,
@@ -47,8 +48,8 @@ const INSIGHT_ICONS: Record<string, React.ReactNode> = {
 }
 
 const CHART_COLORS = {
-  lightsOn: '#f59e0b',
-  roomBar: '#f59e0b',
+  lightsOn: HUE_CHART_COLORS.lightsOn,
+  roomBar: HUE_CHART_COLORS.roomBar,
 }
 
 interface HueAnalyticsCompactProps {
@@ -105,8 +106,8 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
             type="button"
           >
             <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15">
-                <BarChart3 className="size-4 text-amber-500" strokeWidth={2.5} />
+              <div className="flex size-8 items-center justify-center rounded-lg bg-accent-gold/15">
+                <BarChart3 className="size-4 text-accent-gold" strokeWidth={2.5} />
               </div>
               <div>
                 <h2 className="text-sm font-semibold">Usage Insights</h2>
@@ -142,18 +143,18 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
                     <StatCard
                       label="Daily Usage"
                       value={`${data.summary.avgDailyUsageHours}h`}
-                      icon={<Clock className="size-3.5 text-amber-500" />}
+                      icon={<Clock className="size-3.5 text-accent-gold" />}
                     />
                     <StatCard
                       label="Most Active"
                       value={data.summary.mostActiveRoom || '—'}
                       subValue={data.summary.mostActiveRoom ? `${data.summary.mostActiveRoomPercentage}%` : undefined}
-                      icon={<Home className="size-3.5 text-blue-500" />}
+                      icon={<Home className="size-3.5 text-accent-azure" />}
                     />
                     <StatCard
                       label="Brightness"
                       value={`${data.summary.avgBrightness}%`}
-                      icon={<Sun className="size-3.5 text-yellow-500" />}
+                      icon={<Sun className="size-3.5 text-accent-gold" />}
                     />
                     <StatCard
                       label="Trend"
@@ -164,9 +165,9 @@ export function HueAnalyticsCompact({ className }: HueAnalyticsCompactProps) {
                       }
                       icon={
                         data.summary.weekOverWeekChange > 0 ? (
-                          <TrendingUp className="size-3.5 text-green-500" />
+                          <TrendingUp className="size-3.5 text-accent-sage" />
                         ) : data.summary.weekOverWeekChange < 0 ? (
-                          <TrendingDown className="size-3.5 text-red-500" />
+                          <TrendingDown className="size-3.5 text-accent-rose" />
                         ) : (
                           <Activity className="size-3.5 text-muted-foreground" />
                         )
@@ -255,8 +256,8 @@ function StatCard({
         <span
           className={cn(
             'text-sm font-semibold',
-            trend === 'up' && 'text-green-500',
-            trend === 'down' && 'text-red-500'
+            trend === 'up' && 'text-accent-sage',
+            trend === 'down' && 'text-accent-rose'
           )}
         >
           {value}
@@ -426,13 +427,13 @@ function InsightRow({ insight }: { insight: HueInsight }) {
       <div
         className={cn(
           'mt-0.5 rounded p-1',
-          insight.type === 'peak_time' && 'bg-amber-500/15 text-amber-500',
-          insight.type === 'most_used_room' && 'bg-blue-500/15 text-blue-500',
-          insight.type === 'overnight' && 'bg-indigo-500/15 text-indigo-500',
-          insight.type === 'brightness' && 'bg-yellow-500/15 text-yellow-500',
-          insight.type === 'trend' && insight.trend === 'up' && 'bg-green-500/15 text-green-500',
-          insight.type === 'trend' && insight.trend === 'down' && 'bg-red-500/15 text-red-500',
-          insight.type === 'efficiency' && 'bg-emerald-500/15 text-emerald-500'
+          insight.type === 'peak_time' && 'bg-accent-gold/15 text-accent-gold',
+          insight.type === 'most_used_room' && 'bg-accent-azure/15 text-accent-azure',
+          insight.type === 'overnight' && 'bg-accent-violet/15 text-accent-violet',
+          insight.type === 'brightness' && 'bg-accent-gold/15 text-accent-gold',
+          insight.type === 'trend' && insight.trend === 'up' && 'bg-accent-sage/15 text-accent-sage',
+          insight.type === 'trend' && insight.trend === 'down' && 'bg-accent-rose/15 text-accent-rose',
+          insight.type === 'efficiency' && 'bg-accent-sage/15 text-accent-sage'
         )}
       >
         {INSIGHT_ICONS[insight.icon] || <Lightbulb className="size-3.5" />}

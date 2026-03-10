@@ -57,10 +57,10 @@ export interface ConnectivityContextValue extends ConnectivityState {
 // ============================================
 
 /** How long to cache a successful connectivity check (ms) */
-const CACHE_TTL_SUCCESS = 30_000 // 30 seconds
+const CACHE_TTL_SUCCESS = 60_000 // 1 minute
 
 /** How long to cache a failed connectivity check (ms) */
-const CACHE_TTL_FAILURE = 10_000 // 10 seconds
+const CACHE_TTL_FAILURE = 60_000 // 1 minute
 
 /** Timeout for connectivity check requests (ms) */
 const CHECK_TIMEOUT = 3_000 // 3 seconds

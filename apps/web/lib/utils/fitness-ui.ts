@@ -8,6 +8,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { isSameDay } from 'date-fns'
+import { FOCUS_ACCENT, TW } from '@/lib/constants/colors'
 
 export const DAYS_OF_WEEK: DayOfWeek[] = [
   'monday',
@@ -39,71 +40,30 @@ export interface FocusConfigEntry {
   accent: string
 }
 
-export const FOCUS_CONFIG: Record<string, FocusConfigEntry> = {
-  Strength: {
-    icon: Dumbbell,
-    color: 'text-orange-500',
-    bg: 'bg-orange-500/10',
-    ring: 'ring-orange-500/30',
-    accent: 'bg-orange-500',
-  },
-  'Core/Posture': {
-    icon: Target,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-    ring: 'ring-blue-500/30',
-    accent: 'bg-blue-500',
-  },
-  Core: {
-    icon: Target,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-    ring: 'ring-blue-500/30',
-    accent: 'bg-blue-500',
-  },
-  Hybrid: {
-    icon: Zap,
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
-    ring: 'ring-purple-500/30',
-    accent: 'bg-purple-500',
-  },
-  Endurance: {
-    icon: Flame,
-    color: 'text-red-500',
-    bg: 'bg-red-500/10',
-    ring: 'ring-red-500/30',
-    accent: 'bg-red-500',
-  },
-  Circuit: {
-    icon: Zap,
-    color: 'text-green-500',
-    bg: 'bg-green-500/10',
-    ring: 'ring-green-500/30',
-    accent: 'bg-green-500',
-  },
-  HIIT: {
-    icon: Flame,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    ring: 'ring-amber-500/30',
-    accent: 'bg-amber-500',
-  },
-  Rest: {
-    icon: Calendar,
-    color: 'text-slate-400',
-    bg: 'bg-slate-500/10',
-    ring: 'ring-slate-500/30',
-    accent: 'bg-slate-400',
-  },
-  'Active Recovery': {
-    icon: Sun,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-    ring: 'ring-teal-500/30',
-    accent: 'bg-teal-500',
-  },
+const FOCUS_ICONS: Record<string, typeof Dumbbell> = {
+  Strength: Dumbbell,
+  'Core/Posture': Target,
+  Core: Target,
+  Hybrid: Zap,
+  Endurance: Flame,
+  Circuit: Zap,
+  HIIT: Flame,
+  Rest: Calendar,
+  'Active Recovery': Sun,
 }
+
+export const FOCUS_CONFIG: Record<string, FocusConfigEntry> = Object.fromEntries(
+  Object.entries(FOCUS_ACCENT).map(([focus, accent]) => {
+    const tw = TW[accent]
+    return [focus, {
+      icon: FOCUS_ICONS[focus] ?? Calendar,
+      color: tw.text,
+      bg: tw.bg10,
+      ring: `ring-accent-${accent}/30`,
+      accent: tw.bg,
+    }]
+  })
+)
 
 export const FOCUS_CONFIG_FALLBACK: FocusConfigEntry = {
   icon: Calendar,

@@ -84,7 +84,7 @@ export function DateNavigator({
             ? 'text-foreground hover:text-foreground/80 cursor-pointer'
             : isAtToday
               ? 'text-foreground cursor-default'
-              : 'text-amber-500 hover:text-amber-400 cursor-pointer'
+              : 'text-accent-gold hover:text-accent-gold/80 cursor-pointer'
         )}
       >
         {label}

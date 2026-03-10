@@ -178,9 +178,9 @@ export function ExerciseTimer({
 
   // Determine color based on state
   const getProgressColor = () => {
-    if (timeRemaining === 0) return "text-green-500"
-    if (timeRemaining <= 10) return "text-orange-500"
-    return "text-blue-500"
+    if (timeRemaining === 0) return "text-accent-sage"
+    if (timeRemaining <= 10) return "text-accent-ember"
+    return "text-accent-azure"
   }
 
   if (compact) {
@@ -386,7 +386,7 @@ export function ExerciseTimer({
 
       {/* Status text */}
       {timeRemaining === 0 && (
-        <div className="text-sm font-medium text-green-500">Complete!</div>
+        <div className="text-sm font-medium text-accent-sage">Complete!</div>
       )}
     </div>
   )

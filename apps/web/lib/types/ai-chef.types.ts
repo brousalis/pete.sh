@@ -58,6 +58,34 @@ export const WeekPlanSuggestionSchema = z.object({
   estimatedPrepTime: z.string().describe('Total estimated prep time for the week'),
 })
 
+// ============================================
+// FITNESS MEAL PLANNING SCHEMAS
+// ============================================
+
+export const CarbLevelSchema = z.enum(['zero', 'low', 'moderate', 'high'])
+
+export const FitnessDayRequirementSchema = z.object({
+  day: DayOfWeekSchema,
+  carbLevel: CarbLevelSchema,
+  proteinKeywords: z.array(z.string()).describe('Main protein ingredients, e.g. ["chicken","breast"]'),
+  mealType: MealTypeSchema.default('dinner'),
+})
+
+export const FitnessGuidelinesSchema = z.object({
+  days: z.array(FitnessDayRequirementSchema),
+  overallNotes: z.string().optional(),
+})
+
+export const FitnessProfileSchema = z.object({
+  name: z.string().default('Default'),
+  guidelines: FitnessGuidelinesSchema,
+  savedAt: z.string(),
+})
+
+// ============================================
+// RECIPE HINTS SCHEMAS
+// ============================================
+
 export const RecipeHintsSchema = z.object({
   prioritizedIds: z.array(z.string()).describe('Recipe IDs to boost/prioritize (must be from candidates)'),
   excludedIds: z.array(z.string()).optional().describe('Recipe IDs to exclude (must be from candidates)'),
@@ -73,6 +101,10 @@ export type CookingTimePreference = z.infer<typeof CookingTimePreferenceSchema>
 export type WeekPlanSuggestion = z.infer<typeof WeekPlanSuggestionSchema>
 export type WeekPlanDaySuggestion = z.infer<typeof WeekPlanDaySuggestionSchema>
 export type RecipeHints = z.infer<typeof RecipeHintsSchema>
+export type CarbLevel = z.infer<typeof CarbLevelSchema>
+export type FitnessDayRequirement = z.infer<typeof FitnessDayRequirementSchema>
+export type FitnessGuidelines = z.infer<typeof FitnessGuidelinesSchema>
+export type FitnessProfile = z.infer<typeof FitnessProfileSchema>
 
 // ============================================
 // SERVICE TYPES

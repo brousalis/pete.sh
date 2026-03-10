@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react"
 
 const BRANDS = [
-  { key: "purple", label: "Purple", color: "hsl(262, 83%, 58%)" },
-  { key: "blue", label: "Blue", color: "hsl(220, 90%, 56%)" },
-  { key: "teal", label: "Teal", color: "hsl(174, 63%, 45%)" },
-  { key: "orange", label: "Orange", color: "hsl(32, 100%, 50%)" },
-  { key: "pink", label: "Pink", color: "hsl(320, 72%, 66%)" },
-  { key: "yellow", label: "Yellow", color: "hsl(48, 96%, 53%)" },
+  { key: "purple", label: "Purple", color: "hsl(280, 65%, 55%)" },
+  { key: "blue", label: "Blue", color: "hsl(222, 60%, 55%)" },
+  { key: "teal", label: "Teal", color: "hsl(178, 45%, 48%)" },
+  { key: "orange", label: "Orange", color: "hsl(30, 75%, 52%)" },
+  { key: "pink", label: "Pink", color: "hsl(348, 70%, 58%)" },
+  { key: "yellow", label: "Yellow", color: "hsl(45, 80%, 55%)" },
 ] as const
 
 export function ColorThemePicker() {

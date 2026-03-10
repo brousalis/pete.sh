@@ -229,7 +229,7 @@ export function CookingMode({ recipe, open, onClose }: CookingModeProps) {
                     className={cn(
                       'inline-flex flex-col items-center gap-3 rounded-2xl border p-6',
                       timerComplete
-                        ? 'border-green-500/50 bg-green-500/5'
+                        ? 'border-accent-sage/50 bg-accent-sage/5'
                         : 'bg-muted/30'
                     )}
                   >
@@ -238,14 +238,14 @@ export function CookingMode({ recipe, open, onClose }: CookingModeProps) {
                         className={cn(
                           'size-5',
                           timerComplete
-                            ? 'text-green-500'
+                            ? 'text-accent-sage'
                             : 'text-muted-foreground'
                         )}
                       />
                       <span
                         className={cn(
                           'text-4xl font-bold tabular-nums',
-                          timerComplete && 'text-green-600'
+                          timerComplete && 'text-accent-sage'
                         )}
                       >
                         {timerSeconds !== null
@@ -254,7 +254,7 @@ export function CookingMode({ recipe, open, onClose }: CookingModeProps) {
                       </span>
                     </div>
                     {timerComplete ? (
-                      <div className="flex items-center gap-2 text-green-600">
+                      <div className="flex items-center gap-2 text-accent-sage">
                         <Check className="size-5" />
                         <span className="text-sm font-medium">Timer complete!</span>
                       </div>

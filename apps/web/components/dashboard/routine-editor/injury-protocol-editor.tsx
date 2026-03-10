@@ -69,11 +69,11 @@ export function InjuryProtocolEditor({ protocol, onUpdate }: InjuryProtocolEdito
   }
 
   return (
-    <Card className={isActive ? 'border-amber-500/50' : ''}>
+    <Card className={isActive ? 'border-accent-gold/50' : ''}>
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AlertTriangle className={`h-4 w-4 ${isActive ? 'text-amber-500' : 'text-muted-foreground'}`} />
+            <AlertTriangle className={`h-4 w-4 ${isActive ? 'text-accent-gold' : 'text-muted-foreground'}`} />
             Injury Protocol
           </CardTitle>
           <div className="flex items-center gap-2">

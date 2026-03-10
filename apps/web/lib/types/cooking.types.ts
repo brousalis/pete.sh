@@ -190,6 +190,8 @@ export interface RecipeFilters {
   source?: RecipeSource
   difficulty?: RecipeDifficulty
   is_favorite?: boolean
+  nutritionCategory?: string[]
+  ingredientSearch?: string
 }
 
 export interface CreateRecipeInput {

@@ -53,8 +53,8 @@ export function ConcertSetlist({
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-purple-500/10">
-            <ListMusic className="size-4 text-purple-500" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-accent-violet/10">
+            <ListMusic className="size-4 text-accent-violet" />
           </div>
           <CardTitle className="text-base">Setlist</CardTitle>
           {totalSongs > 0 && (

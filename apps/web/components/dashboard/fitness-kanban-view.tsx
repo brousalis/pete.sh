@@ -29,6 +29,7 @@ import type {
   Workout,
   WorkoutCompletion,
 } from '@/lib/types/fitness.types'
+import { HEX } from '@/lib/constants/colors'
 import { cn } from '@/lib/utils'
 import {
   DAYS_OF_WEEK,
@@ -165,10 +166,10 @@ export function FitnessKanbanView({
           //             key={d.day}
           //             className={cn(
           //               'h-1.5 flex-1 rounded-full transition-colors',
-          //               d.status === 'complete' && 'bg-emerald-500',
-          //               d.status === 'partial' && 'bg-amber-500',
+          //               d.status === 'complete' && 'bg-accent-sage',
+          //               d.status === 'partial' && 'bg-accent-gold',
           //               d.status === 'skipped' && 'bg-slate-400',
-          //               d.status === 'missed' && 'bg-red-400/60',
+          //               d.status === 'missed' && 'bg-accent-rose/60',
           //               (d.status === 'future' || d.status === 'rest') && 'bg-muted/50',
           //               d.isToday && d.status !== 'complete' && d.status !== 'partial' && 'bg-primary/30',
           //             )}
@@ -340,17 +341,17 @@ function KanbanColumn({
   morningRoutine, nightRoutine, onDayClick,
 }: KanbanColumnProps) {
   const FocusIcon = focusConfig.icon
-  const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
+  const ringColor = status === 'complete' ? HEX.sage : status === 'partial' ? HEX.gold : status === 'skipped' ? HEX.slate : HEX.sage
 
   return (
     <div
       className={cn(
         'flex flex-col rounded-xl transition-all min-h-0 overflow-hidden',
         isToday && 'border-primary/30 bg-gradient-to-b from-primary/[0.06] to-primary/[0.02] shadow-[0_0_12px_-3px] shadow-primary/20',
-        !isToday && status === 'complete' && 'bg-emerald-500/[0.03]',
+        !isToday && status === 'complete' && 'bg-accent-sage/[0.03]',
         isFuture && !isToday && 'opacity-50',
         !isToday && !isFuture && 'border-border/50',
-        status === 'complete' && 'border-emerald-500/30',
+        status === 'complete' && 'border-accent-sage/30',
       )}
     >
       {/* Column Header */}
@@ -403,7 +404,7 @@ function KanbanColumn({
             onClick={() => onDayClick(date)}
             className={cn(
               'rounded-lg border border-dashed p-2.5 text-center cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md',
-              status === 'complete' ? 'border-emerald-500/30 bg-emerald-500/5' :
+              status === 'complete' ? 'border-accent-sage/30 bg-accent-sage/5' :
               status === 'skipped' ? 'border-muted bg-muted/20 opacity-60' :
               'border-border/50 bg-muted/10',
             )}
@@ -412,7 +413,7 @@ function KanbanColumn({
             {schedule?.goal && (
               <div className="text-[10px] text-muted-foreground/70 truncate">{schedule.goal}</div>
             )}
-            {status === 'complete' && <Check className="size-3 text-emerald-500 mx-auto mt-1" />}
+            {status === 'complete' && <Check className="size-3 text-accent-sage mx-auto mt-1" />}
             {status === 'skipped' && <Ban className="size-3 text-muted-foreground mx-auto mt-1" />}
           </div>
         ) : (
@@ -477,9 +478,9 @@ function KanbanCard({
     <div
       className={cn(
         'rounded-lg border transition-all overflow-hidden',
-        completed && 'border-emerald-500/30 bg-emerald-500/5',
+        completed && 'border-accent-sage/30 bg-accent-sage/5',
         skipped && 'border-muted bg-muted/10 opacity-60',
-        !completed && !skipped && !isFuture && isToday && (isMorning ? 'border-amber-500/20 bg-amber-500/5' : 'border-indigo-500/20 bg-indigo-500/5'),
+        !completed && !skipped && !isFuture && isToday && (isMorning ? 'border-accent-gold/20 bg-accent-gold/5' : 'border-accent-violet/20 bg-accent-violet/5'),
         !completed && !skipped && isFuture && 'border-dashed border-border/40',
         !completed && !skipped && !isFuture && !isToday && 'border-border/50',
       )}
@@ -492,23 +493,23 @@ function KanbanCard({
         <div className="flex items-center gap-1.5">
           <div className={cn(
             'flex items-center justify-center size-5 rounded shrink-0',
-            completed ? 'bg-emerald-500/15' :
+            completed ? 'bg-accent-sage/15' :
             skipped ? 'bg-muted' :
-            isMorning ? 'bg-amber-500/10' : 'bg-indigo-500/10',
+            isMorning ? 'bg-accent-gold/10' : 'bg-accent-violet/10',
           )}>
             {completed ? (
-              <Check className="size-3 text-emerald-500" />
+              <Check className="size-3 text-accent-sage" />
             ) : skipped ? (
               <Ban className="size-3 text-muted-foreground" />
             ) : (
-              <Icon className={cn('size-3', isMorning ? 'text-amber-500' : 'text-indigo-400')} />
+              <Icon className={cn('size-3', isMorning ? 'text-accent-gold' : 'text-accent-violet')} />
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className={cn(
               'text-[11px] font-medium leading-tight truncate',
               skipped && 'line-through text-muted-foreground',
-              completed && 'text-emerald-600 dark:text-emerald-400',
+              completed && 'text-accent-sage',
             )}>
               {label}
             </div>
@@ -531,9 +532,9 @@ function KanbanCard({
               <div key={i} className="flex items-center gap-1.5 py-0.5">
                 <div className={cn(
                   'size-1 rounded-full shrink-0',
-                  completed ? 'bg-emerald-500' :
+                  completed ? 'bg-accent-sage' :
                   skipped ? 'bg-muted-foreground/30' :
-                  isMorning ? 'bg-amber-500/50' : 'bg-indigo-400/50',
+                  isMorning ? 'bg-accent-gold/50' : 'bg-accent-violet/50',
                 )} />
                 <span className={cn(
                   'text-[10px] flex-1 truncate',
@@ -598,9 +599,9 @@ function WorkoutKanbanCard({
     <div
       className={cn(
         'rounded-lg border transition-all relative overflow-hidden',
-        completed && 'border-emerald-500/30 bg-emerald-500/5',
+        completed && 'border-accent-sage/30 bg-accent-sage/5',
         skipped && 'border-muted bg-muted/10 opacity-60',
-        hasProgress && 'border-amber-500/30 bg-amber-500/5',
+        hasProgress && 'border-accent-gold/30 bg-accent-gold/5',
         !completed && !skipped && !hasProgress && !isFuture && isToday && 'border-primary/20 bg-primary/[0.03]',
         !completed && !skipped && !hasProgress && isFuture && 'border-dashed border-border/40',
         !completed && !skipped && !hasProgress && !isFuture && !isToday && 'border-border/50',
@@ -609,9 +610,9 @@ function WorkoutKanbanCard({
       {/* Focus color accent bar */}
       <div className={cn(
         'absolute left-0 top-0 bottom-0 w-1 rounded-l-lg',
-        completed ? 'bg-emerald-500' :
+        completed ? 'bg-accent-sage' :
         skipped ? 'bg-slate-400' :
-        hasProgress ? 'bg-amber-500' :
+        hasProgress ? 'bg-accent-gold' :
         focusConfig.accent,
       )} />
 
@@ -623,12 +624,12 @@ function WorkoutKanbanCard({
         <div className="flex items-center gap-1.5 mb-1">
           <div className={cn(
             'flex items-center justify-center size-5 rounded shrink-0',
-            completed ? 'bg-emerald-500/15' :
+            completed ? 'bg-accent-sage/15' :
             skipped ? 'bg-muted' :
             focusConfig.bg,
           )}>
             {completed ? (
-              <Check className="size-3 text-emerald-500" />
+              <Check className="size-3 text-accent-sage" />
             ) : skipped ? (
               <Ban className="size-3 text-muted-foreground" />
             ) : (
@@ -639,7 +640,7 @@ function WorkoutKanbanCard({
             <div className={cn(
               'text-[11px] font-semibold leading-tight truncate',
               skipped && 'line-through text-muted-foreground',
-              completed && 'text-emerald-600 dark:text-emerald-400',
+              completed && 'text-accent-sage',
             )}>
               {workout?.name || focus}
             </div>
@@ -661,10 +662,10 @@ function WorkoutKanbanCard({
         </div>
 
         <div className="flex items-center gap-1 mb-1.5">
-          {hasSections.warmup && <div className="size-1.5 rounded-full bg-blue-400/60" />}
-          <div className={cn('size-1.5 rounded-full', completed ? 'bg-emerald-500' : focusConfig.accent)} />
-          {hasSections.finisher && <div className="size-1.5 rounded-full bg-orange-400/60" />}
-          {hasSections.metabolic && <div className="size-1.5 rounded-full bg-red-400/60" />}
+          {hasSections.warmup && <div className="size-1.5 rounded-full bg-accent-azure/60" />}
+          <div className={cn('size-1.5 rounded-full', completed ? 'bg-accent-sage' : focusConfig.accent)} />
+          {hasSections.finisher && <div className="size-1.5 rounded-full bg-accent-ember/60" />}
+          {hasSections.metabolic && <div className="size-1.5 rounded-full bg-accent-rose/60" />}
           {hasSections.mobility && <div className="size-1.5 rounded-full bg-teal-400/60" />}
         </div>
 
@@ -673,7 +674,7 @@ function WorkoutKanbanCard({
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-500',
-                completed ? 'bg-emerald-500' : 'bg-amber-500',
+                completed ? 'bg-accent-sage' : 'bg-accent-gold',
               )}
               style={{ width: `${completed ? 100 : progressPct}%` }}
             />
@@ -695,7 +696,7 @@ function WorkoutKanbanCard({
           {workout?.warmup && (
             <InlineExerciseSection
               title="Warmup"
-              dotColor="bg-blue-400"
+              dotColor="bg-accent-azure"
               exercises={workout.warmup.exercises}
               completedIds={completedIds}
               skipped={skipped}
@@ -705,7 +706,7 @@ function WorkoutKanbanCard({
           {workout && workout.exercises.length > 0 && (
             <InlineExerciseSection
               title={`Main${totalExercises > 0 ? ` (${completedCount}/${totalExercises})` : ''}`}
-              dotColor={completed ? 'bg-emerald-500' : focusConfig.accent}
+              dotColor={completed ? 'bg-accent-sage' : focusConfig.accent}
               exercises={workout.exercises}
               completedIds={completedIds}
               skipped={skipped}
@@ -716,7 +717,7 @@ function WorkoutKanbanCard({
           {workout?.finisher && workout.finisher.length > 0 && (
             <InlineExerciseSection
               title="Finisher"
-              dotColor="bg-orange-400"
+              dotColor="bg-accent-ember"
               exercises={workout.finisher}
               completedIds={completedIds}
               skipped={skipped}
@@ -726,7 +727,7 @@ function WorkoutKanbanCard({
           {workout?.metabolicFlush && (
             <InlineExerciseSection
               title="Metabolic Flush"
-              dotColor="bg-red-400"
+              dotColor="bg-accent-rose"
               exercises={workout.metabolicFlush.exercises}
               completedIds={completedIds}
               skipped={skipped}
@@ -778,13 +779,13 @@ function InlineExerciseSection({
           <div key={ex.id || i} className="flex items-center gap-1.5 py-[1px]">
             <div className={cn(
               'size-1 rounded-full shrink-0',
-              isDone ? 'bg-emerald-500' :
+              isDone ? 'bg-accent-sage' :
               skipped ? 'bg-muted-foreground/30' :
               dotColor,
             )} />
             <span className={cn(
               'text-[10px] flex-1 truncate',
-              isDone && 'text-emerald-600 dark:text-emerald-400',
+              isDone && 'text-accent-sage',
               skipped && !isDone && 'line-through text-muted-foreground',
             )}>
               {ex.name}
@@ -831,7 +832,7 @@ function MobileKanbanRow({
 }: MobileKanbanRowProps) {
   const [expanded, setExpanded] = useState(true)
   const FocusIcon = focusConfig.icon
-  const ringColor = status === 'complete' ? '#10b981' : status === 'partial' ? '#f59e0b' : status === 'skipped' ? '#64748b' : '#10b981'
+  const ringColor = status === 'complete' ? HEX.sage : status === 'partial' ? HEX.gold : status === 'skipped' ? HEX.slate : HEX.sage
   const totalExercises = workout?.exercises.length ?? 0
   const completedCount = dayCompletion?.workout?.exercisesCompleted?.length ?? 0
   const completedIds = new Set<string>(dayCompletion?.workout?.exercisesCompleted ?? [])
@@ -840,7 +841,7 @@ function MobileKanbanRow({
     <div className={cn(
       'rounded-xl border transition-all overflow-hidden',
       isToday && 'border-primary/30 bg-gradient-to-r from-primary/[0.06] to-primary/[0.02] shadow-[0_0_12px_-3px] shadow-primary/20',
-      !isToday && status === 'complete' && 'bg-emerald-500/[0.03] border-emerald-500/20',
+      !isToday && status === 'complete' && 'bg-accent-sage/[0.03] border-accent-sage/20',
       !isToday && status === 'skipped' && 'opacity-60 border-muted',
       isFuture && !isToday && 'opacity-50 border-dashed',
       !isToday && !isFuture && status !== 'complete' && status !== 'skipped' && 'border-border/50',
@@ -994,29 +995,29 @@ function MobileDetailSection({
   const isMorning = type === 'morning'
   const isWorkout = type === 'workout'
   const Icon = isMorning ? Sun : isWorkout ? (focusConfig?.icon ?? Dumbbell) : Moon
-  const accentBg = isMorning ? 'bg-amber-500/5' : isWorkout ? (focusConfig?.bg ?? 'bg-muted/10') : 'bg-indigo-500/5'
-  const iconColor = isMorning ? 'text-amber-500' : isWorkout ? (focusConfig?.color ?? 'text-foreground') : 'text-indigo-400'
+  const accentBg = isMorning ? 'bg-accent-gold/5' : isWorkout ? (focusConfig?.bg ?? 'bg-muted/10') : 'bg-accent-violet/5'
+  const iconColor = isMorning ? 'text-accent-gold' : isWorkout ? (focusConfig?.color ?? 'text-foreground') : 'text-accent-violet'
 
   return (
     <div className={cn(
       'rounded-lg border p-2.5 relative overflow-hidden',
-      completed && 'border-emerald-500/20 bg-emerald-500/5',
+      completed && 'border-accent-sage/20 bg-accent-sage/5',
       skipped && 'border-muted opacity-60',
       !completed && !skipped && 'border-border/40',
       !completed && !skipped && accentBg,
     )}>
       {isWorkout && focusConfig && (
-        <div className={cn('absolute left-0 top-0 bottom-0 w-1', completed ? 'bg-emerald-500' : skipped ? 'bg-slate-400' : focusConfig.accent)} />
+        <div className={cn('absolute left-0 top-0 bottom-0 w-1', completed ? 'bg-accent-sage' : skipped ? 'bg-slate-400' : focusConfig.accent)} />
       )}
       <div className={cn(isWorkout && 'pl-1.5')}>
         {/* Header */}
         <div className="flex items-center gap-2 mb-1.5">
           <div className={cn(
             'flex items-center justify-center size-6 rounded-md',
-            completed ? 'bg-emerald-500/15' : skipped ? 'bg-muted' : accentBg,
+            completed ? 'bg-accent-sage/15' : skipped ? 'bg-muted' : accentBg,
           )}>
             {completed ? (
-              <Check className="size-3.5 text-emerald-500" />
+              <Check className="size-3.5 text-accent-sage" />
             ) : skipped ? (
               <Ban className="size-3.5 text-muted-foreground" />
             ) : (
@@ -1026,7 +1027,7 @@ function MobileDetailSection({
           <div className="min-w-0 flex-1">
             <span className={cn(
               'text-xs font-semibold',
-              completed && 'text-emerald-600 dark:text-emerald-400',
+              completed && 'text-accent-sage',
               skipped && 'line-through text-muted-foreground',
             )}>
               {label}
@@ -1041,12 +1042,12 @@ function MobileDetailSection({
         {isWorkout && (warmupCount || finisherCount) && (
           <div className="flex items-center gap-1.5 mb-1.5">
             {warmupCount && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-400/10 text-blue-400 font-medium">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent-azure/10 text-accent-azure font-medium">
                 Warmup · {warmupCount}
               </span>
             )}
             {finisherCount && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-400/10 text-orange-400 font-medium">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent-ember/10 text-accent-ember font-medium">
                 Finisher · {finisherCount}
               </span>
             )}
@@ -1061,14 +1062,14 @@ function MobileDetailSection({
               <div key={ex.id || i} className="flex items-center gap-1.5 py-0.5">
                 <div className={cn(
                   'size-1.5 rounded-full shrink-0',
-                  isDone ? 'bg-emerald-500' :
-                  completed ? 'bg-emerald-500' :
+                  isDone ? 'bg-accent-sage' :
+                  completed ? 'bg-accent-sage' :
                   skipped ? 'bg-muted-foreground/30' :
-                  isMorning ? 'bg-amber-500/50' : isWorkout ? (focusConfig?.accent ?? 'bg-muted') : 'bg-indigo-400/50',
+                  isMorning ? 'bg-accent-gold/50' : isWorkout ? (focusConfig?.accent ?? 'bg-muted') : 'bg-accent-violet/50',
                 )} />
                 <span className={cn(
                   'text-[11px] flex-1 truncate',
-                  isDone && 'text-emerald-600 dark:text-emerald-400',
+                  isDone && 'text-accent-sage',
                   skipped && !isDone && 'line-through text-muted-foreground',
                 )}>
                   {ex.name}
@@ -1109,12 +1110,12 @@ function StatusDot({
         )}>
           <div className={cn(
             'flex items-center justify-center size-7 rounded-lg',
-            completed && 'bg-emerald-500/15',
+            completed && 'bg-accent-sage/15',
             skipped && 'bg-muted',
             !completed && !skipped && 'bg-muted/50',
           )}>
             {completed ? (
-              <Check className="size-3.5 text-emerald-500" />
+              <Check className="size-3.5 text-accent-sage" />
             ) : skipped ? (
               <Ban className="size-3 text-muted-foreground" />
             ) : (
@@ -1122,7 +1123,7 @@ function StatusDot({
             )}
           </div>
           {progress && (
-            <span className="text-[9px] font-medium text-amber-500">{progress}</span>
+            <span className="text-[9px] font-medium text-accent-gold">{progress}</span>
           )}
         </div>
       </TooltipTrigger>

@@ -95,14 +95,14 @@ export function HueLightItem({
       const warmth = (ct - 153) / (500 - 153)
       if (warmth > 0.6)
         return {
-          bg: 'bg-amber-400',
-          shadow: 'shadow-amber-400/30',
+          bg: 'bg-accent-gold',
+          shadow: 'shadow-accent-gold/30',
           icon: 'text-amber-950',
         }
       if (warmth > 0.3)
         return {
-          bg: 'bg-yellow-300',
-          shadow: 'shadow-yellow-300/30',
+          bg: 'bg-accent-gold',
+          shadow: 'shadow-accent-gold/30',
           icon: 'text-yellow-950',
         }
       return {
@@ -117,43 +117,43 @@ export function HueLightItem({
       const h = hue / 65535
       if (h < 0.1 || h > 0.9)
         return {
-          bg: 'bg-red-400',
-          shadow: 'shadow-red-400/30',
+          bg: 'bg-accent-rose',
+          shadow: 'shadow-accent-rose/30',
           icon: 'text-red-950',
         }
       if (h < 0.2)
         return {
-          bg: 'bg-orange-400',
-          shadow: 'shadow-orange-400/30',
+          bg: 'bg-accent-ember',
+          shadow: 'shadow-accent-ember/30',
           icon: 'text-orange-950',
         }
       if (h < 0.35)
         return {
-          bg: 'bg-yellow-400',
-          shadow: 'shadow-yellow-400/30',
+          bg: 'bg-accent-gold',
+          shadow: 'shadow-accent-gold/30',
           icon: 'text-yellow-950',
         }
       if (h < 0.5)
         return {
-          bg: 'bg-green-400',
-          shadow: 'shadow-green-400/30',
+          bg: 'bg-accent-sage',
+          shadow: 'shadow-accent-sage/30',
           icon: 'text-green-950',
         }
       if (h < 0.6)
         return {
-          bg: 'bg-cyan-400',
-          shadow: 'shadow-cyan-400/30',
+          bg: 'bg-accent-teal',
+          shadow: 'shadow-accent-teal/30',
           icon: 'text-cyan-950',
         }
       if (h < 0.75)
         return {
-          bg: 'bg-blue-400',
-          shadow: 'shadow-blue-400/30',
+          bg: 'bg-accent-azure',
+          shadow: 'shadow-accent-azure/30',
           icon: 'text-blue-950',
         }
       return {
-        bg: 'bg-purple-400',
-        shadow: 'shadow-purple-400/30',
+        bg: 'bg-accent-violet',
+        shadow: 'shadow-accent-violet/30',
         icon: 'text-purple-950',
       }
     }

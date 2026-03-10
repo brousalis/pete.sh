@@ -95,8 +95,8 @@ export function DeckDesktop() {
     <div className="rounded-2xl bg-gradient-to-br from-card to-card/80 p-4 shadow-lg ">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-blue-500/20 p-2">
-            <Monitor className="size-5 text-blue-500" />
+          <div className="rounded-lg bg-accent-azure/20 p-2">
+            <Monitor className="size-5 text-accent-azure" />
           </div>
           <div className="text-sm font-semibold text-foreground">Desktop</div>
         </div>

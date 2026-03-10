@@ -241,9 +241,9 @@ export function CalendarMini({
                         <span
                           className={cn(
                             'size-1 rounded-full',
-                            fitnessStatus === 'complete' && 'bg-green-500',
-                            fitnessStatus === 'partial' && 'bg-amber-400',
-                            fitnessStatus === 'rest' && 'bg-slate-400'
+                            fitnessStatus === 'complete' && 'bg-accent-sage',
+                            fitnessStatus === 'partial' && 'bg-accent-gold',
+                            fitnessStatus === 'rest' && 'bg-accent-slate'
                           )}
                         />
                       )}
@@ -254,8 +254,8 @@ export function CalendarMini({
                         <span
                           className={cn(
                             'size-1 rounded-full',
-                            mealPlanStatus === 'planned' && 'bg-teal-500',
-                            mealPlanStatus === 'skipped' && 'bg-slate-400'
+                            mealPlanStatus === 'planned' && 'bg-accent-teal',
+                            mealPlanStatus === 'skipped' && 'bg-accent-slate'
                           )}
                         />
                       )}

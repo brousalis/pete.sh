@@ -225,26 +225,26 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
       {/* Inline stats bar */}
       <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 px-4 py-2">
         <span className="flex items-center gap-1.5 text-sm">
-          <Clock className="size-4 text-blue-500" />
+          <Clock className="size-4 text-accent-azure" />
           <strong>{walk.duration ? formatWalkDuration(walk.duration) : '-'}</strong>
         </span>
         <span className="text-muted-foreground">·</span>
         <span className="flex items-center gap-1.5 text-sm">
-          <Route className="size-4 text-green-500" />
+          <Route className="size-4 text-accent-sage" />
           <strong>
             {walk.distanceMiles ? formatWalkDistance(walk.distanceMiles) : '-'}
           </strong>
         </span>
         <span className="text-muted-foreground">·</span>
         <span className="flex items-center gap-1.5 text-sm">
-          <Flame className="size-4 text-orange-500" />
+          <Flame className="size-4 text-accent-ember" />
           <strong>
             {workout?.activeCalories ? `${Math.round(workout.activeCalories)} cal` : '-'}
           </strong>
         </span>
         <span className="text-muted-foreground">·</span>
         <span className="flex items-center gap-1.5 text-sm">
-          <Mountain className="size-4 text-purple-500" />
+          <Mountain className="size-4 text-accent-violet" />
           <strong>
             {workout?.elevationGainMeters
               ? `${Math.round(workout.elevationGainMeters * 3.28084)} ft`
@@ -314,7 +314,7 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
         <Card>
           <CardHeader className="p-3 pb-0">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Heart className="size-4 text-red-500" />
+              <Heart className="size-4 text-accent-rose" />
               Heart Rate
             </CardTitle>
           </CardHeader>
@@ -333,7 +333,7 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
                     </div>
                   )}
                   {workout.hrMax && (
-                    <div className="text-red-400 text-sm">
+                    <div className="text-accent-rose text-sm">
                       <p className="font-medium">{workout.hrMax}</p>
                       <p className="text-xs">max</p>
                     </div>
@@ -358,11 +358,11 @@ export function MapleWalkDetail({ walkId, onBack, onDeleted }: MapleWalkDetailPr
                               <div
                                 className={cn(
                                   'h-full rounded-full',
-                                  zone.name === 'rest' && 'bg-gray-400',
-                                  zone.name === 'warmup' && 'bg-green-400',
-                                  zone.name === 'fatBurn' && 'bg-yellow-400',
-                                  zone.name === 'cardio' && 'bg-orange-400',
-                                  zone.name === 'peak' && 'bg-red-400'
+                                  zone.name === 'rest' && 'bg-accent-slate',
+                                  zone.name === 'warmup' && 'bg-accent-sage',
+                                  zone.name === 'fatBurn' && 'bg-accent-gold',
+                                  zone.name === 'cardio' && 'bg-accent-ember',
+                                  zone.name === 'peak' && 'bg-accent-rose'
                                 )}
                                 style={{ width: `${zone.percentage}%` }}
                               />

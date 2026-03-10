@@ -82,18 +82,18 @@ export function TodayHero() {
   }
 
   const getWeatherIcon = () => {
-    if (!weather) return <Cloud className="size-8 text-slate-400" />
+    if (!weather) return <Cloud className="size-8 text-accent-slate" />
     const condition = weather.properties.textDescription?.toLowerCase() || ''
     if (condition.includes('sun') || condition.includes('clear')) {
-      return <Sun className="size-8 text-amber-400" />
+      return <Sun className="size-8 text-accent-gold" />
     }
     if (condition.includes('rain') || condition.includes('drizzle')) {
-      return <CloudRain className="size-8 text-blue-400" />
+      return <CloudRain className="size-8 text-accent-azure" />
     }
     if (condition.includes('snow')) {
-      return <CloudSnow className="size-8 text-cyan-300" />
+      return <CloudSnow className="size-8 text-accent-teal" />
     }
-    return <Cloud className="size-8 text-slate-400" />
+    return <Cloud className="size-8 text-accent-slate" />
   }
 
   const tempC = weather?.properties.temperature.value
@@ -110,7 +110,7 @@ export function TodayHero() {
 
   if (!mounted) {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card/80 to-card p-6 md:p-8">
         <div className="h-24 animate-pulse rounded-lg bg-white/5" />
       </div>
     )
@@ -122,7 +122,7 @@ export function TodayHero() {
 
   return (
     <motion.div
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card/80 to-card p-6 md:p-8"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.smooth}
@@ -135,7 +135,7 @@ export function TodayHero() {
         transition={{ ...transitions.smooth, delay: 0.2 }}
       />
       <motion.div
-        className="pointer-events-none absolute bottom-0 -left-10 size-40 rounded-full bg-blue-500/10 blur-2xl"
+        className="pointer-events-none absolute bottom-0 -left-10 size-40 rounded-full bg-accent-azure/10 blur-2xl"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...transitions.smooth, delay: 0.3 }}
@@ -200,7 +200,7 @@ export function TodayHero() {
                   transition={{ ...transitions.smooth, delay: 0.25 }}
                   whileHover={{
                     scale: 1.02,
-                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    backgroundColor: 'hsl(var(--foreground) / 0.08)',
                   }}
                 >
                   <motion.span
@@ -259,7 +259,7 @@ export function TodayHero() {
                     transition={{ ...transitions.smooth, delay: 0.3 }}
                     whileHover={{
                       scale: 1.02,
-                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      backgroundColor: 'hsl(var(--foreground) / 0.08)',
                     }}
                   >
                     <motion.div

@@ -41,14 +41,14 @@ export function DailyRoutineCard({ routine, completion, day, onComplete }: Daily
 
   const Icon = routine.type === "morning" ? Sun : Moon
   const iconBgClass = routine.type === "morning" 
-    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" 
-    : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+    ? "bg-accent-gold/10 text-accent-gold" 
+    : "bg-accent-violet/10 text-accent-violet"
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div className={cn(
         "rounded-lg border transition-all",
-        isCompleted && "bg-green-500/5 border-green-500/20",
+        isCompleted && "bg-accent-sage/5 border-accent-sage/20",
         !isCompleted && "bg-muted/30"
       )}>
         {/* Compact Header - Always Visible */}
@@ -69,7 +69,7 @@ export function DailyRoutineCard({ routine, completion, day, onComplete }: Daily
 
             <div className="flex items-center gap-2 shrink-0">
               {isCompleted ? (
-                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                <Badge variant="outline" className="bg-accent-sage/10 text-accent-sage border-accent-sage/30 text-xs">
                   Done
                 </Badge>
               ) : (

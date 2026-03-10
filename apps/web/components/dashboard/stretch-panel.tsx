@@ -105,16 +105,16 @@ export function StretchPanel({
 
   const themeColors = type === "morning"
     ? {
-        iconBg: "bg-amber-500/10",
-        iconColor: "text-amber-500",
-        borderColor: "border-amber-500/20",
-        accentBg: "bg-amber-500/5",
+        iconBg: "bg-accent-gold/10",
+        iconColor: "text-accent-gold",
+        borderColor: "border-accent-gold/20",
+        accentBg: "bg-accent-gold/5",
       }
     : {
-        iconBg: "bg-indigo-500/10",
-        iconColor: "text-indigo-500",
-        borderColor: "border-indigo-500/20",
-        accentBg: "bg-indigo-500/5",
+        iconBg: "bg-accent-violet/10",
+        iconColor: "text-accent-violet",
+        borderColor: "border-accent-violet/20",
+        accentBg: "bg-accent-violet/5",
       }
 
   // Get YouTube video IDs for stretches
@@ -280,7 +280,7 @@ export function StretchPanel({
               <div className="font-medium text-sm truncate text-foreground/80">{routine.name}</div>
               <div className="text-[11px] text-muted-foreground">{routine.duration}m</div>
             </div>
-            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 text-[10px] h-5 shrink-0 font-medium">
+            <Badge className="bg-accent-sage/15 text-accent-sage border-0 text-[10px] h-5 shrink-0 font-medium">
               Done
             </Badge>
           </div>
@@ -296,7 +296,7 @@ export function StretchPanel({
                     key={idx}
                     className="flex items-center gap-2 px-2 py-2 sm:py-1.5 rounded"
                   >
-                    <Check className="size-4 sm:size-3 text-emerald-500/70 shrink-0" />
+                    <Check className="size-4 sm:size-3 text-accent-sage/70 shrink-0" />
                     <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
                       {exercise.name}
                     </span>
@@ -498,7 +498,7 @@ export function StretchPanel({
                     isExerciseCompleted
                       ? "bg-muted/30 border-transparent"
                       : "bg-muted/30 border-transparent",
-                    isTimerActive && "ring-1 ring-blue-500/50"
+                    isTimerActive && "ring-1 ring-accent-azure/50"
                   )}
                 >
                   {/* Exercise Row - larger touch target */}
@@ -520,7 +520,7 @@ export function StretchPanel({
                       aria-label={isExerciseCompleted ? "Mark as incomplete" : "Mark as complete"}
                     >
                       {isExerciseCompleted ? (
-                        <Check className="size-4 text-green-500" />
+                        <Check className="size-4 text-accent-sage" />
                       ) : (
                         <div className="size-4 rounded-full border-2 border-muted-foreground/30" />
                       )}
@@ -610,8 +610,8 @@ export function StretchPanel({
                           className={cn(
                             "h-7 sm:h-6 px-2 text-[11px] sm:text-[10px] gap-1 touch-manipulation",
                             type === "morning"
-                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
-                              : "text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10"
+                              ? "text-accent-gold hover:text-accent-gold hover:bg-accent-gold/10"
+                              : "text-accent-violet hover:text-accent-violet hover:bg-accent-violet/10"
                           )}
                           onClick={() => openFullscreenTimer(idx)}
                           disabled={isExerciseCompleted}

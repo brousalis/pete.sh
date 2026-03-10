@@ -212,8 +212,8 @@ export default function ConcertDetailPage() {
                       className={cn(
                         'size-6 sm:size-7',
                         concert.rating && i < concert.rating
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-muted-foreground/30 hover:text-amber-300'
+                          ? 'fill-accent-gold text-accent-gold'
+                          : 'text-muted-foreground/30 hover:text-accent-gold/70'
                       )}
                     />
                   </button>

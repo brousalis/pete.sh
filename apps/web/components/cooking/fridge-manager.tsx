@@ -73,8 +73,8 @@ export function FridgeManager({
       <SheetContent className="flex flex-col sm:max-w-md">
         <SheetHeader className="pb-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-green-500/15">
-              <Snowflake className="size-4 text-green-500" />
+            <div className="flex size-8 items-center justify-center rounded-lg bg-accent-sage/15">
+              <Snowflake className="size-4 text-accent-sage" />
             </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-base">My Fridge</SheetTitle>
@@ -113,7 +113,7 @@ export function FridgeManager({
             <div className="flex items-center gap-2">
               <Snowflake className={cn(
                 'size-4',
-                fridgeFilterActive ? 'text-green-500' : 'text-muted-foreground'
+                fridgeFilterActive ? 'text-accent-sage' : 'text-muted-foreground'
               )} />
               <span className="text-sm font-medium">Use as recipe filter</span>
             </div>
@@ -146,12 +146,12 @@ export function FridgeManager({
                   <Badge
                     key={item}
                     variant="secondary"
-                    className="text-xs gap-1 pr-1 h-7 bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                    className="text-xs gap-1 pr-1 h-7 bg-accent-sage/10 text-accent-sage border-accent-sage/20"
                   >
                     {item}
                     <button
                       onClick={() => removeFridgeItem(item)}
-                      className="rounded-full p-0.5 hover:bg-green-500/20 transition-colors"
+                      className="rounded-full p-0.5 hover:bg-accent-sage/20 transition-colors"
                     >
                       <X className="size-3" />
                     </button>

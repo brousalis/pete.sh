@@ -87,14 +87,14 @@ export function DeckWeather() {
       <div className="space-y-0.5">
         {humidity !== null && (
           <div className="flex items-center gap-1.5 text-xs">
-            <Droplets className="size-3 text-blue-500" />
+            <Droplets className="size-3 text-accent-azure" />
             <span className="text-muted-foreground">Humidity:</span>
             <span className="font-semibold text-foreground">{Math.round(humidity)}%</span>
           </div>
         )}
         {windSpeedMph !== null && (
           <div className="flex items-center gap-1.5 text-xs">
-            <Wind className="size-3 text-slate-500" />
+            <Wind className="size-3 text-accent-slate" />
             <span className="text-muted-foreground">Wind:</span>
             <span className="font-semibold text-foreground">{windSpeedMph} mph</span>
           </div>

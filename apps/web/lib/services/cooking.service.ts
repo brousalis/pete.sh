@@ -37,6 +37,30 @@ export class CookingService {
       throw new Error('Supabase not configured')
     }
 
+    // When ingredientSearch is used alongside other filters, we run two
+    // queries and intersect: one for ingredient match (requires JOIN) and
+    // one for the other column-level filters. This avoids PostgREST
+    // limitations combining array overlap with inner JOINs.
+    if (filters?.ingredientSearch) {
+      const ingredientQuery = supabase
+        .from('recipes')
+        .select('id, recipe_ingredients!inner(name)')
+        .ilike('recipe_ingredients.name', `%${filters.ingredientSearch}%`)
+
+      const { data: ingData, error: ingError } = await ingredientQuery
+      if (ingError) {
+        console.error('Error searching by ingredient:', ingError)
+        throw new Error(`Failed to search by ingredient: ${ingError.message}`)
+      }
+
+      const matchingIds = new Set((ingData || []).map((r: { id: string }) => r.id))
+      if (matchingIds.size === 0) return []
+
+      const remaining = { ...filters, ingredientSearch: undefined }
+      const allRecipes = await this.getRecipes(remaining)
+      return allRecipes.filter((r) => matchingIds.has(r.id))
+    }
+
     let query = supabase.from('recipes').select('*').order('created_at', { ascending: false })
 
     if (filters?.search) {
@@ -57,6 +81,10 @@ export class CookingService {
 
     if (filters?.tags && filters.tags.length > 0) {
       query = query.contains('tags', filters.tags)
+    }
+
+    if (filters?.nutritionCategory && filters.nutritionCategory.length > 0) {
+      query = query.overlaps('nutrition_category', filters.nutritionCategory)
     }
 
     const { data, error } = await query

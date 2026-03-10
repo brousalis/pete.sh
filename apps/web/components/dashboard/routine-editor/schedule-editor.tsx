@@ -54,16 +54,16 @@ const FOCUS_OPTIONS = [
 ]
 
 const FOCUS_COLORS: Record<string, string> = {
-  strength: 'bg-red-500/15 text-red-400 border-red-500/30',
-  core: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-  cardio: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-  hiit: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-  recovery: 'bg-green-500/15 text-green-400 border-green-500/30',
-  conditioning: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-  hybrid: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  endurance: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
-  rest: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
-  circuit: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
+  strength: 'bg-accent-ember/15 text-accent-ember border-accent-ember/30',
+  core: 'bg-accent-azure/15 text-accent-azure border-accent-azure/30',
+  cardio: 'bg-accent-azure/15 text-accent-azure border-accent-azure/30',
+  hiit: 'bg-accent-gold/15 text-accent-gold border-accent-gold/30',
+  recovery: 'bg-accent-teal/15 text-accent-teal border-accent-teal/30',
+  conditioning: 'bg-accent-teal/15 text-accent-teal border-accent-teal/30',
+  hybrid: 'bg-accent-violet/15 text-accent-violet border-accent-violet/30',
+  endurance: 'bg-accent-rose/15 text-accent-rose border-accent-rose/30',
+  rest: 'bg-accent-slate/15 text-accent-slate border-accent-slate/30',
+  circuit: 'bg-accent-sage/15 text-accent-sage border-accent-sage/30',
 }
 
 function getFocusColor(focus: string): string {
@@ -71,7 +71,7 @@ function getFocusColor(focus: string): string {
   for (const [key, value] of Object.entries(FOCUS_COLORS)) {
     if (lowerFocus.includes(key)) return value
   }
-  return 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+  return 'bg-accent-slate/15 text-accent-slate border-accent-slate/30'
 }
 
 export function ScheduleEditor({ schedule, onUpdate }: ScheduleEditorProps) {

@@ -101,9 +101,9 @@ export function HomeEnvironmentCard() {
     <div className="space-y-4">
       <DashboardCardHeader
         icon={
-          <Lightbulb className="size-5 text-amber-500 dark:text-amber-400" />
+          <Lightbulb className="size-5 text-accent-gold" />
         }
-        iconContainerClassName="bg-amber-500/10"
+        iconContainerClassName="bg-accent-gold/10"
         title="Lights"
         badge={
           zones.length > 0 ? (

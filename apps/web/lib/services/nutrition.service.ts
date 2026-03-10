@@ -55,15 +55,22 @@ function getModel() {
   })
 }
 
+function getHaikuModel() {
+  if (!config.aiCoach.anthropicApiKey) {
+    throw new Error('Anthropic API key not configured')
+  }
+  const anthropic = createAnthropic({ apiKey: config.aiCoach.anthropicApiKey })
+  return anthropic('claude-haiku-4-5-20251001')
+}
+
 // ============================================
-// RATE LIMITING
+// RATE LIMITING + CONCURRENCY
 // ============================================
 
 async function waitForRateLimit(): Promise<void> {
   const now = Date.now()
   const oneHourAgo = now - 3600_000
 
-  // Purge old timestamps
   while (callTimestamps.length > 0 && (callTimestamps[0] ?? 0) < oneHourAgo) {
     callTimestamps.shift()
   }
@@ -76,6 +83,47 @@ async function waitForRateLimit(): Promise<void> {
   }
 
   callTimestamps.push(Date.now())
+}
+
+function createConcurrencyPool(limit: number) {
+  let active = 0
+  const queue: (() => void)[] = []
+
+  return async function <T>(fn: () => Promise<T>): Promise<T> {
+    while (active >= limit) {
+      await new Promise<void>((resolve) => queue.push(resolve))
+    }
+    active++
+    try {
+      return await fn()
+    } finally {
+      active--
+      queue.shift()?.()
+    }
+  }
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = 2,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      if (attempt === retries) throw err
+      const isRetryable = err instanceof Error && (
+        err.message.includes('429') || err.message.includes('500') ||
+        err.message.includes('502') || err.message.includes('503')
+      )
+      if (!isRetryable) throw err
+      const delay = baseDelayMs * Math.pow(2, attempt)
+      console.log(`[Nutrition] Retry ${attempt + 1}/${retries} after ${delay}ms`)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+  throw new Error('Unreachable')
 }
 
 // ============================================
@@ -218,17 +266,114 @@ function extractPortionData(portions: USDAFoodDetail['foodPortions']): {
 // INGREDIENT NAME NORMALIZATION
 // ============================================
 
+// ── Compound ingredients that should NOT be split ────────────────────
+
+const COMPOUND_INGREDIENTS = new Set([
+  'sweet potato', 'sweet potatoes', 'green onion', 'green onions',
+  'black bean', 'black beans', 'sour cream', 'cream cheese',
+  'bell pepper', 'bell peppers', 'brown sugar', 'brown rice',
+  'red onion', 'red onions', 'white wine', 'red wine',
+  'green bean', 'green beans', 'white bean', 'white beans',
+  'black pepper', 'white pepper', 'red pepper', 'green pepper',
+  'coconut milk', 'coconut oil', 'olive oil', 'sesame oil',
+  'peanut butter', 'almond butter', 'baking soda', 'baking powder',
+  'vanilla extract', 'maple syrup', 'soy sauce', 'fish sauce',
+  'hot sauce', 'tomato paste', 'tomato sauce', 'heavy cream',
+  'whipping cream', 'ice cream', 'greek yogurt', 'plain yogurt',
+  'lemon juice', 'lime juice', 'orange juice', 'apple cider',
+  'rice vinegar', 'white vinegar', 'dark chocolate', 'milk chocolate',
+  'bay leaf', 'bay leaves', 'flat leaf', 'curry powder',
+  'chili powder', 'garlic powder', 'onion powder',
+  'ground beef', 'ground turkey', 'ground pork', 'ground chicken',
+  'chicken breast', 'chicken thigh', 'chicken thighs',
+  'pork tenderloin', 'pork chop', 'pork chops',
+  'flank steak', 'sirloin steak',
+  'cauliflower rice', 'jasmine rice', 'basmati rice',
+  'egg white', 'egg whites', 'egg yolk', 'egg yolks',
+])
+
+// ── Adjectives to strip (only if not part of a compound) ────────────
+
+const STRIP_ADJECTIVES = /\b(large|small|medium|fresh|ripe|organic|raw|whole|dried|dry|extra|thin|thick|boneless|skinless|lite|light|plain|regular|standard|frozen|canned|jarred|packed|loosely|firmly|level|heaping|good|quality|favorite|your|our|about|approximately|roughly)\b/gi
+
+// ── Prep/method phrases embedded in ingredient names ────────────────
+
+const EMBEDDED_PREP_PHRASES = /\b(peeled|sliced|diced|chopped|minced|grated|shredded|julienned|cubed|trimmed|halved|quartered|crushed|beaten|whisked|melted|softened|cooked|toasted|roasted|grilled|sauteed|sautéed|blanched|steamed|boiled|mashed|deveined|deboned|pitted|seeded|cored|stemmed|destemmed|shelled|hulled|crumbled|torn)\b/gi
+
+const TRAILING_PREP = /\b(and |into |in |on |over |with |for ).*$/i
+
+// ── Depluralization ────────────────────────────────────────────────
+
+const PLURAL_EXCEPTIONS = new Set([
+  'hummus', 'couscous', 'asparagus', 'citrus', 'molasses',
+  'swiss', 'bass', 'grass', 'lass', 'class', 'floss',
+])
+
+function depluralize(word: string): string {
+  if (PLURAL_EXCEPTIONS.has(word)) return word
+  if (word.endsWith('ies') && word.length > 4) return word.slice(0, -3) + 'y'
+  if (word.endsWith('ves') && word.length > 4) return word.slice(0, -3) + 'f'
+  if (word.endsWith('oes') && word.length > 4) return word.slice(0, -2)
+  if (word.endsWith('ses') || word.endsWith('ches') || word.endsWith('shes') || word.endsWith('xes') || word.endsWith('zes')) {
+    return word.slice(0, -2)
+  }
+  if (word.endsWith('s') && !word.endsWith('ss') && word.length > 3) return word.slice(0, -1)
+  return word
+}
+
+// ── Synonym overrides for product names ─────────────────────────────
+
+const SYNONYM_OVERRIDES: Record<string, string> = {
+  'unexpected cheddar': 'cheddar cheese',
+  'triangoletti pasta': 'pasta',
+  'spaghetti triangoletti pasta': 'pasta',
+  'everything bagel seasoning': 'seasoning blend',
+  'everything but the bagel seasoning': 'seasoning blend',
+  'elote seasoning': 'seasoning blend',
+  'umami seasoning': 'seasoning blend',
+  'chile lime seasoning': 'seasoning blend',
+  'mushroom umami seasoning': 'seasoning blend',
+  'green goddess seasoning': 'seasoning blend',
+  'cauliflower gnocchi': 'potato gnocchi',
+  'zhoug sauce': 'herb sauce',
+  'bomba sauce': 'chili paste',
+  'ajika sauce': 'chili paste',
+}
+
 /**
- * Normalize an ingredient name for lookup in the nutrition cache.
- * Strips branding, prep notes, and lowercases.
+ * Normalize an ingredient name for nutrition cache lookup.
+ * Strips branding, prep notes, adjectives, depluralization, and synonym overrides.
  */
 export function normalizeForLookup(name: string): string {
+  // 1. Sanitize (strip brands, extract comma-separated prep notes)
   const sanitized = sanitizeIngredientName(name)
-  return sanitized.name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  let result = sanitized.name.toLowerCase()
+
+  // 2. Strip non-alpha characters
+  result = result.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim()
+
+  // 3. Check synonym overrides first (before any further processing)
+  if (SYNONYM_OVERRIDES[result]) return SYNONYM_OVERRIDES[result]!
+
+  // 4. Strip embedded prep phrases ("peeled and sliced into coins")
+  result = result.replace(EMBEDDED_PREP_PHRASES, '').replace(TRAILING_PREP, '').replace(/\s+/g, ' ').trim()
+
+  // 5. Strip adjectives (but protect compound ingredients)
+  const isCompound = COMPOUND_INGREDIENTS.has(result)
+  if (!isCompound) {
+    result = result.replace(STRIP_ADJECTIVES, '').replace(/\s+/g, ' ').trim()
+  }
+
+  // 6. Check synonym overrides again after stripping
+  if (SYNONYM_OVERRIDES[result]) return SYNONYM_OVERRIDES[result]!
+
+  // 7. Depluralize each word
+  result = result.split(' ').map(depluralize).join(' ')
+
+  // 8. Final cleanup
+  result = result.replace(/\s+/g, ' ').trim()
+
+  return result
 }
 
 // ============================================
@@ -248,6 +393,32 @@ async function findNutritionByName(
     .single()
 
   return (data as IngredientNutrition) ?? null
+}
+
+async function findNutritionByNames(
+  canonicalNames: string[]
+): Promise<Map<string, IngredientNutrition>> {
+  const results = new Map<string, IngredientNutrition>()
+  if (!canonicalNames.length) return results
+
+  const supabase = getSupabaseClientForOperation('read')
+  if (!supabase) return results
+
+  for (let i = 0; i < canonicalNames.length; i += 100) {
+    const chunk = canonicalNames.slice(i, i + 100)
+    const { data } = await supabase
+      .from('ingredient_nutrition')
+      .select('*')
+      .in('canonical_name', chunk)
+
+    if (data) {
+      for (const row of data as IngredientNutrition[]) {
+        results.set(row.canonical_name, row)
+      }
+    }
+  }
+
+  return results
 }
 
 async function upsertNutrition(
@@ -354,7 +525,7 @@ const AIEstimateSchema = z.object({
     saturated_fat_per_100g: z.number(),
     density_g_per_cup: z.number().nullable().optional(),
     portion_weight_g: z.number().nullable().optional(),
-    confidence: z.number().min(0).max(1),
+    confidence: z.number().describe('Confidence 0-1'),
   })),
 })
 
@@ -371,7 +542,7 @@ export async function estimateWithAI(
     return []
   }
 
-  const model = getModel()
+  const model = getHaikuModel()
   const ingredientList = ingredientNames
     .map((name, i) => `${i + 1}. "${name}"`)
     .join('\n')
@@ -469,40 +640,65 @@ export async function resolveIngredientsBatch(
   ingredientNames: string[]
 ): Promise<Map<string, IngredientNutrition>> {
   const results = new Map<string, IngredientNutrition>()
-  const toResolve: string[] = []
 
-  // 1. Check cache for all
+  // 1. Normalize all names
+  const canonicalNames: string[] = []
   for (const name of ingredientNames) {
     const canonical = normalizeForLookup(name)
-    if (!canonical) continue
-
-    const cached = await findNutritionByName(canonical)
-    if (cached) {
-      results.set(canonical, cached)
-    } else {
-      toResolve.push(canonical)
-    }
+    if (canonical) canonicalNames.push(canonical)
   }
 
-  if (!toResolve.length) return results
+  // 2. Batch cache lookup (single query instead of N)
+  const cached = await findNutritionByNames(canonicalNames)
+  for (const [name, nutrition] of cached) {
+    results.set(name, nutrition)
+  }
 
-  // 2. Try USDA for uncached
+  const toResolve = canonicalNames.filter((n) => !results.has(n))
+
+  if (!toResolve.length) {
+    console.log(`[Nutrition] All ${canonicalNames.length} ingredients found in cache`)
+    return results
+  }
+
+  console.log(`[Nutrition] ${results.size} cached, ${toResolve.length} need resolution`)
+
+  // 2. Try USDA for uncached (parallel with concurrency pool)
   const usdaFailed: string[] = []
   if (config.nutrition.isConfigured) {
-    for (const name of toResolve) {
-      try {
-        const usdaResult = await resolveViaUSDA(name)
-        if (usdaResult) {
-          const saved = await upsertNutrition(usdaResult)
-          if (saved) results.set(name, saved)
-          continue
-        }
-      } catch (err) {
-        console.error(`[Nutrition] USDA lookup failed for "${name}":`, err)
-      }
-      usdaFailed.push(name)
-    }
+    const pool = createConcurrencyPool(5)
+    let resolvedCount = 0
+    const failedSet = new Set<string>()
+
+    await Promise.allSettled(
+      toResolve.map((name) =>
+        pool(async () => {
+          try {
+            const usdaResult = await withRetry(() => resolveViaUSDA(name))
+            if (usdaResult) {
+              const saved = await upsertNutrition(usdaResult)
+              if (saved) results.set(name, saved)
+              resolvedCount++
+              if (resolvedCount % 20 === 0) {
+                console.log(`[Nutrition] USDA: ${resolvedCount}/${toResolve.length} resolved`)
+              }
+              return
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            if (!msg.includes('404')) {
+              console.error(`[Nutrition] USDA lookup failed for "${name}": ${msg}`)
+            }
+          }
+          failedSet.add(name)
+        })
+      )
+    )
+
+    usdaFailed.push(...failedSet)
+    console.log(`[Nutrition] USDA resolved ${resolvedCount}/${toResolve.length}, ${usdaFailed.length} need AI`)
   } else {
+    console.log(`[Nutrition] USDA not configured, falling back to AI for ${toResolve.length} ingredients`)
     usdaFailed.push(...toResolve)
   }
 
@@ -722,34 +918,62 @@ export async function enrichAllRecipes(
   const { data: recipes } = await query
   if (!recipes?.length) return { total: 0, enriched: 0, failed: 0 }
 
+  // Reset in-memory rate limiter for fresh run
+  callTimestamps.length = 0
+
   const total = recipes.length
   let enriched = 0
   let failed = 0
 
-  // 2. Dedup pass: collect all unique ingredient names
+  // 2. Batch-load all recipes and ingredients (2 queries instead of 2*N)
+  console.log(`[Nutrition] Loading ${total} recipes + ingredients in batch...`)
   onProgress?.({ total, completed: 0, failed: 0, phase: 'dedup' })
+
+  const recipeIds = recipes.map((r) => r.id)
+
+  // Batch load full recipes (chunk if >500 to avoid PostgREST limits)
+  const allFullRecipes: Record<string, unknown>[] = []
+  for (let i = 0; i < recipeIds.length; i += 100) {
+    const chunk = recipeIds.slice(i, i + 100)
+    const { data } = await supabase.from('recipes').select('*').in('id', chunk)
+    if (data) allFullRecipes.push(...data)
+  }
+  const recipeById = new Map(allFullRecipes.map((r: Record<string, unknown>) => [r.id as string, r]))
+
+  // Batch load all ingredients
+  const allIngredients: RecipeIngredient[] = []
+  for (let i = 0; i < recipeIds.length; i += 100) {
+    const chunk = recipeIds.slice(i, i + 100)
+    const { data } = await supabase
+      .from('recipe_ingredients')
+      .select('*')
+      .in('recipe_id', chunk)
+      .order('order_index', { ascending: true })
+    if (data) allIngredients.push(...(data as RecipeIngredient[]))
+  }
+
+  // Group ingredients by recipe_id
+  const ingredientsByRecipe = new Map<string, RecipeIngredient[]>()
+  for (const ing of allIngredients) {
+    const list = ingredientsByRecipe.get(ing.recipe_id) || []
+    list.push(ing)
+    ingredientsByRecipe.set(ing.recipe_id, list)
+  }
+
+  console.log(`[Nutrition] Loaded ${allFullRecipes.length} recipes, ${allIngredients.length} ingredients`)
 
   const allIngredientNames = new Set<string>()
   const recipeIngredientMap = new Map<string, RecipeWithIngredients>()
 
   for (const r of recipes) {
-    const { data: fullRecipe } = await supabase
-      .from('recipes')
-      .select('*')
-      .eq('id', r.id)
-      .single()
+    const fullRecipe = recipeById.get(r.id)
+    const ingredients = ingredientsByRecipe.get(r.id) || []
 
-    const { data: ingredients } = await supabase
-      .from('recipe_ingredients')
-      .select('*')
-      .eq('recipe_id', r.id)
-      .order('order_index')
-
-    if (fullRecipe && ingredients) {
+    if (fullRecipe) {
       const recipeWithIng: RecipeWithIngredients = {
-        ...fullRecipe,
-        nutrition_category: fullRecipe.nutrition_category ?? [],
-        ingredients: ingredients as RecipeIngredient[],
+        ...(fullRecipe as Record<string, unknown>) as unknown as RecipeWithIngredients,
+        nutrition_category: (fullRecipe as Record<string, unknown>).nutrition_category as string[] ?? [],
+        ingredients,
       }
       recipeIngredientMap.set(r.id, recipeWithIng)
 
@@ -760,11 +984,18 @@ export async function enrichAllRecipes(
     }
   }
 
+  console.log(`[Nutrition] Dedup complete: ${recipeIngredientMap.size} recipes, ${allIngredientNames.size} unique ingredients`)
+  onProgress?.({ total, completed: total, failed: 0, phase: 'dedup' })
+
   // 3. Resolve all unique ingredients in batch
+  const uniqueNames = Array.from(allIngredientNames)
+  console.log(`[Nutrition] Resolving ${uniqueNames.length} unique ingredients...`)
   onProgress?.({ total, completed: 0, failed: 0, phase: 'resolve' })
-  await resolveIngredientsBatch(Array.from(allIngredientNames))
+  await resolveIngredientsBatch(uniqueNames)
+  console.log(`[Nutrition] Ingredient resolution complete`)
 
   // 4. Enrich each recipe
+  console.log(`[Nutrition] Enriching ${recipeIngredientMap.size} recipes...`)
   for (const [recipeId, recipe] of recipeIngredientMap) {
     onProgress?.({
       total,
@@ -784,6 +1015,7 @@ export async function enrichAllRecipes(
   }
 
   onProgress?.({ total, completed: enriched + failed, failed, phase: 'done' })
+  console.log(`[Nutrition] Enrichment complete: ${enriched} enriched, ${failed} failed out of ${total}`)
 
   return { total, enriched, failed }
 }

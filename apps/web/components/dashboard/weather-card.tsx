@@ -55,18 +55,18 @@ export function WeatherCard() {
   const getConditionIcon = (description: string, size = 'size-10') => {
     const condition = description.toLowerCase()
     if (condition.includes('sun') || condition.includes('clear')) {
-      return <Sun className={`${size} text-amber-400`} />
+      return <Sun className={`${size} text-accent-gold`} />
     }
     if (condition.includes('rain') || condition.includes('drizzle')) {
-      return <CloudRain className={`${size} text-blue-400`} />
+      return <CloudRain className={`${size} text-accent-azure`} />
     }
     if (condition.includes('snow')) {
-      return <CloudSnow className={`${size} text-cyan-300`} />
+      return <CloudSnow className={`${size} text-accent-teal`} />
     }
     if (condition.includes('cloud') || condition.includes('overcast')) {
-      return <Cloudy className={`${size} text-slate-400`} />
+      return <Cloudy className={`${size} text-accent-slate`} />
     }
-    return <Cloud className={`${size} text-slate-400`} />
+    return <Cloud className={`${size} text-accent-slate`} />
   }
 
   if (loading && !current) {
@@ -103,12 +103,12 @@ export function WeatherCard() {
       <DashboardCardHeader
         icon={
           isClear ? (
-            <Sun className="size-5 text-sky-500 dark:text-sky-400" />
+            <Sun className="size-5 text-accent-azure" />
           ) : (
-            <Cloudy className="size-5 text-sky-500 dark:text-sky-400" />
+            <Cloudy className="size-5 text-accent-azure" />
           )
         }
-        iconContainerClassName="bg-sky-500/10"
+        iconContainerClassName="bg-accent-azure/10"
         title="Weather"
         onRefresh={fetchData}
         refreshing={loading}
@@ -118,7 +118,7 @@ export function WeatherCard() {
       {current && (
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
-            <Droplets className="size-4 shrink-0 text-blue-500" />
+            <Droplets className="size-4 shrink-0 text-accent-azure" />
             <div className="min-w-0">
               <p className="text-muted-foreground text-[10px] sm:text-xs">Humidity</p>
               <p className="text-sm font-semibold sm:text-base">
@@ -127,7 +127,7 @@ export function WeatherCard() {
             </div>
           </div>
           <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
-            <Wind className="size-4 shrink-0 text-slate-500" />
+            <Wind className="size-4 shrink-0 text-accent-slate" />
             <div className="min-w-0">
               <p className="text-muted-foreground text-[10px] sm:text-xs">Wind</p>
               <p className="text-sm font-semibold sm:text-base">
@@ -136,7 +136,7 @@ export function WeatherCard() {
             </div>
           </div>
           <div className="bg-muted/50 flex items-center gap-1.5 rounded-xl p-2 sm:gap-2 sm:p-3">
-            <Eye className="size-4 shrink-0 text-cyan-500" />
+            <Eye className="size-4 shrink-0 text-accent-teal" />
             <div className="min-w-0">
               <p className="text-muted-foreground text-[10px] sm:text-xs">Visibility</p>
               <p className="text-sm font-semibold sm:text-base">

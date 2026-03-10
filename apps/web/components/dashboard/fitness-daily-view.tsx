@@ -135,7 +135,7 @@ export function FitnessDailyView() {
           completion={todayData?.nightRoutine}
           onComplete={() => handleRoutineComplete("night")}
           icon={<Moon className="size-4" />}
-          iconBg="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+          iconBg="bg-accent-violet/10 text-accent-violet"
         />
 
         {/* Workout Card */}
@@ -180,7 +180,7 @@ function RoutineCard({ routine, completion, onComplete, icon, iconBg }: RoutineC
   return (
     <Card className={cn(
       "flex flex-col h-full",
-      isCompleted && "bg-green-500/5 border-green-500/20"
+      isCompleted && "bg-accent-sage/5 border-accent-sage/20"
     )}>
       <CardContent className="flex flex-col flex-1 p-2.5 sm:p-3">
         {/* Header */}
@@ -193,7 +193,7 @@ function RoutineCard({ routine, completion, onComplete, icon, iconBg }: RoutineC
             <div className="text-xs text-muted-foreground">{routine.duration}m</div>
           </div>
           {isCompleted && (
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs shrink-0">
+            <Badge variant="outline" className="bg-accent-sage/10 text-accent-sage border-accent-sage/30 text-xs shrink-0">
               Done
             </Badge>
           )}
@@ -256,12 +256,12 @@ function WorkoutCard({ workout, completion, day }: WorkoutCardProps) {
     <Link href={`/fitness/workout/${day}`} className="block h-full">
       <Card className={cn(
         "flex flex-col h-full transition-colors hover:bg-muted/50",
-        isCompleted && "bg-green-500/5 border-green-500/20"
+        isCompleted && "bg-accent-sage/5 border-accent-sage/20"
       )}>
         <CardContent className="flex flex-col flex-1 p-2.5 sm:p-3">
           {/* Header */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="rounded-md p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <div className="rounded-md p-1.5 bg-accent-azure/10 text-accent-azure">
               <Dumbbell className="size-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -271,7 +271,7 @@ function WorkoutCard({ workout, completion, day }: WorkoutCardProps) {
               </div>
             </div>
             {isCompleted ? (
-              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs shrink-0">
+              <Badge variant="outline" className="bg-accent-sage/10 text-accent-sage border-accent-sage/30 text-xs shrink-0">
                 Done
               </Badge>
             ) : (
@@ -320,9 +320,9 @@ function WorkoutCard({ workout, completion, day }: WorkoutCardProps) {
 // Rest Day Card
 function RestDayCard({ goal }: { goal?: string }) {
   return (
-    <Card className="flex flex-col h-full bg-blue-500/5 border-blue-500/20">
+    <Card className="flex flex-col h-full bg-accent-azure/5 border-accent-azure/20">
       <CardContent className="flex flex-col flex-1 p-2.5 sm:p-3 items-center justify-center text-center">
-        <div className="rounded-md p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 mb-2">
+        <div className="rounded-md p-2 bg-accent-azure/10 text-accent-azure mb-2">
           <Check className="size-5" />
         </div>
         <div className="font-medium text-sm">Rest Day</div>

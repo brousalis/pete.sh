@@ -49,8 +49,8 @@ export function DeckCoffee() {
         {/* Header */}
         <div className="mb-1.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <div className="rounded-lg bg-amber-500/20 p-1.5">
-              <Coffee className="size-4 text-amber-600 dark:text-amber-400" />
+            <div className="rounded-lg bg-accent-ember/20 p-1.5">
+              <Coffee className="size-4 text-accent-ember" />
             </div>
             <div>
               <div className="text-sm font-semibold text-foreground">Coffee</div>
@@ -58,18 +58,18 @@ export function DeckCoffee() {
             </div>
           </div>
           {recipe && (
-            <div className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5">
-              <MethodIcon className="size-3 text-amber-600" />
-              <span className="text-[10px] font-medium text-amber-600 capitalize">{recipe.roast}</span>
+            <div className="flex items-center gap-1 rounded-full bg-accent-ember/10 px-2 py-0.5">
+              <MethodIcon className="size-3 text-accent-ember" />
+              <span className="text-[10px] font-medium text-accent-ember capitalize">{recipe.roast}</span>
             </div>
           )}
         </div>
 
         {/* Recommended Dose - Hero */}
         {recipe && (
-          <div className="mb-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-center">
+          <div className="mb-1.5 rounded-lg border border-accent-ember/30 bg-accent-ember/5 p-2 text-center">
             <div className="flex items-center justify-center gap-1.5">
-              <Scale className="size-4 text-amber-600" />
+              <Scale className="size-4 text-accent-ember" />
               <span className="text-2xl font-bold tabular-nums">{recipe.coffee}g</span>
             </div>
             <div className="text-[10px] text-muted-foreground">

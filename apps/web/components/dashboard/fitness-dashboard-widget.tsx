@@ -117,7 +117,7 @@ export function FitnessDashboardWidget() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Flame className="size-5 text-orange-500" />
+              <Flame className="size-5 text-accent-ember" />
               Fitness
             </CardTitle>
             <CardDescription className="mt-1">
@@ -138,7 +138,7 @@ export function FitnessDashboardWidget() {
           <div className="rounded-lg border bg-muted/30 p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Flame className="size-4 text-orange-500" />
+                <Flame className="size-4 text-accent-ember" />
                 <span className="text-sm font-medium">Current Streak</span>
               </div>
               <div className="text-2xl font-bold">{consistency.currentStreak}</div>
@@ -154,11 +154,11 @@ export function FitnessDashboardWidget() {
           <h4 className="text-sm font-semibold">Daily Routines</h4>
 
           {/* Morning Routine */}
-          <div className={`rounded-lg border p-3 transition-all ${morningCompleted ? "bg-green-50/50 dark:bg-green-950/10 ring-1 ring-green-500/20" : ""}`}>
+          <div className={`rounded-lg border p-3 transition-all ${morningCompleted ? "bg-accent-sage/5 ring-1 ring-accent-sage/20" : ""}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-md bg-amber-100 dark:bg-amber-900/20 p-1.5">
-                  <Sun className="size-4 text-amber-600 dark:text-amber-400" />
+                <div className="rounded-md bg-accent-gold/10 p-1.5">
+                  <Sun className="size-4 text-accent-gold" />
                 </div>
                 <div>
                   <div className="text-sm font-medium">{routine.dailyRoutines.morning.name}</div>
@@ -166,7 +166,7 @@ export function FitnessDashboardWidget() {
                 </div>
               </div>
               {morningCompleted ? (
-                <CheckCircle2 className="size-5 text-green-500" />
+                <CheckCircle2 className="size-5 text-accent-sage" />
               ) : (
                 <Button
                   size="sm"
@@ -181,11 +181,11 @@ export function FitnessDashboardWidget() {
           </div>
 
           {/* Night Routine */}
-          <div className={`rounded-lg border p-3 transition-all ${nightCompleted ? "bg-green-50/50 dark:bg-green-950/10 ring-1 ring-green-500/20" : ""}`}>
+          <div className={`rounded-lg border p-3 transition-all ${nightCompleted ? "bg-accent-sage/5 ring-1 ring-accent-sage/20" : ""}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-md bg-indigo-100 dark:bg-indigo-900/20 p-1.5">
-                  <Moon className="size-4 text-indigo-600 dark:text-indigo-400" />
+                <div className="rounded-md bg-accent-violet/10 p-1.5">
+                  <Moon className="size-4 text-accent-violet" />
                 </div>
                 <div>
                   <div className="text-sm font-medium">{routine.dailyRoutines.night.name}</div>
@@ -193,7 +193,7 @@ export function FitnessDashboardWidget() {
                 </div>
               </div>
               {nightCompleted ? (
-                <CheckCircle2 className="size-5 text-green-500" />
+                <CheckCircle2 className="size-5 text-accent-sage" />
               ) : (
                 <Button
                   size="sm"
@@ -212,12 +212,12 @@ export function FitnessDashboardWidget() {
         {todayWorkout && scheduleInfo?.focus !== "Active Recovery" && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Today's Workout</h4>
-            <div className={`rounded-lg border p-3 transition-all ${workoutCompleted ? "bg-green-50/50 dark:bg-green-950/10 ring-1 ring-green-500/20" : ""}`}>
+            <div className={`rounded-lg border p-3 transition-all ${workoutCompleted ? "bg-accent-sage/5 ring-1 ring-accent-sage/20" : ""}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     {workoutCompleted ? (
-                      <CheckCircle2 className="size-4 text-green-500" />
+                      <CheckCircle2 className="size-4 text-accent-sage" />
                     ) : (
                       <Circle className="size-4 text-muted-foreground" />
                     )}
@@ -244,7 +244,7 @@ export function FitnessDashboardWidget() {
 
         {/* Active Recovery Day */}
         {scheduleInfo?.focus === "Active Recovery" && (
-          <div className="rounded-lg border bg-blue-50/50 dark:bg-blue-950/10 p-3 text-center">
+          <div className="rounded-lg border bg-accent-azure/5 p-3 text-center">
             <div className="text-sm font-medium">Active Recovery</div>
             <div className="text-xs text-muted-foreground mt-1">{scheduleInfo.goal}</div>
           </div>
@@ -252,14 +252,14 @@ export function FitnessDashboardWidget() {
 
         {/* Injury Protocol Warning */}
         {routine.injuryProtocol.status === "active" && (
-          <div className="rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/10 p-3">
+          <div className="rounded-lg border border-accent-ember/30 bg-accent-ember/5 p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="size-4 text-orange-600 dark:text-orange-400 mt-0.5" />
+              <AlertTriangle className="size-4 text-accent-ember mt-0.5" />
               <div className="flex-1">
-                <div className="text-xs font-medium text-orange-900 dark:text-orange-100">
+                <div className="text-xs font-medium text-accent-ember">
                   Injury Protocol Active
                 </div>
-                <div className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">
+                <div className="text-xs text-accent-ember mt-0.5">
                   {routine.injuryProtocol.name}
                 </div>
               </div>

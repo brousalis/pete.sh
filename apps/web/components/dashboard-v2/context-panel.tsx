@@ -30,7 +30,7 @@ export function ContextPanel() {
     {
       label: 'Morning stretch',
       completed: morningDone,
-      color: 'stroke-amber-500',
+      color: 'stroke-accent-gold',
     },
     ...(isRestDay
       ? []
@@ -38,13 +38,13 @@ export function ContextPanel() {
           {
             label: 'Workout',
             completed: workoutDone,
-            color: 'stroke-orange-500',
+            color: 'stroke-accent-ember',
           },
         ]),
     {
       label: 'Night stretch',
       completed: nightDone,
-      color: 'stroke-indigo-500',
+      color: 'stroke-accent-violet',
     },
   ]
 

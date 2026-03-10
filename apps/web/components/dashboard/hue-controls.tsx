@@ -303,11 +303,11 @@ export function HueControls() {
   const getSceneStyles = (name: string) => {
     const n = name.toLowerCase()
     if (n.includes('red'))
-      return 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+      return 'bg-accent-rose/20 text-accent-rose hover:bg-accent-rose/30'
     if (n.includes('purple') || n.includes('rain'))
-      return 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+      return 'bg-accent-violet/20 text-accent-violet hover:bg-accent-violet/30'
     if (n.includes('work') || n.includes('concentrate'))
-      return 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+      return 'bg-accent-azure/20 text-accent-azure hover:bg-accent-azure/30'
     return 'bg-brand/20 text-brand hover:bg-brand/30'
   }
 
@@ -323,10 +323,10 @@ export function HueControls() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-red-500/10 p-6">
+      <div className="rounded-xl bg-accent-rose/10 p-6">
         <div className="flex items-center gap-4">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/20">
-            <AlertCircle className="size-6 text-red-400" />
+          <div className="flex size-12 items-center justify-center rounded-xl bg-accent-rose/20">
+            <AlertCircle className="size-6 text-accent-rose" />
           </div>
           <div>
             <p className="font-semibold text-foreground">{error}</p>
@@ -500,7 +500,7 @@ export function HueControls() {
                         className={cn(
                           'flex size-7 items-center justify-center rounded-md transition-all',
                           syncStatus?.active
-                            ? 'bg-purple-500/20 text-purple-400'
+                            ? 'bg-accent-violet/20 text-accent-violet'
                             : 'bg-white/5 text-muted-foreground'
                         )}
                       >
@@ -511,7 +511,7 @@ export function HueControls() {
                         <div
                           className={cn(
                             'size-1.5 rounded-full',
-                            syncStatus?.active ? 'animate-pulse bg-green-500' : 'bg-white/20'
+                            syncStatus?.active ? 'animate-pulse bg-accent-sage' : 'bg-white/20'
                           )}
                         />
                       </div>
@@ -521,7 +521,7 @@ export function HueControls() {
                           size="sm"
                           onClick={handleStopSync}
                           disabled={isReadOnly}
-                          className="h-6 gap-1 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                          className="h-6 gap-1 px-2 text-[11px] text-accent-rose hover:bg-accent-rose/10 hover:text-accent-rose"
                         >
                           <Square className="size-2.5" />
                           Stop
@@ -765,19 +765,19 @@ function RoomCard({
   const getSceneStyle = (name: string) => {
     const n = name.toLowerCase()
     if (n.includes('pete') && n.includes('red'))
-      return 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+      return 'bg-accent-rose/20 text-accent-rose hover:bg-accent-rose/30'
     if (n.includes('pete') && n.includes('work'))
-      return 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+      return 'bg-accent-azure/20 text-accent-azure hover:bg-accent-azure/30'
     if (n.includes('bright'))
-      return 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+      return 'bg-accent-gold/15 text-accent-gold hover:bg-accent-gold/25'
     if (n.includes('dimmed') || n.includes('nightlight'))
-      return 'bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25'
+      return 'bg-accent-violet/15 text-accent-violet hover:bg-accent-violet/25'
     if (n.includes('concentrate'))
-      return 'bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25'
+      return 'bg-accent-teal/15 text-accent-teal hover:bg-accent-teal/25'
     if (n.includes('energize'))
-      return 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25'
+      return 'bg-accent-ember/15 text-accent-ember hover:bg-accent-ember/25'
     if (n.includes('game'))
-      return 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
+      return 'bg-accent-sage/15 text-accent-sage hover:bg-accent-sage/25'
     return 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
   }
 

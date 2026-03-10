@@ -111,7 +111,7 @@ export function ConcertVenueMap({
       marker.className = 'concert-map-marker'
       marker.style.cssText = `
         width: 32px; height: 32px;
-        background: var(--brand, #f59e0b);
+        background: var(--brand, #d4a843);
         border-radius: 50%;
         border: 3px solid white;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -148,7 +148,7 @@ export function ConcertVenueMap({
         marker.style.cssText = `
           width: ${count > 1 ? 36 : 28}px;
           height: ${count > 1 ? 36 : 28}px;
-          background: ${isUpcoming ? 'var(--brand, #f59e0b)' : 'hsl(var(--muted-foreground))' };
+          background: ${isUpcoming ? 'var(--brand, #d4a843)' : 'hsl(var(--muted-foreground))' };
           border-radius: 50%;
           border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);

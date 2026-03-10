@@ -86,7 +86,7 @@ export function CalendarEventDetail({
         return (
           <Badge
             variant="default"
-            className="bg-green-500/20 text-green-700 dark:text-green-300"
+            className="bg-accent-sage/20 text-accent-sage"
           >
             Confirmed
           </Badge>
@@ -95,7 +95,7 @@ export function CalendarEventDetail({
         return (
           <Badge
             variant="secondary"
-            className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300"
+            className="bg-accent-gold/20 text-accent-gold"
           >
             Tentative
           </Badge>
@@ -198,8 +198,8 @@ export function CalendarEventDetail({
             {event.location && (
               <div className="bg-muted/50 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                    <MapPin className="size-5 text-blue-500" />
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-azure/10">
+                    <MapPin className="size-5 text-accent-azure" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">Location</div>
@@ -370,19 +370,19 @@ function AttendeeStatus({
   const config = {
     needsAction: {
       label: 'Pending',
-      className: 'bg-gray-500/20 text-gray-600 dark:text-gray-400',
+      className: 'bg-accent-slate/20 text-accent-slate',
     },
     declined: {
       label: 'Declined',
-      className: 'bg-red-500/20 text-red-600 dark:text-red-400',
+      className: 'bg-accent-rose/20 text-accent-rose',
     },
     tentative: {
       label: 'Maybe',
-      className: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+      className: 'bg-accent-gold/20 text-accent-gold',
     },
     accepted: {
       label: 'Going',
-      className: 'bg-green-500/20 text-green-600 dark:text-green-400',
+      className: 'bg-accent-sage/20 text-accent-sage',
     },
   }
 

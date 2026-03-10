@@ -39,7 +39,7 @@ import {
     type TrainingReadiness,
     type TrainingReadinessInput,
 } from '@/lib/types/ai-coach.types'
-import type { Workout, DailyRoutine } from '@/lib/types/fitness.types'
+import type { DayOfWeek, Workout, DailyRoutine } from '@/lib/types/fitness.types'
 import type { Recipe } from '@/lib/types/cooking.types'
 import { applyRoutineChanges, applyDailyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
 import type { DailyRoutineChange } from '@/lib/types/ai-coach.types'
@@ -416,6 +416,33 @@ async function loadRoutineData(): Promise<{
       : null,
     workoutDefinitions: null,
   }
+}
+
+const DAY_ORDER: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+/**
+ * Compact fitness routine summary for the Assistant chef agent (meal planning).
+ * So the chef can align dinners with workout days without asking the user.
+ */
+export async function getFitnessRoutineSummaryForMealPlanning(): Promise<string> {
+  const { routine } = await loadRoutineData()
+  if (!routine?.schedule) return ''
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const schedule = routine.schedule as Record<string, { goal?: string; focus?: string }>
+  const lines: string[] = ['## User\'s fitness routine (use for meal planning)']
+  for (const day of DAY_ORDER) {
+    const entry = schedule[day]
+    if (!entry) continue
+    const focus = entry.focus || 'Activity'
+    const goal = entry.goal ? ` — ${entry.goal}` : ''
+    lines.push(`- ${day}: ${focus}${goal}`)
+  }
+  const userProfile = routine.userProfile as { goal?: string } | undefined
+  if (userProfile?.goal) {
+    lines.push('', `Goal: ${userProfile.goal}`)
+  }
+  return lines.join('\n')
 }
 
 async function getWeeklyProgressData(): Promise<string> {

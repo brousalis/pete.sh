@@ -98,7 +98,7 @@ export function MapleWalkCard({
 
                 {/* Heart Rate (if available) */}
                 {hasWorkout && walk.workout?.hrAverage && (
-                  <div className="flex items-center gap-1 text-red-400">
+                  <div className="flex items-center gap-1 text-accent-rose">
                     <Heart className="size-3.5" />
                     <span className={cn(compact ? 'text-xs' : 'text-sm')}>
                       {Math.round(walk.workout.hrAverage)} bpm
@@ -108,7 +108,7 @@ export function MapleWalkCard({
 
                 {/* Calories (if available) */}
                 {hasWorkout && walk.workout?.activeCalories && (
-                  <div className="flex items-center gap-1 text-orange-400">
+                  <div className="flex items-center gap-1 text-accent-ember">
                     <Flame className="size-3.5" />
                     <span className={cn(compact ? 'text-xs' : 'text-sm')}>
                       {Math.round(walk.workout.activeCalories)} cal

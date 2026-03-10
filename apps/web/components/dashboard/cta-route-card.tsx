@@ -26,31 +26,31 @@ function getUrgencyStyles(urgency: UrgencyLevel): {
   switch (urgency) {
     case "missed":
       return {
-        badge: "bg-gray-500 text-white",
+        badge: "bg-accent-slate text-white",
         text: "text-muted-foreground line-through",
         bg: "",
         icon: "text-muted-foreground",
       }
     case "leave-now":
       return {
-        badge: "bg-red-500 text-white animate-pulse",
-        text: "text-red-600 dark:text-red-400 font-bold",
-        bg: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800",
-        icon: "text-red-500",
+        badge: "bg-accent-rose text-white animate-pulse",
+        text: "text-accent-rose font-bold",
+        bg: "bg-accent-rose/10 border-accent-rose/30",
+        icon: "text-accent-rose",
       }
     case "prepare":
       return {
-        badge: "bg-orange-500 text-white",
-        text: "text-orange-600 dark:text-orange-400 font-semibold",
-        bg: "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800",
-        icon: "text-orange-500",
+        badge: "bg-accent-ember text-white",
+        text: "text-accent-ember font-semibold",
+        bg: "bg-accent-ember/10 border-accent-ember/30",
+        icon: "text-accent-ember",
       }
     case "upcoming":
       return {
-        badge: "bg-yellow-500 text-black",
-        text: "text-yellow-600 dark:text-yellow-400",
-        bg: "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800",
-        icon: "text-yellow-500",
+        badge: "bg-accent-gold text-black",
+        text: "text-accent-gold",
+        bg: "bg-accent-gold/10 border-accent-gold/30",
+        icon: "text-accent-gold",
       }
     default:
       return {
@@ -123,8 +123,8 @@ function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerPr
         className={cn(
           "absolute inset-0 transition-all duration-100 ease-linear",
           isLeaveNow
-            ? "bg-red-600/80"
-            : "bg-orange-500/80"
+            ? "bg-accent-rose/80"
+            : "bg-accent-ember/80"
         )}
         style={{ width: `${progress}%` }}
       />
@@ -133,8 +133,8 @@ function UrgencyBanner({ urgency, arrivalMinutes, walkingTime }: UrgencyBannerPr
         className={cn(
           "absolute inset-0",
           isLeaveNow
-            ? "bg-red-900/90"
-            : "bg-orange-900/90"
+            ? "bg-accent-rose/90"
+            : "bg-accent-ember/90"
         )}
         style={{ 
           left: `${progress}%`,
@@ -239,12 +239,12 @@ export function CTARouteCard({ route, type, predictions, error }: CTARouteCardPr
                 </span>
                 <span className="text-muted-foreground text-xs">to {pred.stpnm}</span>
                 {canMakeIt && idx === 0 && (
-                  <span className="ml-auto text-xs text-green-600 dark:text-green-400 font-medium">
+                  <span className="ml-auto text-xs text-accent-sage font-medium">
                     Catchable
                   </span>
                 )}
                 {!canMakeIt && idx === 0 && minutes > 0 && (
-                  <span className="ml-auto text-xs text-red-500 font-medium">
+                  <span className="ml-auto text-xs text-accent-rose font-medium">
                     Too late
                   </span>
                 )}

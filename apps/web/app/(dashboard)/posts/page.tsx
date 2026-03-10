@@ -177,7 +177,7 @@ export default function BlogDashboardPage() {
         </div>
         <div className="bg-card rounded-xl border p-4">
           <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-green-500" />
+            <Globe className="h-4 w-4 text-accent-sage" />
             <p className="text-muted-foreground text-sm">Published</p>
           </div>
           <p className="text-2xl font-bold">{publishedPosts}</p>

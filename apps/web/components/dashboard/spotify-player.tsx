@@ -419,8 +419,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-green-500/20 p-2">
-              <Music className="size-5 text-green-500" />
+            <div className="rounded-lg bg-accent-sage/20 p-2">
+              <Music className="size-5 text-accent-sage" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground">Spotify</h3>
@@ -433,7 +433,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
         {authAvailable && fullAuthUrl && (
           <a
             href={fullAuthUrl}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-3 font-medium text-white transition-colors hover:bg-green-600"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-sage px-4 py-3 font-medium text-white transition-colors hover:bg-accent-sage/80"
           >
             <Music className="size-5" />
             Connect Spotify
@@ -457,8 +457,8 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
       {/* Header with user info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={`rounded-lg p-2 ${isPlaying ? "bg-green-500/20" : "bg-muted"}`}>
-            <Music className={`size-5 ${isPlaying ? "text-green-500" : "text-muted-foreground"}`} />
+          <div className={`rounded-lg p-2 ${isPlaying ? "bg-accent-sage/20" : "bg-muted"}`}>
+            <Music className={`size-5 ${isPlaying ? "text-accent-sage" : "text-muted-foreground"}`} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -659,7 +659,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
               </span>
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-green-500 transition-[width] duration-100 ease-linear"
+                  className="h-full bg-accent-sage transition-[width] duration-100 ease-linear"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -689,7 +689,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
           <Button
             variant="ghost"
             size="icon"
-            className={`size-9 ${playbackState?.shuffle_state ? "text-green-500" : ""}`}
+            className={`size-9 ${playbackState?.shuffle_state ? "text-accent-sage" : ""}`}
             onClick={handleShuffle}
           >
             <Shuffle className="size-4" />
@@ -710,7 +710,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
           <Button
             variant="ghost"
             size="icon"
-            className={`size-9 ${playbackState?.repeat_state !== "off" ? "text-green-500" : ""}`}
+            className={`size-9 ${playbackState?.repeat_state !== "off" ? "text-accent-sage" : ""}`}
             onClick={handleRepeat}
           >
             {playbackState?.repeat_state === "track" ? <Repeat1 className="size-4" /> : <Repeat className="size-4" />}
@@ -760,7 +760,7 @@ export function SpotifyPlayer({ onAuthRequired }: SpotifyPlayerProps) {
               {devices.map((device) => (
                 <DropdownMenuItem
                   key={device.id}
-                  className={device.is_active ? "bg-green-500/10 text-green-500" : ""}
+                  className={device.is_active ? "bg-accent-sage/10 text-accent-sage" : ""}
                   disabled={!device.id}
                 >
                   {getDeviceIcon(device.type)}

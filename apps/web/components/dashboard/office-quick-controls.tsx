@@ -190,13 +190,13 @@ export function OfficeQuickControls() {
           <div
             className={cn(
               'flex size-7 items-center justify-center rounded-lg transition-colors',
-              isOn ? 'bg-amber-500/20' : 'bg-white/10'
+              isOn ? 'bg-accent-gold/20' : 'bg-white/10'
             )}
           >
             <Lightbulb
               className={cn(
                 'size-4 transition-colors',
-                isOn ? 'text-amber-400' : 'text-white/40'
+                isOn ? 'text-accent-gold' : 'text-white/40'
               )}
             />
           </div>
@@ -210,7 +210,7 @@ export function OfficeQuickControls() {
             'flex size-7 items-center justify-center rounded-full transition-all',
             'hover:scale-105 active:scale-95',
             isOn
-              ? 'bg-amber-500/30 text-amber-300 hover:bg-amber-500/40'
+              ? 'bg-accent-gold/30 text-accent-gold hover:bg-accent-gold/40'
               : 'bg-white/10 text-white/40 hover:bg-white/20 hover:text-white/60'
           )}
           aria-label={isOn ? 'Turn off office lights' : 'Turn on office lights'}
@@ -260,7 +260,7 @@ export function OfficeQuickControls() {
           max={100}
           step={5}
           disabled={!isOn}
-          className="flex-1 [&_[data-slot=slider-range]]:bg-amber-400/60 [&_[data-slot=slider-thumb]]:size-3 [&_[data-slot=slider-thumb]]:border-amber-400 [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-track]]:bg-white/10"
+          className="flex-1 [&_[data-slot=slider-range]]:bg-accent-gold/60 [&_[data-slot=slider-thumb]]:size-3 [&_[data-slot=slider-thumb]]:border-accent-gold [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-track]]:bg-white/10"
         />
         <span
           className={cn(

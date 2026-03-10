@@ -59,9 +59,9 @@ function ToolBadge({
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
-          <Wrench className="h-3 w-3 text-green-400" />
+          <Wrench className="h-3 w-3 text-accent-sage" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
         {Object.keys(args).length > 0 && (
@@ -72,9 +72,9 @@ function ToolBadge({
           </span>
         )}
         {isRunning ? (
-          <span className="ml-auto text-purple-400/70">querying...</span>
+          <span className="ml-auto text-accent-violet/70">querying...</span>
         ) : (
-          <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
+          <CheckCircle2 className="ml-auto h-3 w-3 text-accent-sage/70" />
         )}
       </div>
       {state === 'result' && result !== undefined && (
@@ -311,11 +311,11 @@ export function AiCoachInline({
   if (!open) return null
 
   return (
-    <div className="flex h-full w-[400px] shrink-0 flex-col border-l border-white/10 bg-zinc-950/80">
+    <div className="flex h-full w-[400px] shrink-0 flex-col border-l border-white/10 bg-card/80">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-purple-400" />
+          <Brain className="h-4 w-4 text-accent-violet" />
           <span className="text-sm font-semibold text-white">AI Coach</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -323,7 +323,7 @@ export function AiCoachInline({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 gap-1.5 text-xs text-amber-400 hover:text-amber-300"
+              className="h-7 gap-1.5 text-xs text-accent-gold hover:text-accent-gold"
               onClick={onUndo}
               title="Undo last AI change"
             >
@@ -399,7 +399,7 @@ export function AiCoachInline({
                   <div
                     className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${
                       message.role === 'user'
-                        ? 'bg-purple-600/30 text-white'
+                        ? 'bg-accent-violet/30 text-white'
                         : 'border border-white/10 bg-white/5 text-white/80'
                     }`}
                   >
@@ -438,7 +438,7 @@ export function AiCoachInline({
                                     </strong>
                                   ),
                                   em: ({ children }) => (
-                                    <em className="text-purple-300">
+                                    <em className="text-accent-violet">
                                       {children}
                                     </em>
                                   ),
@@ -458,7 +458,7 @@ export function AiCoachInline({
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs text-purple-300">
+                                    <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs text-accent-violet">
                                       {children}
                                     </code>
                                   ),
@@ -510,10 +510,10 @@ export function AiCoachInline({
                               return (
                                 <div
                                   key={index}
-                                  className="my-2 flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-2.5"
+                                  className="my-2 flex items-center gap-2 rounded-lg border border-accent-sage/30 bg-accent-sage/5 px-3 py-2.5"
                                 >
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
-                                  <span className="text-xs font-medium text-green-300">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-accent-sage" />
+                                  <span className="text-xs font-medium text-accent-sage">
                                     Changes applied to editor
                                   </span>
                                   <span className="ml-1 text-[11px] text-white/40">
@@ -606,7 +606,7 @@ export function AiCoachInline({
                 ) && (
                   <div className="flex justify-start">
                     <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                     </div>
                   </div>
                 )}
@@ -615,7 +615,7 @@ export function AiCoachInline({
 
           {/* Error display */}
           {(chatError || error) && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <div className="rounded-lg border border-accent-rose/20 bg-accent-rose/10 px-3 py-2 text-xs text-accent-rose">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                 <span>
@@ -644,14 +644,14 @@ export function AiCoachInline({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about your routine..."
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent-violet/50"
             disabled={status !== 'ready'}
           />
           <Button
             type="submit"
             size="sm"
             disabled={status !== 'ready' || !input.trim()}
-            className="bg-purple-600 text-white hover:bg-purple-700"
+            className="bg-accent-violet text-white hover:bg-accent-violet/90"
           >
             <Send className="h-4 w-4" />
           </Button>

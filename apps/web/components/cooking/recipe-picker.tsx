@@ -247,11 +247,11 @@ export function RecipePickerDialog({
             className={cn(
               'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
               favoritesOnly
-                ? 'bg-amber-500/15 text-amber-500'
+                ? 'bg-accent-gold/15 text-accent-gold'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             )}
           >
-            <Star className={cn('size-3', favoritesOnly && 'fill-amber-500')} />
+            <Star className={cn('size-3', favoritesOnly && 'fill-accent-gold')} />
             Favorites
           </button>
 
@@ -352,7 +352,7 @@ export function RecipePickerDialog({
                 {favorites.length > 0 && (
                   <div>
                     <div className="flex items-center gap-1.5 px-3 py-2">
-                      <Star className="size-3 text-amber-500 fill-amber-500" />
+                      <Star className="size-3 text-accent-gold fill-accent-gold" />
                       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                         Favorites
                       </span>
@@ -415,9 +415,9 @@ export function RecipePickerDialog({
 }
 
 const difficultyColors: Record<string, string> = {
-  easy: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
-  medium: 'bg-amber-500/15 text-amber-500 border-amber-500/20',
-  hard: 'bg-red-500/15 text-red-500 border-red-500/20',
+  easy: 'bg-accent-sage/15 text-accent-sage border-accent-sage/20',
+  medium: 'bg-accent-gold/15 text-accent-gold border-accent-gold/20',
+  hard: 'bg-accent-rose/15 text-accent-rose border-accent-rose/20',
 }
 
 function RecipePickerItem({
@@ -493,12 +493,12 @@ function RecipePickerItem({
             </Badge>
           )}
           {recipe.source === 'trader_joes' && (
-            <Badge className="h-4 px-1.5 text-[9px] bg-red-600 text-white border-0">
+            <Badge className="h-4 px-1.5 text-[9px] bg-accent-rose text-white border-0">
               TJ&apos;s
             </Badge>
           )}
           {recipe.is_favorite && !selected && (
-            <Star className="size-3 text-amber-500 fill-amber-500" />
+            <Star className="size-3 text-accent-gold fill-accent-gold" />
           )}
         </div>
       </div>

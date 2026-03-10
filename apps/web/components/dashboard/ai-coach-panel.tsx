@@ -81,9 +81,9 @@ function ToolInvocationBadge({
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
-          <Wrench className="h-3 w-3 text-green-400" />
+          <Wrench className="h-3 w-3 text-accent-sage" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
         {Object.keys(args).length > 0 && (
@@ -94,9 +94,9 @@ function ToolInvocationBadge({
           </span>
         )}
         {isRunning ? (
-          <span className="ml-auto text-purple-400/70">querying...</span>
+          <span className="ml-auto text-accent-violet/70">querying...</span>
         ) : (
-          <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
+          <CheckCircle2 className="ml-auto h-3 w-3 text-accent-sage/70" />
         )}
       </div>
       {(state === "result" && result && (
@@ -161,21 +161,21 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
 
 function ReadinessGauge({ readiness }: { readiness: TrainingReadiness }) {
   const colorMap = {
-    fresh: "text-green-400",
-    moderate: "text-yellow-400",
-    fatigued: "text-orange-400",
-    overtrained: "text-red-400",
+    fresh: "text-accent-sage",
+    moderate: "text-accent-gold",
+    fatigued: "text-accent-ember",
+    overtrained: "text-accent-rose",
   }
   const bgMap = {
-    fresh: "bg-green-400/20",
-    moderate: "bg-yellow-400/20",
-    fatigued: "bg-orange-400/20",
-    overtrained: "bg-red-400/20",
+    fresh: "bg-accent-sage/20",
+    moderate: "bg-accent-gold/20",
+    fatigued: "bg-accent-ember/20",
+    overtrained: "bg-accent-rose/20",
   }
   const iconMap = {
-    good: <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />,
-    warning: <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />,
-    concern: <AlertTriangle className="h-3.5 w-3.5 text-red-400" />,
+    good: <CheckCircle2 className="h-3.5 w-3.5 text-accent-sage" />,
+    warning: <AlertTriangle className="h-3.5 w-3.5 text-accent-gold" />,
+    concern: <AlertTriangle className="h-3.5 w-3.5 text-accent-rose" />,
   }
 
   return (
@@ -196,12 +196,12 @@ function ReadinessGauge({ readiness }: { readiness: TrainingReadiness }) {
         <div
           className={`h-full rounded-full transition-all duration-500 ${
             readiness.score >= 80
-              ? "bg-green-400"
+              ? "bg-accent-sage"
               : readiness.score >= 60
-                ? "bg-yellow-400"
+                ? "bg-accent-gold"
                 : readiness.score >= 40
-                  ? "bg-orange-400"
-                  : "bg-red-400"
+                  ? "bg-accent-ember"
+                  : "bg-accent-rose"
           }`}
           style={{ width: `${readiness.score}%` }}
         />
@@ -251,16 +251,16 @@ function InsightCard({
   const full = isFull ? (analysis as FullAnalysis) : null
 
   const trendIcon: Record<"losing" | "maintaining" | "gaining", React.ReactNode> = {
-    losing: <TrendingDown className="h-4 w-4 text-green-400" />,
-    maintaining: <Minus className="h-4 w-4 text-yellow-400" />,
-    gaining: <TrendingUp className="h-4 w-4 text-red-400" />,
+    losing: <TrendingDown className="h-4 w-4 text-accent-sage" />,
+    maintaining: <Minus className="h-4 w-4 text-accent-gold" />,
+    gaining: <TrendingUp className="h-4 w-4 text-accent-rose" />,
   }
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-400" />
+          <Sparkles className="h-4 w-4 text-accent-violet" />
           <span className="text-sm font-medium text-white">AI Analysis</span>
         </div>
         <Button
@@ -286,7 +286,7 @@ function InsightCard({
           <span className="text-white/70">
             {full.bodyComposition.currentWeight} lbs
             {full.bodyComposition.isCleanCut && (
-              <span className="text-green-400 ml-1">(clean cut)</span>
+              <span className="text-accent-sage ml-1">(clean cut)</span>
             )}
           </span>
           {full.bodyComposition.weeklyRate !== 0 && (
@@ -300,8 +300,8 @@ function InsightCard({
 
       {/* Weekly focus */}
       {full?.weeklyFocus && (
-        <div className="rounded bg-purple-500/10 border border-purple-500/20 p-2 mb-3">
-          <p className="text-xs text-purple-300">{full.weeklyFocus}</p>
+        <div className="rounded bg-accent-violet/10 border border-accent-violet/20 p-2 mb-3">
+          <p className="text-xs text-accent-violet">{full.weeklyFocus}</p>
         </div>
       )}
 
@@ -315,7 +315,7 @@ function InsightCard({
               </h4>
               {full.progressiveOverload.map((po: ProgressiveOverload, i: number) => (
                 <div key={i} className="text-xs text-white/70 flex items-center gap-1 mb-1">
-                  <ArrowRight className="h-3 w-3 text-blue-400" />
+                  <ArrowRight className="h-3 w-3 text-accent-azure" />
                   <span>
                     {po.exerciseName}:{" "}
                     {po.currentWeight && po.suggestedWeight
@@ -376,7 +376,7 @@ function InsightCard({
               <p className="text-xs text-white/70">
                 Elbow: {full.injuryUpdate.elbowStatus}
                 {full.injuryUpdate.elbowProgressionReady && (
-                  <span className="text-green-400 ml-1">(ready to progress)</span>
+                  <span className="text-accent-sage ml-1">(ready to progress)</span>
                 )}
               </p>
               <p className="text-xs text-white/70">
@@ -608,7 +608,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:w-[480px] sm:max-w-[480px] bg-zinc-950 border-white/10 p-0 flex flex-col"
+        className="w-full sm:w-[480px] sm:max-w-[480px] bg-card border-white/10 p-0 flex flex-col"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -616,7 +616,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
         <SheetHeader className="px-4 pt-4 pb-2 border-b border-white/10">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-white">
-              <Brain className="h-5 w-5 text-purple-400" />
+              <Brain className="h-5 w-5 text-accent-violet" />
               AI Coach
             </SheetTitle>
             <div className="flex items-center gap-2">
@@ -726,7 +726,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                     <div
                       className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
                         message.role === "user"
-                          ? "bg-purple-600/30 text-white"
+                          ? "bg-accent-violet/30 text-white"
                           : "bg-white/5 text-white/80 border border-white/10"
                       }`}
                     >
@@ -744,11 +744,11 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                                     h3: ({ children }) => <h3 className="text-sm font-medium text-white/90 mt-2 mb-1 first:mt-0">{children}</h3>,
                                     p: ({ children }) => <p className="text-sm text-white/80 mb-2 last:mb-0 leading-relaxed">{children}</p>,
                                     strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-                                    em: ({ children }) => <em className="text-purple-300">{children}</em>,
+                                    em: ({ children }) => <em className="text-accent-violet">{children}</em>,
                                     ul: ({ children }) => <ul className="list-disc list-inside text-sm text-white/80 mb-2 space-y-0.5">{children}</ul>,
                                     ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-white/80 mb-2 space-y-0.5">{children}</ol>,
                                     li: ({ children }) => <li className="text-white/80">{children}</li>,
-                                    code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-purple-300">{children}</code>,
+                                    code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-violet">{children}</code>,
                                     hr: () => <hr className="border-white/10 my-3" />,
                                   }}
                                 >
@@ -858,7 +858,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                 ) && (
                   <div className="flex justify-start">
                     <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                     </div>
                   </div>
                 )}
@@ -867,7 +867,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
 
             {/* Error display */}
             {(chatError || error) && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              <div className="rounded-lg border border-accent-rose/20 bg-accent-rose/10 px-3 py-2 text-xs text-accent-rose">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>{chatError || error?.message || "An error occurred"}</span>
@@ -894,14 +894,14 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent-violet/50"
               disabled={status !== "ready"}
             />
             <Button
               type="submit"
               size="sm"
               disabled={status !== "ready" || !input.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-accent-violet hover:bg-accent-violet/90 text-white"
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -930,17 +930,17 @@ export function AiCoachButton({
       className="gap-1.5 text-xs"
       onClick={onClick}
     >
-      <Brain className="h-3.5 w-3.5 text-purple-400" />
+      <Brain className="h-3.5 w-3.5 text-accent-violet" />
       {readinessScore !== undefined && (
         <span
           className={`ml-1 tabular-nums font-medium ${
             readinessScore >= 80
-              ? "text-green-400"
+              ? "text-accent-sage"
               : readinessScore >= 60
-                ? "text-yellow-400"
+                ? "text-accent-gold"
                 : readinessScore >= 40
-                  ? "text-orange-400"
-                  : "text-red-400"
+                  ? "text-accent-ember"
+                  : "text-accent-rose"
           }`}
         >
           {readinessScore}

@@ -78,23 +78,23 @@ function SpotifyCallbackContent() {
         <div
           className={`rounded-full p-4 ${
             status === "loading"
-              ? "bg-green-500/20"
+              ? "bg-accent-sage/20"
               : status === "success"
-                ? "bg-green-500/20"
+                ? "bg-accent-sage/20"
                 : "bg-destructive/20"
           }`}
         >
           {status === "loading" ? (
-            <Loader2 className="size-8 animate-spin text-green-500" />
+            <Loader2 className="size-8 animate-spin text-accent-sage" />
           ) : status === "success" ? (
-            <CheckCircle className="size-8 text-green-500" />
+            <CheckCircle className="size-8 text-accent-sage" />
           ) : (
             <AlertCircle className="size-8 text-destructive" />
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Music className="size-5 text-green-500" />
+          <Music className="size-5 text-accent-sage" />
           <span className="text-lg font-semibold">Spotify</span>
         </div>
 
@@ -108,11 +108,11 @@ function LoadingFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4 rounded-2xl bg-card p-8 shadow-lg">
-        <div className="rounded-full bg-green-500/20 p-4">
-          <Loader2 className="size-8 animate-spin text-green-500" />
+        <div className="rounded-full bg-accent-sage/20 p-4">
+          <Loader2 className="size-8 animate-spin text-accent-sage" />
         </div>
         <div className="flex items-center gap-2">
-          <Music className="size-5 text-green-500" />
+          <Music className="size-5 text-accent-sage" />
           <span className="text-lg font-semibold">Spotify</span>
         </div>
         <p className="text-sm text-muted-foreground">Connecting to Spotify...</p>

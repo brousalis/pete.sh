@@ -54,7 +54,7 @@ export function MealSpotlight() {
           <Button
             variant="ghost"
             size="sm"
-            className="mt-2 h-7 text-xs text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+            className="mt-2 h-7 text-xs text-accent-ember hover:text-accent-ember/80 hover:bg-accent-ember/10"
           >
             Plan dinner
           </Button>
@@ -94,7 +94,7 @@ export function MealSpotlight() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         </div>
       ) : (
-        <div className="h-14 bg-gradient-to-br from-orange-500/[0.06] to-green-500/[0.04]" />
+        <div className="h-14 bg-gradient-to-br from-accent-ember/[0.06] to-accent-sage/[0.04]" />
       )}
 
       {/* Content */}
@@ -114,19 +114,19 @@ export function MealSpotlight() {
             </span>
           )}
           {dinner?.protein_g && isStrengthDay && (
-            <span className="text-green-400/80 bg-green-500/10 px-1.5 py-px rounded text-[10px]">
+            <span className="text-accent-sage/80 bg-accent-sage/10 px-1.5 py-px rounded text-[10px]">
               {dinner.protein_g}g protein
             </span>
           )}
           {dinner?.carbs_g && isEnduranceDay && (
-            <span className="text-amber-400/80 bg-amber-500/10 px-1.5 py-px rounded text-[10px]">
+            <span className="text-accent-gold/80 bg-accent-gold/10 px-1.5 py-px rounded text-[10px]">
               {dinner.carbs_g}g carbs
             </span>
           )}
         </div>
 
         {countdown && (
-          <p className="text-[10px] text-green-400/60 mt-1.5">
+          <p className="text-[10px] text-accent-sage/60 mt-1.5">
             Dinner {countdown}
           </p>
         )}

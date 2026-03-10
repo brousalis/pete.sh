@@ -516,7 +516,7 @@ export function SettingsEditor() {
             {backfillPreview && (
               <div className="bg-muted/50 rounded-lg border p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2">
-                  <Watch className="size-4 text-red-500" />
+                  <Watch className="size-4 text-accent-rose" />
                   <span className="font-medium">Preview Results</span>
                 </div>
                 <div className="text-muted-foreground space-y-1 text-xs">
@@ -610,7 +610,7 @@ export function SettingsEditor() {
             {versionBackfillPreview && (
               <div className="bg-muted/50 rounded-lg border p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2">
-                  <GitBranch className="size-4 text-blue-500" />
+                  <GitBranch className="size-4 text-accent-azure" />
                   <span className="font-medium">Preview Results</span>
                 </div>
                 <div className="text-muted-foreground space-y-1 text-xs">
@@ -685,7 +685,7 @@ export function SettingsEditor() {
             {sanitizePreview && (
               <div className="bg-muted/50 rounded-lg border p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2">
-                  <ChefHat className="size-4 text-orange-500" />
+                  <ChefHat className="size-4 text-accent-ember" />
                   <span className="font-medium">Preview Results</span>
                 </div>
                 <div className="text-muted-foreground space-y-1 text-xs">
@@ -779,7 +779,7 @@ export function SettingsEditor() {
             {nutritionProgress && !nutritionResult && (
               <div className="bg-muted/50 rounded-lg border p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2">
-                  <Apple className="size-4 text-green-500" />
+                  <Apple className="size-4 text-accent-sage" />
                   <span className="font-medium">
                     {nutritionProgress.phase === 'dedup' && 'Deduplicating ingredients...'}
                     {nutritionProgress.phase === 'resolve' && 'Resolving ingredients via USDA...'}
@@ -818,7 +818,7 @@ export function SettingsEditor() {
             {nutritionResult && (
               <div className="bg-muted/50 rounded-lg border p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2">
-                  <Apple className="size-4 text-green-500" />
+                  <Apple className="size-4 text-accent-sage" />
                   <span className="font-medium">Enrichment Complete</span>
                 </div>
                 <div className="text-muted-foreground space-y-1 text-xs">

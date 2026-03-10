@@ -56,6 +56,7 @@ export const navCategories: NavCategory[] = [
     label: 'Quick Access',
     items: [
       { href: '/', label: 'Dashboard', icon: Home, keywords: ['home', 'main'] },
+      { href: '/assistant', label: 'Assistant', icon: Sparkles, keywords: ['assistant', 'ai', 'chef', 'coach', 'chat'] },
       { href: '/settings', label: 'Settings', icon: Settings, keywords: ['preferences', 'config'] },
     ],
   },

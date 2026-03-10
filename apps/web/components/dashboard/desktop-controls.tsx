@@ -100,7 +100,7 @@ export function DesktopControls() {
     <div className="rounded-2xl bg-card p-5 shadow-sm  h-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Laptop className="size-5 text-purple-500" />
+          <Laptop className="size-5 text-accent-violet" />
           <h3 className="text-sm font-semibold text-foreground">Desktop</h3>
         </div>
         <Button
@@ -143,7 +143,7 @@ export function DesktopControls() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5">
-                  <Cpu className="size-3.5 text-blue-500" />
+                  <Cpu className="size-3.5 text-accent-azure" />
                   <span className="text-muted-foreground">CPU</span>
                 </div>
                 <span className="font-medium tabular-nums">
@@ -159,7 +159,7 @@ export function DesktopControls() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5">
-                  <HardDrive className="size-3.5 text-green-500" />
+                  <HardDrive className="size-3.5 text-accent-sage" />
                   <span className="text-muted-foreground">Memory</span>
                 </div>
                 <span className="font-medium tabular-nums">

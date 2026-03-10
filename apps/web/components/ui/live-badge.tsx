@@ -81,8 +81,8 @@ export function LiveBadge({
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
           isRemote 
-            ? "bg-red-500/10 text-red-500" 
-            : "bg-green-500/10 text-green-500",
+            ? "bg-accent-rose/10 text-accent-rose" 
+            : "bg-accent-sage/10 text-accent-sage",
           className
         )}
         title={isRemote ? "Live from Pete's apartment" : "Connected to real devices"}
@@ -101,8 +101,8 @@ export function LiveBadge({
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
         isRemote 
-          ? "bg-red-500/10 text-red-500 border border-red-500/20" 
-          : "bg-green-500/10 text-green-500 border border-green-500/20",
+          ? "bg-accent-rose/10 text-accent-rose border border-accent-rose/20" 
+          : "bg-accent-sage/10 text-accent-sage border border-accent-sage/20",
         className
       )}
     >
@@ -140,7 +140,7 @@ export function ConnectionStatus({
   if (!isLocalAvailable) {
     return (
       <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
-        <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+        <div className="h-2 w-2 rounded-full bg-accent-gold animate-pulse" />
         <span>Cached Data</span>
       </div>
     )
@@ -150,13 +150,13 @@ export function ConnectionStatus({
     <div className={cn("flex items-center gap-1.5 text-xs", className)}>
       {isConnected ? (
         <>
-          <div className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="text-green-600 dark:text-green-400">Connected</span>
+          <div className="h-2 w-2 rounded-full bg-accent-sage" />
+          <span className="text-accent-sage">Connected</span>
         </>
       ) : (
         <>
-          <div className="h-2 w-2 rounded-full bg-red-500" />
-          <span className="text-red-600 dark:text-red-400">Disconnected</span>
+          <div className="h-2 w-2 rounded-full bg-accent-rose" />
+          <span className="text-accent-rose">Disconnected</span>
         </>
       )}
     </div>
@@ -176,7 +176,7 @@ export function ReadOnlyNotice({ className }: { className?: string }) {
   return (
     <div 
       className={cn(
-        "flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm",
+        "flex items-center justify-center gap-2 px-4 py-2 bg-accent-gold/10 border-b border-accent-gold/20 text-accent-gold text-sm",
         className
       )}
     >

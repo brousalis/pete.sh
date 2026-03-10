@@ -179,31 +179,31 @@ export function HueQuickActions({
     const n = name.toLowerCase()
     if (n.includes('red'))
       return {
-        bg: 'bg-gradient-to-br from-red-500/20 via-red-500/10 to-transparent',
-        border: 'border-red-500/40 hover:border-red-500/60',
-        text: 'text-red-400',
-        glow: 'hover:shadow-red-500/20',
+        bg: 'bg-gradient-to-br from-accent-rose/20 via-accent-rose/10 to-transparent',
+        border: 'border-accent-rose/40 hover:border-accent-rose/60',
+        text: 'text-accent-rose',
+        glow: 'hover:shadow-accent-rose/20',
       }
     if (n.includes('purple') || n.includes('rain'))
       return {
-        bg: 'bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-transparent',
-        border: 'border-purple-500/40 hover:border-purple-500/60',
-        text: 'text-purple-400',
-        glow: 'hover:shadow-purple-500/20',
+        bg: 'bg-gradient-to-br from-accent-violet/20 via-accent-violet/10 to-transparent',
+        border: 'border-accent-violet/40 hover:border-accent-violet/60',
+        text: 'text-accent-violet',
+        glow: 'hover:shadow-accent-violet/20',
       }
     if (n.includes('work') || n.includes('concentrate'))
       return {
-        bg: 'bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-transparent',
-        border: 'border-blue-500/40 hover:border-blue-500/60',
-        text: 'text-blue-400',
-        glow: 'hover:shadow-blue-500/20',
+        bg: 'bg-gradient-to-br from-accent-azure/20 via-accent-azure/10 to-transparent',
+        border: 'border-accent-azure/40 hover:border-accent-azure/60',
+        text: 'text-accent-azure',
+        glow: 'hover:shadow-accent-azure/20',
       }
     if (n.includes('relax') || n.includes('orange'))
       return {
-        bg: 'bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-transparent',
-        border: 'border-orange-500/40 hover:border-orange-500/60',
-        text: 'text-orange-400',
-        glow: 'hover:shadow-orange-500/20',
+        bg: 'bg-gradient-to-br from-accent-ember/20 via-accent-ember/10 to-transparent',
+        border: 'border-accent-ember/40 hover:border-accent-ember/60',
+        text: 'text-accent-ember',
+        glow: 'hover:shadow-accent-ember/20',
       }
     return {
       bg: 'bg-gradient-to-br from-brand/20 via-brand/10 to-transparent',

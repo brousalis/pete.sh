@@ -83,7 +83,7 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
           isSelected
             ? 'ring-2 ring-primary bg-primary/5'
             : 'hover:bg-accent/50'
-        } ${version.isActive ? 'border-green-500/50' : ''} ${version.isDraft ? 'border-amber-500/50' : ''}`}
+        } ${version.isActive ? 'border-accent-sage/50' : ''} ${version.isDraft ? 'border-accent-gold/50' : ''}`}
         onClick={onSelect}
       >
         <CardContent className="p-4">
@@ -109,7 +109,7 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
                 </span>
                 {version.activatedAt && (
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <CheckCircle2 className="h-3 w-3 text-accent-sage" />
                     Activated {formatRelativeTime(version.activatedAt)}
                   </span>
                 )}
@@ -118,13 +118,13 @@ function VersionItem({ version, isSelected, onSelect, onRestore }: VersionItemPr
 
             <div className="flex flex-col items-end gap-2">
               {version.isActive && (
-                <Badge className="bg-green-500 text-white">
+                <Badge className="bg-accent-sage text-white">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Active
                 </Badge>
               )}
               {version.isDraft && (
-                <Badge variant="outline" className="text-amber-600 border-amber-500">
+                <Badge variant="outline" className="text-accent-gold border-accent-gold">
                   <FileEdit className="h-3 w-3 mr-1" />
                   Draft
                 </Badge>
@@ -229,8 +229,8 @@ export function VersionHistory({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
-              <GitBranch className="h-6 w-6 text-blue-500" />
+            <div className="w-12 h-12 rounded-full bg-accent-azure/10 flex items-center justify-center mb-4">
+              <GitBranch className="h-6 w-6 text-accent-azure" />
             </div>
             <p className="text-sm text-muted-foreground mb-2">
               You&apos;re editing local JSON files directly.
@@ -297,11 +297,11 @@ export function VersionHistory({
     <div className="space-y-4">
       {/* Cleanup warning */}
       {hasVersionIssues && (
-        <Card className="border-amber-500/50 bg-amber-500/5">
+        <Card className="border-accent-gold/50 bg-accent-gold/5">
           <CardContent className="py-3 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+                <Sparkles className="h-5 w-5 text-accent-gold" />
                 <div>
                   <p className="text-sm font-medium">Version cleanup recommended</p>
                   <p className="text-xs text-muted-foreground">
@@ -334,7 +334,7 @@ export function VersionHistory({
                 <li>The current active version{activeVersion && ` (v${activeVersion.versionNumber})`}</li>
                 <li>The newest draft (if newer than active)</li>
               </ul>
-              <p className="mt-2 text-amber-600">
+              <p className="mt-2 text-accent-gold">
                 {versionList.length - 2} version{versionList.length - 2 !== 1 ? 's' : ''} will be deleted.
               </p>
             </AlertDialogDescription>
@@ -381,9 +381,9 @@ export function VersionHistory({
                   <div
                     className={`absolute -left-[2.375rem] top-5 w-2.5 h-2.5 rounded-full border-2 bg-background transition-colors ${
                       version.isActive
-                        ? 'border-green-500 bg-green-500'
+                        ? 'border-accent-sage bg-accent-sage'
                         : version.isDraft
-                          ? 'border-amber-500 bg-amber-500/30'
+                          ? 'border-accent-gold bg-accent-gold/30'
                           : 'border-muted-foreground/50'
                     }`}
                   />
@@ -423,10 +423,10 @@ export function VersionHistory({
                       v{current.versionNumber}
                     </Badge>
                     {current.isActive && (
-                      <Badge className="bg-green-500 text-white text-xs">Active</Badge>
+                      <Badge className="bg-accent-sage text-white text-xs">Active</Badge>
                     )}
                     {current.isDraft && (
-                      <Badge variant="outline" className="text-amber-600 border-amber-500 text-xs">
+                      <Badge variant="outline" className="text-accent-gold border-accent-gold text-xs">
                         Draft
                       </Badge>
                     )}

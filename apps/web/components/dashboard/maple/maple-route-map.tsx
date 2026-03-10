@@ -1,6 +1,7 @@
 'use client'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { HR_ZONE_COLORS } from '@/lib/constants/colors'
 import type { LocationSample } from '@/lib/types/apple-health.types'
 import type { MapleBathroomMarker } from '@/lib/types/maple.types'
 import { MapPin, Navigation } from 'lucide-react'
@@ -76,22 +77,13 @@ interface MapleRouteMapProps {
 
 const GOOGLE_MAPS_SCRIPT_ID = 'google-maps-script'
 
-// HR zone colors (matching fitness dashboard)
-const HR_ZONE_COLORS = {
-  zone1: '#10b981', // Green - Rest/Light
-  zone2: '#22c55e', // Light Green - Warm up
-  zone3: '#eab308', // Yellow - Fat burn
-  zone4: '#f97316', // Orange - Cardio
-  zone5: '#ef4444', // Red - Peak
-}
-
 function getHrZoneColor(bpm: number, maxHr: number = 185): string {
   const percentage = (bpm / maxHr) * 100
-  if (percentage < 50) return HR_ZONE_COLORS.zone1
-  if (percentage < 60) return HR_ZONE_COLORS.zone2
-  if (percentage < 70) return HR_ZONE_COLORS.zone3
-  if (percentage < 85) return HR_ZONE_COLORS.zone4
-  return HR_ZONE_COLORS.zone5
+  if (percentage < 50) return HR_ZONE_COLORS.rest.hex
+  if (percentage < 60) return HR_ZONE_COLORS.warmup.hex
+  if (percentage < 70) return HR_ZONE_COLORS.fatBurn.hex
+  if (percentage < 85) return HR_ZONE_COLORS.cardio.hex
+  return HR_ZONE_COLORS.peak.hex
 }
 
 export function MapleRouteMap({
@@ -257,7 +249,7 @@ export function MapleRouteMap({
     if (startPosition && endPosition) {
       const startMarkerContent = document.createElement('div')
       startMarkerContent.innerHTML = `
-        <div class="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full border-2 border-white shadow-lg">
+        <div class="flex items-center justify-center w-8 h-8 bg-accent-sage rounded-full border-2 border-white shadow-lg">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
@@ -275,7 +267,7 @@ export function MapleRouteMap({
       // Add end marker
       const endMarkerContent = document.createElement('div')
       endMarkerContent.innerHTML = `
-        <div class="flex items-center justify-center w-8 h-8 bg-red-500 rounded-full border-2 border-white shadow-lg">
+        <div class="flex items-center justify-center w-8 h-8 bg-accent-rose rounded-full border-2 border-white shadow-lg">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
@@ -320,7 +312,7 @@ export function MapleRouteMap({
             height: 32px;
             background: white;
             border-radius: 50%;
-            border: 2px solid ${bm.type === 'pee' ? '#3b82f6' : '#a855f7'};
+            border: 2px solid ${bm.type === 'pee' ? '#5b8fd9' : '#9b5de5'};
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             font-size: 18px;
             cursor: pointer;

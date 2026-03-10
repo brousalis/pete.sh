@@ -317,7 +317,7 @@ function CookingPageContent() {
         <div className={cn('md:hidden flex-1 overflow-y-auto', mobileTab !== 'shopping' && 'hidden')}>
           <div className="p-3 space-y-3">
             <Button
-              className="w-full h-12 gap-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl"
+              className="w-full h-12 gap-2 text-sm bg-accent-sage hover:bg-accent-sage/90 text-white rounded-xl"
               onClick={() => setShowShoppingFocus(true)}
             >
               <Expand className="size-4" />
@@ -390,12 +390,12 @@ function CookingPageContent() {
                 onClick={() => setFavoritesOnly(!favoritesOnly)}
                 className={cn(
                   'flex items-center justify-center size-9 rounded-lg transition-all touch-manipulation',
-                  favoritesOnly
-                    ? 'bg-amber-500/15 text-amber-500'
-                    : 'text-muted-foreground active:bg-muted'
+                        favoritesOnly
+                          ? 'bg-accent-gold/15 text-accent-gold'
+                          : 'text-muted-foreground active:bg-muted'
                 )}
               >
-                <Star className={cn('size-4', favoritesOnly && 'fill-amber-500')} />
+                <Star className={cn('size-4', favoritesOnly && 'fill-accent-gold')} />
               </button>
 
               {fridgeIngredients.length > 0 && (
@@ -404,7 +404,7 @@ function CookingPageContent() {
                   className={cn(
                     'flex items-center justify-center size-9 rounded-lg transition-all touch-manipulation',
                     fridgeFilterActive
-                      ? 'bg-green-500/15 text-green-500'
+                      ? 'bg-accent-sage/15 text-accent-sage'
                       : 'text-muted-foreground active:bg-muted'
                   )}
                 >
@@ -613,12 +613,12 @@ function CookingPageContent() {
                       className={cn(
                         'flex items-center justify-center size-8 rounded-lg transition-all',
                         favoritesOnly
-                          ? 'bg-amber-500/15 text-amber-500'
+                          ? 'bg-accent-gold/15 text-accent-gold'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                       )}
                       title="Favorites"
                     >
-                      <Star className={cn('size-3.5', favoritesOnly && 'fill-amber-500')} />
+                      <Star className={cn('size-3.5', favoritesOnly && 'fill-accent-gold')} />
                     </button>
 
                     {fridgeIngredients.length > 0 && (
@@ -627,7 +627,7 @@ function CookingPageContent() {
                         className={cn(
                           'flex items-center justify-center size-8 rounded-lg transition-all',
                           fridgeFilterActive
-                            ? 'bg-green-500/15 text-green-500'
+                            ? 'bg-accent-sage/15 text-accent-sage'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         )}
                         title="Manage fridge items"

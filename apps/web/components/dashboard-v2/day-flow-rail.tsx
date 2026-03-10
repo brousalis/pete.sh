@@ -69,12 +69,12 @@ function TimelineNode({
       <div
         className={cn(
           'size-7 rounded-full flex items-center justify-center shrink-0 transition-all relative z-10',
-          completed ? 'bg-green-500/15' : iconBg,
+          completed ? 'bg-accent-sage/15' : iconBg,
           glowing && !completed && 'ring-2 ring-primary/20'
         )}
       >
         {completed ? (
-          <Check className="size-3.5 text-green-500" />
+          <Check className="size-3.5 text-accent-sage" />
         ) : (
           <span className={iconColor}>{icon}</span>
         )}
@@ -85,7 +85,7 @@ function TimelineNode({
         <p
           className={cn(
             'text-[13px] font-medium leading-tight',
-            completed ? 'text-green-500/80' : 'text-foreground'
+            completed ? 'text-accent-sage/80' : 'text-foreground'
           )}
         >
           {title}
@@ -96,7 +96,7 @@ function TimelineNode({
         <div className="flex items-center gap-2 mt-1">
           {completed ? (
             <>
-              <span className="text-[9px] text-green-500/70">Done</span>
+              <span className="text-[9px] text-accent-sage/70">Done</span>
               {completedAt && (
                 <span className="text-[9px] text-muted-foreground/40">
                   {format(new Date(completedAt), 'h:mm a')}
@@ -119,7 +119,7 @@ function TimelineNode({
                   onClick={onComplete}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/40 hover:text-green-500 transition-colors"
+                  className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/40 hover:text-accent-sage transition-colors"
                 >
                   <CircleCheck className="size-3" />
                   Mark done
@@ -182,12 +182,12 @@ export function DayFlowRail() {
       <div className="px-3 py-3 flex flex-col flex-1">
         <div className="relative">
           {/* Gradient timeline line */}
-          <div className="absolute left-[13px] top-4 bottom-4 w-px bg-gradient-to-b from-amber-500/30 via-muted/10 to-indigo-500/30" />
+          <div className="absolute left-[13px] top-4 bottom-4 w-px bg-gradient-to-b from-accent-gold/30 via-muted/10 to-accent-violet/30" />
 
           <TimelineNode
             icon={<Sun className="size-3.5" />}
-            iconBg="bg-amber-500/15"
-            iconColor="text-amber-500"
+            iconBg="bg-accent-gold/15"
+            iconColor="text-accent-gold"
             title={routine?.dailyRoutines.morning.name || 'Morning Stretch'}
             subtitle={`${routine?.dailyRoutines.morning.duration || 5}m · ${routine?.dailyRoutines.morning.exercises.length || 0} exercises`}
             completed={morningDone}
@@ -199,8 +199,8 @@ export function DayFlowRail() {
 
           <TimelineNode
             icon={isRestDay ? <Footprints className="size-3.5" /> : <Dumbbell className="size-3.5" />}
-            iconBg={isRestDay ? 'bg-slate-500/15' : focusConfig.bgStrong}
-            iconColor={isRestDay ? 'text-slate-400' : focusConfig.color}
+            iconBg={isRestDay ? 'bg-accent-slate/15' : focusConfig.bgStrong}
+            iconColor={isRestDay ? 'text-accent-slate' : focusConfig.color}
             title={isRestDay ? (schedule?.focus || 'Rest Day') : (workout?.name || 'Workout')}
             subtitle={
               isRestDay
@@ -224,8 +224,8 @@ export function DayFlowRail() {
 
           <TimelineNode
             icon={<UtensilsCrossed className="size-3.5" />}
-            iconBg="bg-green-600/15"
-            iconColor="text-green-600"
+            iconBg="bg-accent-sage/15"
+            iconColor="text-accent-sage"
             title={dinnerRecipe?.name || 'Dinner'}
             subtitle={
               dinnerRecipe
@@ -238,8 +238,8 @@ export function DayFlowRail() {
 
           <TimelineNode
             icon={<Moon className="size-3.5" />}
-            iconBg="bg-indigo-500/15"
-            iconColor="text-indigo-500"
+            iconBg="bg-accent-violet/15"
+            iconColor="text-accent-violet"
             title={routine?.dailyRoutines.night.name || 'Night Stretch'}
             subtitle={`${routine?.dailyRoutines.night.duration || 9}m · ${routine?.dailyRoutines.night.exercises.length || 0} exercises`}
             completed={nightDone}

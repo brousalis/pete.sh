@@ -168,10 +168,10 @@ export function DailyRoutineEditor({
   if (!dailyRoutines) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="bg-amber-50 dark:bg-amber-950/20">
+        <Card className="bg-accent-gold/5">
           <CardHeader className="py-3 px-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Sun className="h-4 w-4 text-amber-500" />
+              <Sun className="h-4 w-4 text-accent-gold" />
               Morning Stretch
             </CardTitle>
           </CardHeader>
@@ -179,10 +179,10 @@ export function DailyRoutineEditor({
             <p className="text-muted-foreground text-sm">Loading...</p>
           </CardContent>
         </Card>
-        <Card className="bg-indigo-50 dark:bg-indigo-950/20">
+        <Card className="bg-accent-violet/5">
           <CardHeader className="py-3 px-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Moon className="h-4 w-4 text-indigo-500" />
+              <Moon className="h-4 w-4 text-accent-violet" />
               Night Stretch
             </CardTitle>
           </CardHeader>
@@ -296,12 +296,12 @@ export function DailyRoutineEditor({
   const renderCard = (type: 'morning' | 'night') => {
     const routine = getRoutine(type)
     const icon = type === 'morning'
-      ? <Sun className="h-4 w-4 text-amber-500" />
-      : <Moon className="h-4 w-4 text-indigo-500" />
+      ? <Sun className="h-4 w-4 text-accent-gold" />
+      : <Moon className="h-4 w-4 text-accent-violet" />
     const bgColor = type === 'morning'
-      ? 'bg-amber-50 dark:bg-amber-950/20'
-      : 'bg-indigo-50 dark:bg-indigo-950/20'
-    const accentColor = type === 'morning' ? 'border-l-amber-500' : 'border-l-indigo-500'
+      ? 'bg-accent-gold/5'
+      : 'bg-accent-violet/5'
+    const accentColor = type === 'morning' ? 'border-l-accent-gold' : 'border-l-accent-violet'
     const totalDuration = routine.exercises.reduce((sum, ex) => sum + (ex.duration || 0), 0)
 
     return (
@@ -414,8 +414,8 @@ export function DailyRoutineEditor({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   {selected.type === 'morning'
-                    ? <Sun className="h-4 w-4 text-amber-500 shrink-0" />
-                    : <Moon className="h-4 w-4 text-indigo-500 shrink-0" />
+                    ? <Sun className="h-4 w-4 text-accent-gold shrink-0" />
+                    : <Moon className="h-4 w-4 text-accent-violet shrink-0" />
                   }
                   <Badge variant="outline" className="text-[10px] font-mono shrink-0 h-5 w-6 justify-center px-0">
                     {selected.index + 1}

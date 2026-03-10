@@ -292,7 +292,7 @@ export function ShoppingList({ onRecipeClick }: ShoppingListProps) {
                   >
                     <button onClick={() => toggleManualItem(index)}>
                       {item.checked ? (
-                        <CheckCircle2 className="size-5 text-green-600" />
+                        <CheckCircle2 className="size-5 text-accent-sage" />
                       ) : (
                         <Circle className="size-5 text-muted-foreground" />
                       )}
@@ -348,7 +348,7 @@ function ShoppingItemRow({
     >
       <button onClick={onToggle} className="mt-0.5 shrink-0">
         {checked ? (
-          <CheckCircle2 className="size-5 text-green-600" />
+          <CheckCircle2 className="size-5 text-accent-sage" />
         ) : (
           <Circle className="size-5 text-muted-foreground" />
         )}

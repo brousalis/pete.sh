@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { HEX } from '@/lib/constants/colors'
 import type { Concert } from '@/lib/types/concerts.types'
 import { format, parseISO } from 'date-fns'
 import { Download, Share2 } from 'lucide-react'
@@ -121,7 +122,7 @@ export function ConcertMemoryCard({ concert, className }: ConcertMemoryCardProps
 
     // Rating stars
     if (concert.rating) {
-      ctx.fillStyle = '#fbbf24'
+      ctx.fillStyle = HEX.gold
       ctx.font = '36px system-ui, -apple-system, sans-serif'
       const stars = '★'.repeat(concert.rating) + '☆'.repeat(5 - concert.rating)
       ctx.fillText(stars, textX, textY)

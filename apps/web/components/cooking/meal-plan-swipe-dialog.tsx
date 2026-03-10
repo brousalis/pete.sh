@@ -219,8 +219,8 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
           <div className="shrink-0 border-b border-border/40 bg-card/50 px-4 pt-4 pb-3 safe-area-inset-top">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-orange-500/15">
-                  <Dices className="size-5 text-orange-500" />
+                <div className="flex size-9 items-center justify-center rounded-xl bg-accent-ember/15">
+                  <Dices className="size-5 text-accent-ember" />
                 </div>
                 <div>
                   <h2 className="text-base font-bold leading-tight">Swipe to plan</h2>
@@ -265,7 +265,7 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
                   onClick={() => setQuickFilter((v) => !v)}
                   className={cn(
                     'shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-                    quickFilter ? 'bg-amber-500/15 text-amber-600' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    quickFilter ? 'bg-accent-gold/15 text-accent-gold' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                   )}
                 >
                   Quick &lt;30m
@@ -290,7 +290,7 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
                           : targetDay === day
                             ? 'bg-primary text-primary-foreground font-semibold'
                             : isFilled
-                              ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                              ? 'bg-accent-sage/15 text-accent-sage'
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       )}
                     >
@@ -334,8 +334,8 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               </div>
             ) : allFilled ? (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
-                <div className="flex size-16 items-center justify-center rounded-full bg-green-500/20">
-                  <Check className="size-8 text-green-500" />
+                <div className="flex size-16 items-center justify-center rounded-full bg-accent-sage/20">
+                  <Check className="size-8 text-accent-sage" />
                 </div>
                 <p className="text-base font-semibold">Your week is fully planned!</p>
                 <Button onClick={() => onOpenChange(false)}>Done</Button>
@@ -355,8 +355,8 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               </div>
             ) : allTargetDaysFilled ? (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
-                <div className="flex size-16 items-center justify-center rounded-full bg-green-500/20">
-                  <Check className="size-8 text-green-500" />
+                <div className="flex size-16 items-center justify-center rounded-full bg-accent-sage/20">
+                  <Check className="size-8 text-accent-sage" />
                 </div>
                 <p className="text-base font-semibold">All done for this round!</p>
                 <p className="text-sm text-muted-foreground">
@@ -396,7 +396,7 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               <Button
                 variant="outline"
                 size="icon"
-                className="size-12 rounded-full border-2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-red-500"
+                className="size-12 rounded-full border-2 border-accent-rose/50 text-accent-rose hover:bg-accent-rose/10 hover:border-accent-rose"
                 onClick={handlePass}
                 aria-label="Skip recipe"
               >
@@ -408,7 +408,7 @@ export function MealPlanSwipeDialog({ open, onOpenChange }: MealPlanSwipeDialogP
               <Button
                 variant="default"
                 size="icon"
-                className="size-12 rounded-full bg-green-500 hover:bg-green-600"
+                className="size-12 rounded-full bg-accent-sage hover:bg-accent-sage"
                 onClick={handleLike}
                 aria-label="Add recipe"
               >
@@ -606,12 +606,12 @@ function SwipeCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
           {recipe.source === 'trader_joes' && (
-            <span className="rounded px-1.5 py-0.5 bg-red-600/90 text-[10px] font-semibold text-white">
+            <span className="rounded px-1.5 py-0.5 bg-accent-rose/90 text-[10px] font-semibold text-white">
               TJ&apos;s
             </span>
           )}
           {recipe.is_favorite && (
-            <Star className="size-4 fill-amber-400 text-amber-400 drop-shadow-sm" />
+            <Star className="size-4 fill-accent-gold text-accent-gold drop-shadow-sm" />
           )}
         </div>
       </div>
@@ -666,7 +666,7 @@ function SwipeCard({
           {nutritionHints.map((hint) => (
             <span
               key={hint}
-              className="rounded-md bg-green-500/15 px-1.5 py-0.5 text-[10px] font-medium text-green-600 dark:text-green-400"
+              className="rounded-md bg-accent-sage/15 px-1.5 py-0.5 text-[10px] font-medium text-accent-sage"
             >
               {hint.replace(/-/g, ' ')}
             </span>

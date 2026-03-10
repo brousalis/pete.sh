@@ -36,29 +36,29 @@ export function DayFlowMobile() {
       label: 'AM',
       done: morningDone,
       icon: Sun,
-      color: 'text-amber-500',
-      bg: morningDone ? 'bg-green-500/15' : 'bg-amber-500/10',
+      color: 'text-accent-gold',
+      bg: morningDone ? 'bg-accent-sage/15' : 'bg-accent-gold/10',
     },
     {
       label: isRestDay ? 'Rest' : focusType.slice(0, 5),
       done: workoutDone,
       icon: Dumbbell,
       color: focusConfig.color,
-      bg: workoutDone ? 'bg-green-500/15' : focusConfig.bg,
+      bg: workoutDone ? 'bg-accent-sage/15' : focusConfig.bg,
     },
     {
       label: dinnerName ? dinnerName.slice(0, 8) : 'Dinner',
       done: false,
       icon: UtensilsCrossed,
-      color: 'text-green-600',
-      bg: 'bg-green-600/10',
+      color: 'text-accent-sage',
+      bg: 'bg-accent-sage/10',
     },
     {
       label: 'PM',
       done: nightDone,
       icon: Moon,
-      color: 'text-indigo-500',
-      bg: nightDone ? 'bg-green-500/15' : 'bg-indigo-500/10',
+      color: 'text-accent-violet',
+      bg: nightDone ? 'bg-accent-sage/15' : 'bg-accent-violet/10',
     },
   ]
 
@@ -72,7 +72,7 @@ export function DayFlowMobile() {
             className={cn(
               'flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-medium shrink-0',
               pill.bg,
-              pill.done ? 'text-green-500' : pill.color
+              pill.done ? 'text-accent-sage' : pill.color
             )}
           >
             {pill.done ? (

@@ -148,7 +148,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
         {/* Top Bar */}
         <div className="flex items-center justify-between p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <Timer className="size-6 text-amber-600 sm:size-8 dark:text-amber-400" />
+            <Timer className="size-6 text-accent-ember sm:size-8" />
             <h2 className="text-lg font-semibold sm:text-xl">Brew Timer</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -197,7 +197,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
               <Button
                 onClick={startTimer}
                 size="lg"
-                className="h-16 w-40 gap-3 bg-amber-600 text-xl hover:bg-amber-700 sm:h-20 sm:w-48 sm:text-2xl"
+                className="h-16 w-40 gap-3 bg-accent-ember text-xl hover:bg-accent-ember/80 sm:h-20 sm:w-48 sm:text-2xl"
               >
                 <Play className="size-6 sm:size-8" />
                 Start
@@ -220,7 +220,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
                 <Button
                   onClick={startTimer}
                   size="lg"
-                  className="h-16 w-32 gap-3 bg-amber-600 text-lg hover:bg-amber-700 sm:h-20 sm:w-40 sm:text-xl"
+                  className="h-16 w-32 gap-3 bg-accent-ember text-lg hover:bg-accent-ember/80 sm:h-20 sm:w-40 sm:text-xl"
                 >
                   <Play className="size-6 sm:size-8" />
                   Resume
@@ -243,9 +243,9 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
                   key={idx}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all sm:px-4 sm:py-3 sm:text-base ${
                     triggeredCues.has(cue.time)
-                      ? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
+                      ? 'border-accent-sage/50 bg-accent-sage/10 text-accent-sage'
                       : cue.time === nextCue?.time
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                        ? 'border-accent-ember/50 bg-accent-ember/10 text-accent-ember'
                         : 'border-border bg-background'
                   }`}
                 >
@@ -265,8 +265,8 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
   return (
     <div className="min-w-0 space-y-2">
       {/* Timer Display */}
-      <div className={`rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 px-3 py-3 transition-all ${
-        timerState === 'running' ? 'ring-2 ring-amber-500/30' : ''
+      <div className={`rounded-xl bg-gradient-to-br from-accent-ember/10 to-accent-gold/5 px-3 py-3 transition-all ${
+        timerState === 'running' ? 'ring-2 ring-accent-ember/30' : ''
       }`}>
         {/* Timer + Controls - Stack on mobile, inline on larger */}
         <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-3">
@@ -296,7 +296,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
           {/* Control Buttons */}
           <div className="flex items-center gap-1.5">
             {timerState === 'idle' && (
-              <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-amber-600 text-sm font-medium hover:bg-amber-700 min-[420px]:flex-none min-[420px]:px-4">
+              <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-accent-ember text-sm font-medium hover:bg-accent-ember/80 min-[420px]:flex-none min-[420px]:px-4">
                 <Play className="size-4" />
                 Start
               </Button>
@@ -314,7 +314,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
             )}
             {timerState === 'paused' && (
               <>
-                <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-amber-600 hover:bg-amber-700 min-[420px]:flex-none min-[420px]:px-3">
+                <Button onClick={startTimer} className="h-9 flex-1 gap-1.5 bg-accent-ember hover:bg-accent-ember/80 min-[420px]:flex-none min-[420px]:px-3">
                   <Play className="size-4" />
                   Resume
                 </Button>
@@ -348,7 +348,7 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
             <span className="font-medium">{nextCue.label}</span>
             <span className="text-muted-foreground">at {formatTime(nextCue.time)}</span>
             {nextCue.time - elapsedTime <= 10 && nextCue.time - elapsedTime > 0 && (
-              <Badge variant="default" className="animate-pulse bg-amber-600 px-1.5 py-0 text-[10px]">
+              <Badge variant="default" className="animate-pulse bg-accent-ember px-1.5 py-0 text-[10px]">
                 {nextCue.time - elapsedTime}s
               </Badge>
             )}
@@ -364,9 +364,9 @@ export function CoffeeStopwatch({ timingCues = [], onFullscreenChange }: CoffeeS
               key={idx}
               className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[11px] transition-all ${
                 triggeredCues.has(cue.time)
-                  ? 'bg-green-500/15 text-green-700 dark:text-green-400'
+                  ? 'bg-accent-sage/15 text-accent-sage'
                   : cue.time === nextCue?.time
-                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                    ? 'bg-accent-ember/15 text-accent-ember'
                     : 'bg-muted/50'
               }`}
             >

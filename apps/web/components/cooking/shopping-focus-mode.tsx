@@ -116,14 +116,14 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
             {/* Top row: close + title */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-green-500/15">
-                  <ShoppingCart className="size-5 text-green-500" />
+                <div className="flex size-10 items-center justify-center rounded-xl bg-accent-sage/15">
+                  <ShoppingCart className="size-5 text-accent-sage" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold leading-tight">Shopping List</h2>
                     {trips.length > 0 && (
-                      <span className="text-xs font-medium text-green-600 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                      <span className="text-xs font-medium text-accent-sage bg-accent-sage/10 border border-accent-sage/20 rounded-full px-2 py-0.5">
                         Trip {trips.length + (weekComplete ? 0 : 1)}
                       </span>
                     )}
@@ -166,7 +166,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                 <div className="flex-1">
                   <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-green-500"
+                      className="h-full rounded-full bg-accent-sage"
                       initial={false}
                       animate={{ width: `${progressPercent}%` }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -176,7 +176,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                     <span className="text-xs text-muted-foreground">
                       {visibleItemCount - checkedCount} remaining
                     </span>
-                    <span className="text-xs font-semibold tabular-nums text-green-500">
+                    <span className="text-xs font-semibold tabular-nums text-accent-sage">
                       {progressPercent}%
                     </span>
                   </div>
@@ -190,7 +190,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
                 onClick={() => setShowTripHistory((v) => !v)}
                 className="flex w-full items-center gap-2 rounded-lg bg-muted/30 px-3 py-2 text-left transition-colors hover:bg-muted/50"
               >
-                <Check className="size-3.5 text-green-500 shrink-0" />
+                <Check className="size-3.5 text-accent-sage shrink-0" />
                 <span className="text-xs font-medium flex-1">
                   {trips.length} completed trip{trips.length !== 1 ? 's' : ''} &middot; {totalAcquiredCount} item{totalAcquiredCount !== 1 ? 's' : ''} acquired
                 </span>
@@ -231,7 +231,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
             <div className="px-4 py-3 space-y-1">
               {weekComplete ? (
                 <div className="py-16 text-center">
-                  <PartyPopper className="size-12 mx-auto mb-3 text-green-500/40" />
+                  <PartyPopper className="size-12 mx-auto mb-3 text-accent-sage/40" />
                   <p className="text-lg font-semibold text-foreground">Week Complete</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     All {totalAcquiredCount} items acquired across {trips.length} trip{trips.length !== 1 ? 's' : ''}
@@ -361,7 +361,7 @@ export function ShoppingFocusMode({ open, onClose }: ShoppingFocusModeProps) {
           {hasCheckedItems && (
             <div className="shrink-0 border-t border-border/40 bg-card/50 px-4 py-3 safe-area-inset-bottom">
               <Button
-                className="w-full h-11 gap-2 text-sm bg-green-600 hover:bg-green-700 text-white"
+                className="w-full h-11 gap-2 text-sm bg-accent-sage hover:bg-accent-sage text-white"
                 onClick={() => completeTrip(shoppingList?.items ?? [])}
               >
                 <ShoppingBag className="size-4" />
@@ -397,8 +397,8 @@ function TripHistoryCard({
   return (
     <div className="rounded-lg bg-card/60 border border-border/30 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2">
-        <div className="flex size-6 items-center justify-center rounded-full bg-green-500/15 shrink-0">
-          <Check className="size-3 text-green-500" />
+        <div className="flex size-6 items-center justify-center rounded-full bg-accent-sage/15 shrink-0">
+          <Check className="size-3 text-accent-sage" />
         </div>
         <button onClick={onToggleExpand} className="flex-1 text-left min-w-0">
           <span className="text-xs font-medium">Trip {tripNumber}</span>
@@ -431,7 +431,7 @@ function TripHistoryCard({
             <div className="px-3 pb-2.5 space-y-1 border-t border-border/20 pt-2">
               {trip.items.map((item) => (
                 <div key={item.ingredient} className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Check className="size-3 text-green-500/50 shrink-0" />
+                  <Check className="size-3 text-accent-sage/50 shrink-0" />
                   <span className="truncate">{item.ingredient}</span>
                   {(item.amount > 0 || item.unit) && (
                     <span className="text-[10px] text-muted-foreground/50 shrink-0 ml-auto">
@@ -442,7 +442,7 @@ function TripHistoryCard({
               ))}
               {trip.manualItems.map((name) => (
                 <div key={name} className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Check className="size-3 text-green-500/50 shrink-0" />
+                  <Check className="size-3 text-accent-sage/50 shrink-0" />
                   <span className="truncate">{name}</span>
                   <span className="text-[10px] text-muted-foreground/40 ml-auto">(custom)</span>
                 </div>
@@ -490,7 +490,7 @@ function FocusItemRow({
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
-            className="size-6 rounded-full bg-green-500 flex items-center justify-center shadow-sm"
+            className="size-6 rounded-full bg-accent-sage flex items-center justify-center shadow-sm"
           >
             <Check className="size-4 text-white" />
           </motion.div>
@@ -558,7 +558,7 @@ function ProgressRing({ percent, size = 40 }: { percent: number; size?: number }
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           strokeLinecap="round"
-          className="text-green-500"
+          className="text-accent-sage"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

@@ -247,8 +247,8 @@ export function SpotifyHistory({
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="relative">
-          <div className="absolute inset-0 animate-ping rounded-full bg-green-500/20" />
-          <RefreshCw className="relative size-6 animate-spin text-green-500" />
+          <div className="absolute inset-0 animate-ping rounded-full bg-accent-sage/20" />
+          <RefreshCw className="relative size-6 animate-spin text-accent-sage" />
         </div>
         <p className="text-muted-foreground mt-3 text-sm">
           Loading your listening history...
@@ -263,8 +263,8 @@ export function SpotifyHistory({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-green-500/10 p-2.5">
-              <History className="size-5 text-green-500" />
+            <div className="rounded-xl bg-accent-sage/10 p-2.5">
+              <History className="size-5 text-accent-sage" />
             </div>
             <div>
               <h3 className="font-semibold">Listening History</h3>
@@ -310,8 +310,8 @@ export function SpotifyHistory({
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-3 text-left transition-colors hover:opacity-80"
         >
-          <div className="rounded-xl bg-green-500/10 p-2.5">
-            <History className="size-5 text-green-500" />
+          <div className="rounded-xl bg-accent-sage/10 p-2.5">
+            <History className="size-5 text-accent-sage" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -365,44 +365,44 @@ export function SpotifyHistory({
       {/* Stats Panel - Redesigned */}
       {showStats && stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 p-4 transition-all hover:from-green-500/15 hover:to-green-600/10">
-            <div className="absolute top-2 right-2 text-green-500/20">
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-accent-sage/10 to-accent-sage/5 p-4 transition-all hover:from-accent-sage/15 hover:to-accent-sage/10">
+            <div className="absolute top-2 right-2 text-accent-sage/20">
               <Disc3 className="size-8" />
             </div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-2xl font-bold text-accent-sage">
               {stats.total_tracks}
             </div>
             <div className="text-muted-foreground text-xs font-medium">
               Total Plays
             </div>
           </div>
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 p-4 transition-all hover:from-blue-500/15 hover:to-blue-600/10">
-            <div className="absolute top-2 right-2 text-blue-500/20">
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-accent-azure/10 to-accent-azure/5 p-4 transition-all hover:from-accent-azure/15 hover:to-accent-azure/10">
+            <div className="absolute top-2 right-2 text-accent-azure/20">
               <Music className="size-8" />
             </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-accent-azure">
               {stats.unique_tracks}
             </div>
             <div className="text-muted-foreground text-xs font-medium">
               Unique Tracks
             </div>
           </div>
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-4 transition-all hover:from-purple-500/15 hover:to-purple-600/10">
-            <div className="absolute top-2 right-2 text-purple-500/20">
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-accent-violet/10 to-accent-violet/5 p-4 transition-all hover:from-accent-violet/15 hover:to-accent-violet/10">
+            <div className="absolute top-2 right-2 text-accent-violet/20">
               <User className="size-8" />
             </div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className="text-2xl font-bold text-accent-violet">
               {stats.unique_artists}
             </div>
             <div className="text-muted-foreground text-xs font-medium">
               Artists
             </div>
           </div>
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 p-4 transition-all hover:from-orange-500/15 hover:to-orange-600/10">
-            <div className="absolute top-2 right-2 text-orange-500/20">
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-accent-ember/10 to-accent-ember/5 p-4 transition-all hover:from-accent-ember/15 hover:to-accent-ember/10">
+            <div className="absolute top-2 right-2 text-accent-ember/20">
               <Timer className="size-8" />
             </div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="text-2xl font-bold text-accent-ember">
               {formatDuration(stats.total_listening_time_ms)}
             </div>
             <div className="text-muted-foreground text-xs font-medium">
@@ -416,8 +416,8 @@ export function SpotifyHistory({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {stats.top_track && (
                   <div className="bg-muted/50 flex items-center gap-3 rounded-xl p-3">
-                    <div className="rounded-lg bg-green-500/10 p-2">
-                      <Sparkles className="size-4 text-green-500" />
+                    <div className="rounded-lg bg-accent-sage/10 p-2">
+                      <Sparkles className="size-4 text-accent-sage" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
@@ -434,8 +434,8 @@ export function SpotifyHistory({
                 )}
                 {stats.top_artist && (
                   <div className="bg-muted/50 flex items-center gap-3 rounded-xl p-3">
-                    <div className="rounded-lg bg-purple-500/10 p-2">
-                      <User className="size-4 text-purple-500" />
+                    <div className="rounded-lg bg-accent-violet/10 p-2">
+                      <User className="size-4 text-accent-violet" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
@@ -625,7 +625,7 @@ export function SpotifyHistory({
                       viewMode === 'compact'
                         ? 'bg-muted/30 hover:bg-muted/60 p-2'
                         : 'hover:bg-muted/50 p-2.5'
-                    } ${hoveredTrackId === entry.id ? 'ring-1 ring-green-500/30' : ''}`}
+                    } ${hoveredTrackId === entry.id ? 'ring-1 ring-accent-sage/30' : ''}`}
                   >
                     {/* Album art - Larger */}
                     <div
@@ -647,7 +647,7 @@ export function SpotifyHistory({
                       {/* Play overlay - More prominent */}
                       {onPlayTrack && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-all duration-200 group-hover:opacity-100">
-                          <div className="rounded-full bg-green-500 p-2 shadow-lg transition-transform group-hover:scale-110">
+                          <div className="rounded-full bg-accent-sage p-2 shadow-lg transition-transform group-hover:scale-110">
                             <Play className="size-4 fill-white text-white" />
                           </div>
                         </div>
@@ -683,7 +683,7 @@ export function SpotifyHistory({
                                 )
                               }
                             }}
-                            className="text-muted-foreground mt-0.5 cursor-pointer truncate text-sm transition-colors hover:text-green-500 hover:underline"
+                            className="text-muted-foreground mt-0.5 cursor-pointer truncate text-sm transition-colors hover:text-accent-sage hover:underline"
                           >
                             {entry.track_artists}
                           </span>

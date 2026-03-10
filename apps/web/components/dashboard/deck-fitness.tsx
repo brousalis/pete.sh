@@ -77,14 +77,14 @@ export function DeckFitness() {
     <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <div className="rounded-lg bg-red-500/20 p-1.5">
-            <Dumbbell className="size-4 text-red-500" />
+          <div className="rounded-lg bg-accent-rose/20 p-1.5">
+            <Dumbbell className="size-4 text-accent-rose" />
           </div>
           <div>
             <div className="text-sm font-semibold text-foreground">Fitness</div>
             {consistency && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Flame className="size-3 text-orange-500" />
+                <Flame className="size-3 text-accent-ember" />
                 <span>{consistency.currentStreak} day streak</span>
               </div>
             )}
@@ -95,12 +95,12 @@ export function DeckFitness() {
       <div className="flex flex-1 flex-col space-y-1.5">
         <div
           className={`flex items-center justify-between rounded-lg border p-1.5 ${
-            morningCompleted ? "border-green-500/50 bg-green-500/10" : "border-border bg-background/50"
+            morningCompleted ? "border-accent-sage/50 bg-accent-sage/10" : "border-border bg-background/50"
           }`}
         >
           <span className="text-xs font-medium text-foreground">Morning</span>
           {morningCompleted ? (
-            <CheckCircle2 className="size-3.5 text-green-500" />
+            <CheckCircle2 className="size-3.5 text-accent-sage" />
           ) : (
             <Circle className="size-3.5 text-muted-foreground" />
           )}
@@ -108,12 +108,12 @@ export function DeckFitness() {
 
         <div
           className={`flex items-center justify-between rounded-lg border p-1.5 ${
-            nightCompleted ? "border-green-500/50 bg-green-500/10" : "border-border bg-background/50"
+            nightCompleted ? "border-accent-sage/50 bg-accent-sage/10" : "border-border bg-background/50"
           }`}
         >
           <span className="text-xs font-medium text-foreground">Night</span>
           {nightCompleted ? (
-            <CheckCircle2 className="size-3.5 text-green-500" />
+            <CheckCircle2 className="size-3.5 text-accent-sage" />
           ) : (
             <Circle className="size-3.5 text-muted-foreground" />
           )}
@@ -123,7 +123,7 @@ export function DeckFitness() {
           <div
             className={`flex items-center justify-between rounded-lg border p-1.5 ${
               workoutCompleted
-                ? "border-green-500/50 bg-green-500/10"
+                ? "border-accent-sage/50 bg-accent-sage/10"
                 : "border-border bg-background/50"
             }`}
           >
@@ -131,7 +131,7 @@ export function DeckFitness() {
               {todayWorkout.name}
             </span>
             {workoutCompleted ? (
-              <CheckCircle2 className="size-3.5 shrink-0 text-green-500" />
+              <CheckCircle2 className="size-3.5 shrink-0 text-accent-sage" />
             ) : (
               <Circle className="size-3.5 shrink-0 text-muted-foreground" />
             )}
@@ -139,7 +139,7 @@ export function DeckFitness() {
         )}
 
         {scheduleInfo?.focus === "Active Recovery" && (
-          <div className="rounded-lg border border-blue-500/50 bg-blue-500/10 p-1.5 text-center">
+          <div className="rounded-lg border border-accent-azure/50 bg-accent-azure/10 p-1.5 text-center">
             <div className="text-xs font-medium text-foreground">Active Recovery</div>
           </div>
         )}

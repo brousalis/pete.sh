@@ -29,6 +29,7 @@ import {
   Music,
   RefreshCw,
   Settings,
+  Sparkles,
   Tv,
   User,
   X
@@ -48,25 +49,27 @@ type NavItem = {
 // All navigation items
 const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home, shortcut: '`' },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
-  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
+  { href: '/assistant', label: 'Assistant', icon: Sparkles, shortcut: '1' },
+  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2' },
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '3' },
+  { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '4' },
   // CTA sunset – hidden from nav, code kept
   // { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
   // Concerts sunset – hidden from nav, code kept
   // { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
   // Lights sunset – hidden from nav, code kept
   // { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '4' },
+  { href: '/music', label: 'Music', icon: Music, shortcut: '5' },
   // Coffee sunset – hidden from nav, code kept
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
-  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '5' },
-  { href: '/me', label: 'Me', icon: User, shortcut: '6' },
+  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '6' },
+  { href: '/me', label: 'Me', icon: User, shortcut: '7' },
 ]
 
 // Mobile bottom nav items
 const mobileBottomItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/assistant', label: 'Assistant', icon: Sparkles },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
@@ -311,7 +314,7 @@ export function TopNavigation() {
                 className={cn(
                   'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
                   isLocalAvailable
-                    ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                    ? 'bg-accent-sage/15 text-accent-sage'
                     : 'bg-muted text-muted-foreground'
                 )}
                 title={

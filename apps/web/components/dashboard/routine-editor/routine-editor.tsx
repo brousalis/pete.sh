@@ -26,6 +26,7 @@ import type {
 } from '@/lib/types/routine-editor.types'
 import { cn } from '@/lib/utils'
 import type { RoutineChangeDiffEntry, DailyRoutineChangeDiffEntry } from '@/lib/utils/routine-change-utils'
+import { FOCUS_ACCENT, TW } from '@/lib/constants/colors'
 import {
   AlertCircle,
   ArrowLeft,
@@ -92,16 +93,16 @@ const DAY_SHORT: Record<DayOfWeek, string> = {
 }
 
 const FOCUS_DOT_COLORS: Record<string, string> = {
-  strength: 'bg-red-400',
-  core: 'bg-orange-400',
-  cardio: 'bg-blue-400',
-  hiit: 'bg-purple-400',
-  recovery: 'bg-green-400',
-  conditioning: 'bg-cyan-400',
-  hybrid: 'bg-amber-400',
-  endurance: 'bg-indigo-400',
-  rest: 'bg-slate-400',
-  circuit: 'bg-pink-400',
+  strength: TW.ember.bg,
+  core: TW.azure.bg,
+  cardio: TW.azure.bg,
+  hiit: TW.gold.bg,
+  recovery: TW.teal.bg,
+  conditioning: TW.teal.bg,
+  hybrid: TW.violet.bg,
+  endurance: TW.rose.bg,
+  rest: TW.slate.bg,
+  circuit: TW.sage.bg,
 }
 
 function getFocusDot(focus: string): string {
@@ -109,7 +110,9 @@ function getFocusDot(focus: string): string {
   for (const [key, value] of Object.entries(FOCUS_DOT_COLORS)) {
     if (lower.includes(key)) return value
   }
-  return 'bg-slate-400'
+  const accent = FOCUS_ACCENT[focus]
+  if (accent) return TW[accent].bg
+  return TW.slate.bg
 }
 
 export function RoutineEditor({
@@ -548,13 +551,13 @@ export function RoutineEditor({
             </span>
           )}
           {saveStatus === 'saved' && lastSaved && (
-            <span className="flex items-center gap-1.5 text-xs text-green-500">
+            <span className="flex items-center gap-1.5 text-xs text-accent-sage">
               <CheckCircle2 className="h-3 w-3" />
               Saved {new Date(lastSaved).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           {saveStatus === 'error' && (
-            <span className="flex items-center gap-1.5 text-xs text-red-500">
+            <span className="flex items-center gap-1.5 text-xs text-accent-rose">
               <AlertCircle className="h-3 w-3" />
               Failed
             </span>
@@ -611,8 +614,8 @@ export function RoutineEditor({
             className={cn(
               'hidden h-7 gap-1.5 text-xs lg:inline-flex border',
               aiCoachOpen
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/50 hover:bg-amber-500/25'
-                : 'bg-transparent text-amber-400/80 border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-300'
+                ?             'bg-accent-gold/15 text-accent-gold border-accent-gold/50 hover:bg-accent-gold/25'
+                : 'bg-transparent text-accent-gold/80 border-accent-gold/30 hover:bg-accent-gold/10 hover:text-accent-gold'
             )}
           >
             <Brain className="h-3 w-3" />
@@ -623,16 +626,16 @@ export function RoutineEditor({
 
       {/* Version Status Bar */}
       {isLocalMode && (
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-blue-500/5 px-5 text-xs">
-          <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-          <span className="text-blue-400 font-medium">Local</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-accent-azure/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-azure" />
+          <span className="text-accent-azure font-medium">Local</span>
           <span className="text-muted-foreground">Changes saved to JSON file</span>
         </div>
       )}
       {isEditingDraft && (
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-amber-500/5 px-5 text-xs">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-          <span className="text-amber-400 font-medium">Editing Draft v{currentVersion.versionNumber}</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-accent-gold/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-gold" />
+          <span className="text-accent-gold font-medium">Editing Draft v{currentVersion.versionNumber}</span>
           {activeVersion && (
             <>
               <span className="text-muted-foreground/40">·</span>
@@ -642,9 +645,9 @@ export function RoutineEditor({
         </div>
       )}
       {!isLocalMode && !isEditingDraft && currentVersion.isActive && (
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-green-500/5 px-5 text-xs">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          <span className="text-green-400 font-medium">v{currentVersion.versionNumber} Active</span>
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-accent-sage/5 px-5 text-xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-sage" />
+          <span className="text-accent-sage font-medium">v{currentVersion.versionNumber} Active</span>
           <span className="text-muted-foreground">This is the live routine</span>
         </div>
       )}

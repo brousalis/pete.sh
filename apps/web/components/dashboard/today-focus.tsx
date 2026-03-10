@@ -144,11 +144,11 @@ export function TodayFocus() {
             <div className={cn(
               "flex items-center gap-3 p-3 rounded-lg border transition-all hover:bg-muted/50",
               todayData?.workout?.completed 
-                ? "bg-green-500/5 border-green-500/20" 
+                ? "bg-accent-sage/5 border-accent-sage/20" 
                 : "bg-muted/30"
             )}>
               {todayData?.workout?.completed ? (
-                <CheckCircle2 className="size-5 text-green-500 shrink-0" />
+                <CheckCircle2 className="size-5 text-accent-sage shrink-0" />
               ) : (
                 <Circle className="size-5 text-muted-foreground shrink-0" />
               )}
@@ -165,7 +165,7 @@ export function TodayFocus() {
 
               <div className="flex items-center gap-2 shrink-0">
                 {todayData?.workout?.completed ? (
-                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                  <Badge variant="outline" className="bg-accent-sage/10 text-accent-sage border-accent-sage/30 text-xs">
                     Done
                   </Badge>
                 ) : (
@@ -180,7 +180,7 @@ export function TodayFocus() {
         )}
 
         {isActiveRecovery && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-accent-azure/5 border-accent-azure/20">
             <div className="flex-1">
               <span className="text-sm font-medium">Active Recovery</span>
               <p className="text-xs text-muted-foreground">

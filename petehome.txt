@@ -1,0 +1,84 @@
+petehome
+
+# dashboard
+
+# fitness
+- possible to background the location/sync checking on watch/iphone
+- redesign the morning/nightly stretch routine
+	- move some icons around, make sure no truncate, no inline timers
+- remove the timers for the main workout
+- workout audibles, how to show recorded sessions that dont fit in the main workout section better
+- maybe we need to put the ai coach, activity, and routine managemenet settings in a navbar in fitness?
+
+	# activity dashboard
+	- figure out a better area for the rings stream info. top right of header
+	- combine the This week and resting hr hrv vo2 max bars?
+	- in the weekly summary, i want an infinite scroll or paged view so we can go through them all
+	- move the summary to the right side so its less busy 
+	- need to figure out what to do with body fat too big
+
+# calendar
+- redesign the upcoming pills & rounded left side bordered stuff
+- rounded content area for the calendar
+
+# cooking
+- mobile
+- tinder style recipe chooser for the meal plan builder
+- shopping list press whole thing 
+- help find common recipes for the meal plan for the week - share ingredients 
+
+# cta
+- need to support opposite direction
+- visualize historical data
+- remove rideshare integration, they dont work
+
+# concerts
+- auto concert video uploads to youtube
+- use youtube as file storage for the videos basically
+- ux to upload via ios app
+
+API Key
+    vExN6Ms-Y6yVomCYCwsLk20IdqJCYaNvDvo5
+    Rate limit max. 2.0/second and max. 1440/DAY.
+https://api.setlist.fm/docs/1.0/index.html
+
+# lights
+- redesign similar to the other pages with dark cards and good layout
+
+# music
+- spotify playlist maker for upcoming concerts via setlist
+
+# maple
+- add photo upload for after walks
+	 have watch ping 
+- automatically ask for how was the walk when we finish a workout
+- add button to watch to mark #1 and #2
+
+
+# me
+- notes app for windows
+	- copy obsidian and notion ux
+- firefox extension for clipping stuff and bookmarks
+- more comprehensive bookmarking system
+- much better design and layout
+
+# settings page
+- weather, cta, some configuration
+- deeper with env vars and api configuration
+- much better layout
+
+future
+# news? rss reader?
+
+----------------------------------------------------------------------
+
+petehome-cli
+
+----------------------------------------------------------------------
+
+petetrain watch
+- cache workout routine data so it doesn't need to keep goin
+
+----------------------------------------------------------------------
+
+peteios

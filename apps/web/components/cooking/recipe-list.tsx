@@ -226,12 +226,12 @@ export function RecipeList({
             </Badge>
           ))}
           {fridgeFilterActive && (
-            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6 bg-green-500/10 text-green-500 border-green-500/20">
+            <Badge variant="secondary" className="text-xs gap-1 pr-1 h-6 bg-accent-sage/10 text-accent-sage border-accent-sage/20">
               <Snowflake className="size-3" />
               Fridge
               <button
                 onClick={() => setFridgeFilterActive(false)}
-                className="rounded-full p-0.5 hover:bg-green-500/20"
+                className="rounded-full p-0.5 hover:bg-accent-sage/20"
               >
                 <X className="size-3" />
               </button>
@@ -247,21 +247,21 @@ export function RecipeList({
 
       {/* Fridge contents summary when filter is active */}
       {fridgeFilterActive && fridgeIngredients.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2 w-full text-left">
-          <Snowflake className="size-3.5 text-green-500 shrink-0" />
-          <span className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-accent-sage/20 bg-accent-sage/5 px-3 py-2 w-full text-left">
+          <Snowflake className="size-3.5 text-accent-sage shrink-0" />
+          <span className="text-xs font-medium text-accent-sage shrink-0">
             Filtering with:
           </span>
           {fridgeIngredients.slice(0, 8).map((item) => (
             <span
               key={item}
-              className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] text-green-700 dark:text-green-300"
+              className="inline-flex items-center rounded-full bg-accent-sage/10 px-2 py-0.5 text-[11px] text-accent-sage"
             >
               {item}
             </span>
           ))}
           {fridgeIngredients.length > 8 && (
-            <span className="text-[11px] text-green-600/70 dark:text-green-400/70">
+            <span className="text-[11px] text-accent-sage/70">
               +{fridgeIngredients.length - 8} more
             </span>
           )}
@@ -271,7 +271,7 @@ export function RecipeList({
       {/* Try Something New -- discovery card */}
       {showDiscovery && randomTjRecipe && (
         <div
-          className="group relative overflow-hidden rounded-lg border border-primary/10 bg-gradient-to-r from-orange-500/[0.04] to-amber-500/[0.04] cursor-pointer transition-all hover:shadow-md hover:border-primary/20 mb-4"
+          className="group relative overflow-hidden rounded-lg border border-primary/10 bg-gradient-to-r from-accent-ember/[0.04] to-accent-gold/[0.04] cursor-pointer transition-all hover:shadow-md hover:border-primary/20 mb-4"
           onClick={() => onRecipeClick?.(randomTjRecipe)}
         >
           <div className="flex items-center gap-3 px-3 py-2">
@@ -283,7 +283,7 @@ export function RecipeList({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-primary/10 to-orange-500/10 flex items-center justify-center">
+                  <div className="h-full w-full bg-gradient-to-br from-primary/10 to-accent-ember/10 flex items-center justify-center">
                   <ChefHat className="size-4 text-muted-foreground/30" />
                 </div>
               )}
@@ -334,8 +334,8 @@ export function RecipeList({
             <FridgeTierSection
               title="Ready to Cook"
               subtitle="80%+ ingredients matched"
-              dotColor="bg-green-500"
-              titleColor="text-green-500"
+              dotColor="bg-accent-sage"
+              titleColor="text-accent-sage"
               items={readyToCook}
               onRecipeClick={onRecipeClick}
               fridgeFilterActive={fridgeFilterActive}
@@ -345,8 +345,8 @@ export function RecipeList({
             <FridgeTierSection
               title="Almost There"
               subtitle="50-79% ingredients matched"
-              dotColor="bg-amber-500"
-              titleColor="text-amber-500"
+              dotColor="bg-accent-gold"
+              titleColor="text-accent-gold"
               items={almostThere}
               onRecipeClick={onRecipeClick}
               fridgeFilterActive={fridgeFilterActive}
@@ -444,8 +444,8 @@ function FridgeTierSection({
   fridgeFilterActive: boolean
 }) {
   const iconBgMap: Record<string, string> = {
-    'text-green-500': 'bg-green-500/10',
-    'text-amber-500': 'bg-amber-500/10',
+    'text-accent-sage': 'bg-accent-sage/10',
+    'text-accent-gold': 'bg-accent-gold/10',
     'text-muted-foreground': 'bg-muted-foreground/10',
   }
   const iconBg = iconBgMap[titleColor] || 'bg-muted/30'

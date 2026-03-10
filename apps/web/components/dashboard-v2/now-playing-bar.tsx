@@ -35,7 +35,7 @@ export function NowPlayingBar() {
         </div>
       </div>
       <div className="h-[2px] rounded-full bg-white/[0.06] mt-2 overflow-hidden">
-        <div className="h-full rounded-full bg-green-500/50 transition-all duration-1000" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-accent-sage/50 transition-all duration-1000" style={{ width: `${progress}%` }} />
       </div>
     </div>
   )

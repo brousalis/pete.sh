@@ -47,6 +47,7 @@ interface CookingContextValue {
   shoppingListLoading: boolean
   refreshShoppingList: (regenerate?: boolean) => Promise<void>
   clearShoppingList: () => Promise<void>
+  addRecipeToShoppingList: (recipeId: string) => Promise<void>
 
   getRecipeById: (id: string) => Recipe | undefined
   getRecipeName: (id: string) => string
@@ -212,6 +213,24 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       toast({ title: 'Failed to clear shopping list', variant: 'destructive' })
     }
   }, [mealPlan?.id, toast])
+
+  const addRecipeToShoppingList = useCallback(async (recipeId: string) => {
+    if (!mealPlan?.id) return
+    try {
+      const response = await apiPost<ShoppingList>(
+        `/api/cooking/meal-plans/${mealPlan.id}/shopping-list`,
+        { action: 'add_recipe', recipeId }
+      )
+      if (response.success && response.data) {
+        setShoppingList(response.data)
+        const recipe = recipes.find((r) => r.id === recipeId)
+        toast({ title: `Added ${recipe?.name || 'recipe'} to shopping list` })
+      }
+    } catch (error) {
+      console.error('Failed to add recipe to shopping list:', error)
+      toast({ title: 'Failed to add to shopping list', variant: 'destructive' })
+    }
+  }, [mealPlan?.id, recipes, toast])
 
   const updateMealSlot = useCallback(
     async (day: DayOfWeek, mealType: string, recipeId: string | null) => {
@@ -574,10 +593,10 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     refreshMealPlan()
   }, [refreshMealPlan])
 
-  // Auto-regenerate shopping list when meal plan mutates
+  // Refresh shopping list display (without regenerating) when meal plan changes
   useEffect(() => {
     if (mealPlanVersion > 0) {
-      refreshShoppingList(true)
+      refreshShoppingList()
     }
   }, [mealPlanVersion, refreshShoppingList])
 
@@ -614,6 +633,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       shoppingListLoading,
       refreshShoppingList,
       clearShoppingList,
+      addRecipeToShoppingList,
       getRecipeById,
       getRecipeName,
       sidebarOpen,
@@ -664,6 +684,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       shoppingListLoading,
       refreshShoppingList,
       clearShoppingList,
+      addRecipeToShoppingList,
       getRecipeById,
       getRecipeName,
       sidebarOpen,

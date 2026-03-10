@@ -10,6 +10,9 @@
  * - A client-side interval
  */
 
+/** Set to true to temporarily disable all sync (API + SyncManager). */
+const SYNC_DISABLED = true
+
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/utils"
 import { syncAll, syncUnauthenticated, syncHue, syncCTA, syncFitness } from "@/lib/sync/background-sync"
@@ -22,10 +25,12 @@ import { isSupabaseConfigured } from "@/lib/supabase/client"
 export async function GET() {
   try {
     await ensureLocalAvailabilityChecked()
+    const canSync =
+      !SYNC_DISABLED && isLocalMode() && isSupabaseConfigured()
     return successResponse({
       mode: isLocalMode() ? 'local' : 'production',
       supabaseConfigured: isSupabaseConfigured(),
-      canSync: isLocalMode() && isSupabaseConfigured(),
+      canSync,
       services: ['hue', 'cta', 'fitness', 'spotify', 'calendar'],
     })
   } catch (error) {
@@ -42,6 +47,9 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    if (SYNC_DISABLED) {
+      return errorResponse("Sync temporarily disabled", 503)
+    }
     // Warm availability cache so first request to this process doesn't 403 (cold cache)
     await ensureLocalAvailabilityChecked()
     if (!isLocalMode()) {

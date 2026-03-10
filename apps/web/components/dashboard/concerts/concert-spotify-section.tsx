@@ -46,7 +46,7 @@ export function ConcertSpotifySection({
       <Card className={className}>
         <CardContent className="p-6">
           <div className="flex animate-pulse items-center gap-3">
-            <div className="size-8 rounded-lg bg-green-500/10" />
+            <div className="size-8 rounded-lg bg-accent-sage/10" />
             <div className="h-4 w-32 rounded bg-muted" />
           </div>
         </CardContent>
@@ -59,8 +59,8 @@ export function ConcertSpotifySection({
       <Card className={className}>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-green-500/10">
-              <Headphones className="size-4 text-green-500" />
+            <div className="flex size-8 items-center justify-center rounded-lg bg-accent-sage/10">
+              <Headphones className="size-4 text-accent-sage" />
             </div>
             <CardTitle className="text-base">Your Listening</CardTitle>
           </div>
@@ -84,8 +84,8 @@ export function ConcertSpotifySection({
     <Card className={className}>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-green-500/10">
-            <Headphones className="size-4 text-green-500" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-accent-sage/10">
+            <Headphones className="size-4 text-accent-sage" />
           </div>
           <CardTitle className="text-base">Your Listening</CardTitle>
         </div>
@@ -175,10 +175,10 @@ function StatBlock({
     <div
       className={cn(
         'rounded-lg p-2 text-center',
-        highlight ? 'bg-green-500/10' : 'bg-muted/50'
+        highlight ? 'bg-accent-sage/10' : 'bg-muted/50'
       )}
     >
-      <p className={cn('text-lg font-bold', highlight && 'text-green-500')}>{value}</p>
+      <p className={cn('text-lg font-bold', highlight && 'text-accent-sage')}>{value}</p>
       <p className="text-muted-foreground text-[10px]">{label}</p>
       <p className="text-muted-foreground/70 text-[9px]">{sublabel}</p>
     </div>
@@ -205,12 +205,12 @@ function MiniSparkline({ data }: { data: Array<{ date: string; count: number }> 
     <svg viewBox={`0 0 ${width} ${height}`} className="size-full" preserveAspectRatio="none">
       <defs>
         <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(34, 197, 94)" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0" />
+          <stop offset="0%" stopColor="#4dba8a" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#4dba8a" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={fillD} fill="url(#sparkFill)" />
-      <path d={pathD} fill="none" stroke="rgb(34, 197, 94)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      <path d={pathD} fill="none" stroke="#4dba8a" strokeWidth="2" vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }

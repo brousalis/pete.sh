@@ -10,6 +10,12 @@ import {
 } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import {
+  getWorkoutTw,
+  getWorkoutHex,
+  HEX,
+  APPLE_WATCH_RINGS,
+} from '@/lib/constants/colors'
+import {
   getWorkoutDisplayLabel,
   getWorkoutTypeByDisplayLabel,
 } from '@/lib/utils/workout-labels'
@@ -196,85 +202,7 @@ const WORKOUT_ICONS: Record<string, React.ReactNode> = {
   other: <Activity className="size-5" />,
 }
 
-// Separated color mappings for more granular control
-const WORKOUT_TEXT_COLORS: Record<string, string> = {
-  running: 'text-green-500',
-  walking: 'text-blue-400',
-  hiking: 'text-emerald-400',
-  cycling: 'text-orange-500',
-  functionalStrengthTraining: 'text-purple-500',
-  traditionalStrengthTraining: 'text-purple-500',
-  coreTraining: 'text-pink-500',
-  hiit: 'text-red-500',
-  rowing: 'text-cyan-500',
-  stairClimbing: 'text-amber-500',
-  elliptical: 'text-teal-500',
-  other: 'text-gray-500',
-}
-
-const WORKOUT_BG_COLORS: Record<string, string> = {
-  running: 'bg-green-500/10',
-  walking: 'bg-blue-400/10',
-  hiking: 'bg-emerald-400/10',
-  cycling: 'bg-orange-500/10',
-  functionalStrengthTraining: 'bg-purple-500/10',
-  traditionalStrengthTraining: 'bg-purple-500/10',
-  coreTraining: 'bg-pink-500/10',
-  hiit: 'bg-red-500/10',
-  rowing: 'bg-cyan-500/10',
-  stairClimbing: 'bg-amber-500/10',
-  elliptical: 'bg-teal-500/10',
-  other: 'bg-gray-500/10',
-}
-
-const WORKOUT_BORDER_COLORS: Record<string, string> = {
-  running: 'border-green-500/60',
-  walking: 'border-blue-400/60',
-  hiking: 'border-emerald-400/60',
-  cycling: 'border-orange-500/60',
-  functionalStrengthTraining: 'border-purple-500/60',
-  traditionalStrengthTraining: 'border-purple-500/60',
-  coreTraining: 'border-pink-500/60',
-  hiit: 'border-red-500/60',
-  rowing: 'border-cyan-500/60',
-  stairClimbing: 'border-amber-500/60',
-  elliptical: 'border-teal-500/60',
-  other: 'border-gray-500/60',
-}
-
-// Combined for backwards compatibility
-const WORKOUT_COLORS: Record<string, string> = {
-  running: 'text-green-500 bg-green-500/10 border-green-500/30',
-  walking: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
-  hiking: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
-  cycling: 'text-orange-500 bg-orange-500/10 border-orange-500/30',
-  functionalStrengthTraining:
-    'text-purple-500 bg-purple-500/10 border-purple-500/30',
-  traditionalStrengthTraining:
-    'text-purple-500 bg-purple-500/10 border-purple-500/30',
-  coreTraining: 'text-pink-500 bg-pink-500/10 border-pink-500/30',
-  hiit: 'text-red-500 bg-red-500/10 border-red-500/30',
-  rowing: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/30',
-  stairClimbing: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
-  elliptical: 'text-teal-500 bg-teal-500/10 border-teal-500/30',
-  other: 'text-gray-500 bg-gray-500/10 border-gray-500/30',
-}
-
-// Hex colors for charts
-const WORKOUT_HEX_COLORS: Record<string, string> = {
-  running: '#22c55e',
-  walking: '#60a5fa',
-  hiking: '#34d399',
-  cycling: '#f97316',
-  functionalStrengthTraining: '#a855f7',
-  traditionalStrengthTraining: '#a855f7',
-  coreTraining: '#ec4899',
-  hiit: '#ef4444',
-  rowing: '#06b6d4',
-  stairClimbing: '#f59e0b',
-  elliptical: '#14b8a6',
-  other: '#6b7280',
-}
+// Color lookups are provided by @/lib/constants/colors via getWorkoutTw / getWorkoutHex
 
 // ============================================
 // HELPER FUNCTIONS
@@ -436,7 +364,7 @@ function ActivityRings({
   const rings = [
     {
       progress: moveProgress,
-      color: '#FF2D55',
+      color: APPLE_WATCH_RINGS.move,
       label: 'Move',
       value: move,
       goal: moveGoal,
@@ -445,7 +373,7 @@ function ActivityRings({
     },
     {
       progress: exerciseProgress,
-      color: '#92E82A',
+      color: APPLE_WATCH_RINGS.exercise,
       label: 'Exercise',
       value: exercise,
       goal: exerciseGoal,
@@ -454,7 +382,7 @@ function ActivityRings({
     },
     {
       progress: standProgress,
-      color: '#00D4FF',
+      color: APPLE_WATCH_RINGS.stand,
       label: 'Stand',
       value: stand,
       goal: standGoal,
@@ -554,7 +482,7 @@ function SyncStatusIndicator({
     <div
       className={cn(
         'flex items-center gap-1.5 text-xs',
-        isStale ? 'text-amber-500' : 'text-muted-foreground',
+        isStale ? 'text-accent-gold' : 'text-muted-foreground',
         className
       )}
     >
@@ -674,9 +602,9 @@ function WeeklyProgress({ dailyMetrics, className }: WeeklyProgressProps) {
   }, [dailyMetrics])
 
   const streaks = [
-    { name: 'Move', color: '#FF2D55', ...streakData.move },
-    { name: 'Exercise', color: '#92E82A', ...streakData.exercise },
-    { name: 'Stand', color: '#00D4FF', ...streakData.stand },
+    { name: 'Move', color: APPLE_WATCH_RINGS.move, ...streakData.move },
+    { name: 'Exercise', color: APPLE_WATCH_RINGS.exercise, ...streakData.exercise },
+    { name: 'Stand', color: APPLE_WATCH_RINGS.stand, ...streakData.stand },
   ]
 
   return (
@@ -701,7 +629,7 @@ function WeeklyProgress({ dailyMetrics, className }: WeeklyProgressProps) {
               <span className={cn(
                 'text-[9px]',
                 day.ringsComplete === 3
-                  ? 'font-medium text-green-500'
+                  ? 'font-medium text-accent-sage'
                   : 'text-muted-foreground'
               )}>
                 {day.dayLabel}
@@ -736,8 +664,8 @@ function WeeklyProgress({ dailyMetrics, className }: WeeklyProgressProps) {
           <>
             <div className="h-8 w-px bg-border/30" />
             <div className="flex items-center gap-1 text-[11px]">
-              <Sparkles className="size-3 text-green-500" />
-              <span className="font-medium text-green-500">{perfectDays}</span>
+              <Sparkles className="size-3 text-accent-sage" />
+              <span className="font-medium text-accent-sage">{perfectDays}</span>
               <span className="text-muted-foreground hidden sm:inline">perfect</span>
             </div>
           </>
@@ -903,9 +831,9 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
     if (isFuture) return 'bg-muted/20'
     switch (ringsComplete) {
       case 0: return 'bg-muted/30'
-      case 1: return 'bg-amber-500/30'
+      case 1: return 'bg-accent-gold/30'
       case 2: return 'bg-lime-500/40'
-      case 3: return 'bg-green-500/50'
+      case 3: return 'bg-accent-sage/50'
       default: return 'bg-muted/30'
     }
   }
@@ -955,7 +883,7 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
                   'relative flex aspect-square items-center justify-center rounded-md text-xs transition-colors',
                   day.dayNum !== null && getRingColorClass(day.ringsComplete, day.isFuture),
                   day.isToday && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
-                  day.ringsComplete === 3 && !day.isFuture && 'font-medium text-green-700 dark:text-green-300'
+                  day.ringsComplete === 3 && !day.isFuture && 'font-medium text-accent-sage'
                 )}
                 title={day.dateStr ? `${day.dateStr}: ${day.ringsComplete}/3 rings` : undefined}
               >
@@ -974,7 +902,7 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
             <span>0</span>
           </div>
           <div className="flex items-center gap-0.5">
-            <div className="size-2 rounded-sm bg-amber-500/30" />
+            <div className="size-2 rounded-sm bg-accent-gold/30" />
             <span>1</span>
           </div>
           <div className="flex items-center gap-0.5">
@@ -982,7 +910,7 @@ function MonthlyRingCalendar({ dailyMetrics, className }: MonthlyRingCalendarPro
             <span>2</span>
           </div>
           <div className="flex items-center gap-0.5">
-            <div className="size-2 rounded-sm bg-green-500/50" />
+            <div className="size-2 rounded-sm bg-accent-sage/50" />
             <span>3</span>
           </div>
         </div>
@@ -1121,9 +1049,9 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
                 'flex size-[18px] items-center justify-center rounded-[3px] text-[8px] transition-colors',
                 d.isFuture && 'bg-muted/15 text-muted-foreground/30',
                 !d.isFuture && d.count === 0 && 'bg-muted/30 text-muted-foreground/50',
-                !d.isFuture && d.count === 1 && 'bg-green-500/30 text-green-300',
-                !d.isFuture && d.count === 2 && 'bg-green-500/50 text-green-200',
-                !d.isFuture && d.count >= 3 && 'bg-green-500/70 text-green-100 font-medium',
+                !d.isFuture && d.count === 1 && 'bg-accent-sage/30 text-accent-sage',
+                !d.isFuture && d.count === 2 && 'bg-accent-sage/50 text-accent-sage',
+                !d.isFuture && d.count >= 3 && 'bg-accent-sage/70 text-accent-sage font-medium',
                 d.isToday && 'ring-1 ring-primary ring-offset-1 ring-offset-background',
               )}
               title={`${format(new Date(currentYear, currentMonthNum, d.day), 'MMM d')}: ${d.count} workout${d.count !== 1 ? 's' : ''}`}
@@ -1138,19 +1066,19 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
           <div className="flex items-center gap-1.5">
             <div className="relative h-1.5 w-16 overflow-hidden rounded-full bg-muted/40">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-green-500 transition-all"
+                className="absolute inset-y-0 left-0 rounded-full bg-accent-sage transition-all"
                 style={{ width: `${consistencyPct}%` }}
               />
             </div>
-            <span className="font-bold tabular-nums text-green-500">{consistencyPct}%</span>
+            <span className="font-bold tabular-nums text-accent-sage">{consistencyPct}%</span>
             <span className="text-muted-foreground text-[10px]">active</span>
           </div>
           {monthRingStats.perfect > 0 && (
             <>
               <div className="h-3 w-px bg-border/30" />
               <span className="flex items-center gap-1">
-                <Sparkles className="size-3 text-amber-500" />
-                <span className="font-bold tabular-nums text-amber-500">{monthRingStats.perfect}</span>
+                <Sparkles className="size-3 text-accent-gold" />
+                <span className="font-bold tabular-nums text-accent-gold">{monthRingStats.perfect}</span>
                 <span className="text-muted-foreground text-[10px]">perfect</span>
               </span>
             </>
@@ -1167,11 +1095,11 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
             <div className="text-[9px] text-muted-foreground">Duration</div>
           </div>
           <div>
-            <div className="text-sm font-bold tabular-nums text-orange-500">{Math.round(monthTotals.totalCalories).toLocaleString()}</div>
+            <div className="text-sm font-bold tabular-nums text-accent-ember">{Math.round(monthTotals.totalCalories).toLocaleString()}</div>
             <div className="text-[9px] text-muted-foreground">Calories</div>
           </div>
           <div>
-            <div className="text-sm font-bold tabular-nums text-green-500">{monthTotals.totalDistance.toFixed(1)}</div>
+            <div className="text-sm font-bold tabular-nums text-accent-sage">{monthTotals.totalDistance.toFixed(1)}</div>
             <div className="text-[9px] text-muted-foreground">Miles</div>
           </div>
         </div>
@@ -1186,7 +1114,7 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
               const pct = totalMonthWorkouts > 0 ? (count / totalMonthWorkouts) * 100 : 0
               // Find the original type key for color lookup
               const typeKey = getWorkoutTypeByDisplayLabel(type) || 'other'
-              const hexColor = WORKOUT_HEX_COLORS[typeKey] || WORKOUT_HEX_COLORS.other || '#6b7280'
+              const hexColor = getWorkoutHex(typeKey)
               return (
                 <div key={type} className="flex items-center gap-2">
                   <span className="w-16 truncate text-[10px] text-muted-foreground">{type}</span>
@@ -1213,11 +1141,11 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
               <div className="text-xs font-semibold">{format(new Date(bestDay.date), 'EEEE, MMM d')}</div>
               <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                 <span>{bestDay.count} workout{bestDay.count !== 1 ? 's' : ''}</span>
-                <span className="text-orange-500 font-medium">{Math.round(bestDay.calories)} cal</span>
+                <span className="text-accent-ember font-medium">{Math.round(bestDay.calories)} cal</span>
                 <span>{formatDuration(bestDay.duration)}</span>
               </div>
             </div>
-            <Zap className="size-4 text-amber-500" />
+            <Zap className="size-4 text-accent-gold" />
           </div>
         </div>
       )}
@@ -1334,21 +1262,21 @@ function RingStreaks({ dailyMetrics, className }: RingStreaksProps) {
   }, [dailyMetrics])
 
   const rings = [
-    { name: 'Move', color: '#FF2D55', data: streakData.move, icon: <Flame className="size-3.5" /> },
-    { name: 'Exercise', color: '#92E82A', data: streakData.exercise, icon: <Activity className="size-3.5" /> },
-    { name: 'Stand', color: '#00D4FF', data: streakData.stand, icon: <TrendingUp className="size-3.5" /> },
+    { name: 'Move', color: APPLE_WATCH_RINGS.move, data: streakData.move, icon: <Flame className="size-3.5" /> },
+    { name: 'Exercise', color: APPLE_WATCH_RINGS.exercise, data: streakData.exercise, icon: <Activity className="size-3.5" /> },
+    { name: 'Stand', color: APPLE_WATCH_RINGS.stand, data: streakData.stand, icon: <TrendingUp className="size-3.5" /> },
   ]
 
   return (
     <div className={cn('rounded-xl bg-muted/30 p-4', className)}>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-medium">
-          <Zap className="size-4 text-amber-500" />
+          <Zap className="size-4 text-accent-gold" />
           Ring Streaks
         </h3>
         {/* Perfect days streak */}
         {streakData.allRings.current > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+          <div className="flex items-center gap-1.5 rounded-full bg-accent-sage/10 px-2.5 py-1 text-xs font-medium text-accent-sage">
             <Sparkles className="size-3" />
             {streakData.allRings.current} perfect day{streakData.allRings.current !== 1 ? 's' : ''}
           </div>
@@ -1447,9 +1375,9 @@ function MiniActivityRings({
   const standProgress = Math.min((stand / standGoal) * 100, 100)
 
   const rings = [
-    { progress: moveProgress, color: '#FF2D55' },
-    { progress: exerciseProgress, color: '#92E82A' },
-    { progress: standProgress, color: '#00D4FF' },
+    { progress: moveProgress, color: APPLE_WATCH_RINGS.move },
+    { progress: exerciseProgress, color: APPLE_WATCH_RINGS.exercise },
+    { progress: standProgress, color: APPLE_WATCH_RINGS.stand },
   ]
 
   return (
@@ -1512,15 +1440,10 @@ function WorkoutRow({
   const isRunning = workout.workout_type === 'running'
   const isOutdoorRun = isRunning && workout.is_indoor === false
   const isIndoorRun = isRunning && workout.is_indoor === true
-  const textColor = isOutdoorRun
-    ? 'text-cyan-500'
-    : (WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500')
-  const bgColor = isOutdoorRun
-    ? 'bg-cyan-500/10'
-    : (WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10')
-  const borderColor = isOutdoorRun
-    ? 'border-cyan-500/30'
-    : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
+  const tw = getWorkoutTw(workout.workout_type)
+  const textColor = isOutdoorRun ? 'text-accent-teal' : tw.text
+  const bgColor = isOutdoorRun ? 'bg-accent-teal/10' : tw.bg10
+  const borderColor = isOutdoorRun ? 'border-cyan-500/30' : tw.border
   const icon = getWorkoutIcon(workout.workout_type, 'md')
   const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : getWorkoutDisplayLabel(workout.workout_type)
   const isCardio = [
@@ -1569,18 +1492,18 @@ function WorkoutRow({
             {formatDuration(workout.duration)}
           </span>
           <span className="flex items-center gap-1 font-medium">
-            <Flame className="size-3 text-orange-500" />
+            <Flame className="size-3 text-accent-ember" />
             {Math.round(workout.active_calories)} cal
           </span>
           {workout.hr_average && (
             <span className="flex items-center gap-1 font-medium">
-              <Heart className="size-3 text-red-500" />
+              <Heart className="size-3 text-accent-rose" />
               {workout.hr_average} bpm
             </span>
           )}
           {isCardio && workout.distance_miles && (
             <span className="flex items-center gap-1 font-medium">
-              <Route className="size-3 text-blue-500" />
+              <Route className="size-3 text-accent-azure" />
               {workout.distance_miles.toFixed(2)} mi
             </span>
           )}
@@ -1597,7 +1520,7 @@ function WorkoutRow({
             </span>
           )}
           {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
-            <span className="flex items-center gap-1 text-green-500">
+            <span className="flex items-center gap-1 text-accent-sage">
               <TrendingUp className="size-3" />
               {Math.round(workout.elevation_gain_meters * 3.28084)} ft
             </span>
@@ -1685,18 +1608,18 @@ function DayGroupSection({
               {formatDuration(group.totalDuration)}
             </span>
             <span className="flex items-center gap-1">
-              <Flame className="size-2.5 text-orange-500" />
+              <Flame className="size-2.5 text-accent-ember" />
               {Math.round(group.totalCalories)} cal
             </span>
             {group.totalDistance > 0 && (
               <span className="flex items-center gap-1">
-                <Route className="size-2.5 text-blue-500" />
+                <Route className="size-2.5 text-accent-azure" />
                 {group.totalDistance.toFixed(1)} mi
               </span>
             )}
             {group.avgHr > 0 && (
               <span className="hidden items-center gap-1 sm:flex">
-                <Heart className="size-2.5 text-red-500" />
+                <Heart className="size-2.5 text-accent-rose" />
                 {group.avgHr} avg
               </span>
             )}
@@ -1832,19 +1755,19 @@ function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTi
               <span className="flex items-center gap-1">
                 <span className="size-1.5 rounded-full bg-[#FF2D55]" />
                 <span className="text-muted-foreground">Move</span>
-                <span className="font-medium tabular-nums" style={{ color: '#FF2D55' }}>{metrics.active_calories}</span>
+                <span className="font-medium tabular-nums" style={{ color: APPLE_WATCH_RINGS.move }}>{metrics.active_calories}</span>
                 <span className="text-muted-foreground">/{metrics.move_goal || 500}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="size-1.5 rounded-full bg-[#92E82A]" />
                 <span className="text-muted-foreground">Exercise</span>
-                <span className="font-medium tabular-nums" style={{ color: '#92E82A' }}>{metrics.exercise_minutes}</span>
+                <span className="font-medium tabular-nums" style={{ color: APPLE_WATCH_RINGS.exercise }}>{metrics.exercise_minutes}</span>
                 <span className="text-muted-foreground">/{metrics.exercise_goal || 30}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="size-1.5 rounded-full bg-[#00D4FF]" />
                 <span className="text-muted-foreground">Stand</span>
-                <span className="font-medium tabular-nums" style={{ color: '#00D4FF' }}>{metrics.stand_hours}</span>
+                <span className="font-medium tabular-nums" style={{ color: APPLE_WATCH_RINGS.stand }}>{metrics.stand_hours}</span>
                 <span className="text-muted-foreground">/{metrics.stand_goal || 12}</span>
               </span>
             </div>
@@ -1854,7 +1777,7 @@ function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTi
           {todayWorkouts.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs">
               {todayWorkouts.map(w => {
-                const tc = WORKOUT_TEXT_COLORS[w.workout_type] ?? WORKOUT_TEXT_COLORS.other
+                const tc = getWorkoutTw(w.workout_type).text
                 return (
                   <span key={w.id} className={cn('flex items-center gap-1 font-medium', tc)}>
                     {getWorkoutIcon(w.workout_type, 'sm')}
@@ -1882,18 +1805,18 @@ function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTi
                   <div className="text-muted-foreground text-[10px]">Duration</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold tabular-nums text-orange-500">{Math.round(totalCalories)}</div>
+                  <div className="text-sm font-bold tabular-nums text-accent-ember">{Math.round(totalCalories)}</div>
                   <div className="text-muted-foreground text-[10px]">Calories</div>
                 </div>
                 {totalDistance > 0 && (
                   <div className="text-center">
-                    <div className="text-sm font-bold tabular-nums text-green-500">{totalDistance.toFixed(1)}</div>
+                    <div className="text-sm font-bold tabular-nums text-accent-sage">{totalDistance.toFixed(1)}</div>
                     <div className="text-muted-foreground text-[10px]">Miles</div>
                   </div>
                 )}
                 {avgHr > 0 && (
                   <div className="text-center">
-                    <div className="text-sm font-bold tabular-nums text-red-500">{avgHr}</div>
+                    <div className="text-sm font-bold tabular-nums text-accent-rose">{avgHr}</div>
                     <div className="text-muted-foreground text-[10px]">Avg HR</div>
                   </div>
                 )}
@@ -1917,7 +1840,7 @@ function TodayHero({ workouts, metrics, dailyMetrics, onWorkoutClick, lastSyncTi
                 />
                 <span className={cn(
                   'text-[8px] leading-none',
-                  day.ringsComplete === 3 ? 'text-green-500' : 'text-muted-foreground/60'
+                  day.ringsComplete === 3 ? 'text-accent-sage' : 'text-muted-foreground/60'
                 )}>
                   {day.dayLabel}
                 </span>
@@ -1953,15 +1876,10 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
   const isRunning = workout.workout_type === 'running'
   const isOutdoorRun = isRunning && workout.is_indoor === false
   const isIndoorRun = isRunning && workout.is_indoor === true
-  const textColor = isOutdoorRun
-    ? 'text-cyan-500'
-    : (WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other ?? 'text-gray-500')
-  const bgColor = isOutdoorRun
-    ? 'bg-cyan-500/10'
-    : (WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other ?? 'bg-gray-500/10')
-  const borderColor = isOutdoorRun
-    ? 'border-cyan-500/30'
-    : (WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other ?? 'border-gray-500/40')
+  const tw = getWorkoutTw(workout.workout_type)
+  const textColor = isOutdoorRun ? 'text-accent-teal' : tw.text
+  const bgColor = isOutdoorRun ? 'bg-accent-teal/10' : tw.bg10
+  const borderColor = isOutdoorRun ? 'border-cyan-500/30' : tw.border
   const icon = getWorkoutIcon(workout.workout_type, 'sm')
   const label = isOutdoorRun ? 'Outdoor Run' : isIndoorRun ? 'Indoor Run' : getWorkoutDisplayLabel(workout.workout_type)
   const isCardio = [
@@ -2000,18 +1918,18 @@ function TodayWorkoutTile({ workout, onClick }: TodayWorkoutTileProps) {
             <span className="font-medium text-foreground">{formatDuration(workout.duration)}</span>
           </span>
           <span className="flex items-center gap-1">
-            <Flame className="size-3 text-orange-500" />
+            <Flame className="size-3 text-accent-ember" />
             <span className="font-medium text-foreground">{Math.round(workout.active_calories)} cal</span>
           </span>
           {workout.hr_average && (
             <span className="flex items-center gap-1">
-              <Heart className="size-3 text-red-500" />
+              <Heart className="size-3 text-accent-rose" />
               <span className="font-medium text-foreground">{workout.hr_average} bpm</span>
             </span>
           )}
           {isCardio && workout.distance_miles && (
             <span className="flex items-center gap-1">
-              <Route className="size-3 text-blue-500" />
+              <Route className="size-3 text-accent-azure" />
               <span className="font-medium text-foreground">{workout.distance_miles.toFixed(2)} mi</span>
             </span>
           )}
@@ -2058,27 +1976,27 @@ function WeeklyStatsSection({ summary, previousSummary }: WeeklyStatsSectionProp
       value: summary.totalWorkouts,
       unit: '',
       trend: workoutTrend,
-      icon: <Dumbbell className="size-4 text-purple-500" />,
+      icon: <Dumbbell className="size-4 text-accent-violet" />,
     },
     {
       label: 'Duration',
       value: summary.totalDurationMin,
       unit: 'min',
-      icon: <Timer className="size-4 text-blue-500" />,
+      icon: <Timer className="size-4 text-accent-azure" />,
     },
     {
       label: 'Calories',
       value: summary.totalCalories.toLocaleString(),
       unit: '',
       trend: calorieTrend,
-      icon: <Flame className="size-4 text-orange-500" />,
+      icon: <Flame className="size-4 text-accent-ember" />,
     },
     {
       label: 'Distance',
       value: summary.totalDistanceMiles.toFixed(1),
       unit: 'mi',
       trend: distanceTrend,
-      icon: <Route className="size-4 text-green-500" />,
+      icon: <Route className="size-4 text-accent-sage" />,
     },
   ]
 
@@ -2107,7 +2025,7 @@ function WeeklyStatsSection({ summary, previousSummary }: WeeklyStatsSectionProp
               <span
                 className={cn(
                   'flex items-center text-[10px]',
-                  stat.trend > 0 ? 'text-green-500' : 'text-red-500'
+                  stat.trend > 0 ? 'text-accent-sage' : 'text-accent-rose'
                 )}
               >
                 {stat.trend > 0 ? (
@@ -2229,7 +2147,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
       {/* Health Metrics */}
       <div className="rounded-xl bg-muted/30 p-5">
         <div className="mb-4 flex items-center gap-2">
-          <HeartPulse className="size-4 text-red-500" />
+          <HeartPulse className="size-4 text-accent-rose" />
           <span className="font-semibold">Health Metrics</span>
         </div>
 
@@ -2237,7 +2155,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
           {/* Resting Heart Rate */}
           {currentMetrics?.resting_heart_rate && (
             <HealthMetricRow
-              icon={<Heart className="size-4 text-red-500" />}
+              icon={<Heart className="size-4 text-accent-rose" />}
               label="Resting HR"
               value={currentMetrics.resting_heart_rate}
               unit="bpm"
@@ -2249,7 +2167,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
           {/* HRV */}
           {currentMetrics?.heart_rate_variability && (
             <HealthMetricRow
-              icon={<Activity className="size-4 text-purple-500" />}
+              icon={<Activity className="size-4 text-accent-violet" />}
               label="HRV"
               value={Math.round(currentMetrics.heart_rate_variability)}
               unit="ms"
@@ -2260,7 +2178,7 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
           {/* VO2 Max */}
           {currentMetrics?.vo2_max && (
             <HealthMetricRow
-              icon={<Wind className="size-4 text-blue-500" />}
+              icon={<Wind className="size-4 text-accent-azure" />}
               label="VO2 Max"
               value={currentMetrics.vo2_max.toFixed(1)}
               unit=""
@@ -2283,11 +2201,11 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
       <div className="rounded-xl bg-muted/30 p-5">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-amber-500" />
+            <Sparkles className="size-4 text-accent-gold" />
             <span className="font-semibold">Activity</span>
           </div>
           {streak > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+            <div className="flex items-center gap-1.5 rounded-full bg-accent-gold/10 px-2.5 py-1 text-xs font-medium text-accent-gold">
               <Zap className="size-3" />
               {streak} day streak
             </div>
@@ -2320,9 +2238,9 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
                         'aspect-square rounded-sm transition-colors',
                         isFuture && 'bg-transparent',
                         !isFuture && !day.hasWorkout && 'bg-muted/50',
-                        !isFuture && day.count === 1 && 'bg-green-500/40',
-                        !isFuture && day.count === 2 && 'bg-green-500/60',
-                        !isFuture && day.count >= 3 && 'bg-green-500/80',
+                        !isFuture && day.count === 1 && 'bg-accent-sage/40',
+                        !isFuture && day.count === 2 && 'bg-accent-sage/60',
+                        !isFuture && day.count >= 3 && 'bg-accent-sage/80',
                         isToday && 'ring-1 ring-primary ring-offset-1 ring-offset-background'
                       )}
                       title={`${format(day.date, 'MMM d')}: ${day.count} workout${day.count !== 1 ? 's' : ''}`}
@@ -2338,9 +2256,9 @@ function InsightsPanel({ dailyMetrics, workouts }: InsightsPanelProps) {
             <span>Less</span>
             <div className="flex gap-0.5">
               <div className="size-2.5 rounded-sm bg-muted/50" />
-              <div className="size-2.5 rounded-sm bg-green-500/40" />
-              <div className="size-2.5 rounded-sm bg-green-500/60" />
-              <div className="size-2.5 rounded-sm bg-green-500/80" />
+              <div className="size-2.5 rounded-sm bg-accent-sage/40" />
+              <div className="size-2.5 rounded-sm bg-accent-sage/60" />
+              <div className="size-2.5 rounded-sm bg-accent-sage/80" />
             </div>
             <span>More</span>
           </div>
@@ -2376,8 +2294,8 @@ function HealthMetricRow({ icon, label, value, unit, trend, trendInverted }: Hea
         {trend && (
           <span className={cn(
             'flex items-center text-xs',
-            isGood && 'text-green-500',
-            isBad && 'text-red-500',
+            isGood && 'text-accent-sage',
+            isBad && 'text-accent-rose',
             !isGood && !isBad && 'text-muted-foreground'
           )}>
             {trend > 0 ? (
@@ -2462,8 +2380,8 @@ function TrainingOverview({ workouts, dailyMetrics }: TrainingOverviewProps) {
       {/* Workout streak */}
       {workoutStreak > 0 && (
         <div className="flex items-center gap-1.5">
-          <Zap className="size-3.5 text-amber-500" />
-          <span className="font-bold tabular-nums text-amber-500">{workoutStreak}</span>
+          <Zap className="size-3.5 text-accent-gold" />
+          <span className="font-bold tabular-nums text-accent-gold">{workoutStreak}</span>
           <span className="text-muted-foreground">day streak</span>
         </div>
       )}
@@ -2473,15 +2391,15 @@ function TrainingOverview({ workouts, dailyMetrics }: TrainingOverviewProps) {
         <span className="text-muted-foreground text-[10px]">Rings:</span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-[#FF2D55]" />
-          <span className="font-bold tabular-nums" style={{ color: '#FF2D55' }}>{ringStreaks.move}</span>
+          <span className="font-bold tabular-nums" style={{ color: APPLE_WATCH_RINGS.move }}>{ringStreaks.move}</span>
         </span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-[#92E82A]" />
-          <span className="font-bold tabular-nums" style={{ color: '#92E82A' }}>{ringStreaks.exercise}</span>
+          <span className="font-bold tabular-nums" style={{ color: APPLE_WATCH_RINGS.exercise }}>{ringStreaks.exercise}</span>
         </span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-[#00D4FF]" />
-          <span className="font-bold tabular-nums" style={{ color: '#00D4FF' }}>{ringStreaks.stand}</span>
+          <span className="font-bold tabular-nums" style={{ color: APPLE_WATCH_RINGS.stand }}>{ringStreaks.stand}</span>
         </span>
         <span className="text-muted-foreground text-[10px]">day streaks</span>
       </div>
@@ -2494,17 +2412,17 @@ function TrainingOverview({ workouts, dailyMetrics }: TrainingOverviewProps) {
         <div className="flex items-center gap-3">
           <span className="text-muted-foreground text-[10px]">7d avg:</span>
           <span className="flex items-center gap-1">
-            <Footprints className="size-3 text-blue-500" />
+            <Footprints className="size-3 text-accent-azure" />
             <span className="font-medium tabular-nums">{weekAvg.avgSteps.toLocaleString()}</span>
             <span className="text-muted-foreground text-[10px]">steps</span>
           </span>
           <span className="flex items-center gap-1">
-            <Flame className="size-3 text-orange-500" />
+            <Flame className="size-3 text-accent-ember" />
             <span className="font-medium tabular-nums">{weekAvg.avgCal}</span>
             <span className="text-muted-foreground text-[10px]">cal</span>
           </span>
           <span className="flex items-center gap-1">
-            <Timer className="size-3 text-green-500" />
+            <Timer className="size-3 text-accent-sage" />
             <span className="font-medium tabular-nums">{weekAvg.avgExercise}</span>
             <span className="text-muted-foreground text-[10px]">min</span>
           </span>
@@ -2551,31 +2469,31 @@ function HealthVitalsRow({ dailyMetrics }: HealthVitalsRowProps) {
 
   const vitals = [
     currentMetrics?.resting_heart_rate ? {
-      icon: <Heart className="size-3.5 text-red-500" />,
+      icon: <Heart className="size-3.5 text-accent-rose" />,
       label: 'Resting HR',
       value: currentMetrics.resting_heart_rate,
       unit: 'bpm',
       trend: hrTrend,
       trendInverted: true,
-      bgColor: 'bg-red-500/10',
+      bgColor: 'bg-accent-rose/10',
     } : null,
     currentMetrics?.heart_rate_variability ? {
-      icon: <HeartPulse className="size-3.5 text-purple-500" />,
+      icon: <HeartPulse className="size-3.5 text-accent-violet" />,
       label: 'HRV',
       value: Math.round(currentMetrics.heart_rate_variability),
       unit: 'ms',
       trend: hrvTrend,
       trendInverted: false,
-      bgColor: 'bg-purple-500/10',
+      bgColor: 'bg-accent-violet/10',
     } : null,
     currentMetrics?.vo2_max ? {
-      icon: <Wind className="size-3.5 text-cyan-500" />,
+      icon: <Wind className="size-3.5 text-accent-teal" />,
       label: 'VO2 Max',
       value: currentMetrics.vo2_max.toFixed(1),
       unit: '',
       trend: vo2Trend,
       trendInverted: false,
-      bgColor: 'bg-cyan-500/10',
+      bgColor: 'bg-accent-teal/10',
     } : null,
   ].filter(Boolean) as {
     icon: React.ReactNode
@@ -2607,8 +2525,8 @@ function HealthVitalsRow({ dailyMetrics }: HealthVitalsRowProps) {
               {vital.trend && (
                 <span className={cn(
                   'flex items-center text-[10px]',
-                  isGood && 'text-green-500',
-                  isBad && 'text-red-500',
+                  isGood && 'text-accent-sage',
+                  isBad && 'text-accent-rose',
                   !isGood && !isBad && 'text-muted-foreground'
                 )}>
                   {vital.trend > 0 ? (
@@ -2755,7 +2673,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
       type,
       label: getWorkoutDisplayLabel(type),
       count,
-      color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+      color: getWorkoutHex(type),
     }))
   }, [filteredWorkouts])
 
@@ -2791,7 +2709,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
           value: formatPace(fastest.pace_best) + '/mi',
           date: format(new Date(fastest.start_date), 'MMM d'),
           workoutId: fastest.id,
-          icon: <Zap className="size-4 text-amber-500" />,
+          icon: <Zap className="size-4 text-accent-gold" />,
         })
       }
     }
@@ -2809,7 +2727,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
           value: longest.distance_miles.toFixed(2) + ' mi',
           date: format(new Date(longest.start_date), 'MMM d'),
           workoutId: longest.id,
-          icon: <Route className="size-4 text-blue-500" />,
+          icon: <Route className="size-4 text-accent-azure" />,
         })
       }
     }
@@ -2824,7 +2742,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
       value: Math.round(calorieWorkout.active_calories).toString() + ' cal',
       date: format(new Date(calorieWorkout.start_date), 'MMM d'),
       workoutId: calorieWorkout.id,
-      icon: <Flame className="size-4 text-orange-500" />,
+      icon: <Flame className="size-4 text-accent-ember" />,
     })
 
     // Longest duration
@@ -2837,7 +2755,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
       value: formatDuration(longestDuration.duration),
       date: format(new Date(longestDuration.start_date), 'MMM d'),
       workoutId: longestDuration.id,
-      icon: <Timer className="size-4 text-blue-500" />,
+      icon: <Timer className="size-4 text-accent-azure" />,
     })
 
     // Highest effort score (if available)
@@ -2853,7 +2771,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
           value: highestEffort.effort_score.toFixed(1) + '/10',
           date: format(new Date(highestEffort.start_date), 'MMM d'),
           workoutId: highestEffort.id,
-          icon: <Target className="size-4 text-red-500" />,
+          icon: <Target className="size-4 text-accent-rose" />,
         })
       }
     }
@@ -2914,7 +2832,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
     workoutTypes.forEach(type => {
       config[type] = {
         label: getWorkoutDisplayLabel(type),
-        color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+        color: getWorkoutHex(type),
       }
     })
     return config
@@ -2922,9 +2840,9 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
 
   // Chart config for performance
   const performanceChartConfig: ChartConfig = {
-    avgHr: { label: 'Avg HR', color: '#ef4444' },
-    avgPace: { label: 'Avg Pace', color: '#22c55e' },
-    calPerMin: { label: 'Cal/min', color: '#f97316' },
+    avgHr: { label: 'Avg HR', color: HEX.rose },
+    avgPace: { label: 'Avg Pace', color: HEX.sage },
+    calPerMin: { label: 'Cal/min', color: HEX.ember },
   }
 
   const totalWorkouts = filteredWorkouts.length
@@ -2981,8 +2899,9 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
               All
             </button>
             {workoutTypes.map(type => {
-              const textColor = WORKOUT_TEXT_COLORS[type] ?? WORKOUT_TEXT_COLORS.other
-              const bgColor = WORKOUT_BG_COLORS[type] ?? WORKOUT_BG_COLORS.other
+              const twColors = getWorkoutTw(type)
+              const textColor = twColors.text
+              const bgColor = twColors.bg10
               const isSelected = selectedType === type
               return (
                 <button
@@ -3061,7 +2980,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
                     key={type}
                     dataKey={type}
                     stackId="volume"
-                    fill={WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other}
+                    fill={getWorkoutHex(type)}
                     radius={[2, 2, 0, 0]}
                   />
                 ))}
@@ -3178,7 +3097,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
                   yAxisId="hr"
                   type="monotone"
                   dataKey="avgHr"
-                  stroke="#ef4444"
+                  stroke={HEX.rose}
                   strokeWidth={2}
                   dot={false}
                   connectNulls
@@ -3187,7 +3106,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
                   yAxisId="cal"
                   type="monotone"
                   dataKey="calPerMin"
-                  stroke="#f97316"
+                  stroke={HEX.ember}
                   strokeWidth={2}
                   dot={false}
                   connectNulls
@@ -3203,11 +3122,11 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
           {/* Legend */}
           <div className="mt-3 flex items-center justify-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-4 rounded bg-red-500" />
+              <div className="h-0.5 w-4 rounded bg-accent-rose" />
               <span className="text-muted-foreground">Avg HR (bpm)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-4 rounded bg-orange-500" />
+              <div className="h-0.5 w-4 rounded bg-accent-ember" />
               <span className="text-muted-foreground">Cal/min</span>
             </div>
           </div>
@@ -3216,7 +3135,7 @@ function _LegacyWorkoutInsights({ workouts, onWorkoutClick }: WorkoutInsightsPro
         {/* Personal Records */}
         <div className="rounded-xl bg-muted/30 p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="size-4 text-amber-500" />
+            <Sparkles className="size-4 text-accent-gold" />
             <h3 className="font-semibold">Personal Records</h3>
           </div>
 
@@ -3338,7 +3257,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
       type,
       label: getWorkoutDisplayLabel(type),
       count,
-      color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+      color: getWorkoutHex(type),
     }))
   }, [filteredWorkouts])
 
@@ -3347,7 +3266,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
     workoutTypes.forEach(type => {
       config[type] = {
         label: getWorkoutDisplayLabel(type),
-        color: WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other,
+        color: getWorkoutHex(type),
       }
     })
     return config
@@ -3385,9 +3304,9 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
   }, [typeFilteredWorkouts, timeRange])
 
   const performanceChartConfig: ChartConfig = {
-    avgHr: { label: 'Avg HR', color: '#ef4444' },
-    calPerMin: { label: 'Cal/min', color: '#f97316' },
-    effort: { label: 'Effort', color: '#a855f7' },
+    avgHr: { label: 'Avg HR', color: HEX.rose },
+    calPerMin: { label: 'Cal/min', color: HEX.ember },
+    effort: { label: 'Effort', color: HEX.violet },
   }
 
   // === ACTIVITY DATA (from daily metrics) ===
@@ -3419,8 +3338,8 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
   }, [filteredMetrics, timeRange])
 
   const activityChartConfig: ChartConfig = {
-    steps: { label: 'Steps', color: '#60a5fa' },
-    activeCalories: { label: 'Active Cal', color: '#f97316' },
+    steps: { label: 'Steps', color: HEX.azure },
+    activeCalories: { label: 'Active Cal', color: HEX.ember },
   }
 
   // === RING COMPLETION DATA ===
@@ -3439,9 +3358,9 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
   }, [filteredMetrics])
 
   const ringChartConfig: ChartConfig = {
-    move: { label: 'Move', color: '#FF2D55' },
-    exercise: { label: 'Exercise', color: '#92E82A' },
-    stand: { label: 'Stand', color: '#00D4FF' },
+    move: { label: 'Move', color: APPLE_WATCH_RINGS.move },
+    exercise: { label: 'Exercise', color: APPLE_WATCH_RINGS.exercise },
+    stand: { label: 'Stand', color: APPLE_WATCH_RINGS.stand },
   }
 
   // === RING SUMMARY STATS ===
@@ -3504,9 +3423,9 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
   }, [filteredMetrics])
 
   const healthChartConfig: ChartConfig = {
-    restingHR: { label: 'Resting HR', color: '#ef4444' },
-    hrv: { label: 'HRV', color: '#a855f7' },
-    vo2Max: { label: 'VO2 Max', color: '#06b6d4' },
+    restingHR: { label: 'Resting HR', color: HEX.rose },
+    hrv: { label: 'HRV', color: HEX.violet },
+    vo2Max: { label: 'VO2 Max', color: HEX.teal },
   }
 
   // Health averages
@@ -3552,7 +3471,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
             value: formatPace(fastest.pace_best) + '/mi',
             date: format(new Date(fastest.start_date), 'MMM d'),
             workoutId: fastest.id,
-            icon: <Zap className="size-4 text-amber-500" />,
+            icon: <Zap className="size-4 text-accent-gold" />,
           })
         }
       }
@@ -3570,7 +3489,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
             value: longest.distance_miles.toFixed(2) + ' mi',
             date: format(new Date(longest.start_date), 'MMM d'),
             workoutId: longest.id,
-            icon: <Route className="size-4 text-blue-500" />,
+            icon: <Route className="size-4 text-accent-azure" />,
           })
         }
       }
@@ -3585,7 +3504,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
         value: Math.round(calorieWorkout.active_calories).toString() + ' cal',
         date: format(new Date(calorieWorkout.start_date), 'MMM d'),
         workoutId: calorieWorkout.id,
-        icon: <Flame className="size-4 text-orange-500" />,
+        icon: <Flame className="size-4 text-accent-ember" />,
       })
 
       // Longest duration
@@ -3598,7 +3517,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
         value: formatDuration(longestDuration.duration),
         date: format(new Date(longestDuration.start_date), 'MMM d'),
         workoutId: longestDuration.id,
-        icon: <Timer className="size-4 text-blue-500" />,
+        icon: <Timer className="size-4 text-accent-azure" />,
       })
     }
 
@@ -3610,7 +3529,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
         label: 'Most Steps',
         value: maxSteps.steps.toLocaleString(),
         date: format(new Date(maxSteps.date), 'MMM d'),
-        icon: <Footprints className="size-4 text-blue-500" />,
+        icon: <Footprints className="size-4 text-accent-azure" />,
       })
 
       // Most exercise minutes
@@ -3621,7 +3540,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
           label: 'Most Exercise',
           value: maxExercise.exercise_minutes + ' min',
           date: format(new Date(maxExercise.date), 'MMM d'),
-          icon: <Activity className="size-4 text-green-500" />,
+          icon: <Activity className="size-4 text-accent-sage" />,
         })
       }
 
@@ -3634,7 +3553,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
           label: 'Lowest Resting HR',
           value: lowestHR.resting_heart_rate + ' bpm',
           date: format(new Date(lowestHR.date), 'MMM d'),
-          icon: <Heart className="size-4 text-red-500" />,
+          icon: <Heart className="size-4 text-accent-rose" />,
         })
       }
 
@@ -3647,7 +3566,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
           label: 'Highest HRV',
           value: Math.round(highestHRV.heart_rate_variability!) + ' ms',
           date: format(new Date(highestHRV.date), 'MMM d'),
-          icon: <HeartPulse className="size-4 text-purple-500" />,
+          icon: <HeartPulse className="size-4 text-accent-violet" />,
         })
       }
     }
@@ -3713,8 +3632,9 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
         All
       </button>
       {workoutTypes.map(type => {
-        const textColor = WORKOUT_TEXT_COLORS[type] ?? WORKOUT_TEXT_COLORS.other
-        const bgColor = WORKOUT_BG_COLORS[type] ?? WORKOUT_BG_COLORS.other
+        const twColors = getWorkoutTw(type)
+        const textColor = twColors.text
+        const bgColor = twColors.bg10
         const isSelected = selectedType === type
         return (
           <button
@@ -3807,7 +3727,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                       <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} tickFormatter={(v) => volumeMetric === 'duration' ? `${v}m` : `${v}mi`} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       {workoutTypes.map(type => (
-                        <Bar key={type} dataKey={type} stackId="volume" fill={WORKOUT_HEX_COLORS[type] || WORKOUT_HEX_COLORS.other} radius={[2, 2, 0, 0]} />
+                        <Bar key={type} dataKey={type} stackId="volume" fill={getWorkoutHex(type)} radius={[2, 2, 0, 0]} />
                       ))}
                     </BarChart>
                   </ChartContainer>
@@ -3859,25 +3779,25 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                       <YAxis yAxisId="hr" orientation="left" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} domain={['dataMin - 10', 'dataMax + 10']} />
                       <YAxis yAxisId="cal" orientation="right" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} width={35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line yAxisId="hr" type="monotone" dataKey="avgHr" stroke="#ef4444" strokeWidth={2} dot={false} connectNulls />
-                      <Line yAxisId="cal" type="monotone" dataKey="calPerMin" stroke="#f97316" strokeWidth={2} dot={false} connectNulls />
+                      <Line yAxisId="hr" type="monotone" dataKey="avgHr" stroke={HEX.rose} strokeWidth={2} dot={false} connectNulls />
+                      <Line yAxisId="cal" type="monotone" dataKey="calPerMin" stroke={HEX.ember} strokeWidth={2} dot={false} connectNulls />
                       {performanceData.some(d => d.effort) && (
-                        <Line yAxisId="cal" type="monotone" dataKey="effort" stroke="#a855f7" strokeWidth={2} dot={false} connectNulls strokeDasharray="4 2" />
+                        <Line yAxisId="cal" type="monotone" dataKey="effort" stroke={HEX.violet} strokeWidth={2} dot={false} connectNulls strokeDasharray="4 2" />
                       )}
                     </LineChart>
                   </ChartContainer>
                   <div className="mt-2 flex items-center justify-center gap-4 text-xs">
                     <div className="flex items-center gap-1.5">
-                      <div className="h-0.5 w-4 rounded bg-red-500" />
+                      <div className="h-0.5 w-4 rounded bg-accent-rose" />
                       <span className="text-muted-foreground">Avg HR (bpm)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="h-0.5 w-4 rounded bg-orange-500" />
+                      <div className="h-0.5 w-4 rounded bg-accent-ember" />
                       <span className="text-muted-foreground">Cal/min</span>
                     </div>
                     {performanceData.some(d => d.effort) && (
                       <div className="flex items-center gap-1.5">
-                        <div className="h-0.5 w-4 rounded bg-purple-500" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #a855f7 0, #a855f7 4px, transparent 4px, transparent 6px)' }} />
+                        <div className="h-0.5 w-4 rounded bg-accent-violet" style={{ backgroundImage: `repeating-linear-gradient(90deg, ${HEX.violet} 0, ${HEX.violet} 4px, transparent 4px, transparent 6px)` }} />
                         <span className="text-muted-foreground">Effort</span>
                       </div>
                     )}
@@ -3902,28 +3822,28 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
               {summaryStats && (
                 <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
                   <div className="flex items-center gap-1.5 text-xs">
-                    <Footprints className="size-3 text-blue-500" />
-                    <span className="font-bold tabular-nums text-blue-500">{summaryStats.avgSteps.toLocaleString()}</span>
+                    <Footprints className="size-3 text-accent-azure" />
+                    <span className="font-bold tabular-nums text-accent-azure">{summaryStats.avgSteps.toLocaleString()}</span>
                     <span className="text-muted-foreground text-[10px]">avg steps/day</span>
                   </div>
                   <div className="h-3 w-px bg-border/30" />
                   <div className="flex items-center gap-1.5 text-xs">
-                    <Flame className="size-3 text-orange-500" />
-                    <span className="font-bold tabular-nums text-orange-500">{summaryStats.totalCalories.toLocaleString()}</span>
+                    <Flame className="size-3 text-accent-ember" />
+                    <span className="font-bold tabular-nums text-accent-ember">{summaryStats.totalCalories.toLocaleString()}</span>
                     <span className="text-muted-foreground text-[10px]">total cal</span>
                   </div>
                   <div className="h-3 w-px bg-border/30" />
                   <div className="flex items-center gap-1.5 text-xs">
-                    <Timer className="size-3 text-green-500" />
-                    <span className="font-bold tabular-nums text-green-500">{summaryStats.totalExercise}</span>
+                    <Timer className="size-3 text-accent-sage" />
+                    <span className="font-bold tabular-nums text-accent-sage">{summaryStats.totalExercise}</span>
                     <span className="text-muted-foreground text-[10px]">exercise min</span>
                   </div>
                   {workoutStreak > 0 && (
                     <>
                       <div className="h-3 w-px bg-border/30" />
                       <div className="flex items-center gap-1.5 text-xs">
-                        <Zap className="size-3 text-amber-500" />
-                        <span className="font-bold tabular-nums text-amber-500">{workoutStreak}</span>
+                        <Zap className="size-3 text-accent-gold" />
+                        <span className="font-bold tabular-nums text-accent-gold">{workoutStreak}</span>
                         <span className="text-muted-foreground text-[10px]">day streak</span>
                       </div>
                     </>
@@ -3941,13 +3861,13 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                       <YAxis yAxisId="left" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
                       <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar yAxisId="left" dataKey="steps" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                      <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke="#f97316" strokeWidth={2} dot={false} />
+                      <Bar yAxisId="left" dataKey="steps" fill={HEX.azure} radius={[4, 4, 0, 0]} />
+                      <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke={HEX.ember} strokeWidth={2} dot={false} />
                     </BarChart>
                   </ChartContainer>
                   <div className="mt-1 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-sm bg-blue-500" /> Steps</span>
-                    <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 rounded bg-orange-500" /> Active Cal</span>
+                    <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-sm bg-accent-azure" /> Steps</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 rounded bg-accent-ember" /> Active Cal</span>
                   </div>
                 </div>
               ) : (
@@ -3961,11 +3881,11 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                     <h4 className="text-xs font-semibold text-muted-foreground">Ring Completion %</h4>
                     {ringStats && (
                       <div className="flex items-center gap-2 text-[10px]">
-                        <span style={{ color: '#FF2D55' }}>{ringStats.movePct}%</span>
-                        <span style={{ color: '#92E82A' }}>{ringStats.exercisePct}%</span>
-                        <span style={{ color: '#00D4FF' }}>{ringStats.standPct}%</span>
+                        <span style={{ color: APPLE_WATCH_RINGS.move }}>{ringStats.movePct}%</span>
+                        <span style={{ color: APPLE_WATCH_RINGS.exercise }}>{ringStats.exercisePct}%</span>
+                        <span style={{ color: APPLE_WATCH_RINGS.stand }}>{ringStats.standPct}%</span>
                         {ringStats.perfectDays > 0 && (
-                          <span className="flex items-center gap-0.5 text-green-500">
+                          <span className="flex items-center gap-0.5 text-accent-sage">
                             <Sparkles className="size-2.5" />
                             {ringStats.perfectDays} perfect
                           </span>
@@ -3979,9 +3899,9 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                       <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                       <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} width={30} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area type="monotone" dataKey="move" stroke="#FF2D55" fill="#FF2D55" fillOpacity={0.15} strokeWidth={1.5} dot={false} />
-                      <Area type="monotone" dataKey="exercise" stroke="#92E82A" fill="#92E82A" fillOpacity={0.1} strokeWidth={1.5} dot={false} />
-                      <Area type="monotone" dataKey="stand" stroke="#00D4FF" fill="#00D4FF" fillOpacity={0.08} strokeWidth={1.5} dot={false} />
+                      <Area type="monotone" dataKey="move" stroke={APPLE_WATCH_RINGS.move} fill={APPLE_WATCH_RINGS.move} fillOpacity={0.15} strokeWidth={1.5} dot={false} />
+                      <Area type="monotone" dataKey="exercise" stroke={APPLE_WATCH_RINGS.exercise} fill={APPLE_WATCH_RINGS.exercise} fillOpacity={0.1} strokeWidth={1.5} dot={false} />
+                      <Area type="monotone" dataKey="stand" stroke={APPLE_WATCH_RINGS.stand} fill={APPLE_WATCH_RINGS.stand} fillOpacity={0.08} strokeWidth={1.5} dot={false} />
                     </AreaChart>
                   </ChartContainer>
                 </div>
@@ -4003,8 +3923,8 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                 <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
                   {healthAvg.avgHR && (
                     <div className="flex items-center gap-1.5 text-xs">
-                      <Heart className="size-3 text-red-500" />
-                      <span className="font-bold tabular-nums text-red-500">{healthAvg.avgHR}</span>
+                      <Heart className="size-3 text-accent-rose" />
+                      <span className="font-bold tabular-nums text-accent-rose">{healthAvg.avgHR}</span>
                       <span className="text-muted-foreground text-[10px]">avg RHR</span>
                     </div>
                   )}
@@ -4012,8 +3932,8 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                     <>
                       <div className="h-3 w-px bg-border/30" />
                       <div className="flex items-center gap-1.5 text-xs">
-                        <HeartPulse className="size-3 text-purple-500" />
-                        <span className="font-bold tabular-nums text-purple-500">{healthAvg.avgHRV}</span>
+                        <HeartPulse className="size-3 text-accent-violet" />
+                        <span className="font-bold tabular-nums text-accent-violet">{healthAvg.avgHRV}</span>
                         <span className="text-muted-foreground text-[10px]">avg HRV</span>
                       </div>
                     </>
@@ -4022,8 +3942,8 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                     <>
                       <div className="h-3 w-px bg-border/30" />
                       <div className="flex items-center gap-1.5 text-xs">
-                        <Wind className="size-3 text-cyan-500" />
-                        <span className="font-bold tabular-nums text-cyan-500">{healthAvg.avgVO2}</span>
+                        <Wind className="size-3 text-accent-teal" />
+                        <span className="font-bold tabular-nums text-accent-teal">{healthAvg.avgVO2}</span>
                         <span className="text-muted-foreground text-[10px]">avg VO2</span>
                       </div>
                     </>
@@ -4039,22 +3959,22 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                       <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="restingHR" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-                      <Line type="monotone" dataKey="hrv" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-                      <Line type="monotone" dataKey="vo2Max" stroke="#06b6d4" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                      <Line type="monotone" dataKey="restingHR" stroke={HEX.rose} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                      <Line type="monotone" dataKey="hrv" stroke={HEX.violet} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                      <Line type="monotone" dataKey="vo2Max" stroke={HEX.teal} strokeWidth={2} dot={{ r: 2 }} connectNulls />
                     </LineChart>
                   </ChartContainer>
                   <div className="mt-2 flex items-center justify-center gap-4 text-xs">
                     <div className="flex items-center gap-1.5">
-                      <div className="h-0.5 w-4 rounded bg-red-500" />
+                      <div className="h-0.5 w-4 rounded bg-accent-rose" />
                       <span className="text-muted-foreground">Resting HR</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="h-0.5 w-4 rounded bg-purple-500" />
+                      <div className="h-0.5 w-4 rounded bg-accent-violet" />
                       <span className="text-muted-foreground">HRV (ms)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="h-0.5 w-4 rounded bg-cyan-500" />
+                      <div className="h-0.5 w-4 rounded bg-accent-teal" />
                       <span className="text-muted-foreground">VO2 Max</span>
                     </div>
                   </div>
@@ -4069,7 +3989,7 @@ function UnifiedAnalytics({ workouts, dailyMetrics, onWorkoutClick }: UnifiedAna
         {/* Records sidebar */}
         <div className="rounded-xl border border-border/50 bg-card p-3">
           <div className="mb-2 flex items-center gap-1.5">
-            <Sparkles className="size-3.5 text-amber-500" />
+            <Sparkles className="size-3.5 text-accent-gold" />
             <h3 className="text-xs font-semibold">Records</h3>
           </div>
 
@@ -4313,7 +4233,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
       label: 'Most Steps',
       value: maxSteps.steps.toLocaleString(),
       date: format(new Date(maxSteps.date), 'MMM d'),
-      icon: <Footprints className="size-4 text-blue-500" />,
+      icon: <Footprints className="size-4 text-accent-azure" />,
     })
 
     // Most calories
@@ -4323,7 +4243,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
       label: 'Most Calories',
       value: Math.round(maxCalories.active_calories).toLocaleString() + ' cal',
       date: format(new Date(maxCalories.date), 'MMM d'),
-      icon: <Flame className="size-4 text-orange-500" />,
+      icon: <Flame className="size-4 text-accent-ember" />,
     })
 
     // Most exercise
@@ -4333,7 +4253,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
       label: 'Most Exercise',
       value: maxExercise.exercise_minutes + ' min',
       date: format(new Date(maxExercise.date), 'MMM d'),
-      icon: <Activity className="size-4 text-green-500" />,
+      icon: <Activity className="size-4 text-accent-sage" />,
     })
 
     // Lowest resting HR (good)
@@ -4347,7 +4267,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
         label: 'Lowest Resting HR',
         value: lowestHR.resting_heart_rate + ' bpm',
         date: format(new Date(lowestHR.date), 'MMM d'),
-        icon: <Heart className="size-4 text-red-500" />,
+        icon: <Heart className="size-4 text-accent-rose" />,
       })
     }
 
@@ -4362,7 +4282,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
         label: 'Highest HRV',
         value: Math.round(highestHRV.heart_rate_variability || 0) + ' ms',
         date: format(new Date(highestHRV.date), 'MMM d'),
-        icon: <HeartPulse className="size-4 text-purple-500" />,
+        icon: <HeartPulse className="size-4 text-accent-violet" />,
       })
     }
 
@@ -4399,21 +4319,21 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
   }, [filteredMetrics])
 
   const ringChartConfig: ChartConfig = {
-    movePercent: { label: 'Move', color: '#FF2D55' },
-    exercisePercent: { label: 'Exercise', color: '#92E82A' },
-    standPercent: { label: 'Stand', color: '#00D4FF' },
+    movePercent: { label: 'Move', color: APPLE_WATCH_RINGS.move },
+    exercisePercent: { label: 'Exercise', color: APPLE_WATCH_RINGS.exercise },
+    standPercent: { label: 'Stand', color: APPLE_WATCH_RINGS.stand },
   }
 
   const activityChartConfig: ChartConfig = {
-    steps: { label: 'Steps', color: '#60a5fa' },
-    activeCalories: { label: 'Active Cal', color: '#f97316' },
-    exerciseMinutes: { label: 'Exercise', color: '#22c55e' },
+    steps: { label: 'Steps', color: HEX.azure },
+    activeCalories: { label: 'Active Cal', color: HEX.ember },
+    exerciseMinutes: { label: 'Exercise', color: HEX.sage },
   }
 
   const healthChartConfig: ChartConfig = {
-    restingHR: { label: 'Resting HR', color: '#ef4444' },
-    hrv: { label: 'HRV', color: '#a855f7' },
-    vo2Max: { label: 'VO2 Max', color: '#06b6d4' },
+    restingHR: { label: 'Resting HR', color: HEX.rose },
+    hrv: { label: 'HRV', color: HEX.violet },
+    vo2Max: { label: 'VO2 Max', color: HEX.teal },
   }
 
   if (dailyMetrics.length === 0) {
@@ -4483,7 +4403,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Sparkles className="size-3.5 text-green-500" />
+              <Sparkles className="size-3.5 text-accent-sage" />
               Perfect Days
             </div>
             <div className="mt-1 text-2xl font-bold">{summaryStats.perfectDays}</div>
@@ -4494,14 +4414,14 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
 
           <div className="rounded-xl bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Footprints className="size-3.5 text-blue-500" />
+              <Footprints className="size-3.5 text-accent-azure" />
               Avg Steps
             </div>
             <div className="mt-1 text-2xl font-bold">{summaryStats.avgSteps.toLocaleString()}</div>
             {weeklyComparison && (
               <div className={cn(
                 'flex items-center gap-1 text-xs',
-                weeklyComparison.stepsChange >= 0 ? 'text-green-500' : 'text-red-500'
+                weeklyComparison.stepsChange >= 0 ? 'text-accent-sage' : 'text-accent-rose'
               )}>
                 {weeklyComparison.stepsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 {weeklyComparison.stepsChangePercent}% vs last week
@@ -4511,14 +4431,14 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
 
           <div className="rounded-xl bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Flame className="size-3.5 text-orange-500" />
+              <Flame className="size-3.5 text-accent-ember" />
               Avg Calories
             </div>
             <div className="mt-1 text-2xl font-bold">{summaryStats.avgCalories.toLocaleString()}</div>
             {weeklyComparison && (
               <div className={cn(
                 'flex items-center gap-1 text-xs',
-                weeklyComparison.calsChange >= 0 ? 'text-green-500' : 'text-red-500'
+                weeklyComparison.calsChange >= 0 ? 'text-accent-sage' : 'text-accent-rose'
               )}>
                 {weeklyComparison.calsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 {weeklyComparison.calsChangePercent}% vs last week
@@ -4528,7 +4448,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
 
           <div className="rounded-xl bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Activity className="size-3.5 text-green-500" />
+              <Activity className="size-3.5 text-accent-sage" />
               Avg Exercise
             </div>
             <div className="mt-1 text-2xl font-bold">{summaryStats.avgExercise} min</div>
@@ -4609,24 +4529,24 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                 <Area
                   type="monotone"
                   dataKey="movePercent"
-                  stroke="#FF2D55"
-                  fill="#FF2D55"
+                  stroke={APPLE_WATCH_RINGS.move}
+                  fill={APPLE_WATCH_RINGS.move}
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
                 <Area
                   type="monotone"
                   dataKey="exercisePercent"
-                  stroke="#92E82A"
-                  fill="#92E82A"
+                  stroke={APPLE_WATCH_RINGS.exercise}
+                  fill={APPLE_WATCH_RINGS.exercise}
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
                 <Area
                   type="monotone"
                   dataKey="standPercent"
-                  stroke="#00D4FF"
-                  fill="#00D4FF"
+                  stroke={APPLE_WATCH_RINGS.stand}
+                  fill={APPLE_WATCH_RINGS.stand}
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
@@ -4660,8 +4580,8 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                   axisLine={false}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar yAxisId="left" dataKey="steps" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke="#f97316" strokeWidth={2} dot={false} />
+                <Bar yAxisId="left" dataKey="steps" fill={HEX.azure} radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="activeCalories" stroke={HEX.ember} strokeWidth={2} dot={false} />
               </BarChart>
             </ChartContainer>
           )}
@@ -4686,7 +4606,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                 <Line
                   type="monotone"
                   dataKey="restingHR"
-                  stroke="#ef4444"
+                  stroke={HEX.rose}
                   strokeWidth={2}
                   dot={{ r: 2 }}
                   connectNulls
@@ -4694,7 +4614,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                 <Line
                   type="monotone"
                   dataKey="hrv"
-                  stroke="#a855f7"
+                  stroke={HEX.violet}
                   strokeWidth={2}
                   dot={{ r: 2 }}
                   connectNulls
@@ -4750,7 +4670,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                 {summaryStats.avgRestingHR && (
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-sm">
-                      <Heart className="size-4 text-red-500" />
+                      <Heart className="size-4 text-accent-rose" />
                       Resting HR
                     </span>
                     <span className="font-medium">{summaryStats.avgRestingHR} bpm</span>
@@ -4759,7 +4679,7 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
                 {summaryStats.avgHRV && (
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-sm">
-                      <HeartPulse className="size-4 text-purple-500" />
+                      <HeartPulse className="size-4 text-accent-violet" />
                       HRV
                     </span>
                     <span className="font-medium">{summaryStats.avgHRV} ms</span>
@@ -4780,15 +4700,15 @@ function _LegacyDailyMetricsInsights({ dailyMetrics, className }: DailyMetricsIn
           </h3>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-500">{summaryStats.totalSteps.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-accent-azure">{summaryStats.totalSteps.toLocaleString()}</div>
               <div className="text-muted-foreground text-sm">Total Steps</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-orange-500">{summaryStats.totalCalories.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-accent-ember">{summaryStats.totalCalories.toLocaleString()}</div>
               <div className="text-muted-foreground text-sm">Active Calories</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-500">{summaryStats.totalExercise.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-accent-sage">{summaryStats.totalExercise.toLocaleString()}</div>
               <div className="text-muted-foreground text-sm">Exercise Minutes</div>
             </div>
           </div>
@@ -4888,9 +4808,9 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
   }, [currentWeight, dailyMetrics])
 
   const chartConfig: ChartConfig = {
-    weight: { label: 'Weight (lbs)', color: '#3b82f6' },
-    bodyFat: { label: 'Body Fat %', color: '#f59e0b' },
-    leanMass: { label: 'Lean Mass (lbs)', color: '#10b981' },
+    weight: { label: 'Weight (lbs)', color: HEX.azure },
+    bodyFat: { label: 'Body Fat %', color: HEX.gold },
+    leanMass: { label: 'Lean Mass (lbs)', color: HEX.sage },
   }
 
   const yDomain = useMemo(() => {
@@ -4915,7 +4835,7 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
     <div className="rounded-xl border border-border/50 bg-card p-4">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
-        <Scale className="size-4 text-blue-500" />
+        <Scale className="size-4 text-accent-azure" />
         <h2 className="text-sm font-bold">Body Composition</h2>
         <div className="flex-1" />
         <div className="flex gap-0.5 rounded-lg bg-muted/30 p-0.5">
@@ -4941,16 +4861,16 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
         {/* Weight */}
         <div className="rounded-lg bg-muted/30 p-3">
           <div className="mb-1 flex items-center gap-1.5">
-            <div className="size-2 rounded-full bg-blue-500" />
+            <div className="size-2 rounded-full bg-accent-azure" />
             <span className="text-muted-foreground text-[10px] font-medium">Weight</span>
           </div>
           {currentWeight ? (
             <>
-              <div className="text-lg font-bold tabular-nums text-blue-500">
+              <div className="text-lg font-bold tabular-nums text-accent-azure">
                 {currentWeight}<span className="text-[10px] font-normal text-muted-foreground"> lbs</span>
               </div>
               {periodStats?.weightDelta !== undefined && periodStats.weightDelta !== 0 && (
-                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.weightDelta < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.weightDelta < 0 ? 'text-accent-sage' : 'text-accent-rose')}>
                   {periodStats.weightDelta < 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
                   {periodStats.weightDelta > 0 ? '+' : ''}{periodStats.weightDelta} lbs
                 </div>
@@ -4964,16 +4884,16 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
         {/* Body Fat */}
         <div className="rounded-lg bg-muted/30 p-3">
           <div className="mb-1 flex items-center gap-1.5">
-            <div className="size-2 rounded-full bg-amber-500" />
+            <div className="size-2 rounded-full bg-accent-gold" />
             <span className="text-muted-foreground text-[10px] font-medium">Body Fat</span>
           </div>
           {currentBf ? (
             <>
-              <div className="text-lg font-bold tabular-nums text-amber-500">
+              <div className="text-lg font-bold tabular-nums text-accent-gold">
                 {currentBf}<span className="text-[10px] font-normal text-muted-foreground"> %</span>
               </div>
               {periodStats?.bfDelta !== undefined && periodStats.bfDelta !== null && periodStats.bfDelta !== 0 && (
-                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.bfDelta < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.bfDelta < 0 ? 'text-accent-sage' : 'text-accent-rose')}>
                   {periodStats.bfDelta < 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
                   {periodStats.bfDelta > 0 ? '+' : ''}{periodStats.bfDelta}%
                 </div>
@@ -4992,11 +4912,11 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
           </div>
           {currentLm ? (
             <>
-              <div className="text-lg font-bold tabular-nums text-emerald-500">
+              <div className="text-lg font-bold tabular-nums text-accent-sage">
                 {currentLm}<span className="text-[10px] font-normal text-muted-foreground"> lbs</span>
               </div>
               {periodStats?.lmDelta !== undefined && periodStats.lmDelta !== null && periodStats.lmDelta !== 0 && (
-                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.lmDelta > 0 ? 'text-emerald-500' : 'text-red-400')}>
+                <div className={cn('flex items-center gap-0.5 text-[10px]', periodStats.lmDelta > 0 ? 'text-accent-sage' : 'text-accent-rose')}>
                   {periodStats.lmDelta > 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                   {periodStats.lmDelta > 0 ? '+' : ''}{periodStats.lmDelta} lbs
                 </div>
@@ -5040,14 +4960,14 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
                       <div className="mb-1.5 text-[10px] font-medium text-muted-foreground">{label}</div>
                       {data?.weight && (
                         <div className="flex items-center gap-1.5 text-xs">
-                          <div className="size-2 rounded-full bg-blue-500" />
+                          <div className="size-2 rounded-full bg-accent-azure" />
                           <span className="text-muted-foreground">Weight:</span>
                           <span className="font-bold tabular-nums">{data.weight} lbs</span>
                         </div>
                       )}
                       {data?.bodyFat && (
                         <div className="flex items-center gap-1.5 text-xs">
-                          <div className="size-2 rounded-full bg-amber-500" />
+                          <div className="size-2 rounded-full bg-accent-gold" />
                           <span className="text-muted-foreground">Body Fat:</span>
                           <span className="font-bold tabular-nums">{data.bodyFat}%</span>
                         </div>
@@ -5061,7 +4981,7 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
                       )}
                       {data?.fatMass && (
                         <div className="flex items-center gap-1.5 text-xs">
-                          <div className="size-1.5 rounded-full bg-red-400/60" />
+                          <div className="size-1.5 rounded-full bg-accent-rose/60" />
                           <span className="text-muted-foreground">Fat Mass:</span>
                           <span className="font-bold tabular-nums">{data.fatMass} lbs</span>
                         </div>
@@ -5070,9 +4990,9 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
                   )
                 }}
               />
-              <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} connectNulls activeDot={{ r: 5 }} />
-              <Line yAxisId="right" type="monotone" dataKey="bodyFat" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-              <Line yAxisId="left" type="monotone" dataKey="leanMass" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+              <Line yAxisId="left" type="monotone" dataKey="weight" stroke={HEX.azure} strokeWidth={2} dot={{ r: 3, fill: HEX.azure }} connectNulls activeDot={{ r: 5 }} />
+              <Line yAxisId="right" type="monotone" dataKey="bodyFat" stroke={HEX.gold} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+              <Line yAxisId="left" type="monotone" dataKey="leanMass" stroke={HEX.sage} strokeWidth={2} dot={{ r: 2 }} connectNulls />
               <ReferenceLine yAxisId="left" y={WEIGHT_GOAL} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" strokeOpacity={0.5} />
             </LineChart>
           </ChartContainer>
@@ -5080,11 +5000,11 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
           {/* Legend */}
           <div className="mt-2 flex items-center justify-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-4 rounded bg-blue-500" />
+              <div className="h-0.5 w-4 rounded bg-accent-azure" />
               <span className="text-muted-foreground">Weight</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-4 rounded bg-amber-500" />
+              <div className="h-0.5 w-4 rounded bg-accent-gold" />
               <span className="text-muted-foreground">Body Fat %</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -5108,7 +5028,7 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
         <div className="mt-4 rounded-lg bg-muted/30 px-3 py-2.5">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Target className="size-3 text-blue-500" />
+              <Target className="size-3 text-accent-azure" />
               <span className="text-[10px] font-semibold">Progress to Goal</span>
             </div>
             <span className="text-[10px] text-muted-foreground">
@@ -5117,7 +5037,7 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
           </div>
           <div className="mb-1.5 h-2 w-full overflow-hidden rounded-full bg-muted/50">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-accent-azure to-accent-azure/70 transition-all duration-500"
               style={{ width: `${goalProgress.pct}%` }}
             />
           </div>
@@ -5129,10 +5049,10 @@ function BodyCompositionSection({ dailyMetrics }: BodyCompositionSectionProps) {
               {goalProgress.remaining > 0 ? (
                 <span className="font-medium text-foreground">{goalProgress.remaining} lbs to go</span>
               ) : (
-                <span className="font-medium text-emerald-500">Goal reached!</span>
+                <span className="font-medium text-accent-sage">Goal reached!</span>
               )}
               {periodStats?.weeklyRate !== undefined && periodStats.weeklyRate !== 0 && (
-                <span className={cn(periodStats.weeklyRate < 0 ? 'text-emerald-500' : 'text-red-400')}>
+                <span className={cn(periodStats.weeklyRate < 0 ? 'text-accent-sage' : 'text-accent-rose')}>
                   {periodStats.weeklyRate > 0 ? '+' : ''}{periodStats.weeklyRate} lbs/wk
                 </span>
               )}
@@ -5367,9 +5287,10 @@ export function TodayActivityBar({
           {/* Workout pills - cleaner design */}
           <div className="flex flex-1 items-center gap-2 overflow-x-auto">
             {todayWorkouts.slice(0, 4).map(workout => {
-              const textColor = WORKOUT_TEXT_COLORS[workout.workout_type] ?? WORKOUT_TEXT_COLORS.other
-              const bgColor = WORKOUT_BG_COLORS[workout.workout_type] ?? WORKOUT_BG_COLORS.other
-              const borderColor = WORKOUT_BORDER_COLORS[workout.workout_type] ?? WORKOUT_BORDER_COLORS.other
+              const twColors = getWorkoutTw(workout.workout_type)
+              const textColor = twColors.text
+              const bgColor = twColors.bg10
+              const borderColor = twColors.border
               const icon = getWorkoutIcon(workout.workout_type, 'sm')
               const label = getWorkoutDisplayLabel(workout.workout_type)
 
@@ -5408,12 +5329,12 @@ export function TodayActivityBar({
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Flame className="size-3.5 text-orange-500" />
+              <Flame className="size-3.5 text-accent-ember" />
               <span className="font-medium">{Math.round(totalCalories)}</span>
             </div>
             {totalDistance > 0 && (
               <div className="flex items-center gap-1">
-                <Route className="size-3.5 text-green-500" />
+                <Route className="size-3.5 text-accent-sage" />
                 <span className="font-medium">
                   {totalDistance.toFixed(1)} mi
                 </span>

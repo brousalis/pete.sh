@@ -126,8 +126,8 @@ export function FitnessWidget() {
   return (
     <div>
       <DashboardCardHeader
-        icon={<Dumbbell className="size-5 text-blue-500" />}
-        iconContainerClassName="bg-blue-500/10"
+        icon={<Dumbbell className="size-5 text-accent-azure" />}
+        iconContainerClassName="bg-accent-azure/10"
         title="Fitness"
         badge={
           hasInjuryProtocol ? (
@@ -143,7 +143,7 @@ export function FitnessWidget() {
         viewLabel="View"
         rightExtra={
           consistencyStats && consistencyStats.currentStreak > 0 ? (
-            <div className="flex items-center gap-1 text-orange-500">
+            <div className="flex items-center gap-1 text-accent-ember">
               <Flame className="size-4" />
               <span className="text-sm font-bold">
                 {consistencyStats.currentStreak}
@@ -160,7 +160,7 @@ export function FitnessWidget() {
             key={i}
             className={cn(
               'h-1 flex-1 rounded-full transition-colors',
-              i < completedTasks ? 'bg-green-500' : 'bg-muted'
+              i < completedTasks ? 'bg-accent-sage' : 'bg-muted'
             )}
           />
         ))}
@@ -173,20 +173,20 @@ export function FitnessWidget() {
           className={cn(
             'flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
             morningDone
-              ? 'border-green-500/20 bg-green-500/5'
-              : 'border-amber-500/20 bg-amber-500/5'
+              ? 'border-accent-sage/20 bg-accent-sage/5'
+              : 'border-accent-gold/20 bg-accent-gold/5'
           )}
         >
           <div
             className={cn(
               'rounded-md p-1.5',
-              morningDone ? 'bg-green-500/10' : 'bg-amber-500/10'
+              morningDone ? 'bg-accent-sage/10' : 'bg-accent-gold/10'
             )}
           >
             <Sun
               className={cn(
                 'size-4',
-                morningDone ? 'text-green-500' : 'text-amber-500'
+                morningDone ? 'text-accent-sage' : 'text-accent-gold'
               )}
             />
           </div>
@@ -199,14 +199,14 @@ export function FitnessWidget() {
               {routine.dailyRoutines.morning.exercises.length} stretches
             </div>
           </div>
-          {morningDone && <Check className="size-4 shrink-0 text-green-500" />}
+          {morningDone && <Check className="size-4 shrink-0 text-accent-sage" />}
         </div>
 
         {/* Today's Workout / Rest Day */}
         {isRestDay ? (
-          <div className="flex items-center gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5">
-            <div className="rounded-md bg-blue-500/10 p-1.5">
-              <Footprints className="size-4 text-blue-500" />
+          <div className="flex items-center gap-3 rounded-lg border border-accent-azure/20 bg-accent-azure/5 p-2.5">
+            <div className="rounded-md bg-accent-azure/10 p-1.5">
+              <Footprints className="size-4 text-accent-azure" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium">Rest Day</div>
@@ -221,20 +221,20 @@ export function FitnessWidget() {
               className={cn(
                 'hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
                 workoutDone
-                  ? 'border-green-500/20 bg-green-500/5'
-                  : 'border-blue-500/20 bg-blue-500/5'
+                  ? 'border-accent-sage/20 bg-accent-sage/5'
+                  : 'border-accent-azure/20 bg-accent-azure/5'
               )}
             >
               <div
                 className={cn(
                   'rounded-md p-1.5',
-                  workoutDone ? 'bg-green-500/10' : 'bg-blue-500/10'
+                  workoutDone ? 'bg-accent-sage/10' : 'bg-accent-azure/10'
                 )}
               >
                 <Dumbbell
                   className={cn(
                     'size-4',
-                    workoutDone ? 'text-green-500' : 'text-blue-500'
+                    workoutDone ? 'text-accent-sage' : 'text-accent-azure'
                   )}
                 />
               </div>
@@ -248,7 +248,7 @@ export function FitnessWidget() {
                 </div>
               </div>
               {workoutDone ? (
-                <Check className="size-4 shrink-0 text-green-500" />
+                <Check className="size-4 shrink-0 text-accent-sage" />
               ) : (
                 <ChevronRight className="text-muted-foreground size-4 shrink-0" />
               )}
@@ -261,20 +261,20 @@ export function FitnessWidget() {
           className={cn(
             'flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
             nightDone
-              ? 'border-green-500/20 bg-green-500/5'
-              : 'border-indigo-500/20 bg-indigo-500/5'
+              ? 'border-accent-sage/20 bg-accent-sage/5'
+              : 'border-accent-violet/20 bg-accent-violet/5'
           )}
         >
           <div
             className={cn(
               'rounded-md p-1.5',
-              nightDone ? 'bg-green-500/10' : 'bg-indigo-500/10'
+              nightDone ? 'bg-accent-sage/10' : 'bg-accent-violet/10'
             )}
           >
             <Moon
               className={cn(
                 'size-4',
-                nightDone ? 'text-green-500' : 'text-indigo-500'
+                nightDone ? 'text-accent-sage' : 'text-accent-violet'
               )}
             />
           </div>
@@ -287,7 +287,7 @@ export function FitnessWidget() {
               {routine.dailyRoutines.night.exercises.length} stretches
             </div>
           </div>
-          {nightDone && <Check className="size-4 shrink-0 text-green-500" />}
+          {nightDone && <Check className="size-4 shrink-0 text-accent-sage" />}
         </div>
       </div>
 

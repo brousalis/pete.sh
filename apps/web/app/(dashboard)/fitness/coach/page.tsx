@@ -14,6 +14,7 @@ import {
 } from '@/components/dashboard/ai-coach-routine-card'
 import { useToast } from '@/hooks/use-toast'
 import type { TrainingReadiness } from '@/lib/types/ai-coach.types'
+import { READINESS_COLORS } from '@/lib/constants/colors'
 import { cn } from '@/lib/utils'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
@@ -84,9 +85,9 @@ function ToolInvocationBadge({
     <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
+          <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
-          <Wrench className="h-3 w-3 text-green-400" />
+          <Wrench className="h-3 w-3 text-accent-sage" />
         )}
         <span className="font-medium text-white/80">{meta.label}</span>
         {Object.keys(args).length > 0 && (
@@ -97,9 +98,9 @@ function ToolInvocationBadge({
           </span>
         )}
         {isRunning ? (
-          <span className="ml-auto text-purple-400/70">querying...</span>
+          <span className="ml-auto text-accent-violet/70">querying...</span>
         ) : (
-          <CheckCircle2 className="ml-auto h-3 w-3 text-green-400/70" />
+          <CheckCircle2 className="ml-auto h-3 w-3 text-accent-sage/70" />
         )}
       </div>
       {(state === 'result' && result && (
@@ -163,22 +164,17 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
 // ============================================
 
 function ReadinessBar({ readiness }: { readiness: TrainingReadiness }) {
-  const color =
+  const level =
     readiness.score >= 80
-      ? 'text-green-400'
+      ? 'high'
       : readiness.score >= 60
-        ? 'text-yellow-400'
+        ? 'moderate'
         : readiness.score >= 40
-          ? 'text-orange-400'
-          : 'text-red-400'
-  const bg =
-    readiness.score >= 80
-      ? 'bg-green-400'
-      : readiness.score >= 60
-        ? 'bg-yellow-400'
-        : readiness.score >= 40
-          ? 'bg-orange-400'
-          : 'bg-red-400'
+          ? 'low'
+          : 'critical'
+  const rc = READINESS_COLORS[level]
+  const color = rc.text
+  const bg = rc.text.replace('text-', 'bg-')
 
   return (
     <div className="flex items-center gap-3">
@@ -296,7 +292,7 @@ function ChatHistorySidebar({
   if (!isOpen) return null
 
   return (
-    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-zinc-900/50">
+    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-card/50">
       {/* Sidebar header */}
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
         <div className="flex items-center gap-2">
@@ -344,7 +340,7 @@ function ChatHistorySidebar({
                           className={cn(
                             'group relative flex items-center rounded-md px-2 py-2 cursor-pointer transition-all',
                             isActive
-                              ? 'bg-white/10 border-l-2 border-purple-500 pl-1.5'
+                              ? 'bg-white/10 border-l-2 border-accent-violet pl-1.5'
                               : 'hover:bg-white/5 border-l-2 border-transparent'
                           )}
                           onClick={() => onSelect(conv.id)}
@@ -366,7 +362,7 @@ function ChatHistorySidebar({
                           {isConfirming ? (
                             <div className="flex items-center gap-1 ml-1">
                               <button
-                                className="rounded px-1.5 py-0.5 text-[10px] font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                                className="rounded px-1.5 py-0.5 text-[10px] font-medium text-accent-rose bg-accent-rose/10 hover:bg-accent-rose/20 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   onDelete(conv.id)
@@ -387,7 +383,7 @@ function ChatHistorySidebar({
                             </div>
                           ) : (
                             <button
-                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-red-400 hover:bg-red-500/10 transition-all"
+                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setConfirmDeleteId(conv.id)
@@ -607,7 +603,7 @@ export default function AiCoachPage() {
   }, [sendMessage, toast])
 
   return (
-    <div className="flex h-full bg-zinc-950">
+    <div className="flex h-full bg-card">
       {/* Sidebar */}
       <ChatHistorySidebar
         conversations={conversations}
@@ -642,7 +638,7 @@ export default function AiCoachPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-purple-400" />
+            <Brain className="h-5 w-5 text-accent-violet" />
             <h1 className="text-lg font-semibold text-white">AI Coach</h1>
           </div>
           <div className="flex-1" />
@@ -674,7 +670,7 @@ export default function AiCoachPage() {
           {messages.length === 0 && (
             <div className="mx-auto max-w-2xl mt-8">
               <div className="text-center mb-8">
-                <Brain className="h-12 w-12 text-purple-400/50 mx-auto mb-3" />
+                <Brain className="h-12 w-12 text-accent-violet/50 mx-auto mb-3" />
                 <h2 className="text-xl font-medium text-white/70 mb-1">
                   What would you like to know?
                 </h2>
@@ -692,7 +688,7 @@ export default function AiCoachPage() {
                     className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
                     onClick={() => handleQuickAction(action.prompt)}
                   >
-                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-purple-400/70" />
+                    <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-accent-violet/70" />
                     {action.label}
                   </Button>
                 ))}
@@ -713,7 +709,7 @@ export default function AiCoachPage() {
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-3 text-sm ${
                       message.role === 'user'
-                        ? 'bg-purple-600/30 text-white'
+                        ? 'bg-accent-violet/30 text-white'
                         : 'bg-white/5 text-white/80 border border-white/10'
                     }`}
                   >
@@ -752,7 +748,7 @@ export default function AiCoachPage() {
                                     </strong>
                                   ),
                                   em: ({ children }) => (
-                                    <em className="text-purple-300">
+                                    <em className="text-accent-violet/70">
                                       {children}
                                     </em>
                                   ),
@@ -772,7 +768,7 @@ export default function AiCoachPage() {
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-purple-300">
+                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-violet/70">
                                       {children}
                                     </code>
                                   ),
@@ -891,7 +887,7 @@ export default function AiCoachPage() {
                 ) && (
                   <div className="flex justify-start">
                     <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                     </div>
                   </div>
                 )}
@@ -900,7 +896,7 @@ export default function AiCoachPage() {
 
           {/* Error */}
           {(chatError || error) && (
-            <div className="mx-auto max-w-2xl mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mx-auto max-w-2xl mt-4 rounded-lg border border-accent-rose/20 bg-accent-rose/10 px-4 py-3 text-sm text-accent-rose">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 <span>
@@ -928,13 +924,13 @@ export default function AiCoachPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent-violet/50"
               disabled={status !== 'ready'}
             />
             <Button
               type="submit"
               disabled={status !== 'ready' || !input.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6"
+              className="bg-accent-violet hover:bg-accent-violet/90 text-white px-6"
             >
               <Send className="h-4 w-4" />
             </Button>

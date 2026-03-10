@@ -86,8 +86,9 @@ export async function DELETE(
 
 /**
  * POST /api/cooking/meal-plans/[id]/shopping-list
- * Update shopping list status
- * Body: { status: 'draft' | 'active' | 'completed' }
+ * Actions:
+ *   { action: 'add_recipe', recipeId: string } — Add one recipe's ingredients to the shopping list
+ *   { status: 'draft' | 'active' | 'completed' } — Update shopping list status
  */
 export async function POST(
   request: NextRequest,
@@ -96,21 +97,27 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { status } = body
 
+    if (body.action === 'add_recipe' && body.recipeId) {
+      const shoppingList = await mealPlanningService.addRecipeToShoppingList(id, body.recipeId)
+      return withCors(
+        NextResponse.json({ success: true, data: shoppingList })
+      )
+    }
+
+    const { status } = body
     if (!status || !['draft', 'active', 'completed'].includes(status)) {
       return withCors(
         NextResponse.json(
           {
             success: false,
-            error: 'Invalid status. Must be draft, active, or completed',
+            error: 'Invalid action or status',
           },
           { status: 400 }
         )
       )
     }
 
-    // Get shopping list first
     const shoppingList = await mealPlanningService.getShoppingList(id)
     if (!shoppingList) {
       return withCors(

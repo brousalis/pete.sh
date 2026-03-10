@@ -241,7 +241,7 @@ function AgendaEventCard({ event, onSelect }: AgendaEventCardProps) {
           {isFitness && (
             <Dumbbell className={cn(
               "size-3.5 shrink-0",
-              isCompleted ? "text-emerald-500" : "text-orange-500"
+              isCompleted ? "text-accent-sage" : "text-accent-ember"
             )} />
           )}
           <h4 className={cn(

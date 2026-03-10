@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import { traderJoesService } from '@/lib/services/trader-joes.service'
+import { maybeRecomputeNutrition } from '@/lib/services/nutrition.service'
 import type { TraderJoesRecipe } from '@/lib/types/cooking.types'
 import { withCors, corsOptionsResponse } from '@/lib/api/cors'
 
@@ -118,13 +119,25 @@ export async function POST() {
       }
     }
 
+    // Fire-and-forget nutrition enrichment for newly imported recipes
+    const importedIds = recipeRows.map((r) => r.id as string)
+    if (importedIds.length > 0) {
+      console.log(`[TJ Import] Queuing nutrition enrichment for ${importedIds.length} recipes`)
+      Promise.allSettled(
+        importedIds.map((id) => maybeRecomputeNutrition(id))
+      ).then((results) => {
+        const succeeded = results.filter((r) => r.status === 'fulfilled').length
+        console.log(`[TJ Import] Nutrition enrichment: ${succeeded}/${importedIds.length} completed`)
+      }).catch(() => {})
+    }
+
     return withCors(
       NextResponse.json({
         success: errors.length === 0,
         imported: importedCount,
         skipped: allTjCacheRecipes.length - toImport.length,
         errors,
-        message: `Imported ${importedCount} recipes, skipped ${allTjCacheRecipes.length - toImport.length}`,
+        message: `Imported ${importedCount} recipes, skipped ${allTjCacheRecipes.length - toImport.length}. Nutrition enrichment queued.`,
       })
     )
   } catch (error) {

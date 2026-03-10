@@ -29,14 +29,14 @@ export function StreakFlame({
       <div className="flex items-center gap-2">
         <Flame
           className={cn(
-            'shrink-0 text-orange-500 animate-[flicker_2s_ease-in-out_infinite]',
+            'shrink-0 text-accent-ember animate-[flicker_2s_ease-in-out_infinite]',
             isMilestone && 'size-7',
             isHigh && !isMilestone && 'size-6',
             isMedium && !isHigh && 'size-5',
             !isMedium && 'size-5'
           )}
         />
-        <span className="text-xl font-bold tabular-nums text-orange-500">
+        <span className="text-xl font-bold tabular-nums text-accent-ember">
           {streak}
         </span>
         <span className="text-[10px] text-muted-foreground">day streak</span>

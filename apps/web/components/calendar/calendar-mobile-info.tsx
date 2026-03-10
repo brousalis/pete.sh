@@ -29,11 +29,11 @@ import {
   Sun,
   Target,
   UtensilsCrossed,
-  Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { getEventColor } from '@/lib/types/calendar-views.types'
+import { FOCUS_CONFIG, DEFAULT_FOCUS_CONFIG } from '@/lib/constants/fitness-colors'
 
 interface CalendarMobileInfoProps {
   routine: WeeklyRoutine | null
@@ -67,59 +67,6 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
   saturday: 'S',
 }
 
-const FOCUS_CONFIG: Record<
-  string,
-  { icon: typeof Dumbbell; color: string; bg: string; gradient: string }
-> = {
-  Strength: {
-    icon: Dumbbell,
-    color: 'text-orange-500',
-    bg: 'bg-orange-500/10',
-    gradient: 'from-orange-500/20 to-orange-500/5',
-  },
-  'Core/Posture': {
-    icon: Target,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-    gradient: 'from-blue-500/20 to-blue-500/5',
-  },
-  Hybrid: {
-    icon: Zap,
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
-    gradient: 'from-purple-500/20 to-purple-500/5',
-  },
-  Endurance: {
-    icon: Flame,
-    color: 'text-red-500',
-    bg: 'bg-red-500/10',
-    gradient: 'from-red-500/20 to-red-500/5',
-  },
-  Circuit: {
-    icon: Zap,
-    color: 'text-green-500',
-    bg: 'bg-green-500/10',
-    gradient: 'from-green-500/20 to-green-500/5',
-  },
-  HIIT: {
-    icon: Flame,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    gradient: 'from-amber-500/20 to-amber-500/5',
-  },
-  Rest: {
-    icon: Calendar,
-    color: 'text-slate-400',
-    bg: 'bg-slate-500/10',
-    gradient: 'from-slate-500/20 to-slate-500/5',
-  },
-  'Active Recovery': {
-    icon: Sun,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-    gradient: 'from-teal-500/20 to-teal-500/5',
-  },
-}
 
 function getDayOfWeekFromDate(date: Date): DayOfWeek {
   return date
@@ -185,13 +132,7 @@ export function CalendarMobileInfo({
   const dayData = week?.days[dayOfWeek]
 
   const focusKey = daySchedule?.focus || 'Rest'
-  const focusConfig = FOCUS_CONFIG[focusKey] ??
-    FOCUS_CONFIG.Rest ?? {
-      icon: Dumbbell,
-      color: 'text-slate-400',
-      bg: 'bg-slate-500/10',
-      gradient: 'from-slate-500/20 to-slate-500/5',
-    }
+  const focusConfig = FOCUS_CONFIG[focusKey] ?? DEFAULT_FOCUS_CONFIG
   const FocusIcon = focusConfig.icon
   const isRestDay = focusKey === 'Rest' || focusKey === 'Active Recovery'
   const weekStart = startOfWeek(viewDate, { weekStartsOn: 0 })
@@ -274,8 +215,8 @@ export function CalendarMobileInfo({
                 completedAt={dayData?.morningRoutine?.completedAt}
                 skipped={dayData?.morningRoutine?.skipped}
                 skippedReason={dayData?.morningRoutine?.skippedReason}
-                iconColor="text-amber-500"
-                iconBg="bg-amber-500/10"
+                iconColor="text-accent-gold"
+                iconBg="bg-accent-gold/10"
               />
               <MobileCompletionCard
                 icon={Moon}
@@ -284,8 +225,8 @@ export function CalendarMobileInfo({
                 completedAt={dayData?.nightRoutine?.completedAt}
                 skipped={dayData?.nightRoutine?.skipped}
                 skippedReason={dayData?.nightRoutine?.skippedReason}
-                iconColor="text-indigo-400"
-                iconBg="bg-indigo-400/10"
+                iconColor="text-accent-violet"
+                iconBg="bg-accent-violet/10"
               />
             </div>
           </div>
@@ -299,9 +240,9 @@ export function CalendarMobileInfo({
                 This Week
               </h3>
               {consistencyStats && (
-                <div className="flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2 py-0.5">
-                  <Flame className="size-3 text-orange-500" />
-                  <span className="text-xs font-bold text-orange-500">
+                <div className="flex items-center gap-1.5 rounded-full bg-accent-ember/10 px-2 py-0.5">
+                  <Flame className="size-3 text-accent-ember" />
+                  <span className="text-xs font-bold text-accent-ember">
                     {consistencyStats.currentStreak}
                   </span>
                 </div>
@@ -361,17 +302,17 @@ export function CalendarMobileInfo({
                     <div
                       className={cn(
                         'flex size-5 items-center justify-center rounded-full transition-all',
-                        isRest && 'bg-slate-200 dark:bg-slate-700',
-                        !isRest && isFullyComplete && 'bg-green-500',
-                        !isRest && isPartialComplete && !isSkipped && 'bg-amber-400',
-                        !isRest && isSkipped && 'bg-slate-500',
-                        !isRest && !isPartialComplete && !isFullyComplete && !isSkipped && isPast && 'bg-red-400/60',
+                        isRest && 'bg-accent-slate/20',
+                        !isRest && isFullyComplete && 'bg-accent-sage',
+                        !isRest && isPartialComplete && !isSkipped && 'bg-accent-gold',
+                        !isRest && isSkipped && 'bg-accent-slate',
+                        !isRest && !isPartialComplete && !isFullyComplete && !isSkipped && isPast && 'bg-accent-rose/60',
                         !isRest && !isPartialComplete && !isFullyComplete && !isSkipped && !isPast && 'bg-muted'
                       )}
                     >
                       {isFullyComplete && <Check className="size-3 text-white" />}
                       {isSkipped && <Ban className="size-3 text-white" />}
-                      {isRest && <span className="text-[9px] text-slate-500">R</span>}
+                      {isRest && <span className="text-[9px] text-accent-slate">R</span>}
                     </div>
                     <span className={cn(
                       'text-[9px] leading-tight',
@@ -423,19 +364,19 @@ export function CalendarMobileInfo({
                 label="Streak"
                 value={consistencyStats.currentStreak}
                 unit="days"
-                icon={<Flame className="size-3 text-orange-500" />}
+                icon={<Flame className="size-3 text-accent-ember" />}
               />
               <StatPill
                 label="Best"
                 value={consistencyStats.longestStreak}
                 unit="days"
-                icon={<Target className="size-3 text-blue-500" />}
+                icon={<Target className="size-3 text-accent-azure" />}
               />
               <StatPill
                 label="Active"
                 value={consistencyStats.totalDaysActive}
                 unit="total"
-                icon={<Dumbbell className="size-3 text-green-500" />}
+                icon={<Dumbbell className="size-3 text-accent-sage" />}
               />
             </div>
           </div>
@@ -446,8 +387,8 @@ export function CalendarMobileInfo({
           <div className="rounded-xl border border-border/50 bg-card">
             <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <div className="flex size-6 items-center justify-center rounded-md bg-teal-500/10">
-                  <UtensilsCrossed className="size-3.5 text-teal-500" />
+                <div className="flex size-6 items-center justify-center rounded-md bg-accent-teal/10">
+                  <UtensilsCrossed className="size-3.5 text-accent-teal" />
                 </div>
                 <h3 className="text-xs font-semibold">
                   {isToday ? "Today's Meals" : 'Meals'}
@@ -468,9 +409,9 @@ export function CalendarMobileInfo({
                 </div>
               ) : dayMeals?.skipped ? (
                 <div className="flex items-center gap-3 rounded-lg px-3 py-3">
-                  <Ban className="size-4 text-slate-500" />
+                  <Ban className="size-4 text-accent-slate" />
                   <div>
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Skipped</span>
+                    <span className="text-sm font-medium text-accent-slate">Skipped</span>
                     {dayMeals.skip_note && (
                       <p className="text-[11px] text-muted-foreground">{dayMeals.skip_note}</p>
                     )}
@@ -483,9 +424,9 @@ export function CalendarMobileInfo({
                     return (
                       <div
                         key={slot.key}
-                        className="flex items-center gap-3 rounded-lg bg-teal-500/5 px-3 py-2.5 dark:bg-teal-500/10"
+                        className="flex items-center gap-3 rounded-lg bg-accent-teal/5 px-3 py-2.5 dark:bg-accent-teal/10"
                       >
-                        <SlotIcon className="size-4 text-teal-600 dark:text-teal-400" />
+                        <SlotIcon className="size-4 text-accent-teal" />
                         <div className="min-w-0 flex-1">
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                             {slot.label}
@@ -614,17 +555,17 @@ function MobileCompletionCard({
     <div
       className={cn(
         'flex items-center gap-3 rounded-xl border border-border/50 px-3 py-3 transition-colors',
-        completed ? 'bg-green-500/8 border-green-500/20' : isSkipped ? 'bg-slate-500/8 border-slate-500/20' : 'bg-card'
+        completed ? 'bg-accent-sage/8 border-accent-sage/20' : isSkipped ? 'bg-accent-slate/8 border-accent-slate/20' : 'bg-card'
       )}
     >
       <div className={cn(
         'flex size-9 items-center justify-center rounded-lg',
-        completed ? 'bg-green-500/10' : isSkipped ? 'bg-slate-500/10' : iconBg
+        completed ? 'bg-accent-sage/10' : isSkipped ? 'bg-accent-slate/10' : iconBg
       )}>
         <Icon
           className={cn(
             'size-4',
-            completed ? 'text-green-500' : isSkipped ? 'text-slate-500' : iconColor
+            completed ? 'text-accent-sage' : isSkipped ? 'text-accent-slate' : iconColor
           )}
         />
       </div>
@@ -633,9 +574,9 @@ function MobileCompletionCard({
           className={cn(
             'text-sm font-medium',
             completed
-              ? 'text-green-700 dark:text-green-400'
+              ? 'text-accent-sage'
               : isSkipped
-                ? 'text-slate-600 dark:text-slate-400'
+                ? 'text-accent-slate'
                 : 'text-foreground'
           )}
         >
@@ -647,17 +588,17 @@ function MobileCompletionCard({
           </p>
         )}
         {isSkipped && skippedReason && (
-          <p className="text-[11px] text-slate-500 italic truncate">
+          <p className="text-[11px] text-accent-slate italic truncate">
             "{skippedReason}"
           </p>
         )}
       </div>
       {completed ? (
-        <div className="flex size-7 items-center justify-center rounded-full bg-green-500">
+        <div className="flex size-7 items-center justify-center rounded-full bg-accent-sage">
           <Check className="size-4 text-white" />
         </div>
       ) : isSkipped ? (
-        <div className="flex size-7 items-center justify-center rounded-full bg-slate-500">
+        <div className="flex size-7 items-center justify-center rounded-full bg-accent-slate">
           <Ban className="size-4 text-white" />
         </div>
       ) : (

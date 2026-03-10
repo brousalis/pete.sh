@@ -112,10 +112,10 @@ export function ExerciseEditor({
           </Badge>
         )}
         {exercise.isElbowSafe && (
-          <Shield className="h-3.5 w-3.5 text-green-500 shrink-0" />
+          <Shield className="h-3.5 w-3.5 text-accent-sage shrink-0" />
         )}
         {exercise.youtubeVideoId && (
-          <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+          <Video className="h-3.5 w-3.5 text-accent-azure shrink-0" />
         )}
       </div>
 

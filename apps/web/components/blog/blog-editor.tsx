@@ -385,7 +385,7 @@ export function BlogEditor({ post, onSave }: BlogEditorProps) {
               {post?.status === 'published' && (
                 <Badge
                   variant="default"
-                  className="bg-green-500/10 text-green-600"
+                  className="bg-accent-sage/10 text-accent-sage"
                 >
                   Published
                 </Badge>
@@ -394,7 +394,7 @@ export function BlogEditor({ post, onSave }: BlogEditorProps) {
                 <Badge variant="secondary">Draft</Badge>
               )}
               {isDirty && (
-                <Badge variant="outline" className="text-amber-600">
+                <Badge variant="outline" className="text-accent-gold">
                   Unsaved
                 </Badge>
               )}

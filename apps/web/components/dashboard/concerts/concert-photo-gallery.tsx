@@ -97,8 +97,8 @@ export function ConcertPhotoGallery({
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-pink-500/10">
-            <Camera className="size-4 text-pink-500" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-accent-rose/10">
+            <Camera className="size-4 text-accent-rose" />
           </div>
           <CardTitle className="text-base">Photos</CardTitle>
           {photos.length > 0 && (
@@ -155,7 +155,7 @@ export function ConcertPhotoGallery({
                 />
                 {photo.is_cover && (
                   <div className="absolute left-1 top-1">
-                    <Star className="size-4 fill-amber-400 text-amber-400 drop-shadow" />
+                    <Star className="size-4 fill-accent-gold text-accent-gold drop-shadow" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
@@ -171,7 +171,7 @@ export function ConcertPhotoGallery({
                     <Star className="size-3" />
                   </button>
                   <button
-                    className="rounded bg-black/50 p-1 text-white hover:bg-red-600"
+                    className="rounded bg-black/50 p-1 text-white hover:bg-accent-rose"
                     onClick={(e) => {
                       e.stopPropagation()
                       handleDelete(photo.id)

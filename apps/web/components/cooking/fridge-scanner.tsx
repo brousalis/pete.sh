@@ -421,19 +421,19 @@ export function FridgeScanner({ open, onOpenChange }: FridgeScannerProps) {
                   className={cn(
                     'relative flex items-center justify-center rounded-full transition-all',
                     isRecording
-                      ? 'size-28 bg-red-500/10'
+                      ? 'size-28 bg-accent-rose/10'
                       : 'size-24 bg-primary/10 hover:bg-primary/15'
                   )}
                 >
                   {isRecording && (
                     <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-red-500/30"
+                      className="absolute inset-0 rounded-full border-2 border-accent-rose/30"
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     />
                   )}
                   {isRecording ? (
-                    <MicOff className="size-10 text-red-500" />
+                    <MicOff className="size-10 text-accent-rose" />
                   ) : (
                     <Mic className="size-10 text-primary" />
                   )}
@@ -650,7 +650,7 @@ function ResultsView({
         <div className="flex items-center gap-2">
           <Snowflake className={cn(
             'size-4',
-            enableFilter ? 'text-green-500' : 'text-muted-foreground'
+            enableFilter ? 'text-accent-sage' : 'text-muted-foreground'
           )} />
           <span className="text-sm font-medium">Apply as recipe filter</span>
         </div>
@@ -664,7 +664,7 @@ function ResultsView({
       <Button
         onClick={onSave}
         size="lg"
-        className="w-full bg-green-600 hover:bg-green-700 text-white"
+        className="w-full bg-accent-sage hover:bg-accent-sage text-white"
         disabled={items.length === 0}
       >
         <ChefHat className="size-4 mr-2" />
@@ -697,9 +697,9 @@ function SavedConfirmation({
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        className="flex size-16 items-center justify-center rounded-full bg-green-500/15"
+        className="flex size-16 items-center justify-center rounded-full bg-accent-sage/15"
       >
-        <Check className="size-8 text-green-500" />
+        <Check className="size-8 text-accent-sage" />
       </motion.div>
 
       <div className="text-center space-y-1">

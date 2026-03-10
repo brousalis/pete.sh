@@ -18,17 +18,15 @@ import { cn } from '@/lib/utils'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import {
     Ban,
-    Calendar,
     Check,
     ChevronRight,
     Dumbbell,
     Flame,
     Moon,
     Sun,
-    Target,
-    Zap,
 } from 'lucide-react'
 import Link from 'next/link'
+import { FOCUS_CONFIG, DEFAULT_FOCUS_CONFIG } from '@/lib/constants/fitness-colors'
 
 interface CalendarFitnessSidebarProps {
   routine: WeeklyRoutine | null
@@ -57,32 +55,6 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
   saturday: 'S',
 }
 
-// Map focus to icons and colors
-const FOCUS_CONFIG: Record<
-  string,
-  { icon: typeof Dumbbell; color: string; bg: string }
-> = {
-  Strength: {
-    icon: Dumbbell,
-    color: 'text-orange-500',
-    bg: 'bg-orange-500/10',
-  },
-  'Core/Posture': {
-    icon: Target,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-  },
-  Hybrid: { icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-  Endurance: { icon: Flame, color: 'text-red-500', bg: 'bg-red-500/10' },
-  Circuit: { icon: Zap, color: 'text-green-500', bg: 'bg-green-500/10' },
-  HIIT: { icon: Flame, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  Rest: { icon: Calendar, color: 'text-slate-400', bg: 'bg-slate-500/10' },
-  'Active Recovery': {
-    icon: Sun,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-  },
-}
 
 function getDayOfWeekFromDate(date: Date): DayOfWeek {
   return date
@@ -116,12 +88,7 @@ export function CalendarFitnessSidebar({
 
   // Get focus config with fallback
   const focusKey = daySchedule?.focus || 'Rest'
-  const focusConfig = FOCUS_CONFIG[focusKey] ??
-    FOCUS_CONFIG.Rest ?? {
-      icon: Dumbbell,
-      color: 'text-slate-400',
-      bg: 'bg-slate-500/10',
-    }
+  const focusConfig = FOCUS_CONFIG[focusKey] ?? DEFAULT_FOCUS_CONFIG
   const FocusIcon = focusConfig.icon
 
   // Calculate week's completion for the mini week view
@@ -232,7 +199,7 @@ export function CalendarFitnessSidebar({
             completedAt={dayData?.morningRoutine?.completedAt}
             skipped={dayData?.morningRoutine?.skipped}
             skippedReason={dayData?.morningRoutine?.skippedReason}
-            iconColor="text-amber-500"
+            iconColor="text-accent-gold"
           />
 
           {/* Night routine */}
@@ -243,7 +210,7 @@ export function CalendarFitnessSidebar({
             completedAt={dayData?.nightRoutine?.completedAt}
             skipped={dayData?.nightRoutine?.skipped}
             skippedReason={dayData?.nightRoutine?.skippedReason}
-            iconColor="text-indigo-400"
+            iconColor="text-accent-violet"
           />
         </div>
 
@@ -255,7 +222,7 @@ export function CalendarFitnessSidebar({
             </span>
             {consistencyStats && (
               <div className="flex items-center gap-1">
-                <Flame className="size-3 text-orange-500" />
+                <Flame className="size-3 text-accent-ember" />
                 <span className="text-[10px] font-semibold">
                   {consistencyStats.currentStreak}
                 </span>
@@ -330,16 +297,16 @@ export function CalendarFitnessSidebar({
                       <div
                         className={cn(
                           'flex size-4 items-center justify-center rounded-full transition-all',
-                          isRest && 'bg-slate-200 dark:bg-slate-700',
-                          !isRest && isFullyComplete && 'bg-green-500',
-                          !isRest && isPartialComplete && !isSkipped && 'bg-amber-400',
-                          !isRest && isSkipped && 'bg-slate-500',
+                          isRest && 'bg-accent-slate/20',
+                          !isRest && isFullyComplete && 'bg-accent-sage',
+                          !isRest && isPartialComplete && !isSkipped && 'bg-accent-gold',
+                          !isRest && isSkipped && 'bg-accent-slate',
                           !isRest &&
                             !isPartialComplete &&
                             !isFullyComplete &&
                             !isSkipped &&
                             isPast &&
-                            'bg-red-400/60',
+                            'bg-accent-rose/60',
                           !isRest &&
                             !isPartialComplete &&
                             !isFullyComplete &&
@@ -355,7 +322,7 @@ export function CalendarFitnessSidebar({
                           <Ban className="size-2.5 text-white" />
                         )}
                         {isRest && (
-                          <span className="text-[8px] text-slate-500">R</span>
+                          <span className="text-[8px] text-accent-slate">R</span>
                         )}
                       </div>
                     </div>
@@ -459,22 +426,22 @@ function CompletionItem({
     <div
       className={cn(
         'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
-        completed ? 'bg-green-500/10' : isSkipped ? 'bg-slate-500/10' : 'bg-muted/30'
+        completed ? 'bg-accent-sage/10' : isSkipped ? 'bg-accent-slate/10' : 'bg-muted/30'
       )}
     >
       <Icon
         className={cn(
           'size-3.5',
-          completed ? 'text-green-500' : isSkipped ? 'text-slate-500' : iconColor
+          completed ? 'text-accent-sage' : isSkipped ? 'text-accent-slate' : iconColor
         )}
       />
       <span
         className={cn(
           'flex-1 text-[11px] font-medium',
           completed
-            ? 'text-green-700 dark:text-green-400'
+            ? 'text-accent-sage'
             : isSkipped
-              ? 'text-slate-600 dark:text-slate-400'
+              ? 'text-accent-slate'
               : 'text-foreground'
         )}
       >
@@ -482,7 +449,7 @@ function CompletionItem({
       </span>
       {completed ? (
         <div className="flex items-center gap-1">
-          <Check className="size-3 text-green-500" />
+          <Check className="size-3 text-accent-sage" />
           {completedAt && (
             <span className="text-muted-foreground text-[9px]">
               {format(new Date(completedAt), 'h:mm a')}
@@ -493,8 +460,8 @@ function CompletionItem({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1">
-              <Ban className="size-3 text-slate-500" />
-              <span className="text-slate-500 text-[9px]">Skipped</span>
+              <Ban className="size-3 text-accent-slate" />
+              <span className="text-accent-slate text-[9px]">Skipped</span>
             </div>
           </TooltipTrigger>
           {skippedReason && (

@@ -74,17 +74,17 @@ export function YouTubePlayer({
               className={cn(
                 "group flex w-full items-center gap-2 rounded-lg",
                 ultraCompact ? "px-1.5 py-1" : compact ? "px-2 py-1.5" : "px-3 py-2",
-                "bg-gradient-to-r from-red-500/10 to-red-600/5",
-                "border border-red-500/20 hover:border-red-500/40",
-                "text-red-600 dark:text-red-400",
+                "bg-gradient-to-r from-accent-rose/10 to-accent-rose/5",
+                "border border-accent-rose/20 hover:border-accent-rose/40",
+                "text-accent-rose",
                 ultraCompact ? "text-[10px]" : compact ? "text-xs" : "text-sm font-medium",
                 "transition-all duration-200 ease-out",
-                "hover:from-red-500/15 hover:to-red-600/10",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                "hover:from-accent-rose/15 hover:to-accent-rose/10",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-rose/50"
               )}
             >
               <div className={cn(
-                "flex items-center justify-center rounded-full bg-red-500/20 transition-colors group-hover:bg-red-500/30",
+                "flex items-center justify-center rounded-full bg-accent-rose/20 transition-colors group-hover:bg-accent-rose/30",
                 ultraCompact ? "size-4" : compact ? "size-5" : "size-7"
               )}>
                 <Play className={cn("fill-current", ultraCompact ? "size-2" : compact ? "size-2.5" : "size-3.5")} />
@@ -107,7 +107,7 @@ export function YouTubePlayer({
               className={cn(
                 "relative overflow-hidden rounded-lg border border-border/50 bg-black shadow-lg",
                 "transition-all duration-300 ease-out",
-                isOpen && !ultraCompact && "ring-2 ring-red-500/30",
+                isOpen && !ultraCompact && "ring-2 ring-accent-rose/30",
                 ultraCompact && "rounded-md"
               )}
             >

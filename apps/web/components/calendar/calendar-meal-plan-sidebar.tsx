@@ -119,8 +119,8 @@ export function CalendarMealPlanSidebar({
       {/* Header */}
       <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center rounded-md bg-teal-500/10">
-            <UtensilsCrossed className="size-3.5 text-teal-500" />
+          <div className="flex size-6 items-center justify-center rounded-md bg-accent-teal/10">
+            <UtensilsCrossed className="size-3.5 text-accent-teal" />
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-semibold">
@@ -148,10 +148,10 @@ export function CalendarMealPlanSidebar({
       {/* Meals for the day */}
       <div className="flex flex-col gap-1 px-3 py-2">
         {dayMeals?.skipped ? (
-          <div className="flex items-center gap-2 rounded-md bg-slate-500/10 px-2 py-1.5">
-            <Ban className="size-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 rounded-md bg-accent-slate/10 px-2 py-1.5">
+            <Ban className="size-3.5 text-accent-slate" />
             <div className="min-w-0 flex-1">
-              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+              <span className="text-[11px] font-medium text-accent-slate">
                 Skipped
               </span>
               {dayMeals.skip_note && (
@@ -169,10 +169,10 @@ export function CalendarMealPlanSidebar({
                 key={slot.key}
                 className={cn(
                   'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
-                  'bg-teal-500/5 dark:bg-teal-500/10'
+                  'bg-accent-teal/5 dark:bg-accent-teal/10'
                 )}
               >
-                <SlotIcon className="size-3.5 text-teal-600 dark:text-teal-400" />
+                <SlotIcon className="size-3.5 text-accent-teal" />
                 <div className="min-w-0 flex-1">
                   <span className="text-muted-foreground text-[9px] uppercase tracking-wider">
                     {slot.label}

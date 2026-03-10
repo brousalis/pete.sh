@@ -32,11 +32,12 @@ import { CoffeeStopwatch } from './coffee-stopwatch'
 // Fallback service for when database is unavailable
 const fallbackService = new CoffeeService()
 
+import { ROAST_COLORS } from '@/lib/constants/colors'
+
 const roastColors: Record<RoastLevel, string> = {
-  light: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
-  medium:
-    'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
-  dark: 'bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-300',
+  light: ROAST_COLORS.light ?? '',
+  medium: ROAST_COLORS.medium ?? '',
+  dark: ROAST_COLORS.dark ?? '',
 }
 
 // Cup size options by method
@@ -162,8 +163,8 @@ export function CoffeeGuide() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15">
-            <Coffee className="size-5 text-amber-500" />
+          <div className="flex size-9 items-center justify-center rounded-xl bg-accent-ember/15">
+            <Coffee className="size-5 text-accent-ember" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Brew Timer</h1>
@@ -189,7 +190,7 @@ export function CoffeeGuide() {
       {/* Recipe Selector */}
       <div className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Droplets className="size-4 text-amber-500" />
+          <Droplets className="size-4 text-accent-ember" />
           Recipe
         </h2>
 
@@ -201,11 +202,11 @@ export function CoffeeGuide() {
             onClick={() => setMethod('moccamaster')}
             className={`h-9 flex-1 gap-1.5 text-xs font-medium ${
               method === 'moccamaster' 
-                ? 'bg-amber-600 hover:bg-amber-700' 
-                : 'hover:border-amber-500/50 hover:bg-amber-500/5'
+                ? 'bg-accent-ember hover:bg-accent-ember/80' 
+                : 'hover:border-accent-ember/50 hover:bg-accent-ember/5'
             }`}
           >
-            <Coffee className={`size-3.5 ${method === 'moccamaster' ? '' : 'text-amber-600'}`} />
+            <Coffee className={`size-3.5 ${method === 'moccamaster' ? '' : 'text-accent-ember'}`} />
             Moccamaster
           </Button>
           <Button
@@ -214,11 +215,11 @@ export function CoffeeGuide() {
             onClick={() => setMethod('switch')}
             className={`h-9 flex-1 gap-1.5 text-xs font-medium ${
               method === 'switch' 
-                ? 'bg-amber-600 hover:bg-amber-700' 
-                : 'hover:border-amber-500/50 hover:bg-amber-500/5'
+                ? 'bg-accent-ember hover:bg-accent-ember/80' 
+                : 'hover:border-accent-ember/50 hover:bg-accent-ember/5'
             }`}
           >
-            <Droplets className={`size-3.5 ${method === 'switch' ? '' : 'text-amber-600'}`} />
+            <Droplets className={`size-3.5 ${method === 'switch' ? '' : 'text-accent-ember'}`} />
             Hario Switch
           </Button>
         </div>
@@ -239,8 +240,8 @@ export function CoffeeGuide() {
                   onClick={() => setCupSize(size.value)}
                   className={`h-7 px-2 text-[11px] font-medium ${
                     cupSize === size.value 
-                      ? 'bg-amber-600 hover:bg-amber-700' 
-                      : 'hover:border-amber-500/50 hover:bg-amber-500/5'
+                      ? 'bg-accent-ember hover:bg-accent-ember/80' 
+                      : 'hover:border-accent-ember/50 hover:bg-accent-ember/5'
                   }`}
                   size="sm"
                 >
@@ -264,8 +265,8 @@ export function CoffeeGuide() {
                   onClick={() => setRoast(r)}
                   className={`h-7 w-7 p-0 text-[11px] font-medium ${
                     roast === r 
-                      ? 'bg-amber-600 hover:bg-amber-700' 
-                      : 'hover:border-amber-500/50 hover:bg-amber-500/5'
+                      ? 'bg-accent-ember hover:bg-accent-ember/80' 
+                      : 'hover:border-accent-ember/50 hover:bg-accent-ember/5'
                   }`}
                   size="sm"
                 >
@@ -278,25 +279,25 @@ export function CoffeeGuide() {
 
         {/* Selected Recipe Details */}
         {selectedRecipe && (
-          <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-3 dark:from-amber-950/30 dark:to-orange-950/20">
+          <div className="rounded-xl border border-accent-ember/30 bg-gradient-to-br from-accent-ember/5 to-accent-gold/5 p-3">
             {/* Key Numbers Row */}
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  <Scale className="size-3 text-amber-600" />
+                  <Scale className="size-3 text-accent-ember" />
                   <span className="text-sm font-bold tabular-nums">
                     {selectedRecipe.coffee}g
                   </span>
                 </div>
                 <span className="text-muted-foreground text-xs">:</span>
                 <div className="flex items-center gap-1">
-                  <Droplets className="size-3 text-blue-500" />
+                  <Droplets className="size-3 text-accent-azure" />
                   <span className="text-sm font-bold tabular-nums">
                     {selectedRecipe.waterMl}g
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Thermometer className="size-3 text-red-500" />
+                  <Thermometer className="size-3 text-accent-rose" />
                   <span className="text-sm font-bold tabular-nums">
                     {selectedRecipe.temp}
                   </span>
@@ -311,7 +312,7 @@ export function CoffeeGuide() {
 
             {/* Technique */}
             <div className="flex items-start gap-1.5">
-              <Zap className="mt-0.5 size-3 shrink-0 text-amber-600" />
+              <Zap className="mt-0.5 size-3 shrink-0 text-accent-ember" />
               <p className="text-muted-foreground text-[11px] leading-snug">
                 {selectedRecipe.technique}
               </p>
@@ -320,7 +321,7 @@ export function CoffeeGuide() {
             {/* Method-specific settings */}
             {(selectedRecipe.switchSetting ||
               selectedRecipe.moccaSetting) && (
-              <div className="mt-2 border-t border-amber-500/20 pt-2 text-[11px]">
+              <div className="mt-2 border-t border-accent-ember/20 pt-2 text-[11px]">
                 {selectedRecipe.switchSetting && (
                   <span>
                     <span className="font-medium">Switch:</span>{' '}
@@ -350,7 +351,7 @@ export function CoffeeGuide() {
             <br />
             <Link
               href="/coffee/config"
-              className="mt-1 inline-block text-amber-600 hover:underline"
+              className="mt-1 inline-block text-accent-ember hover:underline"
             >
               Add one in config
             </Link>
@@ -361,7 +362,7 @@ export function CoffeeGuide() {
       {/* Reference Section */}
       <div className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <BookOpen className="size-4 text-amber-500" />
+              <BookOpen className="size-4 text-accent-ember" />
           Reference
         </h2>
 

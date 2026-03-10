@@ -172,8 +172,8 @@ export function HealthKitWorkoutModal({
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-red-500/10">
-                <Icon className="size-5 text-red-500" />
+              <div className="flex size-10 items-center justify-center rounded-full bg-accent-rose/10">
+                <Icon className="size-5 text-accent-rose" />
               </div>
               <div>
                 <h3 className="font-semibold">
@@ -193,7 +193,7 @@ export function HealthKitWorkoutModal({
             <div className="grid grid-cols-2 gap-3">
               {/* Calories */}
               <div className="rounded-lg border p-3">
-                <div className="flex items-center gap-2 text-orange-500">
+                <div className="flex items-center gap-2 text-accent-ember">
                   <Flame className="size-4" />
                   <span className="text-xs font-medium">Calories</span>
                 </div>
@@ -211,7 +211,7 @@ export function HealthKitWorkoutModal({
               {/* Heart Rate */}
               {workout.hrAverage && (
                 <div className="rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-red-500">
+                  <div className="flex items-center gap-2 text-accent-rose">
                     <Heart className="size-4" />
                     <span className="text-xs font-medium">Heart Rate</span>
                   </div>
@@ -232,7 +232,7 @@ export function HealthKitWorkoutModal({
               {/* Distance (for cardio) */}
               {workout.distanceMiles && (
                 <div className="rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-blue-500">
+                  <div className="flex items-center gap-2 text-accent-azure">
                     <MapPin className="size-4" />
                     <span className="text-xs font-medium">Distance</span>
                   </div>
@@ -248,7 +248,7 @@ export function HealthKitWorkoutModal({
               {/* Pace (for running) */}
               {workout.paceAverage && (
                 <div className="rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-green-500">
+                  <div className="flex items-center gap-2 text-accent-sage">
                     <Timer className="size-4" />
                     <span className="text-xs font-medium">Pace</span>
                   </div>
@@ -261,7 +261,7 @@ export function HealthKitWorkoutModal({
               {/* Cadence (for running) */}
               {workout.cadenceAverage && (
                 <div className="rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-purple-500">
+                  <div className="flex items-center gap-2 text-accent-violet">
                     <TrendingUp className="size-4" />
                     <span className="text-xs font-medium">Cadence</span>
                   </div>
@@ -279,7 +279,7 @@ export function HealthKitWorkoutModal({
             {workout.hrZones && workout.hrZones.length > 0 && (
               <div className="space-y-2">
                 <h4 className="flex items-center gap-2 text-sm font-medium">
-                  <Heart className="size-4 text-red-500" />
+                  <Heart className="size-4 text-accent-rose" />
                   Heart Rate Zones
                 </h4>
                 <HrZonesChart zones={workout.hrZones} />
@@ -311,7 +311,7 @@ export function HealthKitWorkoutBadge({
   return (
     <Badge
       variant="outline"
-      className={`cursor-pointer gap-1 border-red-500/30 bg-red-500/5 text-red-500 hover:bg-red-500/10 ${className}`}
+      className={`cursor-pointer gap-1 border-accent-rose/30 bg-accent-rose/5 text-accent-rose hover:bg-accent-rose/10 ${className}`}
       onClick={e => {
         e.stopPropagation()
         onClick?.()

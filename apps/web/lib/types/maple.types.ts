@@ -18,19 +18,19 @@ export const MOOD_EMOJI: Record<MapleMoodRating, string> = {
 
 export const MOOD_COLORS: Record<MapleMoodRating, { bg: string; text: string; border: string }> = {
   happy: {
-    bg: 'bg-green-500/10',
-    text: 'text-green-500',
-    border: 'border-green-500/30',
+    bg: 'bg-accent-sage/10',
+    text: 'text-accent-sage',
+    border: 'border-accent-sage/30',
   },
   neutral: {
-    bg: 'bg-yellow-500/10',
-    text: 'text-yellow-500',
-    border: 'border-yellow-500/30',
+    bg: 'bg-accent-gold/10',
+    text: 'text-accent-gold',
+    border: 'border-accent-gold/30',
   },
   sad: {
-    bg: 'bg-orange-500/10',
-    text: 'text-orange-500',
-    border: 'border-orange-500/30',
+    bg: 'bg-accent-ember/10',
+    text: 'text-accent-ember',
+    border: 'border-accent-ember/30',
   },
 }
 

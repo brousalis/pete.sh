@@ -54,7 +54,7 @@ export function EventList() {
           <Calendar className="size-3.5 text-white/40" />
           <span className="text-xs font-semibold text-white/80">Upcoming</span>
         </div>
-        <div className="flex items-center gap-2 text-red-400/70">
+        <div className="flex items-center gap-2 text-accent-rose/70">
           <AlertCircle className="size-3.5" />
           <span className="text-[11px]">Failed to load events</span>
         </div>
@@ -85,7 +85,7 @@ export function EventList() {
               key={event.id}
               className="py-2 border-b border-white/[0.04] last:border-0 flex items-start gap-2.5"
             >
-              <div className="size-[6px] rounded-full bg-blue-400 mt-1.5 shrink-0" />
+              <div className="size-[6px] rounded-full bg-accent-azure mt-1.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-medium text-white/80 truncate">{event.summary}</p>
                 <div className="flex items-center gap-2 mt-0.5">

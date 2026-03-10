@@ -59,8 +59,8 @@ const DAILY_ROUTINE_LABELS: Record<string, string> = {
 function DiffEntryRow({ entry }: { entry: { action: string; exerciseName: string; field?: string; before?: string; after?: string } }) {
   if (entry.action === "add") {
     return (
-      <div className="text-[11px] text-green-300/80 flex items-center gap-1.5">
-        <Plus className="h-2.5 w-2.5 text-green-400 flex-shrink-0" />
+      <div className="text-[11px] text-accent-sage/80 flex items-center gap-1.5">
+        <Plus className="h-2.5 w-2.5 text-accent-sage flex-shrink-0" />
         <span>
           {entry.exerciseName}
           {entry.after && <span className="text-white/40"> — {entry.after}</span>}
@@ -70,28 +70,28 @@ function DiffEntryRow({ entry }: { entry: { action: string; exerciseName: string
   }
   if (entry.action === "remove") {
     return (
-      <div className="text-[11px] text-red-300/80 flex items-center gap-1.5 line-through">
-        <Minus className="h-2.5 w-2.5 text-red-400 flex-shrink-0" />
+      <div className="text-[11px] text-accent-rose/80 flex items-center gap-1.5 line-through">
+        <Minus className="h-2.5 w-2.5 text-accent-rose flex-shrink-0" />
         <span>{entry.exerciseName}</span>
       </div>
     )
   }
   if (entry.action === "swap") {
     return (
-      <div className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-        <span className="text-blue-400 flex-shrink-0">~</span>
-        <span>{entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}</span>
+      <div className="text-[11px] text-accent-azure/80 flex items-center gap-1.5">
+        <span className="text-accent-azure flex-shrink-0">~</span>
+        <span>{entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-accent-azure/60" /> {entry.after}</span>
       </div>
     )
   }
   return (
-    <div className="text-[11px] text-blue-300/80 flex items-center gap-1.5">
-      <span className="text-blue-400 flex-shrink-0">~</span>
+    <div className="text-[11px] text-accent-azure/80 flex items-center gap-1.5">
+      <span className="text-accent-azure flex-shrink-0">~</span>
       <span>
         {entry.exerciseName}
         {entry.field && (
           <span className="text-white/40">
-            {" "}{entry.field}: {entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-blue-400/60" /> {entry.after}
+            {" "}{entry.field}: {entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-accent-azure/60" /> {entry.after}
           </span>
         )}
       </span>
@@ -134,10 +134,10 @@ export function RoutineVersionPreviewCard({
 
   if (appliedVersion) {
     return (
-      <div className="my-2 rounded-lg border border-green-500/30 bg-green-500/5 overflow-hidden">
+      <div className="my-2 rounded-lg border border-accent-sage/30 bg-accent-sage/5 overflow-hidden">
         <div className="flex items-center gap-2 px-3 py-2.5">
-          <Check className="h-3.5 w-3.5 text-green-400" />
-          <span className="text-xs font-medium text-green-300">
+          <Check className="h-3.5 w-3.5 text-accent-sage" />
+          <span className="text-xs font-medium text-accent-sage">
             Draft v{appliedVersion.versionNumber} created
           </span>
           <span className="text-[11px] text-white/40 ml-1">
@@ -149,11 +149,11 @@ export function RoutineVersionPreviewCard({
   }
 
   return (
-    <div className="my-2 rounded-lg border border-purple-500/30 bg-purple-500/5 overflow-hidden">
+    <div className="my-2 rounded-lg border border-accent-violet/30 bg-accent-violet/5 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-purple-500/20 bg-purple-500/10">
-        <Dumbbell className="h-3.5 w-3.5 text-purple-400" />
-        <span className="text-xs font-semibold text-purple-300">Proposed Routine Changes</span>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-accent-violet/20 bg-accent-violet/10">
+        <Dumbbell className="h-3.5 w-3.5 text-accent-violet" />
+        <span className="text-xs font-semibold text-accent-violet">Proposed Routine Changes</span>
         {proposal.changesApplied != null && (
           <span className="text-[10px] text-white/40 ml-auto">
             {proposal.changesApplied} change{proposal.changesApplied !== 1 ? "s" : ""}
@@ -188,8 +188,8 @@ export function RoutineVersionPreviewCard({
           <div key={routineType} className="space-y-1">
             <div className="flex items-center gap-1.5">
               {routineType === 'morning'
-                ? <Sun className="h-2.5 w-2.5 text-amber-400" />
-                : <Moon className="h-2.5 w-2.5 text-indigo-400" />
+                ? <Sun className="h-2.5 w-2.5 text-accent-gold" />
+                : <Moon className="h-2.5 w-2.5 text-accent-violet" />
               }
               <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
                 {DAILY_ROUTINE_LABELS[routineType] || routineType}
@@ -207,7 +207,7 @@ export function RoutineVersionPreviewCard({
           <div className="flex items-center gap-2 pt-1">
             <Button
               size="sm"
-              className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5"
+              className="h-7 text-xs bg-accent-sage hover:bg-accent-sage/90 text-white gap-1.5"
               onClick={onApply}
               disabled={applying}
             >
@@ -251,7 +251,7 @@ export function RoutineDismissedBadge() {
 
 export function RoutineErrorBadge({ message }: { message?: string }) {
   return (
-    <div className="my-1.5 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-300">
+    <div className="my-1.5 rounded-md border border-accent-rose/20 bg-accent-rose/5 px-3 py-2 text-xs text-accent-rose">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-3 w-3" />
         <span>{message || "Failed to prepare routine changes"}</span>

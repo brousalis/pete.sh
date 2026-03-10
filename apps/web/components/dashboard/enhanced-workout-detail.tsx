@@ -50,6 +50,7 @@ import {
     XAxis,
     YAxis
 } from 'recharts'
+import { HEX, HR_ZONE_COLORS } from '@/lib/constants/colors'
 
 // ============================================
 // TYPES
@@ -191,14 +192,14 @@ interface WorkoutDetailResponse {
 // ============================================
 
 const ZONE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
-  rest: { bg: 'bg-gray-500/20', text: 'text-gray-400', bar: 'bg-gray-500' },
-  warmup: { bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500' },
-  fatBurn: { bg: 'bg-green-500/20', text: 'text-green-400', bar: 'bg-green-500' },
-  cardio: { bg: 'bg-orange-500/20', text: 'text-orange-400', bar: 'bg-orange-500' },
-  peak: { bg: 'bg-red-500/20', text: 'text-red-400', bar: 'bg-red-500' },
+  rest: { bg: 'bg-accent-slate/20', text: 'text-accent-slate', bar: 'bg-accent-slate' },
+  warmup: { bg: 'bg-accent-sage/20', text: 'text-accent-sage', bar: 'bg-accent-sage' },
+  fatBurn: { bg: 'bg-accent-gold/20', text: 'text-accent-gold', bar: 'bg-accent-gold' },
+  cardio: { bg: 'bg-accent-ember/20', text: 'text-accent-ember', bar: 'bg-accent-ember' },
+  peak: { bg: 'bg-accent-rose/20', text: 'text-accent-rose', bar: 'bg-accent-rose' },
 }
 
-const DEFAULT_ZONE_COLOR = { bg: 'bg-gray-500/20', text: 'text-gray-400', bar: 'bg-gray-500' }
+const DEFAULT_ZONE_COLOR = { bg: 'bg-accent-slate/20', text: 'text-accent-slate', bar: 'bg-accent-slate' }
 
 const ZONE_LABELS: Record<string, string> = {
   rest: 'Rest',
@@ -271,7 +272,7 @@ function generateWorkoutAdvice(
       label: 'VO2 Max / Speed Work',
       description: 'High-intensity effort targeting peak cardiovascular capacity',
       iconType: 'zap',
-      iconColor: 'text-red-500'
+      iconColor: 'text-accent-rose'
     }
     recoveryHours = 48
     nextWorkout = 'Easy recovery run or rest day recommended'
@@ -281,7 +282,7 @@ function generateWorkoutAdvice(
       label: 'Threshold Training',
       description: 'Sustained hard effort building lactate threshold',
       iconType: 'flame',
-      iconColor: 'text-orange-500'
+      iconColor: 'text-accent-ember'
     }
     recoveryHours = 36
     nextWorkout = 'Easy run or cross-training tomorrow'
@@ -291,7 +292,7 @@ function generateWorkoutAdvice(
       label: 'Tempo / Aerobic Power',
       description: 'Moderate-hard effort building aerobic efficiency',
       iconType: 'trending-up',
-      iconColor: 'text-amber-500'
+      iconColor: 'text-accent-gold'
     }
     recoveryHours = 24
     nextWorkout = 'Another moderate effort or easy run'
@@ -301,7 +302,7 @@ function generateWorkoutAdvice(
       label: 'Aerobic Base',
       description: 'Building endurance foundation and fat adaptation',
       iconType: 'heart',
-      iconColor: 'text-green-500'
+      iconColor: 'text-accent-sage'
     }
     recoveryHours = 12
     nextWorkout = 'Good to train again tomorrow - consider adding intensity'
@@ -311,7 +312,7 @@ function generateWorkoutAdvice(
       label: 'Recovery / Easy',
       description: 'Low-intensity effort promoting recovery',
       iconType: 'refresh',
-      iconColor: 'text-blue-500'
+      iconColor: 'text-accent-azure'
     }
     recoveryHours = 8
     nextWorkout = 'Ready for any workout - this promoted recovery'
@@ -453,21 +454,21 @@ function KeyTakeaways({ advice }: { advice: WorkoutAdvice }) {
   if (advice.keyTakeaways.length === 0) return null
 
   const typeColors = {
-    positive: 'border-green-500/30 bg-green-500/5',
-    neutral: 'border-blue-500/30 bg-blue-500/5',
-    improvement: 'border-amber-500/30 bg-amber-500/5'
+    positive: 'border-accent-sage/30 bg-accent-sage/5',
+    neutral: 'border-accent-azure/30 bg-accent-azure/5',
+    improvement: 'border-accent-gold/30 bg-accent-gold/5'
   }
 
   const iconColors = {
-    positive: 'text-green-500',
-    neutral: 'text-blue-500',
-    improvement: 'text-amber-500'
+    positive: 'text-accent-sage',
+    neutral: 'text-accent-azure',
+    improvement: 'text-accent-gold'
   }
 
   return (
     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Lightbulb className="size-4 text-amber-400" />
+        <Lightbulb className="size-4 text-accent-gold" />
         <span className="text-sm font-semibold">Key Takeaways</span>
       </div>
       <div className="space-y-2">
@@ -498,7 +499,7 @@ function RecoveryNextSteps({ advice }: { advice: WorkoutAdvice }) {
   return (
     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
       <div className="mb-4 flex items-center gap-2">
-        <Battery className="size-4 text-emerald-400" />
+        <Battery className="size-4 text-accent-sage" />
         <span className="text-sm font-semibold">Recovery & Next Steps</span>
       </div>
 
@@ -517,7 +518,7 @@ function RecoveryNextSteps({ advice }: { advice: WorkoutAdvice }) {
         {/* Recovery Time */}
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-muted/50 p-2">
-            <Clock className="size-4 text-blue-400" />
+            <Clock className="size-4 text-accent-azure" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium">
@@ -530,7 +531,7 @@ function RecoveryNextSteps({ advice }: { advice: WorkoutAdvice }) {
         {/* Next Workout */}
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-muted/50 p-2">
-            <Dumbbell className="size-4 text-purple-400" />
+            <Dumbbell className="size-4 text-accent-violet" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium">Next Workout</div>
@@ -557,7 +558,7 @@ function ZoneAnalysisCard({ advice, zones }: { advice: WorkoutAdvice; zones: Hea
   return (
     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Target className="size-4 text-cyan-400" />
+        <Target className="size-4 text-accent-teal" />
         <span className="text-sm font-semibold">Zone Analysis</span>
       </div>
 
@@ -653,55 +654,55 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
         {hasHr && hr != null && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Heart className="size-3 text-red-500" />
+              <Heart className="size-3 text-accent-rose" />
               <span className="text-xs text-muted-foreground">Heart Rate</span>
             </div>
-            <span className="text-sm font-semibold text-red-400">{Math.round(hr)} bpm</span>
+            <span className="text-sm font-semibold text-accent-rose">{Math.round(hr)} bpm</span>
           </div>
         )}
         {hasCadence && cadence != null && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Footprints className="size-3 text-blue-400" />
+              <Footprints className="size-3 text-accent-azure" />
               <span className="text-xs text-muted-foreground">Cadence</span>
             </div>
-            <span className="text-sm font-semibold text-blue-400">{Math.round(cadence)} spm</span>
+            <span className="text-sm font-semibold text-accent-azure">{Math.round(cadence)} spm</span>
           </div>
         )}
         {hasGpsPaceMetric && gpsPace != null && gpsPace > 0 && gpsPace < 30 && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Activity className="size-3 text-emerald-400" />
+              <Activity className="size-3 text-accent-sage" />
               <span className="text-xs text-muted-foreground">Pace</span>
             </div>
-            <span className="text-sm font-semibold text-emerald-400">{formatPace(gpsPace)}/mi</span>
+            <span className="text-sm font-semibold text-accent-sage">{formatPace(gpsPace)}/mi</span>
           </div>
         )}
         {hasPace && !hasGpsPaceMetric && pace != null && pace > 0 && pace < 30 && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Activity className="size-3 text-emerald-400" />
+              <Activity className="size-3 text-accent-sage" />
               <span className="text-xs text-muted-foreground">Pace</span>
             </div>
-            <span className="text-sm font-semibold text-emerald-400">{formatPace(pace)}/mi</span>
+            <span className="text-sm font-semibold text-accent-sage">{formatPace(pace)}/mi</span>
           </div>
         )}
         {hasSpeed && cyclingSpeed != null && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Activity className="size-3 text-cyan-400" />
+              <Activity className="size-3 text-accent-teal" />
               <span className="text-xs text-muted-foreground">Speed</span>
             </div>
-            <span className="text-sm font-semibold text-cyan-400">{(cyclingSpeed as number).toFixed(1)} mph</span>
+            <span className="text-sm font-semibold text-accent-teal">{(cyclingSpeed as number).toFixed(1)} mph</span>
           </div>
         )}
         {hasPower && cyclingPower != null && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Zap className="size-3 text-amber-400" />
+              <Zap className="size-3 text-accent-gold" />
               <span className="text-xs text-muted-foreground">Power</span>
             </div>
-            <span className="text-sm font-semibold text-amber-400">{Math.round(cyclingPower as number)} W</span>
+            <span className="text-sm font-semibold text-accent-gold">{Math.round(cyclingPower as number)} W</span>
           </div>
         )}
       </div>
@@ -886,7 +887,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.hr
-                ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                ? 'bg-accent-rose/20 text-accent-rose ring-1 ring-accent-rose/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -899,7 +900,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.cadence
-                ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                ? 'bg-accent-azure/20 text-accent-azure ring-1 ring-accent-azure/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -912,7 +913,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.gpsPace
-                ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
+                ? 'bg-accent-sage/20 text-accent-sage ring-1 ring-accent-sage/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -925,7 +926,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.pace
-                ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
+                ? 'bg-accent-sage/20 text-accent-sage ring-1 ring-accent-sage/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -938,7 +939,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.cyclingSpeed
-                ? 'bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/30'
+                ? 'bg-accent-teal/20 text-accent-teal ring-1 ring-accent-teal/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -951,7 +952,7 @@ function TimeSeriesChart({
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
               activeMetrics.cyclingPower
-                ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30'
+                ? 'bg-accent-gold/20 text-accent-gold ring-1 ring-accent-gold/30'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             )}
           >
@@ -960,16 +961,16 @@ function TimeSeriesChart({
         )}
         <div className="ml-auto flex items-center gap-3 text-[11px] text-muted-foreground">
           {activeMetrics.hr && stats.hr.avg > 0 && (
-            <span><span className="text-red-400 font-medium">{stats.hr.min}–{stats.hr.max}</span> bpm</span>
+            <span><span className="text-accent-rose font-medium">{stats.hr.min}–{stats.hr.max}</span> bpm</span>
           )}
           {activeMetrics.cadence && stats.cadence.avg > 0 && (
-            <span><span className="text-blue-400 font-medium">{stats.cadence.min}–{stats.cadence.max}</span> spm</span>
+            <span><span className="text-accent-azure font-medium">{stats.cadence.min}–{stats.cadence.max}</span> spm</span>
           )}
           {activeMetrics.gpsPace && stats.gpsPace.avg > 0 && (
-            <span><span className="text-emerald-400 font-medium">{formatPace(stats.gpsPace.min)}–{formatPace(stats.gpsPace.max)}</span> /mi</span>
+            <span><span className="text-accent-sage font-medium">{formatPace(stats.gpsPace.min)}–{formatPace(stats.gpsPace.max)}</span> /mi</span>
           )}
           {activeMetrics.pace && stats.pace.avg > 0 && !activeMetrics.gpsPace && (
-            <span><span className="text-emerald-400 font-medium">{formatPace(stats.pace.min)}–{formatPace(stats.pace.max)}</span> /mi</span>
+            <span><span className="text-accent-sage font-medium">{formatPace(stats.pace.min)}–{formatPace(stats.pace.max)}</span> /mi</span>
           )}
         </div>
       </div>
@@ -980,17 +981,17 @@ function TimeSeriesChart({
           <AreaChart data={normalizedData} margin={{ top: 10, right: hasSecondaryMetrics ? 42 : 10, left: 5, bottom: 5 }}>
             <defs>
               <linearGradient id="perfHrGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4} />
-                <stop offset="50%" stopColor="#ef4444" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
+                <stop offset="0%" stopColor={HEX.rose} stopOpacity={0.4} />
+                <stop offset="50%" stopColor={HEX.rose} stopOpacity={0.15} />
+                <stop offset="100%" stopColor={HEX.rose} stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="perfCadenceGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="#60a5fa" stopOpacity={0} />
+                <stop offset="0%" stopColor={HEX.azure} stopOpacity={0.25} />
+                <stop offset="100%" stopColor={HEX.azure} stopOpacity={0} />
               </linearGradient>
               <linearGradient id="perfGpsPaceGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34d399" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#34d399" stopOpacity={0.02} />
+                <stop offset="0%" stopColor={HEX.sage} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={HEX.sage} stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -1006,7 +1007,7 @@ function TimeSeriesChart({
               domain={primaryDomain}
               stroke="rgba(255,255,255,0.3)"
               tick={{
-                fill: primaryMetric === 'hr' ? '#ef4444' : primaryMetric === 'cadence' ? '#60a5fa' : (primaryMetric === 'gpsPace' || primaryMetric === 'pace') ? '#34d399' : '#94a3b8',
+                fill: primaryMetric === 'hr' ? HEX.rose : primaryMetric === 'cadence' ? HEX.azure : (primaryMetric === 'gpsPace' || primaryMetric === 'pace') ? HEX.sage : HEX.slate,
                 fontSize: 10
               }}
               axisLine={false}
@@ -1017,42 +1018,42 @@ function TimeSeriesChart({
 
             {/* Primary HR */}
             {activeMetrics.hr && primaryMetric === 'hr' && (
-              <Area type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} fill="url(#perfHrGrad)" connectNulls />
+              <Area type="monotone" dataKey="hr" stroke={HEX.rose} strokeWidth={2} fill="url(#perfHrGrad)" connectNulls />
             )}
             {/* Normalized HR (when not primary) */}
             {activeMetrics.hr && primaryMetric !== 'hr' && (
-              <Area type="monotone" dataKey="_nHr" stroke="#ef4444" strokeWidth={2} fill="url(#perfHrGrad)" connectNulls />
+              <Area type="monotone" dataKey="_nHr" stroke={HEX.rose} strokeWidth={2} fill="url(#perfHrGrad)" connectNulls />
             )}
 
             {/* Primary Cadence */}
             {activeMetrics.cadence && primaryMetric === 'cadence' && (
-              <Area type="monotone" dataKey="cadence" stroke="#60a5fa" strokeWidth={2} fill="url(#perfCadenceGrad)" connectNulls />
+              <Area type="monotone" dataKey="cadence" stroke={HEX.azure} strokeWidth={2} fill="url(#perfCadenceGrad)" connectNulls />
             )}
             {/* Normalized Cadence (when not primary) */}
             {activeMetrics.cadence && primaryMetric !== 'cadence' && (
-              <Area type="monotone" dataKey="_nCadence" stroke="#60a5fa" strokeWidth={2} fill="url(#perfCadenceGrad)" connectNulls />
+              <Area type="monotone" dataKey="_nCadence" stroke={HEX.azure} strokeWidth={2} fill="url(#perfCadenceGrad)" connectNulls />
             )}
 
             {/* Primary GPS Pace */}
             {activeMetrics.gpsPace && stats.gpsPace.avg > 0 && primaryMetric === 'gpsPace' && (
-              <Area type="monotone" dataKey="gpsPace" stroke="#34d399" strokeWidth={2} fill="url(#perfGpsPaceGrad)" connectNulls />
+              <Area type="monotone" dataKey="gpsPace" stroke={HEX.sage} strokeWidth={2} fill="url(#perfGpsPaceGrad)" connectNulls />
             )}
             {/* Normalized GPS Pace (when not primary) */}
             {activeMetrics.gpsPace && stats.gpsPace.avg > 0 && primaryMetric !== 'gpsPace' && (
-              <Area type="monotone" dataKey="_nGpsPace" stroke="#34d399" strokeWidth={2} fill="url(#perfGpsPaceGrad)" connectNulls />
+              <Area type="monotone" dataKey="_nGpsPace" stroke={HEX.sage} strokeWidth={2} fill="url(#perfGpsPaceGrad)" connectNulls />
             )}
 
             {/* Primary HealthKit Pace (fallback when no GPS) */}
             {activeMetrics.pace && stats.pace.avg > 0 && primaryMetric === 'pace' && (
-              <Area type="monotone" dataKey="pace" stroke="#34d399" strokeWidth={1.5} fill="transparent" connectNulls />
+              <Area type="monotone" dataKey="pace" stroke={HEX.sage} strokeWidth={1.5} fill="transparent" connectNulls />
             )}
             {/* Normalized HealthKit Pace (when not primary) */}
             {activeMetrics.pace && stats.pace.avg > 0 && primaryMetric !== 'pace' && (
-              <Area type="monotone" dataKey="_nPace" stroke="#34d399" strokeWidth={1.5} fill="transparent" connectNulls />
+              <Area type="monotone" dataKey="_nPace" stroke={HEX.sage} strokeWidth={1.5} fill="transparent" connectNulls />
             )}
 
-            {activeMetrics.cyclingSpeed && <Area type="monotone" dataKey="cyclingSpeed" stroke="#22d3ee" strokeWidth={1.5} fill="transparent" connectNulls />}
-            {activeMetrics.cyclingPower && <Area type="monotone" dataKey="cyclingPower" stroke="#fbbf24" strokeWidth={1.5} fill="transparent" connectNulls />}
+            {activeMetrics.cyclingSpeed && <Area type="monotone" dataKey="cyclingSpeed" stroke={HEX.teal} strokeWidth={1.5} fill="transparent" connectNulls />}
+            {activeMetrics.cyclingPower && <Area type="monotone" dataKey="cyclingPower" stroke={HEX.gold} strokeWidth={1.5} fill="transparent" connectNulls />}
           </AreaChart>
         </ResponsiveContainer>
 
@@ -1061,26 +1062,26 @@ function TimeSeriesChart({
           <div className="absolute right-0 top-[10px] bottom-[25px] flex flex-col justify-between text-[9px] pr-0.5">
             {activeMetrics.cadence && primaryMetric !== 'cadence' && (
               <>
-                <span className="text-blue-400/70 tabular-nums">{stats.cadence.max + 5}</span>
-                <span className="text-blue-400/70 tabular-nums">{stats.cadence.min - 5}</span>
+                <span className="text-accent-azure/70 tabular-nums">{stats.cadence.max + 5}</span>
+                <span className="text-accent-azure/70 tabular-nums">{stats.cadence.min - 5}</span>
               </>
             )}
             {activeMetrics.hr && primaryMetric !== 'hr' && (
               <>
-                <span className="text-red-400/70 tabular-nums">{stats.hr.max + 10}</span>
-                <span className="text-red-400/70 tabular-nums">{stats.hr.min - 10}</span>
+                <span className="text-accent-rose/70 tabular-nums">{stats.hr.max + 10}</span>
+                <span className="text-accent-rose/70 tabular-nums">{stats.hr.min - 10}</span>
               </>
             )}
             {activeMetrics.gpsPace && stats.gpsPace.avg > 0 && primaryMetric !== 'gpsPace' && (
               <>
-                <span className="text-emerald-400/70 tabular-nums">{formatPace(stats.gpsPace.max + 1)}</span>
-                <span className="text-emerald-400/70 tabular-nums">{formatPace(stats.gpsPace.min - 1)}</span>
+                <span className="text-accent-sage/70 tabular-nums">{formatPace(stats.gpsPace.max + 1)}</span>
+                <span className="text-accent-sage/70 tabular-nums">{formatPace(stats.gpsPace.min - 1)}</span>
               </>
             )}
             {activeMetrics.pace && stats.pace.avg > 0 && primaryMetric !== 'pace' && !activeMetrics.gpsPace && (
               <>
-                <span className="text-emerald-400/70 tabular-nums">{formatPace(stats.pace.max + 1)}</span>
-                <span className="text-emerald-400/70 tabular-nums">{formatPace(stats.pace.min - 1)}</span>
+                <span className="text-accent-sage/70 tabular-nums">{formatPace(stats.pace.max + 1)}</span>
+                <span className="text-accent-sage/70 tabular-nums">{formatPace(stats.pace.min - 1)}</span>
               </>
             )}
           </div>
@@ -1095,13 +1096,13 @@ function TimeSeriesChart({
 // ============================================
 
 const CADENCE_ZONES = [
-  { label: '<160', min: 0, max: 160, color: '#ef4444', desc: 'Overstriding' },
-  { label: '160–165', min: 160, max: 165, color: '#f97316', desc: 'Low' },
-  { label: '165–170', min: 165, max: 170, color: '#eab308', desc: 'Below Optimal' },
-  { label: '170–175', min: 170, max: 175, color: '#22c55e', desc: 'Optimal' },
-  { label: '175–180', min: 175, max: 180, color: '#10b981', desc: 'Optimal' },
-  { label: '180–185', min: 180, max: 185, color: '#06b6d4', desc: 'Elite' },
-  { label: '185+', min: 185, max: Infinity, color: '#8b5cf6', desc: 'Sprint' },
+  { label: '<160', min: 0, max: 160, color: HEX.rose, desc: 'Overstriding' },
+  { label: '160–165', min: 160, max: 165, color: HEX.ember, desc: 'Low' },
+  { label: '165–170', min: 165, max: 170, color: HEX.gold, desc: 'Below Optimal' },
+  { label: '170–175', min: 170, max: 175, color: HEX.sage, desc: 'Optimal' },
+  { label: '175–180', min: 175, max: 180, color: HEX.sage, desc: 'Optimal' },
+  { label: '180–185', min: 180, max: 185, color: HEX.teal, desc: 'Elite' },
+  { label: '185+', min: 185, max: Infinity, color: HEX.violet, desc: 'Sprint' },
 ]
 
 function CadenceDistributionChart({
@@ -1160,11 +1161,11 @@ function CadenceDistributionChart({
           <div className="flex items-center gap-2">
             <span className={cn(
               'rounded px-1.5 py-0.5 text-[10px] font-semibold',
-              cadenceAnalysis.optimalRange ? 'bg-green-500/20 text-green-400' : cadenceAnalysis.average < 165 ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+              cadenceAnalysis.optimalRange ? 'bg-accent-sage/20 text-accent-sage' : cadenceAnalysis.average < 165 ? 'bg-accent-gold/20 text-accent-gold' : 'bg-accent-azure/20 text-accent-azure'
             )}>
               {cadenceAnalysis.optimalRange ? 'Optimal' : cadenceAnalysis.average < 165 ? 'Below Optimal' : 'Good'}
             </span>
-            <span className="text-lg font-bold tabular-nums text-blue-400">{cadenceAnalysis.average}</span>
+            <span className="text-lg font-bold tabular-nums text-accent-azure">{cadenceAnalysis.average}</span>
             <span className="text-muted-foreground">spm</span>
           </div>
         </div>
@@ -1173,7 +1174,7 @@ function CadenceDistributionChart({
         )}
         {hrCadenceCorrelation && hrCadenceCorrelation.stepsPerBeat > 0 && (
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span>Steps/Beat: <span className="font-medium text-purple-400 tabular-nums">{hrCadenceCorrelation.stepsPerBeat.toFixed(2)}</span></span>
+            <span>Steps/Beat: <span className="font-medium text-accent-violet tabular-nums">{hrCadenceCorrelation.stepsPerBeat.toFixed(2)}</span></span>
           </div>
         )}
       </div>
@@ -1189,7 +1190,7 @@ function CadenceDistributionChart({
           <div className="flex items-center gap-2">
             <span className={cn(
               'rounded px-1.5 py-0.5 text-[10px] font-semibold',
-              cadenceAnalysis.optimalRange ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+              cadenceAnalysis.optimalRange ? 'bg-accent-sage/20 text-accent-sage' : 'bg-accent-gold/20 text-accent-gold'
             )}>
               {cadenceAnalysis.optimalRange ? 'Optimal' : cadenceAnalysis.average < 165 ? 'Low' : 'Good'}
             </span>
@@ -1259,20 +1260,20 @@ function CadenceDistributionChart({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Range</span>
-          <span className="font-medium tabular-nums text-blue-400">{cadenceAnalysis.min}–{cadenceAnalysis.max}</span>
+          <span className="font-medium tabular-nums text-accent-azure">{cadenceAnalysis.min}–{cadenceAnalysis.max}</span>
           <span className="text-muted-foreground">spm</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Std Dev</span>
-          <span className="font-medium tabular-nums text-blue-400">±{cadenceAnalysis.standardDeviation}</span>
+          <span className="font-medium tabular-nums text-accent-azure">±{cadenceAnalysis.standardDeviation}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Consistency</span>
           <span className={cn(
             'rounded px-1 py-0.5 text-[10px] font-medium',
-            cadenceAnalysis.consistency === 'very_consistent' ? 'bg-green-500/15 text-green-400' :
-            cadenceAnalysis.consistency === 'consistent' ? 'bg-blue-500/15 text-blue-400' :
-            'bg-amber-500/15 text-amber-400'
+            cadenceAnalysis.consistency === 'very_consistent' ? 'bg-accent-sage/15 text-accent-sage' :
+            cadenceAnalysis.consistency === 'consistent' ? 'bg-accent-azure/15 text-accent-azure' :
+            'bg-accent-gold/15 text-accent-gold'
           )}>
             {cadenceAnalysis.consistency.replace('_', ' ')}
           </span>
@@ -1280,7 +1281,7 @@ function CadenceDistributionChart({
         {hrCadenceCorrelation && hrCadenceCorrelation.stepsPerBeat > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-muted-foreground">Steps/Beat</span>
-            <span className="font-medium tabular-nums text-purple-400">{hrCadenceCorrelation.stepsPerBeat.toFixed(2)}</span>
+            <span className="font-medium tabular-nums text-accent-violet">{hrCadenceCorrelation.stepsPerBeat.toFixed(2)}</span>
           </div>
         )}
       </div>
@@ -1293,23 +1294,23 @@ function CadenceDistributionChart({
             <div>
               <div className="text-muted-foreground/70 text-[10px]">First Half</div>
               <div className="flex items-baseline gap-2">
-                <span className="font-medium text-red-400 tabular-nums">{hrCadenceCorrelation.avgHr1} <span className="text-muted-foreground font-normal">bpm</span></span>
-                <span className="font-medium text-blue-400 tabular-nums">{hrCadenceCorrelation.avgCad1} <span className="text-muted-foreground font-normal">spm</span></span>
+                <span className="font-medium text-accent-rose tabular-nums">{hrCadenceCorrelation.avgHr1} <span className="text-muted-foreground font-normal">bpm</span></span>
+                <span className="font-medium text-accent-azure tabular-nums">{hrCadenceCorrelation.avgCad1} <span className="text-muted-foreground font-normal">spm</span></span>
               </div>
             </div>
             <div>
               <div className="text-muted-foreground/70 text-[10px]">Second Half</div>
               <div className="flex items-baseline gap-2">
-                <span className="font-medium text-red-400 tabular-nums">{hrCadenceCorrelation.avgHr2} <span className="text-muted-foreground font-normal">bpm</span></span>
-                <span className="font-medium text-blue-400 tabular-nums">{hrCadenceCorrelation.avgCad2} <span className="text-muted-foreground font-normal">spm</span></span>
+                <span className="font-medium text-accent-rose tabular-nums">{hrCadenceCorrelation.avgHr2} <span className="text-muted-foreground font-normal">bpm</span></span>
+                <span className="font-medium text-accent-azure tabular-nums">{hrCadenceCorrelation.avgCad2} <span className="text-muted-foreground font-normal">spm</span></span>
               </div>
             </div>
           </div>
           <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
-            <span>HR drift: <span className={cn('font-medium', hrCadenceCorrelation.hrDelta > 5 ? 'text-amber-400' : 'text-green-400')}>
+            <span>HR drift: <span className={cn('font-medium', hrCadenceCorrelation.hrDelta > 5 ? 'text-accent-gold' : 'text-accent-sage')}>
               {hrCadenceCorrelation.hrDelta > 0 ? '+' : ''}{hrCadenceCorrelation.hrDelta} bpm
             </span></span>
-            <span>Cadence drift: <span className={cn('font-medium', Math.abs(hrCadenceCorrelation.cadDelta) > 3 ? 'text-amber-400' : 'text-green-400')}>
+            <span>Cadence drift: <span className={cn('font-medium', Math.abs(hrCadenceCorrelation.cadDelta) > 3 ? 'text-accent-gold' : 'text-accent-sage')}>
               {hrCadenceCorrelation.cadDelta > 0 ? '+' : ''}{hrCadenceCorrelation.cadDelta} spm
             </span></span>
           </div>
@@ -1352,7 +1353,7 @@ function ZoneColoredHrChart({ data, hrZonesConfig, hrAverage, className }: ZoneC
     if (z4 && z4.minBpm && bpm >= z4.minBpm) return { zone: 4, color: z4.color, label: z4.label }
     if (z3 && z3.minBpm && bpm >= z3.minBpm) return { zone: 3, color: z3.color, label: z3.label }
     if (z2 && z2.minBpm && bpm >= z2.minBpm) return { zone: 2, color: z2.color, label: z2.label }
-    return { zone: 1, color: z1?.color || '#60a5fa', label: z1?.label || 'Zone 1' }
+    return { zone: 1, color: z1?.color || HEX.azure, label: z1?.label || 'Zone 1' }
   }
 
   const getZoneColor = (bpm: number): string => getZoneForBpm(bpm).color
@@ -1451,12 +1452,12 @@ function ZoneColoredHrChart({ data, hrZonesConfig, hrAverage, className }: ZoneC
       {/* Header with avg HR */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Heart className="size-4 text-red-500" />
+          <Heart className="size-4 text-accent-rose" />
           <span className="text-sm font-medium">Heart Rate</span>
         </div>
         {hrAverage && (
           <div className="text-right">
-            <span className="text-2xl font-bold text-red-500">{hrAverage}</span>
+            <span className="text-2xl font-bold text-accent-rose">{hrAverage}</span>
             <span className="text-muted-foreground ml-1 text-xs">BPM AVG</span>
           </div>
         )}
@@ -1532,7 +1533,7 @@ function ZoneColoredHrChart({ data, hrZonesConfig, hrAverage, className }: ZoneC
               y1={yScale(hrAverage)}
               x2={padding.left + chartWidth}
               y2={yScale(hrAverage)}
-              stroke="#ef4444"
+              stroke={HEX.rose}
               strokeWidth={1}
               strokeDasharray="4 4"
               strokeOpacity={0.6}
@@ -1721,7 +1722,7 @@ function WorkoutStructure({
           return (
             <div
               key={`seg-${idx}`}
-              className="absolute top-0 h-full bg-green-500/60"
+              className="absolute top-0 h-full bg-accent-sage/60"
               style={{ left: `${left}%`, width: `${Math.max(width, 0.3)}%` }}
             />
           )
@@ -1729,7 +1730,7 @@ function WorkoutStructure({
         {pauses.map((p, idx) => (
           <div
             key={`pause-${idx}`}
-            className="absolute top-0 h-full w-[2px] bg-orange-400"
+            className="absolute top-0 h-full w-[2px] bg-accent-ember"
             style={{ left: `${getPositionPercent(p.timestamp)}%` }}
           />
         ))}
@@ -1738,13 +1739,13 @@ function WorkoutStructure({
       {/* Stats strip */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-green-500" />
+          <span className="size-1.5 rounded-full bg-accent-sage" />
           <span className="font-medium text-foreground">{formatDuration(activeTime)}</span> active
           <span className="text-muted-foreground/50">({activePercent}%)</span>
         </span>
         {pauses.length > 0 && totalPauseTime > 0 && (
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-orange-400" />
+            <span className="size-1.5 rounded-full bg-accent-ember" />
             <span className="font-medium text-foreground">{formatDuration(totalPauseTime)}</span> paused
             <span className="text-muted-foreground/50">({pauses.length}x)</span>
           </span>
@@ -1884,7 +1885,7 @@ function SplitsChart({ splits, gpsPaceData, totalDistance, className }: {
               <div
                 className={cn(
                   'w-full rounded-t transition-all',
-                  isFastest ? 'bg-green-500' : 'bg-muted-foreground/40'
+                  isFastest ? 'bg-accent-sage' : 'bg-muted-foreground/40'
                 )}
                 style={{ height: `${heightPercent}%` }}
               />
@@ -1894,7 +1895,7 @@ function SplitsChart({ splits, gpsPaceData, totalDistance, className }: {
                 <div className="font-medium">{formatPace(split.avgPace)}/mi</div>
                 {split.avgHr > 0 && <div className="text-muted-foreground">{split.avgHr} bpm</div>}
                 {hasElevation && split.elevationChange != null && (
-                  <div className={cn('text-muted-foreground', split.elevationChange > 0 ? 'text-green-400' : split.elevationChange < 0 ? 'text-red-400' : '')}>
+                  <div className={cn('text-muted-foreground', split.elevationChange > 0 ? 'text-accent-sage' : split.elevationChange < 0 ? 'text-accent-rose' : '')}>
                     {split.elevationChange > 0 ? '+' : ''}{Math.round(split.elevationChange * 3.28084)} ft
                   </div>
                 )}
@@ -1907,7 +1908,7 @@ function SplitsChart({ splits, gpsPaceData, totalDistance, className }: {
       {/* Stats */}
       <div className="mt-2 flex items-center justify-between text-xs">
         <span className="text-muted-foreground">
-          Best: <span className="font-medium text-green-400">{formatPace(minPace)}/mi</span>
+          Best: <span className="font-medium text-accent-sage">{formatPace(minPace)}/mi</span>
         </span>
         <span className="text-muted-foreground">
           Avg: <span className="font-medium">{formatPace(avgPace)}/mi</span>
@@ -1924,7 +1925,7 @@ function SplitsChart({ splits, gpsPaceData, totalDistance, className }: {
               <div key={idx} className="flex flex-1 justify-center">
                 <span className={cn(
                   'text-[9px] tabular-nums',
-                  elevFt > 0 ? 'text-green-400' : elevFt < 0 ? 'text-red-400' : 'text-muted-foreground'
+                  elevFt > 0 ? 'text-accent-sage' : elevFt < 0 ? 'text-accent-rose' : 'text-muted-foreground'
                 )}>
                   {elevFt > 0 ? '+' : ''}{elevFt}
                 </span>
@@ -1974,9 +1975,9 @@ function MetricRow({ icon, label, value, unit, badge, description }: {
   description?: string
 }) {
   const badgeColors = {
-    good: 'bg-green-500/20 text-green-400',
-    neutral: 'bg-blue-500/20 text-blue-400',
-    warning: 'bg-amber-500/20 text-amber-400',
+    good: 'bg-accent-sage/20 text-accent-sage',
+    neutral: 'bg-accent-azure/20 text-accent-azure',
+    warning: 'bg-accent-gold/20 text-accent-gold',
   }
 
   return (
@@ -2005,10 +2006,10 @@ function MetricRow({ icon, label, value, unit, badge, description }: {
 
 function InsightRow({ insight }: { insight: PerformanceInsight }) {
   const icons = {
-    positive: <TrendingUp className="size-4 text-green-400" />,
-    negative: <TrendingDown className="size-4 text-red-400" />,
-    neutral: <Info className="size-4 text-blue-400" />,
-    warning: <AlertTriangle className="size-4 text-amber-400" />,
+    positive: <TrendingUp className="size-4 text-accent-sage" />,
+    negative: <TrendingDown className="size-4 text-accent-rose" />,
+    neutral: <Info className="size-4 text-accent-azure" />,
+    warning: <AlertTriangle className="size-4 text-accent-gold" />,
   }
 
   return (
@@ -2043,13 +2044,13 @@ function WorkoutRouteMap({ route, hrSamples }: { route: RouteData; hrSamples: Hr
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {route.total_elevation_gain != null && (
             <span className="flex items-center gap-1">
-              <TrendingUp className="size-3 text-green-400" />
+              <TrendingUp className="size-3 text-accent-sage" />
               +{Math.round(route.total_elevation_gain * 3.28084)} ft gain
             </span>
           )}
           {route.total_elevation_loss != null && (
             <span className="flex items-center gap-1">
-              <TrendingDown className="size-3 text-red-400" />
+              <TrendingDown className="size-3 text-accent-rose" />
               -{Math.round(route.total_elevation_loss * 3.28084)} ft loss
             </span>
           )}
@@ -2141,7 +2142,7 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
       <div className="text-muted-foreground mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
         <span>Elevation Profile</span>
         {hasPaceData && (
-          <span className="text-[10px] font-normal normal-case text-orange-400/70">
+          <span className="text-[10px] font-normal normal-case text-accent-ember/70">
             Pace: {formatPace(minPace)}–{formatPace(maxPace)}/mi
           </span>
         )}
@@ -2151,8 +2152,8 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
           <ComposedChart data={chartDataWithNormPace} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                <stop offset="0%" stopColor={HEX.sage} stopOpacity={0.4} />
+                <stop offset="100%" stopColor={HEX.sage} stopOpacity={0.05} />
               </linearGradient>
             </defs>
             <XAxis
@@ -2177,7 +2178,7 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
                 return (
                   <div className="rounded-lg border border-border/50 bg-popover px-3 py-2 text-xs shadow-lg">
                     <div className="font-medium">{d.altitudeFt.toFixed(0)} ft</div>
-                    {d.pace != null && <div className="text-orange-400">{formatPace(d.pace)}/mi</div>}
+                    {d.pace != null && <div className="text-accent-ember">{formatPace(d.pace)}/mi</div>}
                     <div className="text-muted-foreground">Mile {d.distance.toFixed(2)}</div>
                   </div>
                 )
@@ -2186,7 +2187,7 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
             <Area
               type="monotone"
               dataKey="altitudeFt"
-              stroke="#22c55e"
+              stroke={HEX.sage}
               strokeWidth={1.5}
               fill="url(#elevGradient)"
               dot={false}
@@ -2196,7 +2197,7 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
               <Area
                 type="monotone"
                 dataKey="normalizedPace"
-                stroke="#f97316"
+                stroke={HEX.ember}
                 strokeWidth={1.5}
                 fill="transparent"
                 dot={false}
@@ -2211,8 +2212,8 @@ function ElevationProfileChart({ route }: { route: RouteData }) {
       <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
         <span>Distance (mi)</span>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 bg-green-500 rounded" />Elev</span>
-          {hasPaceData && <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 bg-orange-500 rounded" style={{ borderTop: '1px dashed' }} />Pace</span>}
+          <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 bg-accent-sage rounded" />Elev</span>
+          {hasPaceData && <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-3 bg-accent-ember rounded" style={{ borderTop: '1px dashed' }} />Pace</span>}
         </div>
       </div>
     </div>
@@ -2248,10 +2249,10 @@ function DynamicsGauge({ label, value, unit, zones, markerColor }: {
           <span className={cn('text-sm font-bold tabular-nums', markerColor)}>{unit === 'cm' && value < 10 ? value.toFixed(1) : Math.round(value)}</span>
           <span className="text-[10px] text-muted-foreground">{unit}</span>
           <span className={cn('ml-1 rounded px-1 py-0.5 text-[9px] font-medium', {
-            'bg-green-500/20 text-green-400': activeZone.label === 'Elite' || activeZone.label === 'Efficient' || activeZone.label === 'Excellent',
-            'bg-blue-500/20 text-blue-400': activeZone.label === 'Good' || activeZone.label === 'Normal',
-            'bg-amber-500/20 text-amber-400': activeZone.label === 'Average' || activeZone.label === 'Moderate',
-            'bg-red-500/20 text-red-400': activeZone.label === 'High' || activeZone.label === 'Short' || activeZone.label === 'Low',
+            'bg-accent-sage/20 text-accent-sage': activeZone.label === 'Elite' || activeZone.label === 'Efficient' || activeZone.label === 'Excellent',
+            'bg-accent-azure/20 text-accent-azure': activeZone.label === 'Good' || activeZone.label === 'Normal',
+            'bg-accent-gold/20 text-accent-gold': activeZone.label === 'Average' || activeZone.label === 'Moderate',
+            'bg-accent-rose/20 text-accent-rose': activeZone.label === 'High' || activeZone.label === 'Short' || activeZone.label === 'Low',
           })}>{activeZone.label}</span>
         </div>
       </div>
@@ -2307,12 +2308,12 @@ function RunningDynamicsCharts({
             label="Ground Contact Time"
             value={groundContactTimeAvg}
             unit="ms"
-            markerColor="#a855f7"
+            markerColor={HEX.violet}
             zones={[
-              { min: 180, max: 220, color: '#22c55e', label: 'Elite' },
-              { min: 220, max: 260, color: '#3b82f6', label: 'Good' },
-              { min: 260, max: 300, color: '#eab308', label: 'Average' },
-              { min: 300, max: 360, color: '#ef4444', label: 'High' },
+              { min: 180, max: 220, color: HEX.sage, label: 'Elite' },
+              { min: 220, max: 260, color: HEX.azure, label: 'Good' },
+              { min: 260, max: 300, color: HEX.gold, label: 'Average' },
+              { min: 300, max: 360, color: HEX.rose, label: 'High' },
             ]}
           />
         )}
@@ -2321,12 +2322,12 @@ function RunningDynamicsCharts({
             label="Vertical Oscillation"
             value={verticalOscillationAvg}
             unit="cm"
-            markerColor="#06b6d4"
+            markerColor={HEX.teal}
             zones={[
-              { min: 4, max: 7, color: '#22c55e', label: 'Efficient' },
-              { min: 7, max: 10, color: '#3b82f6', label: 'Normal' },
-              { min: 10, max: 13, color: '#eab308', label: 'Moderate' },
-              { min: 13, max: 16, color: '#ef4444', label: 'High' },
+              { min: 4, max: 7, color: HEX.sage, label: 'Efficient' },
+              { min: 7, max: 10, color: HEX.azure, label: 'Normal' },
+              { min: 10, max: 13, color: HEX.gold, label: 'Moderate' },
+              { min: 13, max: 16, color: HEX.rose, label: 'High' },
             ]}
           />
         )}
@@ -2335,12 +2336,12 @@ function RunningDynamicsCharts({
             label="Stride Length"
             value={strideLengthAvg * 100}
             unit="cm"
-            markerColor="#3b82f6"
+            markerColor={HEX.azure}
             zones={[
-              { min: 60, max: 80, color: '#ef4444', label: 'Short' },
-              { min: 80, max: 100, color: '#eab308', label: 'Average' },
-              { min: 100, max: 120, color: '#3b82f6', label: 'Good' },
-              { min: 120, max: 150, color: '#22c55e', label: 'Excellent' },
+              { min: 60, max: 80, color: HEX.rose, label: 'Short' },
+              { min: 80, max: 100, color: HEX.gold, label: 'Average' },
+              { min: 100, max: 120, color: HEX.azure, label: 'Good' },
+              { min: 120, max: 150, color: HEX.sage, label: 'Excellent' },
             ]}
           />
         )}
@@ -2349,12 +2350,12 @@ function RunningDynamicsCharts({
             label="Running Power"
             value={runningPowerAvg}
             unit="W"
-            markerColor="#f59e0b"
+            markerColor={HEX.gold}
             zones={[
-              { min: 100, max: 200, color: '#3b82f6', label: 'Low' },
-              { min: 200, max: 300, color: '#22c55e', label: 'Good' },
-              { min: 300, max: 400, color: '#eab308', label: 'Moderate' },
-              { min: 400, max: 500, color: '#ef4444', label: 'High' },
+              { min: 100, max: 200, color: HEX.azure, label: 'Low' },
+              { min: 200, max: 300, color: HEX.sage, label: 'Good' },
+              { min: 300, max: 400, color: HEX.gold, label: 'Moderate' },
+              { min: 400, max: 500, color: HEX.rose, label: 'High' },
             ]}
           />
         )}
@@ -2459,27 +2460,27 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold">{workoutLabel}</h1>
           {isRunning && isOutdoor && (
-            <span className="flex items-center gap-1 rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-medium text-cyan-400">
+            <span className="flex items-center gap-1 rounded-full bg-accent-teal/15 px-2 py-0.5 text-[10px] font-medium text-accent-teal">
               <MapPin className="size-3" />Outdoor
             </span>
           )}
           {isRunning && isIndoor && (
-            <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400">
+            <span className="flex items-center gap-1 rounded-full bg-accent-azure/15 px-2 py-0.5 text-[10px] font-medium text-accent-azure">
               <Dumbbell className="size-3" />Indoor
             </span>
           )}
           {workout.effort_score != null && workout.effort_score > 0 && (
             <span className={cn(
               'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
-              workout.effort_score >= 8 ? 'bg-red-500/15 text-red-400' :
-              workout.effort_score >= 6 ? 'bg-orange-500/15 text-orange-400' :
-              workout.effort_score >= 4 ? 'bg-yellow-500/15 text-yellow-400' : 'bg-green-500/15 text-green-400'
+              workout.effort_score >= 8 ? 'bg-accent-rose/15 text-accent-rose' :
+              workout.effort_score >= 6 ? 'bg-accent-ember/15 text-accent-ember' :
+              workout.effort_score >= 4 ? 'bg-accent-gold/15 text-accent-gold' : 'bg-accent-sage/15 text-accent-sage'
             )}>
               <Activity className="size-3" />{workout.effort_score.toFixed(1)}/10
             </span>
           )}
           {workout.elevation_gain_meters != null && workout.elevation_gain_meters > 0 && (
-            <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-400">
+            <span className="flex items-center gap-1 rounded-full bg-accent-sage/15 px-2 py-0.5 text-[10px] font-medium text-accent-sage">
               <Mountain className="size-3" />{Math.round(workout.elevation_gain_meters * 3.28084)} ft
             </span>
           )}
@@ -2493,24 +2494,24 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Calories</div>
-            <div className="text-base font-semibold tabular-nums text-orange-500">{Math.round(workout.active_calories)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">kcal</span></div>
+            <div className="text-base font-semibold tabular-nums text-accent-ember">{Math.round(workout.active_calories)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">kcal</span></div>
           </div>
           {workout.distance_miles != null && workout.distance_miles > 0 && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Distance</div>
-              <div className="text-base font-semibold tabular-nums text-blue-500">{workout.distance_miles.toFixed(2)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">mi</span></div>
+              <div className="text-base font-semibold tabular-nums text-accent-azure">{workout.distance_miles.toFixed(2)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">mi</span></div>
             </div>
           )}
           {workout.hr_average != null && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg HR</div>
-              <div className="text-base font-semibold tabular-nums text-red-500">{workout.hr_average}<span className="ml-0.5 text-xs text-muted-foreground font-normal">bpm</span></div>
+              <div className="text-base font-semibold tabular-nums text-accent-rose">{workout.hr_average}<span className="ml-0.5 text-xs text-muted-foreground font-normal">bpm</span></div>
             </div>
           )}
           {isRunning && workout.pace_average != null && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Pace</div>
-              <div className="text-base font-semibold tabular-nums text-emerald-500">{formatPace(workout.pace_average)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">/mi</span></div>
+              <div className="text-base font-semibold tabular-nums text-accent-sage">{formatPace(workout.pace_average)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">/mi</span></div>
             </div>
           )}
           {isRunning && workout.cadence_average != null && (
@@ -2522,13 +2523,13 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
           {isCycling && workout.cycling_avg_speed != null && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Speed</div>
-              <div className="text-base font-semibold tabular-nums text-cyan-500">{workout.cycling_avg_speed.toFixed(1)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">mph</span></div>
+              <div className="text-base font-semibold tabular-nums text-accent-teal">{workout.cycling_avg_speed.toFixed(1)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">mph</span></div>
             </div>
           )}
           {isCycling && workout.cycling_avg_power != null && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Power</div>
-              <div className="text-base font-semibold tabular-nums text-amber-500">{Math.round(workout.cycling_avg_power)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">W</span></div>
+              <div className="text-base font-semibold tabular-nums text-accent-gold">{Math.round(workout.cycling_avg_power)}<span className="ml-0.5 text-xs text-muted-foreground font-normal">W</span></div>
             </div>
           )}
         </div>
@@ -2544,9 +2545,9 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
             <div className="mb-2 space-y-1.5">
               {advice.keyTakeaways.map((takeaway, idx) => {
                 const pillColors = {
-                  positive: 'border-green-500/20 text-green-400',
-                  neutral: 'border-blue-500/20 text-blue-400',
-                  improvement: 'border-amber-500/20 text-amber-400',
+                  positive: 'border-accent-sage/20 text-accent-sage',
+                  neutral: 'border-accent-azure/20 text-accent-azure',
+                  improvement: 'border-accent-gold/20 text-accent-gold',
                 }
                 return (
                   <div key={idx} className="flex items-start gap-2 text-xs">
@@ -2568,12 +2569,12 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
             </div>
             <span className="text-border/60">|</span>
             <div className="flex items-center gap-1.5">
-              <Clock className="size-3 text-blue-400" />
+              <Clock className="size-3 text-accent-azure" />
               <span>{advice.recoveryTime.hours}h recovery</span>
             </div>
             <span className="text-border/60">|</span>
             <div className="flex items-center gap-1.5">
-              <Dumbbell className="size-3 text-purple-400" />
+              <Dumbbell className="size-3 text-accent-violet" />
               <span>{advice.nextWorkoutSuggestion}</span>
             </div>
           </div>
@@ -2612,59 +2613,59 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
               <span className="mb-2 block text-xs font-semibold">Training Analysis</span>
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg bg-muted/20 p-2">
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Zap className="size-3 text-amber-500" />Training Load</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Zap className="size-3 text-accent-gold" />Training Load</div>
                   <div className="mt-0.5 flex items-baseline gap-1.5">
                     <span className="text-sm font-semibold tabular-nums">{analytics.trainingImpulse.trimp}</span>
                     <span className={cn(
                       'rounded px-1 py-0.5 text-[9px] font-medium',
-                      analytics.trainingImpulse.intensity === 'easy' ? 'bg-green-500/20 text-green-400' :
-                      analytics.trainingImpulse.intensity === 'moderate' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'
+                      analytics.trainingImpulse.intensity === 'easy' ? 'bg-accent-sage/20 text-accent-sage' :
+                      analytics.trainingImpulse.intensity === 'moderate' ? 'bg-accent-azure/20 text-accent-azure' : 'bg-accent-gold/20 text-accent-gold'
                     )}>{analytics.trainingImpulse.intensity}</span>
                   </div>
                 </div>
                 <div className="rounded-lg bg-muted/20 p-2">
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Heart className="size-3 text-red-500" />Cardiac Drift</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Heart className="size-3 text-accent-rose" />Cardiac Drift</div>
                   <div className="mt-0.5 flex items-baseline gap-1.5">
                     <span className="text-sm font-semibold tabular-nums">{analytics.cardiacDrift.driftPercentage > 0 ? '+' : ''}{analytics.cardiacDrift.driftPercentage}%</span>
                     <span className={cn(
                       'rounded px-1 py-0.5 text-[9px] font-medium',
-                      analytics.cardiacDrift.interpretation === 'minimal' ? 'bg-green-500/20 text-green-400' :
-                      analytics.cardiacDrift.interpretation === 'moderate' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'
+                      analytics.cardiacDrift.interpretation === 'minimal' ? 'bg-accent-sage/20 text-accent-sage' :
+                      analytics.cardiacDrift.interpretation === 'moderate' ? 'bg-accent-azure/20 text-accent-azure' : 'bg-accent-gold/20 text-accent-gold'
                     )}>{analytics.cardiacDrift.interpretation}</span>
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">{analytics.cardiacDrift.firstHalfAvgHr} → {analytics.cardiacDrift.secondHalfAvgHr} bpm</div>
                 </div>
                 <div className="rounded-lg bg-muted/20 p-2">
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><TrendingUp className="size-3 text-blue-500" />Aerobic Decoupling</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><TrendingUp className="size-3 text-accent-azure" />Aerobic Decoupling</div>
                   <div className="mt-0.5 flex items-baseline gap-1.5">
                     <span className="text-sm font-semibold tabular-nums">{analytics.aerobicDecoupling.decouplingPercentage}%</span>
                     <span className={cn(
                       'rounded px-1 py-0.5 text-[9px] font-medium',
-                      ['excellent', 'good'].includes(analytics.aerobicDecoupling.interpretation) ? 'bg-green-500/20 text-green-400' :
-                      analytics.aerobicDecoupling.interpretation === 'moderate' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'
+                      ['excellent', 'good'].includes(analytics.aerobicDecoupling.interpretation) ? 'bg-accent-sage/20 text-accent-sage' :
+                      analytics.aerobicDecoupling.interpretation === 'moderate' ? 'bg-accent-azure/20 text-accent-azure' : 'bg-accent-gold/20 text-accent-gold'
                     )}>{analytics.aerobicDecoupling.interpretation}</span>
                   </div>
                 </div>
                 <div className="rounded-lg bg-muted/20 p-2">
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Wind className="size-3 text-cyan-500" />Efficiency Factor</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Wind className="size-3 text-accent-teal" />Efficiency Factor</div>
                   <div className="mt-0.5">
                     <span className="text-sm font-semibold tabular-nums">{analytics.efficiencyFactor.toFixed(3)}</span>
                   </div>
                 </div>
                 {isRunning && analytics.cadenceAnalysis.average > 0 && (
                   <div className="rounded-lg bg-muted/20 p-2">
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Footprints className="size-3 text-green-500" />Cadence</div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Footprints className="size-3 text-accent-sage" />Cadence</div>
                     <div className="mt-0.5 flex items-baseline gap-1.5">
                       <span className="text-sm font-semibold tabular-nums">{analytics.cadenceAnalysis.average}<span className="ml-0.5 text-[10px] text-muted-foreground font-normal">spm</span></span>
                       <span className={cn(
                         'rounded px-1 py-0.5 text-[9px] font-medium',
-                        analytics.cadenceAnalysis.optimalRange ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                        analytics.cadenceAnalysis.optimalRange ? 'bg-accent-sage/20 text-accent-sage' : 'bg-accent-azure/20 text-accent-azure'
                       )}>{analytics.cadenceAnalysis.optimalRange ? 'Optimal' : 'Low'}</span>
                     </div>
                   </div>
                 )}
                 <div className="rounded-lg bg-muted/20 p-2">
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Activity className="size-3 text-purple-500" />HR Variability</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><Activity className="size-3 text-accent-violet" />HR Variability</div>
                   <div className="mt-0.5">
                     <span className="text-sm font-semibold tabular-nums">{analytics.hrVariability.range}<span className="ml-0.5 text-[10px] text-muted-foreground font-normal">bpm</span></span>
                   </div>
@@ -2710,7 +2711,7 @@ export function EnhancedWorkoutDetailView({ workoutId, onBack, className }: Enha
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold">Mile Splits</span>
                 {analytics.paceAnalysis.splitStrategy === 'negative' && (
-                  <Badge variant="outline" className="border-green-500/30 bg-green-500/10 text-green-400 text-[10px] h-5 px-1.5">
+                  <Badge variant="outline" className="border-accent-sage/30 bg-accent-sage/10 text-accent-sage text-[10px] h-5 px-1.5">
                     <Award className="mr-0.5 size-3" />Negative Split
                   </Badge>
                 )}

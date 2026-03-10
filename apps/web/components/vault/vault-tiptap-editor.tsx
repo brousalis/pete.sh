@@ -105,7 +105,7 @@ export function VaultTiptapEditor({
       Highlight.configure({
         multicolor: false,
         HTMLAttributes: {
-          class: 'bg-yellow-200/50 dark:bg-yellow-500/30 rounded px-0.5',
+          class: 'bg-accent-gold/20 rounded px-0.5',
         },
       }),
     ],

@@ -450,7 +450,7 @@ export function MealPlanWizardDialog({ open, onOpenChange }: MealPlanWizardDialo
                         </div>
                         <div>
                           <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                            <Sparkles className="size-3.5 text-amber-500" />
+                            <Sparkles className="size-3.5 text-accent-gold" />
                             AI hint (optional)
                           </p>
                           <Textarea
@@ -569,7 +569,7 @@ export function MealPlanWizardDialog({ open, onOpenChange }: MealPlanWizardDialo
                                                 {recipe.servings}
                                               </span>
                                             )}
-                                            {recipe.is_favorite && <Star className="size-3 fill-amber-500" />}
+                                            {recipe.is_favorite && <Star className="size-3 fill-accent-gold" />}
                                           </div>
                                         </div>
                                       </div>

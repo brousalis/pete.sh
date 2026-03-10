@@ -130,9 +130,9 @@ export function CoffeeCard() {
       <div className="space-y-4">
         <DashboardCardHeader
           icon={
-            <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
+            <Coffee className="size-5 text-accent-ember" />
           }
-          iconContainerClassName="bg-amber-500/10"
+          iconContainerClassName="bg-accent-ember/10"
           title="Coffee Guide"
           viewHref="/coffee"
           viewLabel="View"
@@ -148,9 +148,9 @@ export function CoffeeCard() {
       <div className="space-y-4">
         <DashboardCardHeader
           icon={
-            <Coffee className="size-5 text-amber-600 dark:text-amber-400" />
+            <Coffee className="size-5 text-accent-ember" />
           }
-          iconContainerClassName="bg-amber-500/10"
+          iconContainerClassName="bg-accent-ember/10"
           title="Coffee Guide"
           viewHref="/coffee"
           viewLabel="View"
@@ -168,8 +168,8 @@ export function CoffeeCard() {
   return (
     <div className="space-y-4">
       <DashboardCardHeader
-        icon={<Coffee className="size-5 text-amber-600 dark:text-amber-400" />}
-        iconContainerClassName="bg-amber-500/10"
+        icon={<Coffee className="size-5 text-accent-ember" />}
+        iconContainerClassName="bg-accent-ember/10"
         title="Coffee Guide"
         viewHref="/coffee"
         viewLabel="View"
@@ -179,16 +179,16 @@ export function CoffeeCard() {
       </p>
 
       {/* Recommended Recipe - Hero Display */}
-      <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-4 dark:from-amber-950/30 dark:to-orange-950/20">
+      <div className="rounded-xl border border-accent-ember/30 bg-gradient-to-br from-accent-ember/5 to-accent-gold/5 p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MethodIcon className="size-4 text-amber-600 dark:text-amber-400" />
+            <MethodIcon className="size-4 text-accent-ember" />
             <span className="text-sm font-medium">
               {recipe.method === 'switch' ? 'Hario Switch' : 'Moccamaster'}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Flame className="size-3 text-amber-600" />
+            <Flame className="size-3 text-accent-ember" />
             <span className="text-muted-foreground text-xs capitalize">
               {recipe.roast}
             </span>
@@ -198,7 +198,7 @@ export function CoffeeCard() {
         {/* Big Dose Number */}
         <div className="mb-2 flex items-baseline gap-3">
           <div className="flex items-center gap-2">
-            <Scale className="size-5 text-amber-600" />
+            <Scale className="size-5 text-accent-ember" />
             <span className="text-3xl font-bold tabular-nums">
               {recipe.coffee}g
             </span>
@@ -243,7 +243,7 @@ export function CoffeeCard() {
       <Link href="/coffee">
         <Button
           size="sm"
-          className="w-full gap-2 bg-amber-600 text-white hover:bg-amber-700"
+          className="w-full gap-2 bg-accent-ember text-white hover:bg-accent-ember/80"
         >
           <Coffee className="size-4" />
           Open Full Guide

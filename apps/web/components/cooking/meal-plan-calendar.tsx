@@ -56,10 +56,10 @@ const ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const
 const DINNER_ONLY = ['dinner'] as const
 
 const MEAL_COLORS = {
-  breakfast: 'border-amber-500/30 bg-amber-500/5',
-  lunch: 'border-blue-500/30 bg-blue-500/5',
-  dinner: 'border-purple-500/30 bg-purple-500/5',
-  snack: 'border-green-500/30 bg-green-500/5',
+  breakfast: 'border-accent-gold/30 bg-accent-gold/5',
+  lunch: 'border-accent-azure/30 bg-accent-azure/5',
+  dinner: 'border-accent-violet/30 bg-accent-violet/5',
+  snack: 'border-accent-sage/30 bg-accent-sage/5',
 } as const
 
 interface MealPlanCalendarProps {
@@ -296,7 +296,7 @@ export function MealPlanCalendar({
                           variant="outline"
                           className="text-[10px] gap-0.5 h-5"
                         >
-                          <Flame className="size-2.5 text-orange-500" />
+                          <Flame className="size-2.5 text-accent-ember" />
                           {dayCalories}
                         </Badge>
                       )}

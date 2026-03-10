@@ -151,7 +151,7 @@ export function ActivitySummary() {
         {/* Header */}
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5">
-            <Activity className="size-3.5 text-green-500" />
+            <Activity className="size-3.5 text-accent-sage" />
             <span className="text-[11px] font-semibold text-foreground">Activity</span>
           </div>
           {stale && (
@@ -169,13 +169,13 @@ export function ActivitySummary() {
           {/* Activity rings - nested */}
           <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
             <div className="absolute inset-0 flex items-center justify-center">
-              <MiniRing value={moveVal} goal={moveGoal} color="stroke-red-500" size={44} />
+              <MiniRing value={moveVal} goal={moveGoal} color="stroke-accent-rose" size={44} />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <MiniRing value={exerciseVal} goal={exerciseGoal} color="stroke-green-500" size={34} />
+              <MiniRing value={exerciseVal} goal={exerciseGoal} color="stroke-accent-sage" size={34} />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <MiniRing value={standVal} goal={standGoal} color="stroke-blue-400" size={24} />
+              <MiniRing value={standVal} goal={standGoal} color="stroke-accent-azure" size={24} />
             </div>
           </div>
 

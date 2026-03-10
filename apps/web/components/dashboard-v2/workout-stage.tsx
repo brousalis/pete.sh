@@ -78,8 +78,8 @@ function ExerciseRow({
       className={cn(
         'py-3 flex items-start gap-3 border-b border-border/20 last:border-0',
         'hover:bg-muted/10 transition-colors rounded-lg -mx-1 px-1',
-        completed && 'bg-green-500/5',
-        flashGreen && 'bg-green-500/10'
+        completed && 'bg-accent-sage/5',
+        flashGreen && 'bg-accent-sage/10'
       )}
     >
       {/* Checkbox */}
@@ -89,8 +89,8 @@ function ExerciseRow({
         className={cn(
           'size-5 rounded-md border-2 shrink-0 mt-0.5 flex items-center justify-center transition-colors',
           completed
-            ? 'bg-green-500 border-green-500'
-            : 'border-border/50 hover:border-green-500/50'
+            ? 'bg-accent-sage border-accent-sage'
+            : 'border-border/50 hover:border-accent-sage/50'
         )}
       >
         {completed && (
@@ -129,7 +129,7 @@ function ExerciseRow({
       {/* Right side badges */}
       <div className="flex items-center gap-1.5 shrink-0">
         {exercise.isElbowSafe && (
-          <Badge className="h-4 px-1.5 text-[9px] bg-green-500/15 text-green-500 border-0">
+          <Badge className="h-4 px-1.5 text-[9px] bg-accent-sage/15 text-accent-sage border-0">
             Safe
           </Badge>
         )}
@@ -141,7 +141,7 @@ function ExerciseRow({
                   href={`https://youtube.com/watch?v=${exercise.youtubeVideoId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground/40 hover:text-red-500 transition-colors"
+                  className="text-muted-foreground/40 hover:text-accent-rose transition-colors"
                 >
                   <Play className="size-3.5" />
                 </a>
@@ -190,7 +190,7 @@ function WorkoutSection({
         </span>
         <div className="w-16 h-1 rounded-full bg-muted/30 overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-green-500"
+            className="h-full rounded-full bg-accent-sage"
             animate={{ width: `${progress}%` }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
           />
@@ -283,10 +283,10 @@ export function WorkoutStage() {
     return (
       <div className="rounded-2xl overflow-hidden overflow-y-auto scrollbar-hide border border-white/[0.06] bg-white/[0.015]">
         {/* Rest day header */}
-        <div className="bg-gradient-to-r from-slate-500/8 via-slate-500/4 to-transparent px-5 py-4 border-b border-white/[0.04]">
+        <div className="bg-gradient-to-r from-accent-slate/8 via-accent-slate/4 to-transparent px-5 py-4 border-b border-white/[0.04]">
           <div className="flex items-center gap-3">
-            <div className="size-10 rounded-full bg-slate-500/10 flex items-center justify-center">
-              <Footprints className="size-5 text-slate-400" />
+            <div className="size-10 rounded-full bg-accent-slate/10 flex items-center justify-center">
+              <Footprints className="size-5 text-accent-slate" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Rest Day</h2>
@@ -300,9 +300,9 @@ export function WorkoutStage() {
         <div className="p-5 space-y-5">
           {/* Morning routine */}
           {morningRoutine && (
-            <div className="rounded-xl bg-amber-500/[0.07] border border-amber-500/15 p-4">
+            <div className="rounded-xl bg-accent-gold/[0.07] border border-accent-gold/15 p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Sun className="size-4 text-amber-500" />
+                <Sun className="size-4 text-accent-gold" />
                 <span className="text-sm font-semibold">{morningRoutine.name}</span>
                 <span className="text-[10px] text-muted-foreground ml-auto">{morningRoutine.duration}m</span>
               </div>
@@ -349,9 +349,9 @@ export function WorkoutStage() {
 
           {/* Night routine */}
           {nightRoutine && (
-            <div className="rounded-xl bg-indigo-500/[0.07] border border-indigo-500/15 p-4">
+            <div className="rounded-xl bg-accent-violet/[0.07] border border-accent-violet/15 p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Moon className="size-4 text-indigo-500" />
+                <Moon className="size-4 text-accent-violet" />
                 <span className="text-sm font-semibold">{nightRoutine.name}</span>
                 <span className="text-[10px] text-muted-foreground ml-auto">{nightRoutine.duration}m</span>
               </div>
@@ -408,7 +408,7 @@ export function WorkoutStage() {
             </span>
           )}
           {routine?.injuryProtocol?.status === 'active' && (
-            <Badge className="h-4 gap-0.5 px-1.5 text-[10px] bg-red-500/15 text-red-400 border-0">
+            <Badge className="h-4 gap-0.5 px-1.5 text-[10px] bg-accent-rose/15 text-accent-rose border-0">
               <AlertTriangle className="size-2.5" />
               Injury
             </Badge>
@@ -423,7 +423,7 @@ export function WorkoutStage() {
       <div className="px-5 py-2.5 flex items-center gap-3 border-b border-white/[0.03]">
         <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-green-500/60"
+            className="h-full rounded-full bg-accent-sage/60"
             animate={{ width: `${overallProgress}%` }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
           />
@@ -525,7 +525,7 @@ export function WorkoutStage() {
           </Button>
           <Button
             size="sm"
-            className="h-8 text-xs rounded-lg px-4 bg-green-600 text-white hover:bg-green-500 transition-colors"
+            className="h-8 text-xs rounded-lg px-4 bg-accent-sage text-white hover:bg-accent-sage/90 transition-colors"
           >
             Complete
           </Button>

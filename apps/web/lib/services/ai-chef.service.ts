@@ -26,10 +26,16 @@ import { mealPlanningService } from '@/lib/services/meal-planning.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import {
   CookingPreferencesSchema,
+  FitnessGuidelinesSchema,
+  FitnessProfileSchema,
   RecipeHintsSchema,
   WeekPlanSuggestionSchema,
+  type CarbLevel,
   type ConversationSummary,
   type CookingPreferences,
+  type FitnessDayRequirement,
+  type FitnessGuidelines,
+  type FitnessProfile,
   type RecipeHints,
 } from '@/lib/types/ai-chef.types'
 import type { DayMeals, DayOfWeek, MealPlan, Recipe, WeeklyMeals } from '@/lib/types/cooking.types'
@@ -241,39 +247,33 @@ Return prioritizedIds (recipes that match well) and optionally excludedIds (reci
 async function getRecipeCatalogSummary(): Promise<string> {
   try {
     const recipes = await cookingService.getRecipes()
-    if (recipes.length === 0) return 'No recipes in the catalog yet.'
+    if (recipes.length === 0) return 'No recipes yet.'
+
+    // Dense format: id|name|source|time|tags|cal|protein|nutrition_category
+    function formatRecipe(r: Recipe): string {
+      const src = r.source === 'trader_joes' ? 'TJ' : 'C'
+      const time = (r.prep_time || 0) + (r.cook_time || 0)
+      const parts = [r.id, r.name, src]
+      parts.push(time ? `${time}m` : '-')
+      parts.push(r.tags?.length ? r.tags.join(',') : '-')
+      if (r.calories_per_serving || r.protein_g) {
+        parts.push(r.calories_per_serving ? `${r.calories_per_serving}cal` : '-')
+        parts.push(r.protein_g ? `${r.protein_g}gP` : '-')
+      }
+      if (r.nutrition_category?.length) parts.push(r.nutrition_category.join(','))
+      if (r.is_favorite) parts.push('★')
+      return parts.join('|')
+    }
 
     const custom = recipes.filter((r: Recipe) => r.source === 'custom')
     const tj = recipes.filter((r: Recipe) => r.source === 'trader_joes')
-
-    function formatRecipe(r: Recipe): string {
-      const parts = [`- "${r.name}"`]
-      parts.push(`[id: ${r.id}]`)
-      if (r.source === 'trader_joes') parts.push('[TJ]')
-      if (r.difficulty) parts.push(`(${r.difficulty})`)
-      if (r.prep_time || r.cook_time) {
-        const total = (r.prep_time || 0) + (r.cook_time || 0)
-        parts.push(`${total}min`)
-      }
-      if (r.tags?.length) parts.push(`tags: ${r.tags.join(', ')}`)
-      if (r.is_favorite) parts.push('★ favorite')
-      if (r.calories_per_serving) parts.push(`${r.calories_per_serving}cal`)
-      if (r.protein_g) parts.push(`${r.protein_g}g protein`)
-      if (r.nutrition_category?.length) parts.push(`[${r.nutrition_category.join(', ')}]`)
-      return parts.join(' ')
-    }
-
-    const lines: string[] = [`${recipes.length} total recipes (${custom.length} custom, ${tj.length} Trader Joe's).\n`]
+    const lines: string[] = [`${recipes.length} recipes (${custom.length} custom, ${tj.length} TJ). Format: id|name|source|time|tags|cal|protein`]
 
     if (custom.length > 0) {
-      lines.push('### Custom Recipes')
-      lines.push(...custom.map(formatRecipe))
-      lines.push('')
+      lines.push('Custom:', ...custom.map(formatRecipe))
     }
-
     if (tj.length > 0) {
-      lines.push(`### Trader Joe's Recipes (${tj.length})`)
-      lines.push(...tj.map(formatRecipe))
+      lines.push('TJ:', ...tj.map(formatRecipe))
     }
 
     return lines.join('\n')
@@ -321,7 +321,7 @@ async function getCurrentMealPlanContext(): Promise<string> {
   }
 }
 
-async function getRecentMealPlansContext(weeks: number = 4): Promise<string> {
+async function getRecentMealPlansContext(weeks: number = 2): Promise<string> {
   try {
     const plans = await mealPlanningService.getRecentMealPlans(weeks)
     if (plans.length === 0) return 'No recent meal plan history.'
@@ -372,6 +372,10 @@ async function getFridgeContext(): Promise<string> {
   }
 }
 
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 3.5)
+}
+
 export async function assembleContext(): Promise<string> {
   const [
     preferences,
@@ -383,30 +387,34 @@ export async function assembleContext(): Promise<string> {
     getPreferences(),
     getRecipeCatalogSummary(),
     getCurrentMealPlanContext(),
-    getRecentMealPlansContext(4),
+    getRecentMealPlansContext(2),
     getFridgeContext(),
   ])
 
-  const sections: string[] = []
+  const prefsLine = [
+    preferences.dislikes.length > 0 ? `Dislikes: ${preferences.dislikes.join(', ')}` : null,
+    preferences.allergies.length > 0 ? `Allergies: ${preferences.allergies.join(', ')}` : null,
+    preferences.dietary.length > 0 ? `Dietary: ${preferences.dietary.join(', ')}` : null,
+    preferences.cuisinePreferences.length > 0 ? `Cuisines: ${preferences.cuisinePreferences.join(', ')}` : null,
+    `Household: ${preferences.householdSize}`,
+    `Max cook: ${preferences.cookingTimePreference}`,
+    preferences.notes ? `Notes: ${preferences.notes}` : null,
+  ].filter(Boolean).join(' | ')
 
-  sections.push(`## Food Preferences
-Dislikes: ${preferences.dislikes.length > 0 ? preferences.dislikes.join(', ') : 'none specified'}
-Allergies: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'none'}
-Dietary: ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'no restrictions'}
-Preferred Cuisines: ${preferences.cuisinePreferences.length > 0 ? preferences.cuisinePreferences.join(', ') : 'open to anything'}
-Household Size: ${preferences.householdSize} people
-Weeknight Cooking Time: ${preferences.cookingTimePreference}
-Notes: ${preferences.notes || 'none'}`)
+  const context = [
+    `[Prefs] ${prefsLine}`,
+    `[This Week] ${currentPlan}`,
+    `[Recent] ${recentPlans}`,
+    `[Recipes]\n${recipeCatalog}`,
+    `[Fridge] ${fridge}`,
+  ].join('\n\n')
 
-  sections.push(`## Current Week's Meal Plan\n${currentPlan}`)
+  console.log(
+    `[AI Chef] Context assembled: ~${estimateTokens(context)} tokens | ` +
+    `recipes=${recipeCatalog.length}ch plan=${currentPlan.length}ch recent=${recentPlans.length}ch fridge=${fridge.length}ch`
+  )
 
-  sections.push(`## Recent Meal Plans (for variety — avoid repeats)\n${recentPlans}`)
-
-  sections.push(`## Recipe Catalog (custom + Trader Joe's)\n${recipeCatalog}`)
-
-  sections.push(`## Current Fridge Contents\n${fridge}`)
-
-  return sections.join('\n\n---\n\n')
+  return context
 }
 
 // ============================================
@@ -477,7 +485,7 @@ export async function createRecipeChatStream(
   recipeId: string
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(uiMessages)
+  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
 
   return streamText({
     model,
@@ -597,62 +605,48 @@ ${recipeContext}`,
 // MEAL PLANNING CHAT STREAM
 // ============================================
 
+const MAX_CONTEXT_MESSAGES = 20
+
+function trimMessages(messages: UIMessage[]): UIMessage[] {
+  if (messages.length <= MAX_CONTEXT_MESSAGES) return messages
+  const trimmed = messages.slice(-MAX_CONTEXT_MESSAGES)
+  console.log(`[AI Chef] Trimmed messages: ${messages.length} → ${trimmed.length}`)
+  return trimmed
+}
+
 export async function createChatStream(
   uiMessages: UIMessage[],
   systemContext: string
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(uiMessages)
+  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
 
   return streamText({
     model,
-    system: `You are an expert AI Chef and meal planning assistant embedded in the user's cooking dashboard. You have full access to their recipe catalog (both custom recipes and Trader Joe's recipes), meal plan history, food preferences, and fridge contents.
+    system: `You are an AI Chef meal-planning assistant. Be warm, specific, practical. Reference actual recipe names/IDs from context.
 
-Your personality is warm, helpful, and practical — like a knowledgeable friend who loves cooking. Be specific: reference actual recipe names, prep times, and ingredients from the data.
+## Tools
+- suggestWeekPlan: REQUIRED when planning multiple days. Renders UI card with "Apply All". ALWAYS call this.
+- setMealSlot: Change a single day's meal.
+- searchRecipes: Get full recipe details. Catalog IDs are in context; use this for ingredient/description search.
 
-## IMPORTANT: Tool Usage Workflow
+## Rules
+- Respect dislikes/allergies strictly. Avoid recent-week repeats. Use fridge items first.
+- Mix TJ and custom (C) recipes for variety. Weeknights: respect max cook time.
+- Always finish with suggestWeekPlan or setMealSlot when asked to plan/set meals.
 
-The user's food preferences, current meal plan, recent meal plans, and the full recipe catalog (names + IDs, grouped by source) are ALREADY provided below in the context data. You do NOT need to call tools to read data that is already here.
-
-When the user asks you to **plan a week or suggest meals**:
-1. Review the context data already provided (preferences, recent plans, recipe catalog)
-2. Pick recipes from the catalog — recipes marked [TJ] are from Trader Joe's (quick, accessible options). Mix in TJ recipes alongside custom recipes for variety.
-3. If you want more details about a recipe before suggesting it, use searchRecipes with the recipe name as the query.
-4. Call the **suggestWeekPlan** tool with your complete plan — this is REQUIRED. Do NOT just describe meals in text. The suggestWeekPlan tool renders a beautiful card in the UI with an "Apply All" button.
-
-When the user asks **questions about recipes** (e.g. "what greek recipes do we have", "suggest something with chicken"):
-1. Check the catalog in the context data first
-2. Use searchRecipes to find matching recipes by ingredient, cuisine, or keyword
-3. Provide helpful details: describe the recipes, compare options, and suggest how to use them
-
-When the user asks to **change a specific day**:
-1. Use setMealSlot directly with the recipe ID and day
-
-CRITICAL: Always finish with an ACTION tool (suggestWeekPlan or setMealSlot) when the user asks to plan or set meals. Never stop after only calling read-only tools.
-
-## Core Principles
-- ALWAYS respect food dislikes and allergies — never suggest recipes with disliked or allergenic ingredients
-- Ensure weekly variety — check the "Recent Meal Plans" section and avoid repeating those recipes
-- Balance the week: quick weeknight meals (Mon-Thu) with more involved weekend cooking (Fri-Sun)
-- Consider prep time preferences: on weeknights, favor meals within the user's time preference
-- Factor in nutrition when possible (calories, protein, etc.)
-- If the fridge has items, try to suggest meals that use them before they expire
-- Actively use Trader Joe's recipes — they are quick, accessible options from a nearby store
-
-Today's date: ${getLocalDateString()}
-Day of week: ${getDayOfWeek()}
+Today: ${getLocalDateString()} (${getDayOfWeek()})
 
 ${systemContext}`,
     messages: modelMessages,
-    stopWhen: stepCountIs(8),
+    stopWhen: stepCountIs(4),
     experimental_transform: smoothStream({ delayInMs: 20, chunking: 'word' }),
     tools: {
       searchRecipes: tool({
-        description:
-          'Search recipes by name, tags, ingredients, or cuisine. Returns full details including description and ingredients. Recipe names and IDs are already in the context for quick reference, but use this tool to get full details or to search by ingredient/description.',
+        description: 'Search recipes by name, tags, ingredients, or cuisine. Returns details not in the catalog summary.',
         inputSchema: z.object({
-          query: z.string().optional().describe('Search query (matches name, description, tags)'),
-          source: z.enum(['all', 'custom', 'trader_joes']).default('all').describe('Filter by source: custom (user recipes), trader_joes (TJ recipes), or all'),
+          query: z.string().optional().describe('Search term'),
+          source: z.enum(['all', 'custom', 'trader_joes']).default('all'),
         }),
         execute: async ({ query, source }) => {
           const filters: { search?: string; source?: 'custom' | 'trader_joes' } = {}
@@ -660,65 +654,18 @@ ${systemContext}`,
           if (source !== 'all') filters.source = source
 
           const recipes = await cookingService.getRecipes(filters)
-          const results: string[] = []
+          if (recipes.length === 0) return ['No recipes found']
 
-          for (const r of recipes.slice(0, 30)) {
-            const totalTime = (r.prep_time || 0) + (r.cook_time || 0)
-            const tag = r.source === 'trader_joes' ? '[TJ]' : '[USER]'
-            results.push(
-              `${tag} "${r.name}" [id:${r.id}]` +
-              (totalTime ? ` | ${totalTime}min` : '') +
-              (r.servings ? ` | serves ${r.servings}` : '') +
-              (r.tags?.length ? ` | tags: ${r.tags.join(', ')}` : '') +
-              (r.description ? `\n  ${r.description.slice(0, 150)}` : '')
-            )
-          }
-
-          return results.length > 0
-            ? results
-            : ['No recipes found matching the query']
-        },
-      }),
-
-      getCurrentMealPlan: tool({
-        description: 'Get the current week\'s meal plan. NOTE: This data is already in the context — only call if you need a refresh after making changes.',
-        inputSchema: z.object({}),
-        execute: async () => {
-          return await getCurrentMealPlanContext()
-        },
-      }),
-
-      getRecentMealPlans: tool({
-        description:
-          'Get recent weeks\' meal plans. NOTE: This data is already in the context — only call if you specifically need more weeks than the default 4.',
-        inputSchema: z.object({
-          weeks: z.number().default(4).describe('Number of weeks to look back'),
-        }),
-        execute: async ({ weeks }) => {
-          return await getRecentMealPlansContext(weeks)
-        },
-      }),
-
-      getFoodPreferences: tool({
-        description: 'Get food preferences. NOTE: Preferences are already in the context — only call if you suspect they changed mid-conversation.',
-        inputSchema: z.object({}),
-        execute: async () => {
-          const prefs = await getPreferences()
-          return prefs
-        },
-      }),
-
-      getFridgeContents: tool({
-        description: 'Get current fridge contents from the latest scan. NOTE: Fridge data is already in the context.',
-        inputSchema: z.object({}),
-        execute: async () => {
-          return await getFridgeContext()
+          return recipes.slice(0, 20).map((r) => {
+            const src = r.source === 'trader_joes' ? 'TJ' : 'C'
+            const time = (r.prep_time || 0) + (r.cook_time || 0)
+            return `${src}|${r.id}|${r.name}|${time ? time + 'm' : '-'}|${r.tags?.join(',') || '-'}${r.description ? '|' + r.description.slice(0, 100) : ''}`
+          })
         },
       }),
 
       suggestWeekPlan: tool({
-        description:
-          'REQUIRED when suggesting meals for multiple days. Returns a structured plan that the UI renders as a visual card with recipe details and an "Apply All" button. You MUST call this tool when the user asks to plan a week — do not just describe meals in text.',
+        description: 'REQUIRED for multi-day meal plans. Renders UI card with "Apply All".',
         inputSchema: z.object({
           plan: WeekPlanSuggestionSchema.describe('The suggested week plan'),
         }),
@@ -728,8 +675,7 @@ ${systemContext}`,
       }),
 
       setMealSlot: tool({
-        description:
-          'Set a specific recipe for a specific day and meal type in the current week\'s meal plan. Use for individual adjustments.',
+        description: 'Set one meal slot in the current week plan.',
         inputSchema: z.object({
           day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']).describe('Day of the week'),
           mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).describe('Meal type'),
@@ -782,6 +728,357 @@ function getWeekStartDate(): string {
   const diff = now.getDate() - day + (day === 0 ? -6 : 1)
   const monday = new Date(now.setDate(diff))
   return monday.toISOString().split('T')[0] ?? ''
+}
+
+// ============================================
+// FITNESS MEAL PLAN PIPELINE
+// ============================================
+
+function getHaikuModel() {
+  const anthropic = createAnthropic({ apiKey: config.aiCoach.anthropicApiKey })
+  return anthropic('claude-haiku-4-5-20251001')
+}
+
+/**
+ * Parse a fitness prompt into structured per-day requirements using Haiku.
+ * Haiku has a separate rate limit bucket from Sonnet (~200k/min vs 30k/min).
+ */
+export async function parseFitnessGuidelines(prompt: string): Promise<FitnessGuidelines> {
+  const { experimental_output } = await generateText({
+    model: getHaikuModel(),
+    output: Output.object({ schema: FitnessGuidelinesSchema }),
+    system: 'Extract per-day nutrition requirements from the fitness meal plan. For each day mentioned, return the day name (lowercase), carbLevel (zero/low/moderate/high), proteinKeywords (the main protein ingredients mentioned, as individual words like ["chicken","breast"]), and mealType (breakfast/lunch/dinner/snack). Only include days explicitly mentioned.',
+    prompt,
+  })
+  if (!experimental_output) {
+    throw new Error('Failed to parse fitness guidelines')
+  }
+  console.log(`[AI Chef Fitness] Parsed ${experimental_output.days.length} days from guidelines`)
+  return experimental_output
+}
+
+const CARB_LEVEL_CATEGORIES: Record<CarbLevel, string[]> = {
+  zero: ['low-carb', 'rest-day', 'recomp-friendly'],
+  low: ['low-carb', 'rest-day', 'recomp-friendly'],
+  moderate: ['moderate-carb', 'balanced', 'post-workout'],
+  high: ['high-carb', 'post-workout'],
+}
+
+interface DayCandidates {
+  day: DayOfWeek
+  carbLevel: CarbLevel
+  mealType: string
+  proteinKeywords: string[]
+  recipes: Recipe[]
+}
+
+/**
+ * Find candidate recipes for each day using tiered SQL filtering.
+ * Tier 1: nutrition_category + ingredient keyword match
+ * Tier 2: nutrition_category only
+ * Tier 3: ingredient keyword match only
+ * Tier 4: all recipes (last resort)
+ */
+export async function findCandidateRecipes(
+  days: FitnessDayRequirement[],
+  recentRecipeIds: Set<string>,
+  maxPerDay: number = 8
+): Promise<DayCandidates[]> {
+  const results: DayCandidates[] = []
+
+  for (const day of days) {
+    const categories = CARB_LEVEL_CATEGORIES[day.carbLevel]
+    const primaryKeyword = day.proteinKeywords[0]
+    let candidates: Recipe[] = []
+
+    // Tier 1: nutrition_category + ingredient keyword
+    if (primaryKeyword && categories.length > 0) {
+      try {
+        candidates = await cookingService.getRecipes({
+          nutritionCategory: [...categories, 'high-protein'],
+          ingredientSearch: primaryKeyword,
+        })
+      } catch {
+        candidates = []
+      }
+    }
+
+    // Tier 2: nutrition_category only
+    if (candidates.length < 3 && categories.length > 0) {
+      try {
+        const tier2 = await cookingService.getRecipes({
+          nutritionCategory: [...categories, 'high-protein'],
+        })
+        const existingIds = new Set(candidates.map((r) => r.id))
+        for (const r of tier2) {
+          if (!existingIds.has(r.id)) candidates.push(r)
+        }
+      } catch { /* continue */ }
+    }
+
+    // Tier 3: ingredient keyword only
+    if (candidates.length < 3 && primaryKeyword) {
+      try {
+        const tier3 = await cookingService.getRecipes({
+          ingredientSearch: primaryKeyword,
+        })
+        const existingIds = new Set(candidates.map((r) => r.id))
+        for (const r of tier3) {
+          if (!existingIds.has(r.id)) candidates.push(r)
+        }
+      } catch { /* continue */ }
+    }
+
+    // Tier 4: all recipes as last resort
+    if (candidates.length < 3) {
+      try {
+        const tier4 = await cookingService.getRecipes()
+        const existingIds = new Set(candidates.map((r) => r.id))
+        for (const r of tier4) {
+          if (!existingIds.has(r.id)) candidates.push(r)
+        }
+      } catch { /* continue */ }
+    }
+
+    // Filter out recently used, then cap
+    const filtered = candidates
+      .filter((r) => !recentRecipeIds.has(r.id))
+      .slice(0, maxPerDay)
+
+    // If filtering removed too many, add some recent ones back
+    const final = filtered.length >= 3
+      ? filtered
+      : candidates.slice(0, maxPerDay)
+
+    results.push({
+      day: day.day,
+      carbLevel: day.carbLevel,
+      mealType: day.mealType,
+      proteinKeywords: day.proteinKeywords,
+      recipes: final,
+    })
+  }
+
+  const totalCandidates = results.reduce((sum, d) => sum + d.recipes.length, 0)
+  console.log(
+    `[AI Chef Fitness] Found candidates: ${results.map((d) => `${d.day}=${d.recipes.length}`).join(', ')} (${totalCandidates} total)`
+  )
+
+  return results
+}
+
+/**
+ * Get recipe IDs used in recent meal plans (for variety avoidance).
+ */
+export async function getRecentRecipeIds(weeks: number = 2): Promise<Set<string>> {
+  const ids = new Set<string>()
+  try {
+    const plans = await mealPlanningService.getRecentMealPlans(weeks)
+    const allDays: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    for (const plan of plans) {
+      for (const day of allDays) {
+        const meals = plan.meals[day]
+        if (!meals) continue
+        for (const mealType of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
+          const recipeId = meals[mealType]
+          if (recipeId) ids.add(recipeId)
+        }
+      }
+    }
+  } catch { /* non-critical */ }
+  return ids
+}
+
+function formatCandidatesContext(candidates: DayCandidates[]): string {
+  return candidates.map((day) => {
+    const header = `[${day.day}|${day.carbLevel}-carb|${day.mealType}]`
+    if (day.recipes.length === 0) return `${header} No matching recipes found`
+    const recipes = day.recipes.map((r) => {
+      const time = (r.prep_time || 0) + (r.cook_time || 0)
+      const parts = [r.id, r.name]
+      if (time) parts.push(`${time}m`)
+      if (r.calories_per_serving) parts.push(`${r.calories_per_serving}cal`)
+      if (r.protein_g) parts.push(`${r.protein_g}gP`)
+      if (r.carbs_g) parts.push(`${r.carbs_g}gC`)
+      if (r.source === 'trader_joes') parts.push('TJ')
+      return parts.join('|')
+    }).join('\n  ')
+    return `${header}\n  ${recipes}`
+  }).join('\n')
+}
+
+/**
+ * Create a fitness-optimized planning stream.
+ * Uses a minimal system prompt with only pre-filtered candidates.
+ */
+export async function createFitnessPlanStream(
+  candidates: DayCandidates[],
+  guidelines: FitnessGuidelines,
+  uiMessages: UIMessage[]
+) {
+  const model = getModel()
+  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
+  const candidateContext = formatCandidatesContext(candidates)
+  const preferences = await getPreferences()
+
+  const prefsLine = [
+    preferences.dislikes.length > 0 ? `Dislikes: ${preferences.dislikes.join(', ')}` : null,
+    preferences.allergies.length > 0 ? `Allergies: ${preferences.allergies.join(', ')}` : null,
+  ].filter(Boolean).join(' | ')
+
+  const contextEstimate = estimateTokens(candidateContext)
+  console.log(`[AI Chef Fitness] Planning stream context: ~${contextEstimate} tokens`)
+
+  return streamText({
+    model,
+    system: `You are an AI Chef. Select the best recipe for each day from the pre-filtered candidates below. Call suggestWeekPlan with your selections.
+
+${prefsLine ? `Restrictions: ${prefsLine}\n` : ''}Each day lists candidate recipes matching that day's nutrition profile (carb level + high protein). Pick the best fit considering variety and taste.
+
+${candidateContext}`,
+    messages: modelMessages,
+    stopWhen: stepCountIs(2),
+    experimental_transform: smoothStream({ delayInMs: 20, chunking: 'word' }),
+    tools: {
+      suggestWeekPlan: tool({
+        description: 'Submit the meal plan. Renders UI card with "Apply All".',
+        inputSchema: z.object({
+          plan: WeekPlanSuggestionSchema.describe('The suggested week plan'),
+        }),
+        execute: async ({ plan }) => plan,
+      }),
+      setMealSlot: tool({
+        description: 'Set one meal slot in the current week plan.',
+        inputSchema: z.object({
+          day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+          mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+          recipeId: z.string(),
+          recipeName: z.string(),
+        }),
+        execute: async ({ day, mealType, recipeId, recipeName }) => {
+          try {
+            const currentPlan = await mealPlanningService.getMealPlan()
+            const meals: WeeklyMeals = currentPlan?.meals || {}
+            const dayMeals: DayMeals = meals[day as DayOfWeek] || {}
+            dayMeals[mealType as keyof Pick<DayMeals, 'breakfast' | 'lunch' | 'dinner' | 'snack'>] = recipeId
+            const weekStart = getWeekStartDate()
+            await mealPlanningService.saveMealPlan({
+              week_start_date: weekStart,
+              meals: { ...meals, [day]: dayMeals },
+            })
+            return { success: true, message: `Set ${day} ${mealType} to "${recipeName}"` }
+          } catch (error) {
+            return {
+              success: false,
+              message: `Failed to set meal: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            }
+          }
+        },
+      }),
+    },
+    onStepFinish({ finishReason, usage, toolCalls }) {
+      if (toolCalls && toolCalls.length > 0) {
+        for (const tc of toolCalls) {
+          console.log(
+            `[AI Chef Fitness] Tool ${tc.toolName}: reason=${finishReason} | tokens=${usage?.totalTokens || 0}`
+          )
+        }
+      }
+    },
+  })
+}
+
+// ============================================
+// FITNESS PROFILE PERSISTENCE
+// ============================================
+
+export async function saveFitnessProfile(guidelines: FitnessGuidelines): Promise<void> {
+  const supabase = getSupabaseClientForOperation('write')
+  if (!supabase) return
+
+  const profile: FitnessProfile = FitnessProfileSchema.parse({
+    name: 'Default',
+    guidelines,
+    savedAt: new Date().toISOString(),
+  })
+
+  const { data: existing } = await supabase
+    .from('cooking_preferences')
+    .select('id, preferences')
+    .limit(1)
+    .single()
+
+  if (existing) {
+    const prefs = (existing.preferences as Record<string, unknown>) || {}
+    await supabase
+      .from('cooking_preferences')
+      .update({
+        preferences: { ...prefs, fitnessProfile: profile } as never,
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq('id', existing.id)
+  } else {
+    await supabase
+      .from('cooking_preferences')
+      .insert({
+        preferences: { fitnessProfile: profile } as never,
+      } as never)
+  }
+  console.log(`[AI Chef Fitness] Saved fitness profile (${guidelines.days.length} days)`)
+}
+
+export async function loadFitnessProfile(): Promise<FitnessProfile | null> {
+  const supabase = getSupabaseClientForOperation('read')
+  if (!supabase) return null
+
+  const { data } = await supabase
+    .from('cooking_preferences')
+    .select('preferences')
+    .limit(1)
+    .single()
+
+  if (!data) return null
+
+  try {
+    const prefs = data.preferences as Record<string, unknown>
+    if (!prefs?.fitnessProfile) return null
+    return FitnessProfileSchema.parse(prefs.fitnessProfile)
+  } catch {
+    return null
+  }
+}
+
+// ============================================
+// FITNESS PROMPT DETECTION
+// ============================================
+
+const DAY_NAMES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const FITNESS_KEYWORDS = ['carb', 'protein', 'workout', 'fitness', 'macro', 'calories', 'lifting', 'cardio', 'zone 2', 'interval', 'recovery']
+
+export function isFitnessMealPlanRequest(msg: string): boolean {
+  if (msg.length < 200) return false
+  const lower = msg.toLowerCase()
+  const dayCount = DAY_NAMES.filter((d) => lower.includes(d)).length
+  if (dayCount < 3) return false
+  const keywordCount = FITNESS_KEYWORDS.filter((k) => lower.includes(k)).length
+  return keywordCount >= 2
+}
+
+export function isFitnessProfileTrigger(msg: string): boolean {
+  if (msg.length > 150) return false
+  const lower = msg.toLowerCase()
+  const triggers = [
+    'plan this week',
+    'plan my meals',
+    'fitness plan',
+    'fitness profile',
+    'use my profile',
+    'meal plan',
+    'weekly plan',
+    'plan dinners',
+    "plan this week's",
+  ]
+  return triggers.some((t) => lower.includes(t))
 }
 
 // ============================================

@@ -12,6 +12,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { HEX, HR_ZONE_COLORS } from '@/lib/constants/colors'
 import { apiGet } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
@@ -115,31 +116,23 @@ export interface HealthKitExerciseDataProps {
 // ============================================
 
 const ZONE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
-  rest: { bg: 'bg-gray-500/20', text: 'text-gray-400', bar: 'bg-gray-500' },
-  warmup: { bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500' },
-  fatBurn: {
-    bg: 'bg-green-500/20',
-    text: 'text-green-400',
-    bar: 'bg-green-500',
-  },
-  cardio: {
-    bg: 'bg-orange-500/20',
-    text: 'text-orange-400',
-    bar: 'bg-orange-500',
-  },
-  peak: { bg: 'bg-red-500/20', text: 'text-red-400', bar: 'bg-red-500' },
+  rest: { bg: 'bg-accent-slate/20', text: 'text-accent-slate', bar: 'bg-accent-slate' },
+  warmup: { bg: 'bg-accent-sage/20', text: 'text-accent-sage', bar: 'bg-accent-sage' },
+  fatBurn: { bg: 'bg-accent-gold/20', text: 'text-accent-gold', bar: 'bg-accent-gold' },
+  cardio: { bg: 'bg-accent-ember/20', text: 'text-accent-ember', bar: 'bg-accent-ember' },
+  peak: { bg: 'bg-accent-rose/20', text: 'text-accent-rose', bar: 'bg-accent-rose' },
 }
 
 const WORKOUT_COLORS: Record<string, string> = {
-  running: 'border-green-500/30 bg-green-500/5',
-  walking: 'border-blue-400/30 bg-blue-400/5',
-  hiking: 'border-emerald-400/30 bg-emerald-400/5',
-  cycling: 'border-orange-500/30 bg-orange-500/5',
-  functionalStrengthTraining: 'border-purple-500/30 bg-purple-500/5',
-  traditionalStrengthTraining: 'border-purple-500/30 bg-purple-500/5',
-  coreTraining: 'border-pink-500/30 bg-pink-500/5',
-  hiit: 'border-red-500/30 bg-red-500/5',
-  rowing: 'border-cyan-500/30 bg-cyan-500/5',
+  running: 'border-accent-sage/30 bg-accent-sage/5',
+  walking: 'border-accent-azure/30 bg-accent-azure/5',
+  hiking: 'border-accent-sage/30 bg-accent-sage/5',
+  cycling: 'border-accent-ember/30 bg-accent-ember/5',
+  functionalStrengthTraining: 'border-accent-violet/30 bg-accent-violet/5',
+  traditionalStrengthTraining: 'border-accent-violet/30 bg-accent-violet/5',
+  coreTraining: 'border-accent-rose/30 bg-accent-rose/5',
+  hiit: 'border-accent-rose/30 bg-accent-rose/5',
+  rowing: 'border-accent-teal/30 bg-accent-teal/5',
 }
 
 // ============================================
@@ -243,7 +236,7 @@ interface MiniSparklineProps {
 
 function MiniSparkline({
   data,
-  color = 'rgb(239 68 68)',
+  color = HEX.rose,
   height = 24,
   className,
 }: MiniSparklineProps) {
@@ -307,10 +300,10 @@ interface InsightBadgeProps {
 
 function InsightBadge({ type, title, description }: InsightBadgeProps) {
   const styles = {
-    strength: 'border-green-500/30 bg-green-500/10 text-green-500',
-    improvement: 'border-blue-500/30 bg-blue-500/10 text-blue-500',
-    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-500',
-    info: 'border-purple-500/30 bg-purple-500/10 text-purple-500',
+    strength: 'border-accent-sage/30 bg-accent-sage/10 text-accent-sage',
+    improvement: 'border-accent-azure/30 bg-accent-azure/10 text-accent-azure',
+    warning: 'border-accent-gold/30 bg-accent-gold/10 text-accent-gold',
+    info: 'border-accent-violet/30 bg-accent-violet/10 text-accent-violet',
   }
 
   const icons = {
@@ -409,7 +402,7 @@ export function HealthKitExerciseData({
     'elliptical',
   ].includes(workout.workout_type)
   const isRunning = workout.workout_type === 'running'
-  const colorClass = WORKOUT_COLORS[workout.workout_type] || 'border-gray-500/30'
+  const colorClass = WORKOUT_COLORS[workout.workout_type] || 'border-accent-slate/30'
   const label = getWorkoutDisplayLabel(workout.workout_type)
 
   // Get top insights to display
@@ -457,7 +450,7 @@ export function HealthKitExerciseData({
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Flame className="size-3 text-orange-500" />
+              <Flame className="size-3 text-accent-ember" />
               <span className="font-medium">
                 {Math.round(workout.active_calories)}
               </span>
@@ -467,7 +460,7 @@ export function HealthKitExerciseData({
           {/* Cardio-specific metrics */}
           {isCardio && workout.distance_miles && (
             <div className="flex items-center gap-1 text-xs">
-              <Route className="size-3 text-blue-500" />
+              <Route className="size-3 text-accent-azure" />
               <span className="font-medium">
                 {workout.distance_miles.toFixed(2)} mi
               </span>
@@ -477,7 +470,7 @@ export function HealthKitExerciseData({
           {/* HR Average */}
           {workout.hr_average && (
             <div className="flex items-center gap-1 text-xs">
-              <Heart className="size-3 text-red-500" />
+              <Heart className="size-3 text-accent-rose" />
               <span className="font-medium">{workout.hr_average}</span>
             </div>
           )}
@@ -485,7 +478,7 @@ export function HealthKitExerciseData({
           {/* Running pace */}
           {isRunning && workout.pace_average && (
             <div className="flex items-center gap-1 text-xs">
-              <Gauge className="size-3 text-green-500" />
+              <Gauge className="size-3 text-accent-sage" />
               <span className="font-medium">
                 {formatPace(workout.pace_average)}/mi
               </span>
@@ -520,7 +513,7 @@ export function HealthKitExerciseData({
             {hrSparklineData.length > 5 && (
               <div>
                 <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                  <Heart className="size-3 text-red-500" />
+                  <Heart className="size-3 text-accent-rose" />
                   Heart Rate
                   <span className="ml-auto">
                     {workout.hr_min}-{workout.hr_max} bpm
@@ -528,7 +521,7 @@ export function HealthKitExerciseData({
                 </div>
                 <MiniSparkline
                   data={hrSparklineData}
-                  color="rgb(239 68 68)"
+                  color={HEX.rose}
                   height={32}
                 />
               </div>
@@ -569,7 +562,7 @@ export function HealthKitExerciseData({
                 {workout.pace_average && (
                   <div className="bg-muted/30 rounded-md p-2">
                     <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                      <Gauge className="size-3 text-green-500" />
+                      <Gauge className="size-3 text-accent-sage" />
                       Pace
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -582,7 +575,7 @@ export function HealthKitExerciseData({
                     </div>
                     {workout.pace_best && (
                       <div className="text-muted-foreground mt-0.5 flex items-center gap-1 text-[10px]">
-                        <Zap className="size-2.5 text-amber-500" />
+                        <Zap className="size-2.5 text-accent-gold" />
                         Best: {formatPace(workout.pace_best)}
                       </div>
                     )}
@@ -593,7 +586,7 @@ export function HealthKitExerciseData({
                 {workout.cadence_average && (
                   <div className="bg-muted/30 rounded-md p-2">
                     <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                      <Footprints className="size-3 text-blue-500" />
+                      <Footprints className="size-3 text-accent-azure" />
                       Cadence
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -607,7 +600,7 @@ export function HealthKitExerciseData({
                     {analytics.cadenceAnalysis?.optimalRange ? (
                       <Badge
                         variant="outline"
-                        className="mt-0.5 h-4 border-green-500/30 bg-green-500/10 px-1 py-0 text-[9px] text-green-500"
+                        className="mt-0.5 h-4 border-accent-sage/30 bg-accent-sage/10 px-1 py-0 text-[9px] text-accent-sage"
                       >
                         Optimal
                       </Badge>
@@ -623,7 +616,7 @@ export function HealthKitExerciseData({
                 {analytics.cardiacDrift && (
                   <div className="bg-muted/30 rounded-md p-2">
                     <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                      <Activity className="size-3 text-purple-500" />
+                      <Activity className="size-3 text-accent-violet" />
                       Cardiac Drift
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -631,10 +624,10 @@ export function HealthKitExerciseData({
                         className={cn(
                           'text-lg font-bold',
                           analytics.cardiacDrift.interpretation === 'minimal'
-                            ? 'text-green-500'
+                            ? 'text-accent-sage'
                             : analytics.cardiacDrift.interpretation ===
                                 'excessive'
-                              ? 'text-red-500'
+                              ? 'text-accent-rose'
                               : ''
                         )}
                       >
@@ -647,10 +640,10 @@ export function HealthKitExerciseData({
                       className={cn(
                         'mt-0.5 h-4 px-1 py-0 text-[9px] capitalize',
                         analytics.cardiacDrift.interpretation === 'minimal'
-                          ? 'border-green-500/30 bg-green-500/10 text-green-500'
+                          ? 'border-accent-sage/30 bg-accent-sage/10 text-accent-sage'
                           : analytics.cardiacDrift.interpretation === 'excessive'
-                            ? 'border-red-500/30 bg-red-500/10 text-red-500'
-                            : 'border-amber-500/30 bg-amber-500/10 text-amber-500'
+                            ? 'border-accent-rose/30 bg-accent-rose/10 text-accent-rose'
+                            : 'border-accent-gold/30 bg-accent-gold/10 text-accent-gold'
                       )}
                     >
                       {analytics.cardiacDrift.interpretation}
@@ -662,7 +655,7 @@ export function HealthKitExerciseData({
                 {analytics.trainingImpulse && (
                   <div className="bg-muted/30 rounded-md p-2">
                     <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                      <Zap className="size-3 text-amber-500" />
+                      <Zap className="size-3 text-accent-gold" />
                       Training Load
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -688,12 +681,12 @@ export function HealthKitExerciseData({
             {isRunning && analytics?.splits && analytics.splits.length > 0 && (
               <div>
                 <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-                  <BarChart3 className="size-3 text-purple-500" />
+                  <BarChart3 className="size-3 text-accent-violet" />
                   Mile Splits
                   {analytics.paceAnalysis?.splitStrategy === 'negative' && (
                     <Badge
                       variant="outline"
-                      className="ml-1 h-4 border-green-500/30 bg-green-500/10 px-1 py-0 text-[9px] text-green-500"
+                      className="ml-1 h-4 border-accent-sage/30 bg-accent-sage/10 px-1 py-0 text-[9px] text-accent-sage"
                     >
                       <Award className="mr-0.5 size-2.5" />
                       Negative Split
@@ -713,7 +706,7 @@ export function HealthKitExerciseData({
                               className={cn(
                                 'flex-1 rounded py-1 text-center text-[10px] font-medium',
                                 isFastest
-                                  ? 'bg-green-500/20 text-green-500'
+                                  ? 'bg-accent-sage/20 text-accent-sage'
                                   : 'bg-muted/50'
                               )}
                             >
@@ -805,7 +798,7 @@ export function CompactWorkoutMetrics({
     'elliptical',
   ].includes(workout.workout_type)
   const isRunning = workout.workout_type === 'running'
-  const colorClass = WORKOUT_COLORS[workout.workout_type] || 'border-gray-500/30'
+  const colorClass = WORKOUT_COLORS[workout.workout_type] || 'border-accent-slate/30'
 
   return (
     <div
@@ -825,13 +818,13 @@ export function CompactWorkoutMetrics({
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Flame className="size-3 text-orange-500" />
+        <Flame className="size-3 text-accent-ember" />
         <span className="font-medium">{Math.round(workout.active_calories)}</span>
       </div>
 
       {isCardio && workout.distance_miles && (
         <div className="flex items-center gap-1.5">
-          <Route className="size-3 text-blue-500" />
+          <Route className="size-3 text-accent-azure" />
           <span className="font-medium">
             {workout.distance_miles.toFixed(2)} mi
           </span>
@@ -840,14 +833,14 @@ export function CompactWorkoutMetrics({
 
       {workout.hr_average && (
         <div className="flex items-center gap-1.5">
-          <Heart className="size-3 text-red-500" />
+          <Heart className="size-3 text-accent-rose" />
           <span className="font-medium">{workout.hr_average}</span>
         </div>
       )}
 
       {isRunning && workout.pace_average && (
         <div className="flex items-center gap-1.5">
-          <Gauge className="size-3 text-green-500" />
+          <Gauge className="size-3 text-accent-sage" />
           <span className="font-medium">{formatPace(workout.pace_average)}/mi</span>
         </div>
       )}

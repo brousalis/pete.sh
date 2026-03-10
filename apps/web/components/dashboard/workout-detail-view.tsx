@@ -231,8 +231,8 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
         className={cn(
           'flex items-start gap-2 rounded-md p-2 transition-colors',
           showCheckbox && 'hover:bg-muted/50 cursor-pointer',
-          isCompleted && 'bg-green-500/10',
-          hasLinkedWorkouts && !isCompleted && 'bg-red-500/5 border-l-2 border-l-red-500/30',
+          isCompleted && 'bg-accent-sage/10',
+          hasLinkedWorkouts && !isCompleted && 'bg-accent-rose/5 border-l-2 border-l-accent-rose/30',
           className
         )}
         onClick={onClick}
@@ -240,7 +240,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
         {showCheckbox && (
           <div className="mt-0.5 shrink-0">
             {isCompleted ? (
-              <CheckCircle2 className="size-4 text-green-500" />
+              <CheckCircle2 className="size-4 text-accent-sage" />
             ) : (
               <Circle className="text-muted-foreground size-4" />
             )}
@@ -412,7 +412,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                   id="warmup"
                   title={workout.warmup.name}
                   icon={RotateCcw}
-                  iconColor="text-blue-500"
+                  iconColor="text-accent-azure"
                   duration={workout.warmup.duration}
                   count={workout.warmup.exercises.length}
                 />
@@ -481,7 +481,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                   id="finisher"
                   title="Finisher"
                   icon={Clock}
-                  iconColor="text-red-500"
+                  iconColor="text-accent-rose"
                   count={workout.finisher.length}
                 />
               </CollapsibleTrigger>
@@ -491,7 +491,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                     <ExerciseRow
                       key={ex.id}
                       exercise={ex}
-                      className="bg-red-500/5"
+                      className="bg-accent-rose/5"
                       linkedWorkouts={getLinkedWorkouts(ex.id)}
                     />
                   ))}
@@ -516,7 +516,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                     id="metabolic"
                     title={workout.metabolicFlush.name}
                     icon={PersonStanding}
-                    iconColor="text-orange-500"
+                    iconColor="text-accent-ember"
                     duration={workout.metabolicFlush.duration}
                   />
                 </CollapsibleTrigger>
@@ -526,7 +526,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                       <ExerciseRow
                         key={ex.id}
                         exercise={ex}
-                        className="bg-orange-500/5"
+                        className="bg-accent-ember/5"
                         linkedWorkouts={getLinkedWorkouts(ex.id)}
                       />
                     ))}
@@ -550,7 +550,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                   id="mobility"
                   title={workout.mobility.name}
                   icon={StretchVertical}
-                  iconColor="text-purple-500"
+                  iconColor="text-accent-violet"
                   duration={workout.mobility.duration}
                 />
               </CollapsibleTrigger>
@@ -560,7 +560,7 @@ export function WorkoutDetailView({ day, onComplete }: WorkoutDetailViewProps) {
                     <ExerciseRow
                       key={ex.id}
                       exercise={ex}
-                      className="bg-purple-500/5"
+                      className="bg-accent-violet/5"
                       linkedWorkouts={getLinkedWorkouts(ex.id)}
                     />
                   ))}

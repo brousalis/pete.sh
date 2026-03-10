@@ -165,9 +165,9 @@ export function RecipeDetailSheet({
   }, [recipe?.instructions])
 
   const difficultyColors = {
-    easy: 'bg-green-500/10 text-green-600',
-    medium: 'bg-yellow-500/10 text-yellow-600',
-    hard: 'bg-red-500/10 text-red-600',
+    easy: 'bg-accent-sage/10 text-accent-sage',
+    medium: 'bg-accent-gold/10 text-accent-gold',
+    hard: 'bg-accent-rose/10 text-accent-rose',
   }
 
   return (
@@ -207,7 +207,7 @@ export function RecipeDetailSheet({
                         {recipe.name}
                       </SheetTitle>
                       {recipe.is_favorite && (
-                        <Star className="size-4 shrink-0 fill-yellow-500 text-yellow-500" />
+                        <Star className="size-4 shrink-0 fill-accent-gold text-accent-gold" />
                       )}
                     </div>
                     {recipe.description && (
@@ -248,7 +248,7 @@ export function RecipeDetailSheet({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 shrink-0 border-amber-500/30 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 touch-manipulation"
+                    className="h-9 shrink-0 border-accent-gold/30 text-accent-gold hover:text-accent-gold hover:bg-accent-gold/10 touch-manipulation"
                     onClick={() => setShowRecipeChat(true)}
                   >
                     <Sparkles className="size-3.5 mr-1.5" />
@@ -288,7 +288,7 @@ export function RecipeDetailSheet({
                         className="h-full w-full object-cover"
                       />
                       {recipe.source === 'trader_joes' && (
-                        <Badge className="absolute right-3 top-3 bg-red-600 text-white border-0">
+                        <Badge className="absolute right-3 top-3 bg-accent-rose text-white border-0">
                           Trader Joe's
                         </Badge>
                       )}
@@ -499,7 +499,7 @@ export function RecipeDetailSheet({
                                         {ingFat ? <span>{ingFat}g F</span> : null}
                                         {ingCarbs ? <span>{ingCarbs}g C</span> : null}
                                         {n?.data_source === 'ai_estimate' && (
-                                          <span className="text-amber-500/60 italic">est.</span>
+                                          <span className="text-accent-gold/60 italic">est.</span>
                                         )}
                                       </div>
                                     )}
@@ -619,25 +619,25 @@ export function RecipeDetailSheet({
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'high-protein': 'bg-red-500/10 text-red-500',
-  'low-carb': 'bg-blue-500/10 text-blue-500',
-  'low-calorie': 'bg-green-500/10 text-green-500',
-  'high-fiber': 'bg-emerald-500/10 text-emerald-500',
-  'balanced': 'bg-violet-500/10 text-violet-500',
-  'post-workout': 'bg-orange-500/10 text-orange-500',
-  'pre-workout-friendly': 'bg-yellow-500/10 text-yellow-600',
-  'rest-day': 'bg-sky-500/10 text-sky-500',
-  'recomp-friendly': 'bg-pink-500/10 text-pink-500',
-  'clean': 'bg-emerald-500/10 text-emerald-600',
-  'low-sodium': 'bg-teal-500/10 text-teal-500',
-  'junk-carbs': 'bg-amber-500/10 text-amber-600',
-  'inflammatory-fats': 'bg-red-500/10 text-red-400',
-  'high-sugar': 'bg-amber-500/10 text-amber-500',
-  'high-carb': 'bg-amber-500/10 text-amber-600',
-  'high-fat': 'bg-yellow-500/10 text-yellow-600',
-  'high-calorie': 'bg-orange-500/10 text-orange-600',
-  'low-fat': 'bg-sky-500/10 text-sky-500',
-  'moderate-carb': 'bg-slate-500/10 text-slate-500',
+  'high-protein': 'bg-accent-rose/10 text-accent-rose',
+  'low-carb': 'bg-accent-azure/10 text-accent-azure',
+  'low-calorie': 'bg-accent-sage/10 text-accent-sage',
+  'high-fiber': 'bg-accent-sage/10 text-accent-sage',
+  'balanced': 'bg-accent-violet/10 text-accent-violet',
+  'post-workout': 'bg-accent-ember/10 text-accent-ember',
+  'pre-workout-friendly': 'bg-accent-gold/10 text-accent-gold',
+  'rest-day': 'bg-accent-azure/10 text-accent-azure',
+  'recomp-friendly': 'bg-accent-rose/10 text-accent-rose',
+  'clean': 'bg-accent-sage/10 text-accent-sage',
+  'low-sodium': 'bg-accent-teal/10 text-accent-teal',
+  'junk-carbs': 'bg-accent-gold/10 text-accent-gold',
+  'inflammatory-fats': 'bg-accent-rose/10 text-accent-rose',
+  'high-sugar': 'bg-accent-gold/10 text-accent-gold',
+  'high-carb': 'bg-accent-gold/10 text-accent-gold',
+  'high-fat': 'bg-accent-gold/10 text-accent-gold',
+  'high-calorie': 'bg-accent-ember/10 text-accent-ember',
+  'low-fat': 'bg-accent-azure/10 text-accent-azure',
+  'moderate-carb': 'bg-accent-slate/10 text-accent-slate',
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -707,7 +707,7 @@ function NutritionCard({
       <CardContent className="p-3">
         {/* Calories header */}
         <div className="flex items-center gap-2 mb-3">
-          <Flame className="size-4 text-orange-500" />
+          <Flame className="size-4 text-accent-ember" />
           <span className="text-sm font-semibold">
             {scaledCal} calories
           </span>
@@ -725,7 +725,7 @@ function NutritionCard({
             {scaledProtein && (
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <Beef className="size-3 text-red-500" />
+                  <Beef className="size-3 text-accent-rose" />
                   <span className="text-xs text-muted-foreground">Protein</span>
                 </div>
                 <span className="text-sm font-semibold">{scaledProtein}g</span>
@@ -740,7 +740,7 @@ function NutritionCard({
             {scaledFat && (
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <Droplets className="size-3 text-yellow-500" />
+                  <Droplets className="size-3 text-accent-gold" />
                   <span className="text-xs text-muted-foreground">Fat</span>
                 </div>
                 <span className="text-sm font-semibold">{scaledFat}g</span>
@@ -755,7 +755,7 @@ function NutritionCard({
             {scaledCarbs && (
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <Wheat className="size-3 text-amber-600" />
+                  <Wheat className="size-3 text-accent-gold" />
                   <span className="text-xs text-muted-foreground">Carbs</span>
                 </div>
                 <span className="text-sm font-semibold">{scaledCarbs}g</span>
@@ -775,28 +775,28 @@ function NutritionCard({
           <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/30">
             {scaledFiber && (
               <div className="text-center">
-                <Leaf className="size-3 text-green-500 mx-auto mb-0.5" />
+                <Leaf className="size-3 text-accent-sage mx-auto mb-0.5" />
                 <span className="text-[10px] text-muted-foreground block">Fiber</span>
                 <span className="text-xs font-semibold">{scaledFiber}g</span>
               </div>
             )}
             {scaledSugar && (
               <div className="text-center">
-                <Sparkles className="size-3 text-pink-400 mx-auto mb-0.5" />
+                <Sparkles className="size-3 text-accent-rose mx-auto mb-0.5" />
                 <span className="text-[10px] text-muted-foreground block">Sugar</span>
                 <span className="text-xs font-semibold">{scaledSugar}g</span>
               </div>
             )}
             {scaledSodium && (
               <div className="text-center">
-                <Droplets className="size-3 text-slate-400 mx-auto mb-0.5" />
+                <Droplets className="size-3 text-accent-slate mx-auto mb-0.5" />
                 <span className="text-[10px] text-muted-foreground block">Sodium</span>
                 <span className="text-xs font-semibold">{scaledSodium}mg</span>
               </div>
             )}
             {scaledSatFat && (
               <div className="text-center">
-                <Droplets className="size-3 text-orange-400 mx-auto mb-0.5" />
+                <Droplets className="size-3 text-accent-ember mx-auto mb-0.5" />
                 <span className="text-[10px] text-muted-foreground block">Sat. Fat</span>
                 <span className="text-xs font-semibold">{scaledSatFat}g</span>
               </div>
@@ -877,7 +877,7 @@ function RecipeCookLog({ recipeId }: { recipeId: string }) {
             <div className="text-center">
               <div className="flex items-center gap-0.5">
                 <span className="text-lg font-bold tabular-nums">{avgRating.toFixed(1)}</span>
-                <Star className="size-4 fill-amber-400 text-amber-400" />
+                <Star className="size-4 fill-accent-gold text-accent-gold" />
               </div>
               <p className="text-[10px] text-muted-foreground">avg rating</p>
             </div>
@@ -900,8 +900,8 @@ function RecipeCookLog({ recipeId }: { recipeId: string }) {
       <div className="space-y-2">
         {completions.map((c) => (
           <div key={c.id} className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors">
-            <div className="flex size-8 items-center justify-center rounded-full bg-green-500/15 shrink-0">
-              <CalendarCheck className="size-4 text-green-500" />
+            <div className="flex size-8 items-center justify-center rounded-full bg-accent-sage/15 shrink-0">
+              <CalendarCheck className="size-4 text-accent-sage" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -921,7 +921,7 @@ function RecipeCookLog({ recipeId }: { recipeId: string }) {
                       key={s}
                       className={cn(
                         'size-3',
-                        s <= c.rating! ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20'
+                        s <= c.rating! ? 'fill-accent-gold text-accent-gold' : 'text-muted-foreground/20'
                       )}
                     />
                   ))}

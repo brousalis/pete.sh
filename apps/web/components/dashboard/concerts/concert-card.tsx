@@ -137,7 +137,7 @@ export function ConcertCard({ concert, className }: ConcertCardProps) {
                           className={cn(
                             'size-3',
                             i < concert.rating!
-                              ? 'fill-amber-400 text-amber-400'
+                              ? 'fill-accent-gold text-accent-gold'
                               : 'text-muted-foreground/30'
                           )}
                         />
@@ -213,7 +213,7 @@ export function ConcertCardCompact({ concert }: { concert: Concert }) {
         )}
         {concert.rating && !isUpcoming && (
           <div className="flex shrink-0 items-center gap-0.5">
-            <Star className="size-3 fill-amber-400 text-amber-400" />
+            <Star className="size-3 fill-accent-gold text-accent-gold" />
             <span className="text-xs">{concert.rating}</span>
           </div>
         )}

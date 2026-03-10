@@ -4,98 +4,126 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0.003 90);
+  --foreground: oklch(0.16 0.004 285);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.16 0.004 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.16 0.004 285);
+  --primary: oklch(0.205 0.004 285);
+  --primary-foreground: oklch(0.98 0.003 90);
+  --secondary: oklch(0.955 0.005 90);
+  --secondary-foreground: oklch(0.205 0.004 285);
+  --muted: oklch(0.955 0.005 90);
+  --muted-foreground: oklch(0.48 0.01 285);
+  --accent: oklch(0.955 0.005 90);
+  --accent-foreground: oklch(0.205 0.004 285);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --border: oklch(0.91 0.004 90);
+  --input: oklch(0.93 0.004 90);
+  --ring: oklch(0.72 0.01 285);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Default brand = yellow */
-  --brand: oklch(0.85 0.18 95); /* yellow */
+
+  /* 8-color accent palette */
+  --accent-ember: oklch(0.74 0.16 55);
+  --accent-azure: oklch(0.70 0.13 240);
+  --accent-violet: oklch(0.64 0.20 295);
+  --accent-rose: oklch(0.68 0.19 15);
+  --accent-sage: oklch(0.72 0.16 160);
+  --accent-gold: oklch(0.82 0.14 84);
+  --accent-teal: oklch(0.72 0.11 192);
+  --accent-slate: oklch(0.56 0.02 270);
+
+  /* Semantic status tokens */
+  --success: var(--accent-sage);
+  --success-foreground: oklch(0.98 0 0);
+  --warning: var(--accent-gold);
+  --warning-foreground: oklch(0.25 0 0);
+  --info: var(--accent-azure);
+  --info-foreground: oklch(0.98 0 0);
+
+  /* Chart colors (1-11 for Google Calendar color IDs) */
+  --chart-1: var(--accent-ember);
+  --chart-2: var(--accent-azure);
+  --chart-3: var(--accent-sage);
+  --chart-4: var(--accent-violet);
+  --chart-5: var(--accent-gold);
+  --chart-6: var(--accent-teal);
+  --chart-7: var(--accent-rose);
+  --chart-8: var(--accent-slate);
+  --chart-9: oklch(0.80 0.12 55);
+  --chart-10: oklch(0.76 0.10 240);
+  --chart-11: oklch(0.78 0.12 160);
+
+  /* Sidebar */
+  --sidebar: oklch(0.98 0.003 90);
+  --sidebar-foreground: oklch(0.16 0.004 285);
+  --sidebar-primary: oklch(0.205 0.004 285);
+  --sidebar-primary-foreground: oklch(0.98 0.003 90);
+  --sidebar-accent: oklch(0.955 0.005 90);
+  --sidebar-accent-foreground: oklch(0.205 0.004 285);
+  --sidebar-border: oklch(0.91 0.004 90);
+  --sidebar-ring: oklch(0.72 0.01 285);
+
+  /* Brand (default = yellow) */
+  --brand: oklch(0.84 0.17 92);
   --brand-2: color-mix(in oklab, var(--brand) 85%, white 15%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.14 0.004 285);
+  --foreground: oklch(0.97 0.003 90);
+  --card: oklch(0.19 0.004 285);
+  --card-foreground: oklch(0.97 0.003 90);
+  --popover: oklch(0.19 0.004 285);
+  --popover-foreground: oklch(0.97 0.003 90);
+  --primary: oklch(0.97 0.003 90);
+  --primary-foreground: oklch(0.205 0.004 285);
+  --secondary: oklch(0.25 0.006 285);
+  --secondary-foreground: oklch(0.97 0.003 90);
+  --muted: oklch(0.25 0.006 285);
+  --muted-foreground: oklch(0.65 0.01 285);
+  --accent: oklch(0.25 0.006 285);
+  --accent-foreground: oklch(0.97 0.003 90);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.28 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --border: oklch(0.27 0.005 285);
+  --input: oklch(0.22 0.005 285);
+  --ring: oklch(0.40 0.01 285);
+
+  --success-foreground: oklch(0.98 0 0);
+  --warning-foreground: oklch(0.20 0 0);
+
+  --sidebar: oklch(0.19 0.004 285);
+  --sidebar-foreground: oklch(0.97 0.003 90);
+  --sidebar-primary: oklch(0.65 0.20 295);
+  --sidebar-primary-foreground: oklch(0.97 0.003 90);
+  --sidebar-accent: oklch(0.25 0.006 285);
+  --sidebar-accent-foreground: oklch(0.97 0.003 90);
+  --sidebar-border: oklch(0.25 0.006 285);
+  --sidebar-ring: oklch(0.40 0.01 285);
   --brand-2: color-mix(in oklab, var(--brand) 80%, black 20%);
 }
 
-/* Brand presets – switch via document.documentElement.dataset.brand */
+/* Brand presets */
 [data-brand='purple'] {
-  --brand: oklch(0.61 0.24 300);
+  --brand: oklch(0.62 0.22 298);
 }
 [data-brand='blue'] {
-  --brand: oklch(0.65 0.17 240);
+  --brand: oklch(0.66 0.16 242);
 }
 [data-brand='teal'] {
-  --brand: oklch(0.7 0.12 180);
+  --brand: oklch(0.71 0.12 185);
 }
 [data-brand='orange'] {
-  --brand: oklch(0.73 0.19 60);
+  --brand: oklch(0.74 0.17 58);
 }
 [data-brand='pink'] {
-  --brand: oklch(0.71 0.28 360);
+  --brand: oklch(0.70 0.24 355);
 }
 [data-brand='yellow'] {
-  --brand: oklch(0.85 0.18 95);
+  --brand: oklch(0.84 0.17 92);
 }
 
 @theme inline {
@@ -125,6 +153,26 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
+  --color-chart-11: var(--chart-11);
+  --color-accent-ember: var(--accent-ember);
+  --color-accent-azure: var(--accent-azure);
+  --color-accent-violet: var(--accent-violet);
+  --color-accent-rose: var(--accent-rose);
+  --color-accent-sage: var(--accent-sage);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-slate: var(--accent-slate);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -150,13 +198,12 @@
   }
 }
 
-/* Hide scrollbar but allow scrolling */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 @layer utilities {
@@ -175,12 +222,10 @@
   .bg-sidebar-gradient {
     background: linear-gradient(to bottom, var(--brand), var(--brand-2));
   }
-  /* In dark mode, ensure any accidental bg-white becomes a themed card surface */
   .dark .bg-white {
     background-color: var(--card);
   }
 
-  /* Optional helpers for consistent surfaces */
   .surface {
     background-color: var(--card);
   }
@@ -188,17 +233,13 @@
     background-color: var(--muted);
   }
 
-  /* Add a reusable, theme-aware native range style.
-     - Uses --brand for the filled portion and thumb ring
-     - Works in light/dark, cross-browser
-     - Pair with an inline background gradient for dynamic fill (already used) */
   .themed-range {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
     height: 10px;
     border-radius: 9999px;
-    background: var(--muted); /* fallback; dynamic fill supplied inline */
+    background: var(--muted);
     accent-color: var(--brand);
     outline: none;
   }
@@ -244,7 +285,6 @@
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 15%, transparent);
   }
 
-  /* Default Recharts theming (axes/grid/labels) using tokens */
   .recharts-surface text {
     fill: var(--muted-foreground);
   }
@@ -262,7 +302,6 @@
     color: var(--foreground) !important;
   }
 
-  /* Soften RadialBar background track from Recharts to theme-muted (prevents near-black in dark mode) */
   .recharts-radial-bar-background-sector,
   .recharts-radial-bar-background-sector path {
     fill: var(--muted) !important;
@@ -273,7 +312,6 @@
    KEYFRAME ANIMATIONS
    ============================================================================ */
 
-/* NFO/AOL Progz scene-inspired gradient animations */
 @keyframes gradient-shift {
   0%, 100% {
     background-position: 0% 50%;
@@ -461,7 +499,6 @@
    ============================================================================ */
 
 @layer utilities {
-  /* Fade animations */
   .animate-fade-in {
     animation: fadeIn 0.25s ease-out both;
   }
@@ -472,7 +509,6 @@
     animation: fadeInUp 0.25s ease-out both;
   }
 
-  /* Slide animations */
   .animate-slide-in-right {
     animation: slideInFromRight 0.25s ease-out both;
   }
@@ -483,7 +519,6 @@
     animation: slideInFromBottom 0.25s ease-out both;
   }
 
-  /* Spotify skip animations */
   .animate-slide-left {
     animation: slideLeft 0.3s ease-out both;
   }
@@ -491,12 +526,10 @@
     animation: slideRight 0.3s ease-out both;
   }
 
-  /* Scale animation */
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out both;
   }
 
-  /* Continuous animations */
   .animate-pulse-subtle {
     animation: pulse 2s ease-in-out infinite;
   }
@@ -507,7 +540,6 @@
     animation: spin 3s linear infinite;
   }
 
-  /* Animation delays */
   .animation-delay-75 {
     animation-delay: 75ms;
   }
@@ -527,7 +559,6 @@
     animation-delay: 500ms;
   }
 
-  /* Stagger animation utilities for lists */
   .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
   .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
   .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
@@ -539,16 +570,14 @@
   .stagger-children > *:nth-child(9) { animation-delay: 400ms; }
   .stagger-children > *:nth-child(10) { animation-delay: 450ms; }
 
-  /* Hover lift effect - use with group */
   .hover-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px color-mix(in oklch, var(--foreground) 10%, transparent);
   }
 
-  /* Press effect - for buttons */
   .press-effect {
     transition: transform 0.1s ease-out;
   }
@@ -556,7 +585,6 @@
     transform: scale(0.97);
   }
 
-  /* Smooth transition utilities */
   .transition-smooth {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 250ms;
@@ -571,10 +599,9 @@
   }
 
   /* ============================================================================
-     NFO / AOL PROGZ SCENE GRADIENT UTILITIES
+     LOGO & NAV GRADIENT UTILITIES
      ============================================================================ */
 
-  /* Logo "pete" - muted idle state with subtle animation */
   .logo-gradient-pete-muted {
     background: linear-gradient(
       90deg,
@@ -591,7 +618,6 @@
     animation: gradient-flow 12s linear infinite;
   }
 
-  /* Logo "home" - muted idle state with subtle animation */
   .logo-gradient-home-muted {
     background: linear-gradient(
       90deg,
@@ -609,7 +635,6 @@
     animation-delay: -3s;
   }
 
-  /* Logo "pete" - vibrant brand gradient */
   .logo-gradient-pete {
     background: linear-gradient(
       90deg,
@@ -628,7 +653,6 @@
     animation: gradient-flow 4s linear infinite;
   }
 
-  /* Logo "home" - softer brand complement */
   .logo-gradient-home {
     background: linear-gradient(
       90deg,
@@ -646,45 +670,14 @@
     animation-delay: -1s;
   }
 
-  /* Nav label gradient */
-  .nav-label-gradient {
-    background: linear-gradient(
-      90deg,
-      var(--foreground) 0%,
-      var(--brand) 50%,
-      var(--foreground) 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: gradient-shift 4s ease-in-out infinite;
-  }
-
-  /* Nav icon gradient */
-  .nav-icon-gradient {
-    background: linear-gradient(
-      90deg,
-      var(--brand) 0%,
-      var(--brand-2) 50%,
-      var(--brand) 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: gradient-shift 4s ease-in-out infinite;
-  }
-
-  /* Animated gradient text - classic scene style */
   .text-gradient-scene {
     background: linear-gradient(
       135deg,
-      oklch(0.75 0.2 200) 0%,    /* cyan */
-      oklch(0.7 0.25 280) 25%,   /* purple */
-      oklch(0.75 0.22 330) 50%,  /* magenta */
-      oklch(0.8 0.2 60) 75%,     /* orange */
-      oklch(0.75 0.2 200) 100%   /* cyan */
+      var(--accent-teal) 0%,
+      var(--accent-violet) 25%,
+      var(--accent-rose) 50%,
+      var(--accent-ember) 75%,
+      var(--accent-teal) 100%
     );
     background-size: 300% 300%;
     -webkit-background-clip: text;
@@ -693,12 +686,11 @@
     animation: gradient-flow 8s linear infinite;
   }
 
-  /* Subtle animated gradient text - for nav labels */
   .text-gradient-scene-subtle {
     background: linear-gradient(
       90deg,
       var(--brand) 0%,
-      oklch(0.72 0.2 280) 50%,   /* violet */
+      var(--accent-violet) 50%,
       var(--brand) 100%
     );
     background-size: 200% 100%;
@@ -708,12 +700,11 @@
     animation: gradient-shift 3s ease-in-out infinite;
   }
 
-  /* Nav icon gradient text for active state */
   .nav-icon-gradient {
     background: linear-gradient(
       135deg,
       var(--brand) 0%,
-      oklch(0.72 0.2 280) 50%,
+      var(--accent-violet) 50%,
       var(--brand) 100%
     );
     background-size: 200% 200%;
@@ -723,7 +714,6 @@
     animation: gradient-shift 4s ease-in-out infinite;
   }
 
-  /* Dashboard v2 animations */
   @keyframes flicker {
     0%, 100% { transform: rotate(0deg) scale(1); opacity: 1; }
     25% { transform: rotate(-2deg) scale(1.05); opacity: 0.9; }
@@ -736,13 +726,12 @@
     50% { transform: translateY(-3px); }
   }
 
-  /* Nav label gradient - revealed on hover */
   .nav-label-gradient {
     background: linear-gradient(
       90deg,
       var(--foreground) 0%,
       var(--brand) 25%,
-      oklch(0.72 0.2 280) 50%,
+      var(--accent-violet) 50%,
       var(--brand) 75%,
       var(--foreground) 100%
     );

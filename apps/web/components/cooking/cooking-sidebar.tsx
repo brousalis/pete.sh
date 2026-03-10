@@ -145,14 +145,14 @@ function useMediaQuery(query: string): boolean {
 // ── Weekly Weather Summary (compact temp strip) ──
 
 function getTempColor(tempF: number): string {
-  if (tempF <= 20) return 'text-blue-400'
-  if (tempF <= 32) return 'text-blue-300'
-  if (tempF <= 45) return 'text-sky-300'
-  if (tempF <= 55) return 'text-slate-400'
-  if (tempF <= 65) return 'text-slate-300'
-  if (tempF <= 75) return 'text-amber-400'
-  if (tempF <= 85) return 'text-orange-400'
-  return 'text-red-400'
+  if (tempF <= 20) return 'text-accent-azure'
+  if (tempF <= 32) return 'text-accent-azure'
+  if (tempF <= 45) return 'text-accent-azure'
+  if (tempF <= 55) return 'text-accent-slate'
+  if (tempF <= 65) return 'text-accent-slate'
+  if (tempF <= 75) return 'text-accent-gold'
+  if (tempF <= 85) return 'text-accent-ember'
+  return 'text-accent-rose'
 }
 
 interface DayForecast {
@@ -242,6 +242,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
     updateCompletionRating,
     deleteCompletion,
     recipesLoading,
+    addRecipeToShoppingList,
   } = useCooking()
 
   const [pickerSlot, setPickerSlot] = useState<{ day: DayOfWeek; meal: string } | null>(null)
@@ -489,8 +490,8 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                               className={cn(
                                 'rounded p-0.5 transition-all',
                                 dinnerCompletion
-                                  ? 'text-green-500 opacity-100 hover:text-green-600'
-                                  : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'
+                                  ? 'text-accent-sage opacity-100 hover:text-accent-sage'
+                                  : 'text-muted-foreground hover:text-accent-sage hover:bg-accent-sage/10'
                               )}
                               onClick={() => handleMarkCooked(day, 'dinner', dinnerRecipeId)}
                               title={dinnerCompletion ? 'Undo cooked' : 'Mark as cooked'}
@@ -503,6 +504,13 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                               title="Remove meal"
                             >
                               <X className="size-3" />
+                            </button>
+                            <button
+                              className="rounded p-0.5 text-muted-foreground hover:text-accent-gold hover:bg-accent-gold/10 transition-colors"
+                              onClick={() => addRecipeToShoppingList(dinnerRecipeId)}
+                              title="Add to shopping list"
+                            >
+                              <ShoppingCart className="size-3" />
                             </button>
                           </>
                         )
@@ -559,8 +567,8 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                             className={cn(
                               'group/meal flex items-center gap-2 rounded-lg border-l-2 px-2 py-1.5 cursor-pointer transition-colors hover:bg-muted/60',
                               completion
-                                ? 'border-green-500/50 bg-green-500/[0.06]'
-                                : 'border-orange-500/30 bg-muted/40'
+                                ? 'border-accent-sage/50 bg-accent-sage/[0.06]'
+                                : 'border-accent-ember/30 bg-muted/40'
                             )}
                             onClick={() => onRecipeClick?.(recipe.id)}
                           >
@@ -596,7 +604,7 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                                               className={cn(
                                                 'size-2',
                                                 s <= completion.rating!
-                                                  ? 'fill-amber-400 text-amber-400'
+                                                  ? 'fill-accent-gold text-accent-gold'
                                                   : 'text-muted-foreground/30'
                                               )}
                                             />
@@ -624,8 +632,8 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
                                   className={cn(
                                     'rounded p-0.5 transition-all',
                                     completion
-                                      ? 'text-green-500 hover:text-green-600'
-                                      : 'opacity-70 group-hover/meal:opacity-100 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 [@media(hover:none)]:opacity-100'
+                                      ? 'text-accent-sage hover:text-accent-sage'
+                                      : 'opacity-70 group-hover/meal:opacity-100 text-muted-foreground hover:text-accent-sage hover:bg-accent-sage/10 [@media(hover:none)]:opacity-100'
                                   )}
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -783,8 +791,8 @@ function CookCompletionDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-green-500/15">
-            <Check className="size-4 text-green-500" />
+          <div className="flex size-9 items-center justify-center rounded-lg bg-accent-sage/15">
+            <Check className="size-4 text-accent-sage" />
           </div>
           <div>
             <h3 className="text-sm font-semibold">Mark as Cooked</h3>
@@ -808,8 +816,8 @@ function CookCompletionDialog({
                   className={cn(
                     'size-6 transition-colors',
                     (hover || selectedRating) >= star
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-muted-foreground/30 hover:text-amber-300'
+                      ? 'fill-accent-gold text-accent-gold'
+                      : 'text-muted-foreground/30 hover:text-accent-gold'
                   )}
                 />
               </button>
@@ -1348,7 +1356,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-semibold">Shopping</h3>
             {trips.length > 0 && (
-              <Badge variant="outline" className="h-4 px-1.5 text-[10px] tabular-nums border-green-500/30 text-green-600">
+              <Badge variant="outline" className="h-4 px-1.5 text-[10px] tabular-nums border-accent-sage/30 text-accent-sage">
                 Trip {trips.length + 1}
               </Badge>
             )}
@@ -1430,7 +1438,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
             <MiniProgressRing percent={progressPercent} size={18} />
             <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden">
               <div
-                className="h-full rounded-full bg-green-500 transition-all duration-300"
+                className="h-full rounded-full bg-accent-sage transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -1451,7 +1459,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
                       onClick={() => setExpandedTripId(isExpanded ? null : trip.id)}
                       className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors min-w-0 flex-1"
                     >
-                      <Check className="size-2.5 text-green-500 shrink-0" />
+                      <Check className="size-2.5 text-accent-sage shrink-0" />
                       <span className="truncate">
                         Trip {i + 1} &middot; {itemCount} item{itemCount !== 1 ? 's' : ''} &middot; {formatDistanceToNow(new Date(trip.completedAt), { addSuffix: true })}
                       </span>
@@ -1471,7 +1479,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
                     <div className="ml-4 mt-0.5 space-y-0.5 pb-1">
                       {trip.items.map((item) => (
                         <div key={item.ingredient} className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                          <Check className="size-2 text-green-500/50 shrink-0" />
+                          <Check className="size-2 text-accent-sage/50 shrink-0" />
                           <span className="truncate">{item.ingredient}</span>
                           {(item.amount > 0 || item.unit) && (
                             <span className="text-[9px] text-muted-foreground/40 shrink-0">
@@ -1482,7 +1490,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
                       ))}
                       {trip.manualItems.map((name) => (
                         <div key={name} className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                          <Check className="size-2 text-green-500/50 shrink-0" />
+                          <Check className="size-2 text-accent-sage/50 shrink-0" />
                           <span className="truncate">{name}</span>
                           <span className="text-[9px] text-muted-foreground/40">(custom)</span>
                         </div>
@@ -1610,7 +1618,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
                     >
                       <button onClick={() => toggleManualItem(index)} className="shrink-0">
                         {item.checked ? (
-                          <div className="size-4 rounded-full bg-green-500 flex items-center justify-center">
+                          <div className="size-4 rounded-full bg-accent-sage flex items-center justify-center">
                             <Check className="size-2.5 text-white" />
                           </div>
                         ) : (
@@ -1640,7 +1648,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
             {hasCheckedItems && (
               <button
                 onClick={() => completeTrip(shoppingList?.items ?? [])}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-2 text-[11px] font-medium text-green-600 transition-colors hover:bg-green-500/20 mt-1"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent-sage/10 border border-accent-sage/20 px-3 py-2 text-[11px] font-medium text-accent-sage transition-colors hover:bg-accent-sage/20 mt-1"
               >
                 <ShoppingBag className="size-3" />
                 Complete Trip ({checkedCount})
@@ -1675,7 +1683,7 @@ function ShoppingItemRow({
     >
       <button onClick={onToggle} className="shrink-0">
         {isChecked ? (
-          <div className="size-4 rounded-full bg-green-500 flex items-center justify-center">
+          <div className="size-4 rounded-full bg-accent-sage flex items-center justify-center">
             <Check className="size-2.5 text-white" />
           </div>
         ) : (
@@ -1735,7 +1743,7 @@ function MiniProgressRing({ percent, size = 18 }: { percent: number; size?: numb
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        className="text-green-500 transition-all duration-300"
+        className="text-accent-sage transition-all duration-300"
       />
     </svg>
   )
@@ -1849,10 +1857,10 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
       {/* Header */}
       <div className="pt-3 pb-2 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500/15">
-              <CalendarDays className="size-4 text-orange-500" />
-            </div>
+            <div className="flex items-center gap-2.5">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-accent-ember/15">
+                  <CalendarDays className="size-4 text-accent-ember" />
+                </div>
             <div>
               <h2 className="text-base font-bold leading-tight">Meal Plan</h2>
               {plannedMealsCount > 0 && (
@@ -1996,7 +2004,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
                               className={cn(
                                 'rounded-xl border overflow-hidden transition-colors',
                                 completion
-                                  ? 'border-green-500/30 bg-green-500/5'
+                                  ? 'border-accent-sage/30 bg-accent-sage/5'
                                   : 'border-border/50 bg-card'
                               )}
                             >
@@ -2032,7 +2040,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
                                           className={cn(
                                             'size-3',
                                             s <= completion.rating!
-                                              ? 'fill-amber-400 text-amber-400'
+                                              ? 'fill-accent-gold text-accent-gold'
                                               : 'text-muted-foreground/20'
                                           )}
                                         />
@@ -2042,7 +2050,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
                                 </div>
                                 {completion && (
                                   <div className="shrink-0">
-                                    <div className="size-7 rounded-full bg-green-500 flex items-center justify-center">
+                                    <div className="size-7 rounded-full bg-accent-sage flex items-center justify-center">
                                       <Check className="size-4 text-white" />
                                     </div>
                                   </div>
@@ -2054,7 +2062,7 @@ export function MobileMealPlanView({ onRecipeClick }: { onRecipeClick?: (recipeI
                                   onClick={() => handleMarkCooked(day, mealType, recipe.id)}
                                 >
                                   <Check
-                                    className={cn('size-3.5', completion && 'text-green-500')}
+                                    className={cn('size-3.5', completion && 'text-accent-sage')}
                                   />
                                   {completion ? 'Undo' : 'Cooked'}
                                 </button>

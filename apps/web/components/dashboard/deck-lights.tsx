@@ -88,8 +88,8 @@ export function DeckLights() {
     <div className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-card to-card/80 p-2 shadow-lg ">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <div className="rounded-lg bg-yellow-500/20 p-1.5">
-            <Lightbulb className={`size-4 ${anyOn ? "text-yellow-500" : "text-muted-foreground"}`} />
+          <div className="rounded-lg bg-accent-gold/20 p-1.5">
+            <Lightbulb className={`size-4 ${anyOn ? "text-accent-gold" : "text-muted-foreground"}`} />
           </div>
           <div>
             <div className="text-sm font-semibold text-foreground">Lights</div>
@@ -125,7 +125,7 @@ export function DeckLights() {
                 onClick={() => handleToggleZone(zone.id, !zone.state.any_on)}
                 className={`min-h-[44px] touch-manipulation rounded-lg border-2 p-2 text-center transition-all active:scale-95 ${
                   zone.state.any_on
-                    ? "border-yellow-500/50 bg-yellow-500/10"
+                    ? "border-accent-gold/50 bg-accent-gold/10"
                     : "border-border bg-background/50"
                 }`}
               >

@@ -50,14 +50,14 @@ export function ConsistencyDashboard() {
           {/* Streaks */}
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
-              <Flame className="size-4 text-orange-500" />
+              <Flame className="size-4 text-accent-ember" />
               <div>
                 <div className="text-lg font-bold leading-none">{stats.currentStreak}</div>
                 <div className="text-[10px] text-muted-foreground">Current Streak</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Target className="size-4 text-blue-500" />
+              <Target className="size-4 text-accent-azure" />
               <div>
                 <div className="text-lg font-bold leading-none">{stats.longestStreak}</div>
                 <div className="text-[10px] text-muted-foreground">Longest Streak</div>

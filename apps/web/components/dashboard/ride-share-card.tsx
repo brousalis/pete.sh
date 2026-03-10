@@ -193,8 +193,8 @@ export function RideShareCard({ compact = false }: RideShareCardProps) {
           {!compact && (
             <div className="space-y-2">
               <div className="flex items-center gap-3 rounded-xl bg-background/50 p-3">
-                <div className="flex size-9 items-center justify-center rounded-full bg-green-500/10">
-                  <Navigation className="size-4 text-green-600" />
+                <div className="flex size-9 items-center justify-center rounded-full bg-accent-sage/10">
+                  <Navigation className="size-4 text-accent-sage" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">From</p>

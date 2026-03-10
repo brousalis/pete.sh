@@ -41,24 +41,24 @@ export function QuickActions() {
         className={cn(
           'flex-1 min-w-0 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-all border overflow-hidden',
           morningDone
-            ? 'bg-green-500/[0.07] border-green-500/20 hover:bg-green-500/[0.12]'
-            : 'bg-white/[0.02] border-white/[0.06] hover:bg-amber-500/[0.06] hover:border-amber-500/20'
+            ? 'bg-accent-sage/[0.07] border-accent-sage/20 hover:bg-accent-sage/[0.12]'
+            : 'bg-white/[0.02] border-white/[0.06] hover:bg-accent-gold/[0.06] hover:border-accent-gold/20'
         )}
       >
         <div
           className={cn(
             'size-7 rounded-lg flex items-center justify-center shrink-0',
-            morningDone ? 'bg-green-500/20' : 'bg-amber-500/10'
+            morningDone ? 'bg-accent-sage/20' : 'bg-accent-gold/10'
           )}
         >
           {morningDone ? (
-            <Check className="size-3.5 text-green-400" />
+            <Check className="size-3.5 text-accent-sage" />
           ) : (
-            <Sun className="size-3.5 text-amber-400" />
+            <Sun className="size-3.5 text-accent-gold" />
           )}
         </div>
         <div className="min-w-0 flex-1 text-left overflow-hidden">
-          <p className={cn('text-[11px] font-medium leading-tight truncate', morningDone ? 'text-green-400' : 'text-white/90')}>
+          <p className={cn('text-[11px] font-medium leading-tight truncate', morningDone ? 'text-accent-sage' : 'text-white/90')}>
             {routine?.dailyRoutines.morning.name || 'Morning'}
           </p>
           <p className="text-[10px] text-white/40">
@@ -75,24 +75,24 @@ export function QuickActions() {
         className={cn(
           'flex-1 min-w-0 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-all border overflow-hidden',
           nightDone
-            ? 'bg-green-500/[0.07] border-green-500/20 hover:bg-green-500/[0.12]'
-            : 'bg-white/[0.02] border-white/[0.06] hover:bg-indigo-500/[0.06] hover:border-indigo-500/20'
+            ? 'bg-accent-sage/[0.07] border-accent-sage/20 hover:bg-accent-sage/[0.12]'
+            : 'bg-white/[0.02] border-white/[0.06] hover:bg-accent-violet/[0.06] hover:border-accent-violet/20'
         )}
       >
         <div
           className={cn(
             'size-7 rounded-lg flex items-center justify-center shrink-0',
-            nightDone ? 'bg-green-500/20' : 'bg-indigo-500/10'
+            nightDone ? 'bg-accent-sage/20' : 'bg-accent-violet/10'
           )}
         >
           {nightDone ? (
-            <Check className="size-3.5 text-green-400" />
+            <Check className="size-3.5 text-accent-sage" />
           ) : (
-            <Moon className="size-3.5 text-indigo-400" />
+            <Moon className="size-3.5 text-accent-violet" />
           )}
         </div>
         <div className="min-w-0 flex-1 text-left overflow-hidden">
-          <p className={cn('text-[11px] font-medium leading-tight truncate', nightDone ? 'text-green-400' : 'text-white/90')}>
+          <p className={cn('text-[11px] font-medium leading-tight truncate', nightDone ? 'text-accent-sage' : 'text-white/90')}>
             {routine?.dailyRoutines.night.name || 'Night'}
           </p>
           <p className="text-[10px] text-white/40">

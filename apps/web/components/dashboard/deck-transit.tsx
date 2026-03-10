@@ -7,17 +7,7 @@ import type { CTABusResponse, CTATrainResponse } from "@/lib/types/cta.types"
 import { getWalkingTime, getUrgencyLevel, type UrgencyLevel } from "@/lib/types/cta.types"
 import { cn } from "@/lib/utils"
 import { apiGet } from "@/lib/api/client"
-
-// CTA Brand Colors
-const CTA_COLORS = {
-  Brown: { bg: "bg-[#62361B]", text: "text-white" },
-  Purple: { bg: "bg-[#522398]", text: "text-white" },
-  Red: { bg: "bg-[#C60C30]", text: "text-white" },
-  Blue: { bg: "bg-[#00A1DE]", text: "text-white" },
-  Green: { bg: "bg-[#009B3A]", text: "text-white" },
-  Orange: { bg: "bg-[#F9461C]", text: "text-white" },
-  bus: { bg: "bg-[#565A5C]", text: "text-white" },
-}
+import { CTA_LINE_COLORS } from "@/lib/constants/colors"
 
 interface UrgencyBannerProps {
   urgency: "leave-now" | "prepare"
@@ -60,13 +50,13 @@ function UrgencyBanner({ urgency, arrivalMinutes, walkingTime, routeLabel }: Urg
       <div
         className={cn(
           "absolute inset-0 transition-all duration-100 ease-linear",
-          isLeaveNow ? "bg-red-600/80" : "bg-orange-500/80"
+          isLeaveNow ? "bg-accent-rose/80" : "bg-accent-ember/80"
         )}
         style={{ width: `${progress}%` }}
       />
       {/* Darker background for depleted portion */}
       <div
-        className={cn("absolute inset-0", isLeaveNow ? "bg-red-900/90" : "bg-orange-900/90")}
+        className={cn("absolute inset-0", isLeaveNow ? "bg-accent-rose/90" : "bg-accent-ember/90")}
         style={{ left: `${progress}%`, width: `${100 - progress}%` }}
       />
       {/* Content */}
@@ -97,10 +87,10 @@ function ArrivalBadge({ minutes, urgency, isFirst }: ArrivalBadgeProps) {
 
   const urgencyBg = isFirst
     ? {
-        missed: "bg-gray-400 text-white line-through opacity-60",
-        "leave-now": "bg-red-500 text-white",
-        prepare: "bg-orange-500 text-white",
-        upcoming: "bg-yellow-500 text-black",
+        missed: "bg-accent-slate text-white line-through opacity-60",
+        "leave-now": "bg-accent-rose text-white",
+        prepare: "bg-accent-ember text-white",
+        upcoming: "bg-accent-gold text-black",
         normal: isDue ? "bg-brand text-white" : "bg-muted text-foreground",
       }[urgency]
     : isDue
@@ -131,8 +121,8 @@ interface RouteRowProps {
 function RouteRow({ type, route, lineName, destination, arrivals, walkingTime }: RouteRowProps) {
   const colors =
     type === "train" && lineName
-      ? CTA_COLORS[lineName as keyof typeof CTA_COLORS] || CTA_COLORS.bus
-      : CTA_COLORS.bus
+      ? (CTA_LINE_COLORS[lineName] ?? CTA_LINE_COLORS.bus!)
+      : CTA_LINE_COLORS.bus!
 
   // Calculate urgency based on first arrival
   const firstArrival = arrivals[0]
@@ -148,9 +138,9 @@ function RouteRow({ type, route, lineName, destination, arrivals, walkingTime }:
   // Row background based on urgency
   const rowBg = {
     missed: "bg-muted/20 opacity-60",
-    "leave-now": "bg-red-950/30 border-red-500/50",
-    prepare: "bg-orange-950/30 border-orange-500/50",
-    upcoming: "bg-yellow-950/20 border-yellow-500/30",
+    "leave-now": "bg-accent-rose/30 border-accent-rose/50",
+    prepare: "bg-accent-ember/30 border-accent-ember/50",
+    upcoming: "bg-accent-gold/20 border-accent-gold/30",
     normal: "bg-muted/20 border-transparent hover:bg-muted/40",
   }[urgency]
 
@@ -192,9 +182,9 @@ function RouteRow({ type, route, lineName, destination, arrivals, walkingTime }:
           <p className="truncate text-[9px] text-muted-foreground">to {destination}</p>
           {arrivals.length > 0 &&
             (hasCatchable ? (
-              <span className="text-[8px] font-medium text-green-500">Catchable</span>
+              <span className="text-[8px] font-medium text-accent-sage">Catchable</span>
             ) : (
-              <span className="text-[8px] font-medium text-red-400">Missed</span>
+              <span className="text-[8px] font-medium text-accent-rose">Missed</span>
             ))}
         </div>
       </div>
@@ -406,8 +396,8 @@ export function DeckTransit() {
       {/* Live indicator */}
       <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[9px] text-muted-foreground">
         <span className="relative flex size-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex size-1.5 rounded-full bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-sage opacity-75" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-accent-sage" />
         </span>
         Live every 30s
       </div>

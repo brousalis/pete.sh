@@ -10,6 +10,7 @@ import {
   type UrgencyLevel,
 } from '@/lib/types/cta.types'
 import { cn } from '@/lib/utils'
+import { CTA_LINE_COLORS } from '@/lib/constants/colors'
 import {
   AlertCircle,
   AlertTriangle,
@@ -22,31 +23,6 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { RideShareCard } from './ride-share-card'
 
-// CTA Brand Colors
-const CTA_COLORS = {
-  Brown: { bg: 'bg-[#62361B]', text: 'text-white', border: 'border-[#62361B]' },
-  Purple: {
-    bg: 'bg-[#522398]',
-    text: 'text-white',
-    border: 'border-[#522398]',
-  },
-  Red: { bg: 'bg-[#C60C30]', text: 'text-white', border: 'border-[#C60C30]' },
-  Blue: { bg: 'bg-[#00A1DE]', text: 'text-white', border: 'border-[#00A1DE]' },
-  Green: { bg: 'bg-[#009B3A]', text: 'text-white', border: 'border-[#009B3A]' },
-  Orange: {
-    bg: 'bg-[#F9461C]',
-    text: 'text-white',
-    border: 'border-[#F9461C]',
-  },
-  Pink: { bg: 'bg-[#E27EA6]', text: 'text-white', border: 'border-[#E27EA6]' },
-  Yellow: {
-    bg: 'bg-[#F9E300]',
-    text: 'text-black',
-    border: 'border-[#F9E300]',
-  },
-  bus: { bg: 'bg-[#565A5C]', text: 'text-white', border: 'border-[#565A5C]' },
-}
-
 // Urgency styling
 function getUrgencyRowStyles(urgency: UrgencyLevel) {
   switch (urgency) {
@@ -57,18 +33,18 @@ function getUrgencyRowStyles(urgency: UrgencyLevel) {
       }
     case 'leave-now':
       return {
-        row: 'bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800',
-        text: 'text-red-600 dark:text-red-400',
+        row: 'bg-accent-rose/10 border border-accent-rose/30',
+        text: 'text-accent-rose',
       }
     case 'prepare':
       return {
-        row: 'bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800',
-        text: 'text-orange-600 dark:text-orange-400',
+        row: 'bg-accent-ember/10 border border-accent-ember/30',
+        text: 'text-accent-ember',
       }
     case 'upcoming':
       return {
-        row: 'bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-800',
-        text: 'text-yellow-600 dark:text-yellow-400',
+        row: 'bg-accent-gold/10 border border-accent-gold/30',
+        text: 'text-accent-gold',
       }
     default:
       return {
@@ -133,7 +109,7 @@ function UrgencyBanner({
       <div
         className={cn(
           'absolute inset-0 transition-all duration-100 ease-linear',
-          isLeaveNow ? 'bg-red-600/80' : 'bg-orange-500/80'
+          isLeaveNow ? 'bg-accent-rose/80' : 'bg-accent-ember/80'
         )}
         style={{ width: `${progress}%` }}
       />
@@ -141,7 +117,7 @@ function UrgencyBanner({
       <div
         className={cn(
           'absolute inset-0',
-          isLeaveNow ? 'bg-red-900/90' : 'bg-orange-900/90'
+          isLeaveNow ? 'bg-accent-rose/90' : 'bg-accent-ember/90'
         )}
         style={{
           left: `${progress}%`,
@@ -177,10 +153,10 @@ function ArrivalBadge({ minutes, urgency, isFirst }: ArrivalBadgeProps) {
   // Apply urgency styling to first badge
   const urgencyBg = isFirst
     ? {
-        missed: 'bg-gray-400 text-white line-through',
-        'leave-now': 'bg-red-500 text-white animate-pulse',
-        prepare: 'bg-orange-500 text-white',
-        upcoming: 'bg-yellow-500 text-black',
+        missed: 'bg-accent-slate text-white line-through',
+        'leave-now': 'bg-accent-rose text-white animate-pulse',
+        prepare: 'bg-accent-ember text-white',
+        upcoming: 'bg-accent-gold text-black',
         normal: isDue
           ? 'animate-pulse bg-brand text-white'
           : 'bg-muted text-foreground',
@@ -218,8 +194,8 @@ function CTARouteRow({
 }: CTARouteRowProps) {
   const colors =
     type === 'train' && lineName
-      ? CTA_COLORS[lineName as keyof typeof CTA_COLORS] || CTA_COLORS.bus
-      : CTA_COLORS.bus
+      ? (CTA_LINE_COLORS[lineName] ?? CTA_LINE_COLORS.bus!)
+      : CTA_LINE_COLORS.bus!
 
   // Get walking time for this route
   const walkingTime = getWalkingTime(route, type)
@@ -296,11 +272,11 @@ function CTARouteRow({
             {/* Catchable indicator */}
             {arrivals.length > 0 &&
               (hasCatchable ? (
-                <span className="text-[10px] font-medium text-green-600 dark:text-green-400">
+                <span className="text-[10px] font-medium text-accent-sage">
                   Catchable
                 </span>
               ) : (
-                <span className="text-[10px] font-medium text-red-500">
+                <span className="text-[10px] font-medium text-accent-rose">
                   Too late
                 </span>
               ))}
@@ -510,8 +486,8 @@ export function TransportationCard() {
       {/* Live indicator */}
       <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs">
         <span className="relative flex size-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex size-2 rounded-full bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-sage opacity-75" />
+          <span className="relative inline-flex size-2 rounded-full bg-accent-sage" />
         </span>
         Live updates every 30s
       </div>

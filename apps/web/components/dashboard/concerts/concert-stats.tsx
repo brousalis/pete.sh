@@ -45,36 +45,36 @@ export function ConcertStatsBar({ stats, loading, className }: ConcertStatsBarPr
       icon: Music,
       label: 'Artists',
       value: stats.unique_artists,
-      color: 'text-purple-500',
-      bg: 'bg-purple-500/10',
+      color: 'text-accent-violet',
+      bg: 'bg-accent-violet/10',
     },
     {
       icon: MapPin,
       label: 'Venues',
       value: stats.unique_venues,
-      color: 'text-blue-500',
-      bg: 'bg-blue-500/10',
+      color: 'text-accent-azure',
+      bg: 'bg-accent-azure/10',
     },
     {
       icon: Star,
       label: 'Avg Rating',
       value: stats.avg_rating > 0 ? stats.avg_rating.toFixed(1) : '—',
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
+      color: 'text-accent-gold',
+      bg: 'bg-accent-gold/10',
     },
     {
       icon: DollarSign,
       label: 'Total Spent',
       value: stats.total_spent > 0 ? `$${Math.round(stats.total_spent)}` : '—',
-      color: 'text-green-500',
-      bg: 'bg-green-500/10',
+      color: 'text-accent-sage',
+      bg: 'bg-accent-sage/10',
     },
     {
       icon: Flame,
       label: 'Streak',
       value: `${stats.current_streak}mo`,
-      color: 'text-orange-500',
-      bg: 'bg-orange-500/10',
+      color: 'text-accent-ember',
+      bg: 'bg-accent-ember/10',
     },
   ]
 
@@ -119,8 +119,8 @@ export function ConcertStatsDetail({ stats, className }: ConcertStatsDetailProps
         {stats.top_venue && (
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <MapPin className="size-5 text-blue-500" />
+              <div className="flex size-10 items-center justify-center rounded-lg bg-accent-azure/10">
+                <MapPin className="size-5 text-accent-azure" />
               </div>
               <div>
                 <p className="text-muted-foreground text-xs">Most Visited Venue</p>
@@ -136,8 +136,8 @@ export function ConcertStatsDetail({ stats, className }: ConcertStatsDetailProps
         {stats.top_artist && (
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-purple-500/10">
-                <Users className="size-5 text-purple-500" />
+              <div className="flex size-10 items-center justify-center rounded-lg bg-accent-violet/10">
+                <Users className="size-5 text-accent-violet" />
               </div>
               <div>
                 <p className="text-muted-foreground text-xs">Most Seen Artist</p>
@@ -155,7 +155,7 @@ export function ConcertStatsDetail({ stats, className }: ConcertStatsDetailProps
       {(stats.current_streak > 0 || stats.longest_streak > 0) && (
         <div className="flex flex-wrap gap-2">
           {stats.current_streak > 0 && (
-            <Badge variant="secondary" className="gap-1 bg-orange-500/10 text-orange-600">
+            <Badge variant="secondary" className="gap-1 bg-accent-ember/10 text-accent-ember">
               <Flame className="size-3" />
               {stats.current_streak} month streak
             </Badge>

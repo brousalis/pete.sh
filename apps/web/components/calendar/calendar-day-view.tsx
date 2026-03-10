@@ -271,8 +271,8 @@ function DayCurrentTimeIndicator({ hourHeight }: { hourHeight: number }) {
 
   return (
     <div className="absolute inset-x-0 z-20 flex items-center" style={{ top }}>
-      <div className="size-3 rounded-full bg-red-500 shadow-lg" />
-      <div className="h-0.5 flex-1 bg-red-500" />
+      <div className="size-3 rounded-full bg-accent-rose shadow-lg" />
+      <div className="h-0.5 flex-1 bg-accent-rose" />
     </div>
   )
 }

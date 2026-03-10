@@ -59,12 +59,12 @@ function getGreeting(
 function WeatherIcon({ description }: { description: string }) {
   const d = description.toLowerCase()
   if (d.includes('sun') || d.includes('clear'))
-    return <Sun className="size-5 text-amber-400 animate-[float_3s_ease-in-out_infinite]" />
+    return <Sun className="size-5 text-accent-gold animate-[float_3s_ease-in-out_infinite]" />
   if (d.includes('rain') || d.includes('drizzle'))
-    return <CloudRain className="size-5 text-blue-400" />
+    return <CloudRain className="size-5 text-accent-azure" />
   if (d.includes('snow'))
-    return <CloudSnow className="size-5 text-cyan-300" />
-  return <Cloud className="size-5 text-slate-400" />
+    return <CloudSnow className="size-5 text-accent-teal" />
+  return <Cloud className="size-5 text-accent-slate" />
 }
 
 const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -162,8 +162,8 @@ function DatePickerCalendar({
                     inMonth && !isSelected && 'text-foreground hover:bg-muted/30',
                     isSelected && 'bg-primary text-primary-foreground font-semibold',
                     isToday && !isSelected && 'ring-1 ring-primary/50',
-                    isPast && allDone && !isSelected && 'bg-green-500/10',
-                    isPast && someDone && !allDone && !isSelected && 'bg-amber-500/10',
+                    isPast && allDone && !isSelected && 'bg-accent-sage/10',
+                    isPast && someDone && !allDone && !isSelected && 'bg-accent-gold/10',
                   )}
                 >
                   {format(day, 'd')}
@@ -247,16 +247,16 @@ export function CommandBar() {
   }
 
   const accentLineColors: Record<string, string> = {
-    Strength: 'via-orange-500/40',
-    'Core/Posture': 'via-blue-500/40',
-    Hybrid: 'via-purple-500/40',
-    Endurance: 'via-red-500/40',
-    Circuit: 'via-green-500/40',
-    HIIT: 'via-amber-500/40',
-    Rest: 'via-slate-500/40',
-    'Active Recovery': 'via-teal-500/40',
+    Strength: 'via-accent-ember/40',
+    'Core/Posture': 'via-accent-azure/40',
+    Hybrid: 'via-accent-violet/40',
+    Endurance: 'via-accent-rose/40',
+    Circuit: 'via-accent-sage/40',
+    HIIT: 'via-accent-gold/40',
+    Rest: 'via-accent-slate/40',
+    'Active Recovery': 'via-accent-teal/40',
   }
-  const accentLine = accentLineColors[focusType] || 'via-slate-500/40'
+  const accentLine = accentLineColors[focusType] || 'via-accent-slate/40'
 
   return (
     <div className="relative bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05]">
@@ -295,7 +295,7 @@ export function CommandBar() {
                 className={cn(
                   'text-sm font-medium min-w-[140px] text-center px-2 py-1 rounded-md transition-colors',
                   'hover:bg-muted/50',
-                  isToday ? 'text-foreground' : 'text-amber-500'
+                  isToday ? 'text-foreground' : 'text-accent-gold'
                 )}
               >
                 {format(selectedDate, 'EEEE, MMM d')}
