@@ -57,6 +57,7 @@ next-env.d.ts
 
 # IDE
 .idea
+.cursor/mcp.json
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

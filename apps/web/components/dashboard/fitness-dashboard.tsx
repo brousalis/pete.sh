@@ -976,6 +976,20 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
     return { totalDuration, totalCalories, totalDistance }
   }, [monthWorkouts])
 
+  // Year workouts and totals (same 3 metrics as this day / this month)
+  const yearWorkouts = useMemo(() => {
+    return workouts.filter(w => {
+      const d = new Date(w.start_date)
+      return d.getFullYear() === currentYear
+    })
+  }, [workouts, currentYear])
+  const yearTotals = useMemo(() => {
+    const totalDuration = yearWorkouts.reduce((s, w) => s + w.duration, 0)
+    const totalCalories = yearWorkouts.reduce((s, w) => s + w.active_calories, 0)
+    const totalDistance = yearWorkouts.reduce((s, w) => s + (w.distance_miles || 0), 0)
+    return { totalDuration, totalCalories, totalDistance }
+  }, [yearWorkouts])
+
   // Active days + consistency
   const activeDays = useMemo(() => {
     const days = new Set(monthWorkouts.map(w => format(new Date(w.start_date), 'yyyy-MM-dd')))
@@ -1100,6 +1114,25 @@ function MonthSnapshot({ workouts, dailyMetrics, onWorkoutClick }: MonthSnapshot
           </div>
           <div>
             <div className="text-sm font-bold tabular-nums text-accent-sage">{monthTotals.totalDistance.toFixed(1)}</div>
+            <div className="text-[9px] text-muted-foreground">Miles</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Year totals - same 3 metrics as this day / this month */}
+      <div className="rounded-xl border border-border/50 bg-card p-3">
+        <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">This Year</h4>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div className="text-sm font-bold tabular-nums">{formatDuration(yearTotals.totalDuration)}</div>
+            <div className="text-[9px] text-muted-foreground">Duration</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums text-accent-ember">{Math.round(yearTotals.totalCalories).toLocaleString()}</div>
+            <div className="text-[9px] text-muted-foreground">Calories</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums text-accent-sage">{yearTotals.totalDistance.toFixed(1)}</div>
             <div className="text-[9px] text-muted-foreground">Miles</div>
           </div>
         </div>

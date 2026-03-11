@@ -128,15 +128,15 @@ export function CalendarHeader({
 
   return (
     <PageHeader>
-      <PageHeaderRow>
+      <PageHeaderRow className="justify-start flex-wrap gap-x-3 gap-y-2">
       {sectionTitle && (
         <div className="flex items-center gap-2 shrink-0">
           <CalendarDays className="size-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold">{sectionTitle}</h2>
         </div>
       )}
-      {/* Left side - Navigation */}
-      <div className="flex items-center gap-1.5">
+      {/* Date nav + view mode */}
+      <div className="flex items-center gap-1.5 shrink-0">
         <DateNavigator
           label={title}
           onPrev={handlePrev}
@@ -222,9 +222,8 @@ export function CalendarHeader({
 
       </div>
 
-      {/* Right side - Search and actions */}
-      <div className="flex items-center gap-1">
-
+      {/* Search and actions - same row as title/nav (no justify-between) */}
+      <div className="flex items-center gap-1 shrink-0">
       <div className="hidden items-center gap-1 text-[11px] text-muted-foreground md:flex">
         <span>Jump to:</span>
         <button

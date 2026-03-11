@@ -7,52 +7,52 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { FullscreenTimer } from '@/components/ui/fullscreen-timer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { YouTubePlayer } from '@/components/ui/youtube-player'
 import type {
-    DayOfWeek,
-    Exercise,
-    Workout,
-    WorkoutCompletion,
+  DayOfWeek,
+  Exercise,
+  Workout,
+  WorkoutCompletion,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-    AlertTriangle,
-    Ban,
-    ChevronDown,
-    ChevronRight,
-    Dumbbell,
-    Expand,
-    Footprints,
-    PersonStanding,
-    Play,
-    RotateCcw,
-    StretchVertical,
-    Timer,
-    Undo2,
-    Watch,
-    Zap,
+  AlertTriangle,
+  Ban,
+  ChevronDown,
+  ChevronRight,
+  Dumbbell,
+  Expand,
+  Footprints,
+  PersonStanding,
+  Play,
+  RotateCcw,
+  StretchVertical,
+  Timer,
+  Undo2,
+  Watch,
+  Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -604,7 +604,7 @@ export function WorkoutCenter({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <h2 className={cn(
-                "truncate text-sm sm:text-base font-semibold",
+                "truncate text-sm font-semibold",
                 isWorkoutCompleted && "text-foreground/80",
                 isWorkoutSkipped && "text-muted-foreground"
               )}>
@@ -639,7 +639,7 @@ export function WorkoutCenter({
                 </Badge>
               )}
             </div>
-            <div className="text-muted-foreground flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs mt-0.5">
+            <div className="text-muted-foreground flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
               <span className={cn("font-medium", isWorkoutCompleted || isWorkoutSkipped ? "text-muted-foreground" : "text-foreground/80")}>{dayName}</span>
               <span>·</span>
               <span>{focus}</span>
@@ -708,8 +708,8 @@ export function WorkoutCenter({
         {/* Footer */}
         <div
           className={cn(
-            'border-t p-2.5 sm:p-3',
-            isWorkoutCompleted ? 'bg-muted/10 border-border/30' : isWorkoutSkipped ? 'bg-muted/5 border-border/20' : 'bg-muted/20'
+            'border-t p-2',
+            isWorkoutCompleted ? 'border-border/30' : isWorkoutSkipped ? 'border-border/20' : ''
           )}
         >
           <div className="flex items-center gap-2 sm:gap-3">

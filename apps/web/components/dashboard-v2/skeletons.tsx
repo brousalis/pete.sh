@@ -26,25 +26,34 @@ export function CommandBarSkeleton() {
 
 export function WeekHorizonSkeleton() {
   return (
-    <div className="bg-card/60 border-b border-border/40">
-      <div className="grid grid-cols-7 gap-1 px-2 py-2">
+    <div className="border-b border-border">
+      <div className="grid grid-cols-7 divide-x divide-border/60">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5 px-2 py-2">
-            <Skeleton className="h-3 w-8" />
-            <Skeleton className="h-6 w-6" />
-            <Skeleton className="h-4 w-12 rounded-full" />
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-6" />
-            <div className="flex gap-1">
-              <Skeleton className="size-1.5 rounded-full" />
-              <Skeleton className="size-1.5 rounded-full" />
-              <Skeleton className="size-1.5 rounded-full" />
+          <div key={i} className="flex flex-col gap-[3px] py-1.5 px-2">
+            {/* Row 1: Day + Date + Badge + Dots */}
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-2.5 w-6" />
+              <Skeleton className="h-3.5 w-4" />
+              <Skeleton className="h-3 w-10 rounded" />
+              <div className="flex gap-[3px] ml-auto">
+                <Skeleton className="size-1 rounded-full" />
+                <Skeleton className="size-1 rounded-full" />
+                <Skeleton className="size-1 rounded-full" />
+              </div>
+            </div>
+            {/* Row 2: Workout name */}
+            <Skeleton className="h-2 w-[70%]" />
+            {/* Row 3: Recipe + Meta */}
+            <div className="flex items-center gap-1">
+              <Skeleton className="size-3.5 rounded-[3px]" />
+              <Skeleton className="h-2.5 flex-1" />
+              <Skeleton className="h-2.5 w-6" />
             </div>
           </div>
         ))}
       </div>
-      <div className="px-3 pb-2">
-        <Skeleton className="h-1 w-full rounded-full" />
+      <div className="px-3 pb-1.5">
+        <Skeleton className="h-0.5 w-full rounded-full" />
       </div>
     </div>
   )

@@ -98,7 +98,22 @@ export function DashboardCalendarSection() {
   }
 
   return (
-    <div className="relative">
+    <div className="flex flex-col h-full min-h-0">
+      {/* Full-width section title row: Calendar + date nav + view mode + search (matches Cooking) */}
+      <CalendarHeader
+        sectionTitle="Calendar"
+        currentDate={selectedDate}
+        viewMode={viewMode}
+        searchQuery={searchQuery}
+        isLoading={dashboardLoading}
+        onDateChange={handleDateChange}
+        onViewModeChange={setViewMode}
+        onSearchChange={setSearchQuery}
+        onRefresh={refetch}
+      />
+
+      {/* Content: sidebar + main calendar */}
+      <div className="relative flex-1 min-h-0">
       {/* Left sidebar - in normal flow, determines container height */}
       <aside
         className={cn(
@@ -174,18 +189,6 @@ export function DashboardCalendarSection() {
 
       {/* Main calendar view - absolutely positioned, height constrained by sidebar */}
       <main className="absolute top-0 bottom-0 left-[calc(268px+0.75rem)] right-0 flex flex-col min-w-0 overflow-hidden">
-        <CalendarHeader
-          sectionTitle="Calendar"
-          currentDate={selectedDate}
-          viewMode={viewMode}
-          searchQuery={searchQuery}
-          isLoading={dashboardLoading}
-          onDateChange={handleDateChange}
-          onViewModeChange={setViewMode}
-          onSearchChange={setSearchQuery}
-          onRefresh={refetch}
-        />
-
         <div className="flex-1 min-h-0 overflow-auto">
           <AnimatePresence mode="wait" custom={slideDirection}>
             {viewMode === 'month' && (
@@ -298,6 +301,7 @@ export function DashboardCalendarSection() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   )
 }

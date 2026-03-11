@@ -107,7 +107,7 @@ export function StretchPanel({
     ? {
         iconBg: "bg-accent-gold/10",
         iconColor: "text-accent-gold",
-        borderColor: "border-accent-gold/20",
+        borderColor: "border-accent-gold/40",
         accentBg: "bg-accent-gold/5",
       }
     : {

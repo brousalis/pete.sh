@@ -20,11 +20,10 @@ import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import {
   Ban,
   Check,
-  ChevronRight,
   Dumbbell,
   Flame,
   Moon,
-  Sun,
+  Sun
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -136,7 +135,7 @@ export function CalendarFitnessSidebar({
     <TooltipProvider delayDuration={200}>
       <div className="border-border/50 bg-card flex flex-col gap-2 overflow-hidden border">
         {/* Header */}
-        <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
+        {/* <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-2">
             <div
               className={cn(
@@ -165,20 +164,19 @@ export function CalendarFitnessSidebar({
               <ChevronRight className="size-3" />
             </Button>
           </Link>
-        </div>
+        </div> */}
 
         {/* Day's Goal */}
-        {daySchedule?.goal && (
+        {/* {daySchedule?.goal && (
           <div className="px-3">
             <p className="text-muted-foreground text-[11px] leading-relaxed">
               {daySchedule.goal}
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Completion Status - Only show if not a rest day or if there are routines */}
-        <div className="flex flex-col gap-1.5 px-3 pb-2">
-          {/* Workout completion */}
+        {/* <div className="flex flex-col gap-1.5 px-3 pb-2">
           {!isRestDay && (
             <CompletionItem
               icon={Dumbbell}
@@ -191,7 +189,6 @@ export function CalendarFitnessSidebar({
             />
           )}
 
-          {/* Morning routine */}
           <CompletionItem
             icon={Sun}
             label="Morning Stretch"
@@ -202,7 +199,6 @@ export function CalendarFitnessSidebar({
             iconColor="text-accent-gold"
           />
 
-          {/* Night routine */}
           <CompletionItem
             icon={Moon}
             label="Night Stretch"
@@ -212,7 +208,7 @@ export function CalendarFitnessSidebar({
             skippedReason={dayData?.nightRoutine?.skippedReason}
             iconColor="text-accent-violet"
           />
-        </div>
+        </div> */}
 
         {/* Week Overview */}
         <div className="border-border/50 border-t px-3 py-2">
