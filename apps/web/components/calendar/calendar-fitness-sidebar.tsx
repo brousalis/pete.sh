@@ -4,29 +4,29 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { DEFAULT_FOCUS_CONFIG, FOCUS_CONFIG } from '@/lib/constants/fitness-colors'
 import type {
-    ConsistencyStats,
-    DayOfWeek,
-    WeeklyRoutine,
+  ConsistencyStats,
+  DayOfWeek,
+  WeeklyRoutine,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import {
-    Ban,
-    Check,
-    ChevronRight,
-    Dumbbell,
-    Flame,
-    Moon,
-    Sun,
+  Ban,
+  Check,
+  ChevronRight,
+  Dumbbell,
+  Flame,
+  Moon,
+  Sun,
 } from 'lucide-react'
 import Link from 'next/link'
-import { FOCUS_CONFIG, DEFAULT_FOCUS_CONFIG } from '@/lib/constants/fitness-colors'
 
 interface CalendarFitnessSidebarProps {
   routine: WeeklyRoutine | null
@@ -134,7 +134,7 @@ export function CalendarFitnessSidebar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="border-border/50 bg-card flex flex-col gap-2 overflow-hidden rounded-xl border">
+      <div className="border-border/50 bg-card flex flex-col gap-2 overflow-hidden border">
         {/* Header */}
         <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-2">

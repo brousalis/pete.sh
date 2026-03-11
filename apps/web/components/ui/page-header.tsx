@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ children, secondaryRow, secondaryRowClassName, className }: PageHeaderProps) {
   return (
-    <header className={cn('mb-3 shrink-0', className)}>
+    <header className={cn('shrink-0', className)}>
       <div className="bg-card/40 border border-border/50">
         {children}
         {secondaryRow && (

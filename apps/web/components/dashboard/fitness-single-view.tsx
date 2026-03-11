@@ -214,7 +214,7 @@ function FitnessDatePicker({
                       onClick={() => handleSelectDay(day)}
                       disabled={isFuturePastWeek}
                       className={cn(
-                        'group relative flex aspect-square flex-col items-center justify-center rounded-lg p-0.5 transition-all',
+                        'group relative flex aspect-square flex-col items-center justify-center  p-0.5 transition-all',
                         'hover:ring-2 hover:ring-inset',
                         isCurrentMonth
                           ? 'text-foreground'
@@ -266,28 +266,28 @@ function FitnessDatePicker({
                       {isCurrentMonth && !isFutureDate && (
                         <div className="mt-0.5 flex items-center justify-center">
                           {status === 'complete' && (
-                            <div className="flex size-3 items-center justify-center rounded-full bg-accent-sage">
+                            <div className="flex size-3 items-center justify-center  bg-accent-sage">
                               <Check className="size-2 text-white" />
                             </div>
                           )}
                           {status === 'partial' && (
                             <div className="flex gap-0.5">
                               {details.morning && (
-                                <div className="size-1.5 rounded-full bg-accent-gold" />
+                                <div className="size-1.5  bg-accent-gold" />
                               )}
                               {details.workout && !details.isRest && (
-                                <div className="size-1.5 rounded-full bg-accent-ember" />
+                                <div className="size-1.5  bg-accent-ember" />
                               )}
                               {details.night && (
-                                <div className="size-1.5 rounded-full bg-accent-violet" />
+                                <div className="size-1.5  bg-accent-violet" />
                               )}
                             </div>
                           )}
                           {status === 'missed' && (
-                            <div className="size-1.5 rounded-full bg-accent-rose/60" />
+                            <div className="size-1.5  bg-accent-rose/60" />
                           )}
                           {status === 'skipped' && (
-                            <div className="flex size-3 items-center justify-center rounded-full bg-slate-500">
+                            <div className="flex size-3 items-center justify-center  bg-slate-500">
                               <Ban className="size-2 text-white" />
                             </div>
                           )}
@@ -441,21 +441,21 @@ function FitnessDatePicker({
       {/* Legend */}
       <div className="mt-3 flex flex-wrap items-center justify-center gap-3 border-t border-border/50 pt-3">
         <div className="flex items-center gap-1">
-          <div className="flex size-3 items-center justify-center rounded-full bg-accent-sage">
+          <div className="flex size-3 items-center justify-center  bg-accent-sage">
             <Check className="size-2 text-white" />
           </div>
           <span className="text-muted-foreground text-[10px]">Complete</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-accent-gold" />
+          <div className="size-2  bg-accent-gold" />
           <span className="text-muted-foreground text-[10px]">Partial</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="size-2 rounded-full bg-accent-rose/60" />
+          <div className="size-2  bg-accent-rose/60" />
           <span className="text-muted-foreground text-[10px]">Missed</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="flex size-3 items-center justify-center rounded-full bg-slate-500">
+          <div className="flex size-3 items-center justify-center  bg-slate-500">
             <Ban className="size-2 text-white" />
           </div>
           <span className="text-muted-foreground text-[10px]">Skipped</span>
@@ -482,6 +482,8 @@ interface FitnessSingleViewProps {
   initialDate?: Date | null
   /** When set, date is controlled by parent (e.g. dashboard). Hides date picker and week strip. */
   controlledDate?: Date | null
+  /** When set (e.g. "Fitness" when embedded), show section title on same line as Day/Week filters. */
+  sectionTitle?: string
   onSwitchToEdit?: () => void
   onSwitchToWeek?: () => void
 }
@@ -503,6 +505,7 @@ interface FitnessSingleViewProps {
 export function FitnessSingleView({
   initialDate,
   controlledDate,
+  sectionTitle,
   onSwitchToEdit,
   onSwitchToWeek,
 }: FitnessSingleViewProps) {
@@ -1094,7 +1097,13 @@ export function FitnessSingleView({
               {/* Week Strip - Day selector (hidden when date is controlled by parent) */}
               <div className="px-3 py-1.5">
                 {/* Desktop: Unified header layout */}
-                <div className="hidden sm:flex">
+                <div className="hidden sm:flex items-start gap-3">
+                  {sectionTitle && (
+                    <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                      <Dumbbell className="size-4 text-muted-foreground" />
+                      <h2 className="text-sm font-semibold">{sectionTitle}</h2>
+                    </div>
+                  )}
                   {/* Left column */}
                   <div className="flex flex-col justify-between min-w-0 flex-1 gap-1.5">
                     {/* Top: DateNav + Date Picker (hidden when controlled) */}
@@ -1156,7 +1165,7 @@ export function FitnessSingleView({
                     <div className="flex items-center gap-2">
                     {headerWorkouts.length > 0 && (
                       <>
-                        <div className="flex items-center gap-1.5 shrink-0 rounded-lg bg-muted/40 px-2.5 py-1">
+                        <div className="flex items-center gap-1.5 shrink-0  bg-muted/40 px-2.5 py-1">
                           <Dumbbell className="size-3.5 text-muted-foreground" />
                           <span className="text-xs font-bold tabular-nums leading-none">{headerWorkouts.length}</span>
                           <span className="text-xs text-muted-foreground font-medium">
@@ -1176,7 +1185,7 @@ export function FitnessSingleView({
                                   <button
                                     onClick={() => router.push(`/fitness/activity?workout=${workout.id}`)}
                                     className={cn(
-                                      'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all whitespace-nowrap',
+                                      'flex items-center gap-1.5  px-2.5 py-1 text-xs transition-all whitespace-nowrap',
                                       'bg-muted/30 hover:bg-muted/50 hover:shadow-sm',
                                       'border-[1px]',
                                       `${borderColor}/30`,
@@ -1214,7 +1223,7 @@ export function FitnessSingleView({
 
                   {/* Center: Week strip (hidden when controlled) */}
                   {!isControlled && (
-                  <div className="flex items-center gap-1 rounded-xl bg-muted/20 p-1.5 shrink-0 self-center mx-3">
+                  <div className="flex items-center gap-1  bg-muted/20 p-1.5 shrink-0 self-center mx-3">
                     {DAYS_OF_WEEK.map((day, index) => {
                       const daySchedule = routine.schedule[day]
                       const weekStart = startOfWeek(effectiveViewingDate || new Date(), { weekStartsOn: 1 })
@@ -1236,7 +1245,7 @@ export function FitnessSingleView({
                             <button
                               onClick={() => navigateToDate(dayDate)}
                               className={cn(
-                                'relative flex flex-col items-center w-12 py-1.5 rounded-lg transition-all',
+                                'relative flex flex-col items-center w-12 py-1.5  transition-all',
                                 isSelected
                                   ? 'bg-foreground/10 shadow-md ring-1 ring-foreground/10'
                                   : 'hover:bg-muted/50',
@@ -1380,7 +1389,7 @@ export function FitnessSingleView({
                     <div className="flex items-center gap-2">
                     {headerWorkouts.length > 0 && (
                       <>
-                        <div className="flex items-center gap-3 rounded-lg bg-muted/20 px-2.5 py-1.5">
+                        <div className="flex items-center gap-3  bg-muted/20 px-2.5 py-1.5">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-1.5 cursor-default">
@@ -1455,7 +1464,7 @@ export function FitnessSingleView({
                         key={day}
                         onClick={() => navigateToDate(dayDate)}
                         className={cn(
-                          'relative flex flex-col items-center justify-center min-w-[44px] min-h-[56px] py-2 px-1.5 rounded-xl transition-all touch-manipulation snap-center',
+                          'relative flex flex-col items-center justify-center min-w-[44px] min-h-[56px] py-2 px-1.5  transition-all touch-manipulation snap-center',
                           isSelected
                             ? 'bg-foreground/10 shadow-md ring-1 ring-foreground/10'
                             : 'active:bg-muted/50',
@@ -1519,10 +1528,16 @@ export function FitnessSingleView({
                 Date nav hidden when controlled
                 ============================================ */}
             <div className="sm:hidden">
-              {/* Row 1: Date + Nav + Actions (Date nav hidden when controlled) */}
+              {/* Row 1: Section title (when set) + Date + Nav + Actions (Date nav hidden when controlled) */}
               <div className="flex items-center justify-between gap-1.5 px-3 py-2">
-                {/* Left: Date Navigator + Date Picker (hidden when controlled) */}
+                {/* Left: Section title (when embedded) + Date Navigator + Date Picker (hidden when controlled) */}
                 <div className="flex items-center gap-1">
+                  {sectionTitle && (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Dumbbell className="size-4 text-muted-foreground" />
+                      <span className="text-sm font-semibold">{sectionTitle}</span>
+                    </div>
+                  )}
                   {!isControlled && (
                     <>
                       <DateNavigator
@@ -1601,7 +1616,7 @@ export function FitnessSingleView({
         </PageHeader>
 
         {/* Main 3-Panel Layout - Stacks vertically on mobile, workout first */}
-        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[280px_1fr_280px] md:overflow-hidden">
+        <div className="flex flex-col overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[280px_1fr_280px] md:overflow-hidden">
           {/* Morning Panel - Shows viewed day's data (order-2 on mobile to show after workout) */}
           <StretchPanel
             routine={routine.dailyRoutines.morning}
@@ -1793,7 +1808,7 @@ function UnifiedActivitySummary({
         {/* {metrics && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 cursor-default shrink-0 rounded-lg bg-muted/30 p-1">
+              <div className="flex items-center gap-2 cursor-default shrink-0  bg-muted/30 p-1">
                 <ActivityRings
                   move={moveProgress}
                   exercise={exerciseProgress}
@@ -1808,7 +1823,7 @@ function UnifiedActivitySummary({
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="size-2.5 rounded-full bg-[#FF2D55]" />
+                    <div className="size-2.5  bg-[#FF2D55]" />
                     <span className="text-xs">Move</span>
                   </div>
                   <span className="text-xs font-medium tabular-nums">
@@ -1817,7 +1832,7 @@ function UnifiedActivitySummary({
                 </div>
                 <div className="flex items-center justify-between gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="size-2.5 rounded-full bg-[#92E82A]" />
+                    <div className="size-2.5  bg-[#92E82A]" />
                     <span className="text-xs">Exercise</span>
                   </div>
                   <span className="text-xs font-medium tabular-nums">
@@ -1826,7 +1841,7 @@ function UnifiedActivitySummary({
                 </div>
                 <div className="flex items-center justify-between gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="size-2.5 rounded-full bg-[#00D4FF]" />
+                    <div className="size-2.5  bg-[#00D4FF]" />
                     <span className="text-xs">Stand</span>
                   </div>
                   <span className="text-xs font-medium tabular-nums">
@@ -1847,7 +1862,7 @@ function UnifiedActivitySummary({
         {dateWorkouts.length > 0 ? (
           <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
             {/* Workout count badge - desktop only */}
-            <div className="hidden sm:flex items-center gap-1.5 shrink-0 rounded-lg bg-muted/40 px-2.5 py-1">
+            <div className="hidden sm:flex items-center gap-1.5 shrink-0 bg-muted/40 px-2.5 py-1">
               <Dumbbell className="size-3.5 text-muted-foreground" />
               <span className="text-base font-bold tabular-nums leading-none">{dateWorkouts.length}</span>
               <span className="text-[10px] text-muted-foreground font-medium">
@@ -1888,7 +1903,7 @@ function UnifiedActivitySummary({
                       <button
                         onClick={() => onWorkoutClick?.(workout.id)}
                         className={cn(
-                          'flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs transition-all whitespace-nowrap touch-manipulation',
+                          'flex items-center gap-1.5 sm:gap-2  px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs transition-all whitespace-nowrap touch-manipulation',
                           'bg-muted/30 hover:bg-muted/50 active:bg-muted/60 hover:shadow-sm',
                           'border-[1px]',
                           `${borderColor}/30`,
@@ -1941,7 +1956,7 @@ function UnifiedActivitySummary({
           <div className="hidden sm:block h-6 w-px bg-border/30 shrink-0" />
 
           {/* Stats group with subtle background */}
-          <div className="flex items-center gap-3 sm:gap-4 rounded-lg bg-muted/20 px-2.5 sm:px-3 py-1.5">
+          <div className="flex items-center gap-3 sm:gap-4 bg-muted/20 px-2.5 sm:px-3 py-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1.5 cursor-default">

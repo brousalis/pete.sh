@@ -34,6 +34,8 @@ import {
 import { useMemo, useState } from "react"
 
 interface CalendarHeaderProps {
+  /** When set (e.g. "Calendar" when embedded in dashboard), show section title on same line as controls. */
+  sectionTitle?: string
   currentDate: Date
   viewMode: CalendarViewMode
   searchQuery: string
@@ -59,6 +61,7 @@ const MONTHS = [
 ]
 
 export function CalendarHeader({
+  sectionTitle,
   currentDate,
   viewMode,
   searchQuery,
@@ -126,6 +129,12 @@ export function CalendarHeader({
   return (
     <PageHeader>
       <PageHeaderRow>
+      {sectionTitle && (
+        <div className="flex items-center gap-2 shrink-0">
+          <CalendarDays className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">{sectionTitle}</h2>
+        </div>
+      )}
       {/* Left side - Navigation */}
       <div className="flex items-center gap-1.5">
         <DateNavigator

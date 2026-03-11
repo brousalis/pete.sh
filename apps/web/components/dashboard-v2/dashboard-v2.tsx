@@ -32,7 +32,7 @@ import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import type { DayOfWeek } from '@/lib/types/fitness.types'
 import { addDays, startOfWeek } from 'date-fns'
 import { AnimatePresence } from 'framer-motion'
-import { CalendarDays, ChefHat, Dumbbell, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 /** Syncs CookingProvider's currentWeek with dashboard selectedDate */
@@ -202,15 +202,12 @@ function DashboardContent() {
         />
         <DayFlowMobile />
 
-        {/* Fitness */}
+        {/* Fitness — section title is inside content, same line as Day/Week */}
         <section className="shrink-0 flex flex-col border-b border-border">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
-            <Dumbbell className="size-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Fitness</h2>
-          </div>
           <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
             <FitnessPageContent
               embedded
+              sectionTitle="Fitness"
               selectedDate={selectedDate}
               onDateChange={(date) =>
                 navigateToDay(date, date > selectedDate ? 'forward' : 'backward')
@@ -219,23 +216,15 @@ function DashboardContent() {
           </div>
         </section>
 
-        {/* Cooking */}
+        {/* Cooking — section title is inside content, same line as filters */}
         <section className="min-h-[320px] shrink-0 flex flex-col border-b border-border">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
-            <ChefHat className="size-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Cooking</h2>
-          </div>
           <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
             <DashboardCookingSection />
           </div>
         </section>
 
-        {/* Calendar */}
+        {/* Calendar — section title is inside content, same line as view controls */}
         <section className="shrink-0 flex flex-col border-b border-border">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
-            <CalendarDays className="size-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Calendar</h2>
-          </div>
           <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
             <DashboardCalendarSection />
           </div>

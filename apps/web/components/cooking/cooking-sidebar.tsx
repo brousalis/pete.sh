@@ -1349,7 +1349,7 @@ export function ShoppingCard({ onOpenFocusMode, onCollapse }: { onOpenFocusMode?
   const progressPercent = visibleItemCount > 0 ? Math.round((checkedCount / visibleItemCount) * 100) : 0
 
   return (
-    <div className="border-border/50 bg-card flex flex-col border">
+    <div className="border-border/50 bg-card flex flex-col ">
       {/* Card header */}
       <div className="border-border/50 border-b px-3 py-2.5 shrink-0">
         <div className="flex items-center justify-between">

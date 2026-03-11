@@ -68,11 +68,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface FitnessKanbanViewProps {
+  /** When set (e.g. "Fitness" when embedded), show section title on same line as filters. */
+  sectionTitle?: string
   onSwitchToDay: (date?: Date) => void
   onSwitchToEdit?: () => void
 }
 
 export function FitnessKanbanView({
+  sectionTitle,
   onSwitchToDay,
   onSwitchToEdit,
 }: FitnessKanbanViewProps) {
@@ -184,6 +187,12 @@ export function FitnessKanbanView({
           // }
         >
           <PageHeaderRow>
+          {sectionTitle && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Dumbbell className="size-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold">{sectionTitle}</h2>
+            </div>
+          )}
           {/* Left: Week navigation */}
           <div className="flex items-center gap-1.5">
             <DateNavigator

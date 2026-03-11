@@ -152,7 +152,7 @@ export function CalendarMini({
   }
 
   return (
-    <div className="border-border/50 bg-card shrink-0 rounded-xl border p-3">
+    <div className="border-border/50 bg-card shrink-0 border p-3">
       {/* Header with navigation */}
       <div className="mb-2 flex items-center justify-between">
         <Button

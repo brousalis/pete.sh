@@ -80,7 +80,7 @@ export function CalendarMealPlanSidebar({
 
   if (loading) {
     return (
-      <div className="border-border/50 bg-card flex flex-col overflow-hidden rounded-xl border">
+      <div className="border-border/50 bg-card flex flex-col overflow-hidden  border">
         <div className="border-border/50 flex items-center gap-2 border-b px-3 py-2">
           <UtensilsCrossed className="text-muted-foreground size-4" />
           <span className="text-xs font-semibold">Meals</span>
@@ -94,7 +94,7 @@ export function CalendarMealPlanSidebar({
 
   if (!mealPlan) {
     return (
-      <div className="border-border/50 bg-card flex flex-col overflow-hidden rounded-xl border">
+      <div className="border-border/50 bg-card flex flex-col overflow-hidden  border">
         <div className="border-border/50 flex items-center gap-2 border-b px-3 py-2">
           <UtensilsCrossed className="text-muted-foreground size-4" />
           <span className="text-xs font-semibold">Meals</span>
@@ -115,7 +115,7 @@ export function CalendarMealPlanSidebar({
   }
 
   return (
-    <div className="border-border/50 bg-card flex flex-col overflow-hidden rounded-xl border">
+    <div className="border-border/50 bg-card flex flex-col overflow-hidden  border">
       {/* Header */}
       <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">

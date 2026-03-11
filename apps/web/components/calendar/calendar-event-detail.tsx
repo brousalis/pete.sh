@@ -158,7 +158,7 @@ export function CalendarEventDetail({
         <ScrollArea className="flex-1">
           <div className="space-y-4 p-4">
             {/* Date & Time */}
-            <div className="bg-muted/50 rounded-xl p-4">
+            <div className="bg-muted/50  p-4">
               <div className="flex items-start gap-3">
                 <div className="bg-brand/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
                   {allDay ? (
@@ -196,7 +196,7 @@ export function CalendarEventDetail({
 
             {/* Location */}
             {event.location && (
-              <div className="bg-muted/50 rounded-xl p-4">
+              <div className="bg-muted/50  p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-azure/10">
                     <MapPin className="size-5 text-accent-azure" />
@@ -243,7 +243,7 @@ export function CalendarEventDetail({
 
             {/* Description */}
             {event.description && (
-              <div className="bg-muted/50 rounded-xl p-4">
+              <div className="bg-muted/50  p-4">
                 <h3 className="mb-2 font-semibold">Description</h3>
                 <p className="text-muted-foreground text-sm whitespace-pre-wrap">
                   {event.description}
@@ -253,7 +253,7 @@ export function CalendarEventDetail({
 
             {/* Attendees */}
             {event.attendees && event.attendees.length > 0 && (
-              <div className="bg-muted/50 rounded-xl p-4">
+              <div className="bg-muted/50  p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <Users className="text-muted-foreground size-4" />
                   <h3 className="font-semibold">
@@ -287,7 +287,7 @@ export function CalendarEventDetail({
             {event.reminders &&
               !event.reminders.useDefault &&
               event.reminders.overrides && (
-                <div className="bg-muted/50 rounded-xl p-4">
+                <div className="bg-muted/50  p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Bell className="text-muted-foreground size-4" />
                     <h3 className="font-semibold">Reminders</h3>

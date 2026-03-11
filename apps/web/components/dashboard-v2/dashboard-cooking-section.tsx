@@ -16,24 +16,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { TagMultiSelect } from '@/components/ui/tag-multi-select'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ViewToggle } from '@/components/ui/view-toggle'
 import { useCooking } from '@/hooks/use-cooking-data'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Dices, ImageIcon, Plus, Search, ShoppingCart, Snowflake, Star, Wand2, X } from 'lucide-react'
+import { ChefHat, Dices, ImageIcon, Plus, Search, ShoppingCart, Snowflake, Star, Wand2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
@@ -188,9 +188,13 @@ function DashboardCookingContent() {
   return (
     <>
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Top bar: Meal plan controls (day cards handle the plan) */}
+        {/* Top bar: Section title + meal plan controls (day cards handle the plan) */}
         <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-border/50 bg-card/40">
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <ChefHat className="size-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold">Cooking</h2>
+            </div>
             {plannedMealsCount > 0 && (
               <Badge variant="secondary" className="h-5 px-2 text-[10px] tabular-nums">
                 {plannedMealsCount} planned
@@ -240,7 +244,7 @@ function DashboardCookingContent() {
         <MealPlanSwipeDialog open={swipeOpen} onOpenChange={setSwipeOpen} />
         <MealPlanWizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
 
-        <div className="flex-1 min-h-0 flex overflow-hidden pt-3">
+        <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* Shopping sidebar - collapsible */}
           <AnimatePresence>
             {sidebarOpen && (
@@ -249,7 +253,7 @@ function DashboardCookingContent() {
                 animate={{ width: 280, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="hidden shrink-0 flex-col border-r border-border overflow-hidden lg:flex"
+                className="hidden shrink-0 flex-col overflow-hidden lg:flex"
                 style={{ display: 'flex' }}
               >
                 <ScrollArea className="flex-1 min-h-0">
@@ -263,7 +267,7 @@ function DashboardCookingContent() {
           </AnimatePresence>
 
           {/* Recipe area */}
-          <div className="flex flex-1 flex-col overflow-hidden min-w-0 rounded-xl border border-border/50 bg-card">
+          <div className="flex flex-1 flex-col overflow-hidden min-w-0 bg-card">
             {/* Recipe Header: Search + Filters (matching main cooking page) */}
             <div className="border-b border-border/40">
               {/* Row 1: Search + Actions */}

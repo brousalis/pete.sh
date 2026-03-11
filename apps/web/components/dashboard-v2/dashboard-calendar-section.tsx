@@ -1,24 +1,24 @@
 'use client'
 
 import {
-    CalendarAgendaView,
-    CalendarDayView,
-    CalendarEventDetail,
-    CalendarFitnessSidebar,
-    CalendarHeader,
-    CalendarMealPlanSidebar,
-    CalendarMini,
-    CalendarMonthGrid,
-    CalendarWeekView,
+  CalendarAgendaView,
+  CalendarDayView,
+  CalendarEventDetail,
+  CalendarFitnessSidebar,
+  CalendarHeader,
+  CalendarMealPlanSidebar,
+  CalendarMini,
+  CalendarMonthGrid,
+  CalendarWeekView,
 } from '@/components/calendar'
 import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import type { CalendarViewMode } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import { cn } from '@/lib/utils'
 import {
-    filterEvents,
-    generateFitnessEvents,
-    generateMealPlanEvents
+  filterEvents,
+  generateFitnessEvents,
+  generateMealPlanEvents
 } from '@/lib/utils/calendar-utils'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -102,7 +102,7 @@ export function DashboardCalendarSection() {
       {/* Left sidebar - in normal flow, determines container height */}
       <aside
         className={cn(
-          'hidden flex-col gap-3 border-r border-border/50 md:flex',
+          'hidden flex-col border-r border-border/50 md:flex',
           'w-[280px]'
         )}
       >
@@ -129,7 +129,7 @@ export function DashboardCalendarSection() {
           loading={false}
         />
 
-        <div className="border-border/50 bg-card flex flex-col overflow-hidden rounded-xl border">
+        <div className="border-border/50 bg-card flex flex-col overflow-hidden border">
           <div className="border-border/50 shrink-0 border-b px-3 py-2">
             <h3 className="text-xs font-semibold">
               {isSameDay(selectedDate, new Date())
@@ -173,8 +173,9 @@ export function DashboardCalendarSection() {
       </aside>
 
       {/* Main calendar view - absolutely positioned, height constrained by sidebar */}
-      <main className="absolute top-0 bottom-0 left-[calc(280px+0.75rem)] right-0 flex flex-col min-w-0 overflow-hidden">
+      <main className="absolute top-0 bottom-0 left-[calc(268px+0.75rem)] right-0 flex flex-col min-w-0 overflow-hidden">
         <CalendarHeader
+          sectionTitle="Calendar"
           currentDate={selectedDate}
           viewMode={viewMode}
           searchQuery={searchQuery}
@@ -185,7 +186,7 @@ export function DashboardCalendarSection() {
           onRefresh={refetch}
         />
 
-        <div className="flex-1 min-h-0 overflow-auto rounded-lg">
+        <div className="flex-1 min-h-0 overflow-auto">
           <AnimatePresence mode="wait" custom={slideDirection}>
             {viewMode === 'month' && (
               <motion.div

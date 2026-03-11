@@ -12,6 +12,8 @@ type FitnessTab = 'today' | 'week' | 'edit'
 export interface FitnessPageContentProps {
   /** When true, uses internal state only (no URL sync). Use when embedded in dashboard. */
   embedded?: boolean
+  /** When embedded, show this section title on the same line as Day/Week filters. */
+  sectionTitle?: string
   /** When embedded, the date is controlled by the parent. Pass selectedDate from dashboard. */
   selectedDate?: Date
   /** When embedded, called when fitness view wants to navigate (e.g. user picks day from week view). */
@@ -20,6 +22,7 @@ export interface FitnessPageContentProps {
 
 export function FitnessPageContent({
   embedded = false,
+  sectionTitle,
   selectedDate: controlledSelectedDate,
   onDateChange,
 }: FitnessPageContentProps) {
@@ -79,12 +82,14 @@ export function FitnessPageContent({
         <FitnessSingleView
           initialDate={initialDate}
           controlledDate={embedded ? controlledSelectedDate ?? null : null}
+          sectionTitle={sectionTitle}
           onSwitchToEdit={() => handleTabChange('edit')}
           onSwitchToWeek={() => handleTabChange('week')}
         />
       )}
       {activeTab === 'week' && (
         <FitnessKanbanView
+          sectionTitle={sectionTitle}
           onSwitchToDay={(date) => handleTabChange('today', date)}
           onSwitchToEdit={() => handleTabChange('edit')}
         />
