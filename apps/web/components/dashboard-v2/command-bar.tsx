@@ -3,37 +3,37 @@
 import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import { Button } from '@/components/ui/button'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover'
 import { getFocusConfig } from '@/lib/constants/fitness-colors'
+import type { DayOfWeek } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  addDays,
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameDay,
-  isSameMonth,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
+    addDays,
+    addMonths,
+    eachDayOfInterval,
+    endOfMonth,
+    endOfWeek,
+    format,
+    isSameDay,
+    isSameMonth,
+    startOfMonth,
+    startOfWeek,
+    subMonths,
 } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Cloud,
-  CloudRain,
-  CloudSnow,
-  Sun,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    Cloud,
+    CloudRain,
+    CloudSnow,
+    Sun,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { DayOfWeek } from '@/lib/types/fitness.types'
 
 function getGreeting(
   hour: number,

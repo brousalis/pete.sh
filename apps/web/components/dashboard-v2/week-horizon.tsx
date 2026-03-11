@@ -5,18 +5,18 @@ import { WeekDayCell } from '@/components/dashboard-v2/week-day-cell'
 import { useCooking } from '@/hooks/use-cooking-data'
 import type { DayOfWeek } from '@/lib/types/fitness.types'
 import {
-  addDays,
-  format,
-  isSameDay,
-  startOfWeek,
+    generateFitnessEvents,
+    generateMealPlanEvents,
+    getEventsForDay,
+} from '@/lib/utils/calendar-utils'
+import {
+    addDays,
+    format,
+    isSameDay,
+    startOfWeek,
 } from 'date-fns'
 import { motion } from 'framer-motion'
 import { useMemo } from 'react'
-import {
-  generateFitnessEvents,
-  generateMealPlanEvents,
-  getEventsForDay,
-} from '@/lib/utils/calendar-utils'
 
 const DAY_KEYS: DayOfWeek[] = [
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',

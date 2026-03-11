@@ -1,26 +1,26 @@
 'use client'
 
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { getFocusConfig, getTempColor } from '@/lib/constants/fitness-colors'
-import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import type { MealPlan } from '@/lib/types/cooking.types'
+import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import { format, isSameDay } from 'date-fns'
 import { motion } from 'framer-motion'
 import {
-  CalendarDays,
-  Check,
-  Dices,
-  Plus,
-  ShoppingCart,
-  SkipForward,
-  Undo2,
-  X,
+    CalendarDays,
+    Check,
+    Dices,
+    Plus,
+    ShoppingCart,
+    SkipForward,
+    Undo2,
+    X,
 } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 
 interface WeekDayCellProps {
   date: Date
@@ -113,11 +113,14 @@ export function WeekDayCell({
   }
 
   return (
-    <motion.button
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={handleCellClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(e as unknown as React.MouseEvent) } }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        'relative flex flex-col items-center justify-center gap-1 py-3 px-1 transition-colors duration-150 min-w-0',
+        'relative flex flex-col items-center justify-center gap-1 py-3 px-1 transition-colors duration-150 min-w-0 cursor-pointer',
         !isActive && 'hover:bg-muted/50',
         isActive && 'bg-muted',
         allDone && isPast && !isActive && 'bg-accent-sage/[0.03]',
@@ -406,6 +409,6 @@ export function WeekDayCell({
           </Tooltip>
         )}
       </div>
-    </motion.button>
+    </motion.div>
   )
 }

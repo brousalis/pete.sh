@@ -2,11 +2,11 @@
 
 import type { AppSettings, AppSettingsUpdate } from '@/lib/types/settings.types'
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
 } from 'react'
 
 // Default settings to use before fetching from API

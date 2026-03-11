@@ -35,13 +35,13 @@ import {
 } from '@/components/ui/tooltip'
 import { ViewToggle } from '@/components/ui/view-toggle'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
+import { HEX } from '@/lib/constants/colors'
 import type {
   ConsistencyStats,
   DayOfWeek,
   WeeklyRoutine,
   Workout,
 } from '@/lib/types/fitness.types'
-import { HEX } from '@/lib/constants/colors'
 import { cn } from '@/lib/utils'
 import {
   DAYS_OF_WEEK,
@@ -1601,7 +1601,7 @@ export function FitnessSingleView({
         </PageHeader>
 
         {/* Main 3-Panel Layout - Stacks vertically on mobile, workout first */}
-        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[230px_1fr_230px] xl:grid-cols-[280px_1fr_280px] 2xl:grid-cols-[320px_1fr_320px] md:overflow-hidden">
+        <div className="flex flex-col gap-2 sm:gap-3 overflow-y-auto pb-4 md:pb-0 md:grid md:min-h-0 md:flex-1 md:grid-cols-[280px_1fr_280px] md:overflow-hidden">
           {/* Morning Panel - Shows viewed day's data (order-2 on mobile to show after workout) */}
           <StretchPanel
             routine={routine.dailyRoutines.morning}

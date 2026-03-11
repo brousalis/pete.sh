@@ -36,6 +36,8 @@ interface RecipeListProps {
   onNewRecipe?: () => void
   className?: string
   cardImageSize?: number
+  /** Scroll container ref for IntersectionObserver. Use when list is inside a constrained scroll area to prevent infinite load. */
+  scrollRootRef?: React.RefObject<HTMLDivElement | null>
 }
 
 export function RecipeList({
@@ -44,6 +46,7 @@ export function RecipeList({
   onNewRecipe,
   className,
   cardImageSize,
+  scrollRootRef,
 }: RecipeListProps) {
   const {
     recipes,
@@ -184,13 +187,14 @@ export function RecipeList({
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
+    const root = scrollRootRef?.current ?? null
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry?.isIntersecting) loadMore() },
-      { rootMargin: '200px' }
+      { root, rootMargin: '200px' }
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [loadMore])
+  }, [loadMore, scrollRootRef])
 
   const showDiscovery =
     sourceFilter !== 'my-recipes' && !debouncedSearch && selectedCategories.size === 0

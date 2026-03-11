@@ -1,29 +1,23 @@
 'use client'
 
-import { FitnessPageContent } from '@/components/dashboard/fitness-page-content'
+import { CookCompletionDialog } from '@/components/cooking/cooking-sidebar'
+import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
 import { CommandBar } from '@/components/dashboard-v2/command-bar'
+import { DashboardCalendarSection } from '@/components/dashboard-v2/dashboard-calendar-section'
+import { DashboardCookingSection } from '@/components/dashboard-v2/dashboard-cooking-section'
 import {
   DashboardV2Provider,
   useDashboardV2,
 } from '@/components/dashboard-v2/dashboard-v2-provider'
-import { DashboardCalendarSection } from '@/components/dashboard-v2/dashboard-calendar-section'
-import { DashboardCookingSection } from '@/components/dashboard-v2/dashboard-cooking-section'
 import { DayFlowMobile } from '@/components/dashboard-v2/day-flow-mobile'
-import {
-  type DashboardSection,
-  SectionTabs,
-} from '@/components/dashboard-v2/section-tabs'
 import {
   CommandBarSkeleton,
   WeekHorizonSkeleton,
   WorkoutStageSkeleton,
 } from '@/components/dashboard-v2/skeletons'
 import { WeekHorizon } from '@/components/dashboard-v2/week-horizon'
-import { CookCompletionDialog } from '@/components/cooking/cooking-sidebar'
-import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
+import { FitnessPageContent } from '@/components/dashboard/fitness-page-content'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -32,11 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import type { DayOfWeek } from '@/lib/types/fitness.types'
 import { addDays, startOfWeek } from 'date-fns'
-import { AnimatePresence, motion } from 'framer-motion'
-import { MessageSquare, SkipForward } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { CalendarDays, ChefHat, Dumbbell, MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 /** Syncs CookingProvider's currentWeek with dashboard selectedDate */
@@ -63,7 +59,6 @@ function DashboardContent() {
     completeRoutine,
   } = useDashboardV2()
 
-  const [activeSection, setActiveSection] = useState<DashboardSection>('fitness')
   const [pickerSlot, setPickerSlot] = useState<{
     day: DayOfWeek
     meal: string
@@ -191,45 +186,61 @@ function DashboardContent() {
   return (
     <div className="flex flex-col h-full">
       <CookingWeekSync />
-      <CommandBar />
-      <WeekHorizon
-        onAddDinner={(day) => setPickerSlot({ day, meal: 'dinner' })}
-        onRecipeClick={handleRecipeClick}
-        onMarkCooked={handleMarkCooked}
-        onRemoveMeal={(day, meal) => cooking.updateMealSlot(day, meal, null)}
-        onAddToShopping={(recipeId) => cooking.addRecipeToShoppingList(recipeId)}
-        onRandomFill={handleRandomFill}
-        onSkipDay={(day) => setSkipNoteDay(day)}
-        onUnskipDay={(day) => cooking.unskipDay(day)}
-        isSlotCompleted={cooking.isSlotCompleted}
-        randomizingDay={randomizingDay}
-      />
-      <SectionTabs activeSection={activeSection} onSectionChange={setActiveSection} />
-      <DayFlowMobile />
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+        <CommandBar />
+        <WeekHorizon
+          onAddDinner={(day) => setPickerSlot({ day, meal: 'dinner' })}
+          onRecipeClick={handleRecipeClick}
+          onMarkCooked={handleMarkCooked}
+          onRemoveMeal={(day, meal) => cooking.updateMealSlot(day, meal, null)}
+          onAddToShopping={(recipeId) => cooking.addRecipeToShoppingList(recipeId)}
+          onRandomFill={handleRandomFill}
+          onSkipDay={(day) => setSkipNoteDay(day)}
+          onUnskipDay={(day) => cooking.unskipDay(day)}
+          isSlotCompleted={cooking.isSlotCompleted}
+          randomizingDay={randomizingDay}
+        />
+        <DayFlowMobile />
 
-      {activeSection === 'fitness' && (
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <FitnessPageContent
-            embedded
-            selectedDate={selectedDate}
-            onDateChange={(date) =>
-              navigateToDay(date, date > selectedDate ? 'forward' : 'backward')
-            }
-          />
-        </div>
-      )}
+        {/* Fitness */}
+        <section className="shrink-0 flex flex-col border-b border-border">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
+            <Dumbbell className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">Fitness</h2>
+          </div>
+          <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
+            <FitnessPageContent
+              embedded
+              selectedDate={selectedDate}
+              onDateChange={(date) =>
+                navigateToDay(date, date > selectedDate ? 'forward' : 'backward')
+              }
+            />
+          </div>
+        </section>
 
-      {activeSection === 'cooking' && (
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <DashboardCookingSection />
-        </div>
-      )}
+        {/* Cooking */}
+        <section className="min-h-[320px] shrink-0 flex flex-col border-b border-border">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
+            <ChefHat className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">Cooking</h2>
+          </div>
+          <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
+            <DashboardCookingSection />
+          </div>
+        </section>
 
-      {activeSection === 'calendar' && (
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <DashboardCalendarSection />
-        </div>
-      )}
+        {/* Calendar */}
+        <section className="shrink-0 flex flex-col border-b border-border">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card/40">
+            <CalendarDays className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">Calendar</h2>
+          </div>
+          <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
+            <DashboardCalendarSection />
+          </div>
+        </section>
+      </div>
 
       <RecipePickerDialog
         open={!!pickerSlot}

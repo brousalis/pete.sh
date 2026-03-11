@@ -53,7 +53,7 @@ export function DateNavigator({
 
   return (
     <div className={cn('flex items-center', cfg.gap, className)}>
-      <div className="flex items-center rounded-md border border-border/50">
+      <div className="flex items-center border border-border/50">
         <Button
           variant="ghost"
           size="icon"

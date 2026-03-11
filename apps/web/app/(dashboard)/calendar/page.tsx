@@ -462,7 +462,7 @@ export default function CalendarPage() {
         <aside
           className={cn(
             'border-border/50 hidden shrink-0 flex-col gap-3 overflow-hidden border-r md:flex',
-            'w-[250px] lg:w-[270px]'
+            'w-[280px]'
           )}
         >
           {/* Mini Calendar */}

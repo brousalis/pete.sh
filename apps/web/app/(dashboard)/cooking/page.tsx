@@ -543,7 +543,7 @@ function CookingPageContent() {
               {sidebarOpen && (
                 <motion.aside
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 340, opacity: 1 }}
+                  animate={{ width: 280, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2, ease: 'easeInOut' }}
                   className="hidden shrink-0 flex-col border-r border-border/40 overflow-hidden lg:flex"
