@@ -35,7 +35,7 @@ export function ProgressRing({
   return (
     <div
       className={cn(
-        'rounded-xl px-4 py-3 border bg-white/[0.02] border-white/[0.06]',
+        'rounded-xl px-4 py-3 border border-border bg-card shadow-sm ring-1 ring-border/40 ring-inset',
         className
       )}
     >
@@ -61,7 +61,7 @@ export function ProgressRing({
                   fill="none"
                   strokeWidth={strokeWidth}
                   strokeLinecap="round"
-                  className="stroke-white/[0.06]"
+                  className="stroke-border"
                   strokeDasharray={`${segmentArc} ${circumference - segmentArc}`}
                   strokeDashoffset={-offset}
                 />
@@ -104,7 +104,7 @@ export function ProgressRing({
                 <Check className="size-5 text-accent-sage" />
               </motion.div>
             ) : (
-              <span className="text-base font-bold tabular-nums text-white">
+              <span className="text-base font-bold tabular-nums text-foreground" title={`${completedCount} of ${segments.length} completed`}>
                 {completedCount}/{segments.length}
               </span>
             )}
@@ -112,7 +112,7 @@ export function ProgressRing({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-white/80 mb-1.5">
+          <p className="text-[11px] font-semibold text-foreground mb-1.5">
             {allDone ? 'All done today' : 'Today\'s progress'}
           </p>
           <div className="space-y-1">
@@ -123,15 +123,15 @@ export function ProgressRing({
                     'size-[6px] rounded-full',
                     seg.completed
                       ? seg.color.replace('stroke-', 'bg-')
-                      : 'bg-white/15'
+                      : 'bg-muted'
                   )}
                 />
                 <span
                   className={cn(
                     'text-[10px]',
                     seg.completed
-                      ? 'text-white/40 line-through'
-                      : 'text-white/60'
+                      ? 'text-muted-foreground line-through'
+                      : 'text-muted-foreground'
                   )}
                 >
                   {seg.label}

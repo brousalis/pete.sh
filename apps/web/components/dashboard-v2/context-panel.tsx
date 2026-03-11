@@ -1,15 +1,15 @@
 'use client'
 
-import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import { ActivitySummary } from '@/components/dashboard-v2/activity-summary'
+import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import { EventList } from '@/components/dashboard-v2/event-list'
 import { MealSpotlight } from '@/components/dashboard-v2/meal-spotlight'
 import { NowPlayingBar } from '@/components/dashboard-v2/now-playing-bar'
 import { ProgressRing } from '@/components/dashboard-v2/progress-ring'
 import { QuickActions } from '@/components/dashboard-v2/quick-actions'
 import { ShoppingSummary } from '@/components/dashboard-v2/shopping-summary'
-import { motion } from 'framer-motion'
 import { staggerContainerVariants, staggerItemVariants } from '@/lib/animations'
+import { motion } from 'framer-motion'
 
 export function ContextPanel() {
   const {
@@ -49,9 +49,9 @@ export function ContextPanel() {
   ]
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide">
+    <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide bg-muted/20">
       <motion.div
-        className="flex flex-col gap-2.5 p-2.5"
+        className="flex flex-col gap-3 p-3"
         initial="hidden"
         animate="visible"
         variants={staggerContainerVariants}

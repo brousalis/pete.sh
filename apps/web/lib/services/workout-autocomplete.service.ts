@@ -288,11 +288,13 @@ class WorkoutAutocompleteService {
 
   /**
    * Gets linked HealthKit workouts for exercises on a given day
+   * routineId is required to use the (routine_id, day_of_week, week_number, year) index
    */
   async getLinkedWorkoutsForDay(
     dayOfWeek: DayOfWeek,
     weekNumber: number,
-    year: number
+    year: number,
+    routineId: string = 'climber-physique'
   ): Promise<Map<string, string[]>> {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) {
@@ -304,6 +306,7 @@ class WorkoutAutocompleteService {
       const { data, error } = await (supabase as any)
         .from('exercise_healthkit_links')
         .select('exercise_id, healthkit_workout_id')
+        .eq('routine_id', routineId)
         .eq('day_of_week', dayOfWeek)
         .eq('week_number', weekNumber)
         .eq('year', year)

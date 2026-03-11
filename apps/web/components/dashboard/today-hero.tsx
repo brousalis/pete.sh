@@ -111,7 +111,7 @@ export function TodayHero() {
   if (!mounted) {
     return (
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card/80 to-card p-6 md:p-8">
-        <div className="h-24 animate-pulse rounded-lg bg-white/5" />
+        <div className="h-24 animate-pulse rounded-lg bg-muted/50" />
       </div>
     )
   }
@@ -151,7 +151,7 @@ export function TodayHero() {
           {/* Left: Time & Greeting */}
           <motion.div className="space-y-1" variants={staggerItemVariants}>
             <motion.p
-              className="text-sm font-medium text-white/60"
+              className="text-sm font-medium text-muted-foreground"
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ ...transitions.smooth, delay: 0.1 }}
@@ -164,15 +164,15 @@ export function TodayHero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.smooth, delay: 0.15 }}
             >
-              <span className="text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
+              <span className="text-5xl font-bold tracking-tight text-foreground tabular-nums md:text-6xl">
                 {timeString}
               </span>
-              <span className="text-2xl font-medium text-white/50 md:text-3xl">
+              <span className="text-2xl font-medium text-muted-foreground md:text-3xl">
                 {ampm}
               </span>
             </motion.div>
             <motion.p
-              className="text-base text-white/70 md:text-lg"
+              className="text-base text-muted-foreground md:text-lg"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ ...transitions.smooth, delay: 0.2 }}
@@ -194,7 +194,7 @@ export function TodayHero() {
               {/* Weather */}
               {weather && (
                 <motion.div
-                  className="flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm"
+                  className="flex items-center gap-4 rounded-xl bg-muted/50 px-4 py-3 backdrop-blur-sm"
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ ...transitions.smooth, delay: 0.25 }}
@@ -212,17 +212,17 @@ export function TodayHero() {
                   </motion.span>
                   <div className="text-right">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-white tabular-nums md:text-4xl">
+                      <span className="text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                         {tempF ?? '--'}
                       </span>
-                      <span className="text-lg text-white/50">°F</span>
+                      <span className="text-lg text-muted-foreground">°F</span>
                     </div>
                     {showFeelsLike && (
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted-foreground">
                         Feels like {feelsLikeF}°
                       </p>
                     )}
-                    <p className="text-xs font-medium text-white/60">
+                    <p className="text-xs font-medium text-muted-foreground">
                       {weather.properties.textDescription || 'Weather'}
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export function TodayHero() {
 
                 return (
                   <motion.div
-                    className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-2.5 backdrop-blur-sm"
+                    className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-2.5 backdrop-blur-sm"
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ ...transitions.smooth, delay: 0.3 }}
@@ -270,10 +270,10 @@ export function TodayHero() {
                       <Calendar className="text-brand size-4" />
                     </motion.div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">
+                      <p className="truncate text-sm font-medium text-foreground">
                         {nextEvent.summary}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted-foreground">
                         {timeDisplay}
                         {nextEvent.location && (
                           <span className="ml-2">

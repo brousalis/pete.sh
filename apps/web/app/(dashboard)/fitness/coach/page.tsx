@@ -82,16 +82,16 @@ function ToolInvocationBadge({
   const isRunning = state === 'call' || state === 'partial-call'
 
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
           <Wrench className="h-3 w-3 text-accent-sage" />
         )}
-        <span className="font-medium text-white/80">{meta.label}</span>
+        <span className="font-medium text-foreground">{meta.label}</span>
         {Object.keys(args).length > 0 && (
-          <span className="text-white/30">
+          <span className="text-muted-foreground">
             ({Object.entries(args)
               .map(([k, v]) => `${k}: ${v}`)
               .join(', ')})
@@ -104,14 +104,14 @@ function ToolInvocationBadge({
         )}
       </div>
       {(state === 'result' && result && (
-        <div className="mt-1.5 max-h-20 overflow-y-auto text-[10px] text-white/40 font-mono leading-relaxed">
+        <div className="mt-1.5 max-h-20 overflow-y-auto text-[10px] text-muted-foreground font-mono leading-relaxed">
           {Array.isArray(result)
             ? result.slice(0, 5).map((r, i) => <div key={i}>{String(r)}</div>)
             : typeof result === 'object'
               ? JSON.stringify(result, null, 1).slice(0, 200)
               : String(result).slice(0, 200)}
           {Array.isArray(result) && result.length > 5 && (
-            <div className="text-white/20">...and {result.length - 5} more</div>
+            <div className="text-muted-foreground">...and {result.length - 5} more</div>
           )}
         </div>
       )) as React.ReactNode}
@@ -133,7 +133,7 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
   if (!tokens && !model && !createdAt) return null
 
   return (
-    <div className="flex items-center gap-3 mt-1 text-[10px] text-white/20">
+    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
       {model && (
         <span className="flex items-center gap-0.5">
           <Brain className="h-2.5 w-2.5" />
@@ -183,17 +183,17 @@ function ReadinessBar({ readiness }: { readiness: TrainingReadiness }) {
         <span className={`text-lg font-bold tabular-nums ${color}`}>
           {readiness.score}
         </span>
-        <span className="text-xs text-white/40 capitalize">
+        <span className="text-xs text-muted-foreground capitalize">
           {readiness.level}
         </span>
       </div>
-      <div className="h-2 w-32 rounded-full bg-white/10">
+      <div className="h-2 w-32 rounded-full bg-muted">
         <div
           className={`h-full rounded-full ${bg}`}
           style={{ width: `${readiness.score}%` }}
         />
       </div>
-      <span className="text-xs text-white/40 max-w-xs truncate">
+      <span className="text-xs text-muted-foreground max-w-xs truncate">
         {readiness.todayRecommendation}
       </span>
     </div>
@@ -292,17 +292,17 @@ function ChatHistorySidebar({
   if (!isOpen) return null
 
   return (
-    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-card/50">
+    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-border bg-card/50">
       {/* Sidebar header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
+      <div className="flex items-center justify-between border-b border-border px-3 py-3">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-white/50" />
-          <span className="text-xs font-semibold text-white/70">History</span>
+          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">History</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 text-white/50 hover:text-white"
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
           onClick={onNewChat}
           title="New Chat"
         >
@@ -314,9 +314,9 @@ function ChatHistorySidebar({
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <MessageSquare className="h-8 w-8 text-white/10 mb-2" />
-            <p className="text-xs text-white/30">No conversations yet</p>
-            <p className="text-[10px] text-white/20 mt-1">
+            <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground">No conversations yet</p>
+            <p className="text-[10px] text-muted-foreground mt-1">
               Start a chat to see it here
             </p>
           </div>
@@ -327,7 +327,7 @@ function ChatHistorySidebar({
               if (!items || items.length === 0) return null
               return (
                 <div key={groupName}>
-                  <div className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-white/25">
+                  <div className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     {groupName}
                   </div>
                   <div className="space-y-0.5">
@@ -340,20 +340,20 @@ function ChatHistorySidebar({
                           className={cn(
                             'group relative flex items-center rounded-md px-2 py-2 cursor-pointer transition-all',
                             isActive
-                              ? 'bg-white/10 border-l-2 border-accent-violet pl-1.5'
-                              : 'hover:bg-white/5 border-l-2 border-transparent'
+                              ? 'bg-muted border-l-2 border-accent-violet pl-1.5'
+                              : 'hover:bg-muted/50 border-l-2 border-transparent'
                           )}
                           onClick={() => onSelect(conv.id)}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="truncate text-xs font-medium text-white/70 group-hover:text-white/90">
+                            <div className="truncate text-xs font-medium text-foreground group-hover:text-foreground">
                               {conv.title}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-white/25">
+                              <span className="text-[10px] text-muted-foreground">
                                 {formatRelativeTime(conv.updatedAt)}
                               </span>
-                              <span className="text-[10px] text-white/20">
+                              <span className="text-[10px] text-muted-foreground">
                                 {conv.messageCount} msgs
                               </span>
                             </div>
@@ -372,7 +372,7 @@ function ChatHistorySidebar({
                                 Delete
                               </button>
                               <button
-                                className="rounded px-1.5 py-0.5 text-[10px] text-white/40 hover:text-white/60 transition-colors"
+                                className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setConfirmDeleteId(null)
@@ -383,7 +383,7 @@ function ChatHistorySidebar({
                             </div>
                           ) : (
                             <button
-                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
+                              className="ml-1 rounded p-1 text-transparent group-hover:text-muted-foreground hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setConfirmDeleteId(conv.id)
@@ -617,11 +617,11 @@ export default function AiCoachPage() {
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-white/50 hover:text-white"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen((v) => !v)}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
           >
@@ -631,7 +631,7 @@ export default function AiCoachPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-white/60 hover:text-white"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               Fitness
@@ -639,7 +639,7 @@ export default function AiCoachPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-accent-violet" />
-            <h1 className="text-lg font-semibold text-white">AI Coach</h1>
+            <h1 className="text-lg font-semibold text-foreground">AI Coach</h1>
           </div>
           <div className="flex-1" />
           {readiness && (
@@ -652,7 +652,7 @@ export default function AiCoachPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-xs text-white/50 hover:text-white"
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               onClick={handleNewChat}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -671,10 +671,10 @@ export default function AiCoachPage() {
             <div className="mx-auto max-w-2xl mt-8">
               <div className="text-center mb-8">
                 <Brain className="h-12 w-12 text-accent-violet/50 mx-auto mb-3" />
-                <h2 className="text-xl font-medium text-white/70 mb-1">
+                <h2 className="text-xl font-medium text-foreground mb-1">
                   What would you like to know?
                 </h2>
-                <p className="text-sm text-white/30">
+                <p className="text-sm text-muted-foreground">
                   Ask about your training, body composition, readiness, or get
                   coaching advice.
                 </p>
@@ -685,7 +685,7 @@ export default function AiCoachPage() {
                     key={action.label}
                     variant="outline"
                     size="sm"
-                    className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
+                    className="h-auto py-3 px-4 text-left justify-start text-foreground hover:text-foreground border-border hover:border-border"
                     onClick={() => handleQuickAction(action.prompt)}
                   >
                     <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-accent-violet/70" />
@@ -710,7 +710,7 @@ export default function AiCoachPage() {
                     className={`max-w-[80%] rounded-lg px-4 py-3 text-sm ${
                       message.role === 'user'
                         ? 'bg-accent-violet/30 text-white'
-                        : 'bg-white/5 text-white/80 border border-white/10'
+                        : 'bg-muted/30 text-foreground border border-border'
                     }`}
                   >
                     <div>
@@ -723,27 +723,27 @@ export default function AiCoachPage() {
                               <ReactMarkdown
                                 components={{
                                   h1: ({ children }) => (
-                                    <h1 className="text-base font-bold text-white mt-3 mb-1.5 first:mt-0">
+                                    <h1 className="text-base font-bold text-foreground mt-3 mb-1.5 first:mt-0">
                                       {children}
                                     </h1>
                                   ),
                                   h2: ({ children }) => (
-                                    <h2 className="text-sm font-semibold text-white mt-3 mb-1 first:mt-0">
+                                    <h2 className="text-sm font-semibold text-foreground mt-3 mb-1 first:mt-0">
                                       {children}
                                     </h2>
                                   ),
                                   h3: ({ children }) => (
-                                    <h3 className="text-sm font-medium text-white/90 mt-2 mb-1 first:mt-0">
+                                    <h3 className="text-sm font-medium text-foreground mt-2 mb-1 first:mt-0">
                                       {children}
                                     </h3>
                                   ),
                                   p: ({ children }) => (
-                                    <p className="text-sm text-white/80 mb-2 last:mb-0 leading-relaxed">
+                                    <p className="text-sm text-foreground mb-2 last:mb-0 leading-relaxed">
                                       {children}
                                     </p>
                                   ),
                                   strong: ({ children }) => (
-                                    <strong className="font-semibold text-white">
+                                    <strong className="font-semibold text-foreground">
                                       {children}
                                     </strong>
                                   ),
@@ -753,27 +753,27 @@ export default function AiCoachPage() {
                                     </em>
                                   ),
                                   ul: ({ children }) => (
-                                    <ul className="list-disc list-inside text-sm text-white/80 mb-2 space-y-0.5">
+                                    <ul className="list-disc list-inside text-sm text-foreground mb-2 space-y-0.5">
                                       {children}
                                     </ul>
                                   ),
                                   ol: ({ children }) => (
-                                    <ol className="list-decimal list-inside text-sm text-white/80 mb-2 space-y-0.5">
+                                    <ol className="list-decimal list-inside text-sm text-foreground mb-2 space-y-0.5">
                                       {children}
                                     </ol>
                                   ),
                                   li: ({ children }) => (
-                                    <li className="text-white/80">
+                                    <li className="text-foreground">
                                       {children}
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-violet/70">
+                                    <code className="bg-muted rounded px-1 py-0.5 text-xs font-mono text-accent-violet/70">
                                       {children}
                                     </code>
                                   ),
                                   hr: () => (
-                                    <hr className="border-white/10 my-3" />
+                                    <hr className="border-border my-3" />
                                   ),
                                 }}
                               >
@@ -886,7 +886,7 @@ export default function AiCoachPage() {
                     })
                 ) && (
                   <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+                    <div className="bg-muted/30 border border-border rounded-lg px-4 py-3">
                       <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                     </div>
                   </div>
@@ -908,7 +908,7 @@ export default function AiCoachPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-white/10 px-6 py-4">
+        <div className="border-t border-border px-6 py-4">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -924,7 +924,7 @@ export default function AiCoachPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent-violet/50"
+              className="flex-1 bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent-violet/50"
               disabled={status !== 'ready'}
             />
             <Button

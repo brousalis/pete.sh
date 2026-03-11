@@ -218,7 +218,7 @@ function FridgeMatchBadge({ score }: { score: number }) {
   return (
     <div className={cn('flex items-center gap-1 rounded-full px-1.5 py-0.5 backdrop-blur-sm shadow-sm', bgColor)}>
       <svg className="size-3.5" viewBox="0 0 16 16">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/30" />
         <circle
           cx="8"
           cy="8"

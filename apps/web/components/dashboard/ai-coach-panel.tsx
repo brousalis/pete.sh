@@ -78,16 +78,16 @@ function ToolInvocationBadge({
   const isRunning = state === "call" || state === "partial-call"
 
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
           <Wrench className="h-3 w-3 text-accent-sage" />
         )}
-        <span className="font-medium text-white/80">{meta.label}</span>
+        <span className="font-medium text-foreground/90">{meta.label}</span>
         {Object.keys(args).length > 0 && (
-          <span className="text-white/30">
+          <span className="text-muted-foreground/70">
             ({Object.entries(args)
               .map(([k, v]) => `${k}: ${v}`)
               .join(", ")})
@@ -100,14 +100,14 @@ function ToolInvocationBadge({
         )}
       </div>
       {(state === "result" && result && (
-        <div className="mt-1.5 max-h-20 overflow-y-auto text-[10px] text-white/40 font-mono leading-relaxed">
+        <div className="mt-1.5 max-h-20 overflow-y-auto text-[10px] text-muted-foreground font-mono leading-relaxed">
           {Array.isArray(result)
             ? result.slice(0, 5).map((r, i) => <div key={i}>{String(r)}</div>)
             : typeof result === "object"
               ? JSON.stringify(result, null, 1).slice(0, 200)
               : String(result).slice(0, 200)}
           {Array.isArray(result) && result.length > 5 && (
-            <div className="text-white/20">...and {result.length - 5} more</div>
+            <div className="text-muted-foreground/60">...and {result.length - 5} more</div>
           )}
         </div>
       )) as React.ReactNode}
@@ -129,7 +129,7 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
   if (!tokens && !model && !createdAt) return null
 
   return (
-    <div className="flex items-center gap-3 mt-1 text-[10px] text-white/20">
+    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60">
       {model && (
         <span className="flex items-center gap-0.5">
           <Brain className="h-2.5 w-2.5" />
@@ -179,9 +179,9 @@ function ReadinessGauge({ readiness }: { readiness: TrainingReadiness }) {
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+    <div className="rounded-lg border border-border bg-muted/30 p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs uppercase tracking-wider text-white/50">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">
           Training Readiness
         </span>
         <span
@@ -192,7 +192,7 @@ function ReadinessGauge({ readiness }: { readiness: TrainingReadiness }) {
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 w-full rounded-full bg-white/10 mb-3">
+      <div className="h-2 w-full rounded-full bg-muted mb-3">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
             readiness.score >= 80
@@ -220,13 +220,13 @@ function ReadinessGauge({ readiness }: { readiness: TrainingReadiness }) {
         {readiness.signals.map((signal, i) => (
           <div key={i} className="flex items-start gap-2 text-xs">
             {iconMap[signal.status]}
-            <span className="text-white/70">{signal.detail}</span>
+            <span className="text-foreground/80">{signal.detail}</span>
           </div>
         ))}
       </div>
 
       {/* Recommendation */}
-      <p className="mt-3 text-xs text-white/50 border-t border-white/10 pt-3">
+      <p className="mt-3 text-xs text-muted-foreground border-t border-border pt-3">
         {readiness.todayRecommendation}
       </p>
     </div>
@@ -257,16 +257,16 @@ function InsightCard({
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+    <div className="rounded-lg border border-border bg-muted/30 p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-accent-violet" />
-          <span className="text-sm font-medium text-white">AI Analysis</span>
+          <span className="text-sm font-medium text-foreground">AI Analysis</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 text-white/50"
+          className="h-6 w-6 p-0 text-muted-foreground"
           onClick={() => setExpanded(!expanded)}
         >
           <ChevronDown
@@ -275,7 +275,7 @@ function InsightCard({
         </Button>
       </div>
 
-      <p className="text-xs text-white/70 mb-3">
+      <p className="text-xs text-foreground/80 mb-3">
         {isFull ? analysis.progressSummary : (analysis as PostWorkoutAnalysis).workoutSummary}
       </p>
 
@@ -283,14 +283,14 @@ function InsightCard({
       {full?.bodyComposition && (
         <div className="flex items-center gap-3 text-xs mb-3">
           {trendIcon[full.bodyComposition.weightTrend]}
-          <span className="text-white/70">
+          <span className="text-foreground/80">
             {full.bodyComposition.currentWeight} lbs
             {full.bodyComposition.isCleanCut && (
               <span className="text-accent-sage ml-1">(clean cut)</span>
             )}
           </span>
           {full.bodyComposition.weeklyRate !== 0 && (
-            <span className="text-white/50">
+            <span className="text-muted-foreground">
               {full.bodyComposition.weeklyRate > 0 ? "+" : ""}
               {full.bodyComposition.weeklyRate.toFixed(1)} lbs/wk
             </span>
@@ -306,15 +306,15 @@ function InsightCard({
       )}
 
       {expanded && (
-        <div className="space-y-3 border-t border-white/10 pt-3">
+        <div className="space-y-3 border-t border-border pt-3">
           {/* Progressive overload suggestions */}
           {full && (full.progressiveOverload?.length ?? 0) > 0 && (
             <div>
-              <h4 className="text-xs font-medium text-white/50 mb-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground mb-1.5">
                 Progressive Overload
               </h4>
               {full.progressiveOverload.map((po: ProgressiveOverload, i: number) => (
-                <div key={i} className="text-xs text-white/70 flex items-center gap-1 mb-1">
+                <div key={i} className="text-xs text-foreground/80 flex items-center gap-1 mb-1">
                   <ArrowRight className="h-3 w-3 text-accent-azure" />
                   <span>
                     {po.exerciseName}:{" "}
@@ -330,15 +330,15 @@ function InsightCard({
           {/* Routine changes */}
           {full && (full.routineChanges?.length ?? 0) > 0 && (
             <div>
-              <h4 className="text-xs font-medium text-white/50 mb-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground mb-1.5">
                 Routine Suggestions
               </h4>
               {full.routineChanges.map((change: RoutineChange, i: number) => (
-                <div key={i} className="text-xs text-white/70 mb-1">
+                <div key={i} className="text-xs text-foreground/80 mb-1">
                   <span className="capitalize">{change.day}</span>{" "}
-                  <span className="text-white/40">{change.section}</span>:{" "}
+                  <span className="text-muted-foreground">{change.section}</span>:{" "}
                   {change.action} {change.exerciseName || change.newExerciseName}
-                  <span className="text-white/40 block ml-2">
+                    <span className="text-muted-foreground block ml-2">
                     {change.reasoning}
                   </span>
                 </div>
@@ -370,16 +370,16 @@ function InsightCard({
           {/* Injury update */}
           {full?.injuryUpdate && (
             <div>
-              <h4 className="text-xs font-medium text-white/50 mb-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground mb-1.5">
                 Injury Status
               </h4>
-              <p className="text-xs text-white/70">
+              <p className="text-xs text-foreground/80">
                 Elbow: {full.injuryUpdate.elbowStatus}
                 {full.injuryUpdate.elbowProgressionReady && (
                   <span className="text-accent-sage ml-1">(ready to progress)</span>
                 )}
               </p>
-              <p className="text-xs text-white/70">
+              <p className="text-xs text-foreground/80">
                 Achilles: {full.injuryUpdate.achillesStatus}
               </p>
             </div>
@@ -608,14 +608,14 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:w-[480px] sm:max-w-[480px] bg-card border-white/10 p-0 flex flex-col"
+        className="w-full sm:w-[480px] sm:max-w-[480px] bg-card border-border p-0 flex flex-col"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <SheetHeader className="px-4 pt-4 pb-2 border-b border-white/10">
+        <SheetHeader className="px-4 pt-4 pb-2 border-b border-border">
           <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-2 text-white">
+            <SheetTitle className="flex items-center gap-2 text-foreground">
               <Brain className="h-5 w-5 text-accent-violet" />
               AI Coach
             </SheetTitle>
@@ -624,7 +624,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs h-7 text-white/50 hover:text-white"
+                  className="text-xs h-7 text-muted-foreground hover:text-foreground"
                   onClick={handleNewChat}
                   title="New conversation"
                 >
@@ -666,9 +666,9 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
           <div className="py-4 space-y-4">
             {/* Training Readiness */}
             {loadingReadiness ? (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-white/50 mr-2" />
-                <span className="text-xs text-white/50">
+              <div className="rounded-lg border border-border bg-muted/30 p-4 flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                <span className="text-xs text-muted-foreground">
                   Loading readiness...
                 </span>
               </div>
@@ -694,7 +694,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
             {/* Quick Actions (only show when no messages) */}
             {messages.length === 0 && (
               <div>
-                <h3 className="text-xs uppercase tracking-wider text-white/40 mb-2">
+                <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
                   Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -703,7 +703,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                       key={action.label}
                       variant="outline"
                       size="sm"
-                      className="text-xs h-auto py-2 px-3 text-left justify-start text-white/70 hover:text-white"
+                      className="text-xs h-auto py-2 px-3 text-left justify-start text-foreground/80 hover:text-foreground"
                       onClick={() => handleQuickAction(action.prompt)}
                     >
                       {action.label}
@@ -726,8 +726,8 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                     <div
                       className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
                         message.role === "user"
-                          ? "bg-accent-violet/30 text-white"
-                          : "bg-white/5 text-white/80 border border-white/10"
+                          ? "bg-accent-violet/30 text-foreground"
+                          : "bg-muted/30 text-foreground/90 border border-border"
                       }`}
                     >
                       <div>
@@ -739,17 +739,17 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                               <div key={index} className="ai-coach-markdown">
                                 <ReactMarkdown
                                   components={{
-                                    h1: ({ children }) => <h1 className="text-base font-bold text-white mt-3 mb-1.5 first:mt-0">{children}</h1>,
-                                    h2: ({ children }) => <h2 className="text-sm font-semibold text-white mt-3 mb-1 first:mt-0">{children}</h2>,
-                                    h3: ({ children }) => <h3 className="text-sm font-medium text-white/90 mt-2 mb-1 first:mt-0">{children}</h3>,
-                                    p: ({ children }) => <p className="text-sm text-white/80 mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                                    strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                                    h1: ({ children }) => <h1 className="text-base font-bold text-foreground mt-3 mb-1.5 first:mt-0">{children}</h1>,
+                                    h2: ({ children }) => <h2 className="text-sm font-semibold text-foreground mt-3 mb-1 first:mt-0">{children}</h2>,
+                                    h3: ({ children }) => <h3 className="text-sm font-medium text-foreground mt-2 mb-1 first:mt-0">{children}</h3>,
+                                    p: ({ children }) => <p className="text-sm text-foreground/90 mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                    strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
                                     em: ({ children }) => <em className="text-accent-violet">{children}</em>,
-                                    ul: ({ children }) => <ul className="list-disc list-inside text-sm text-white/80 mb-2 space-y-0.5">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-white/80 mb-2 space-y-0.5">{children}</ol>,
-                                    li: ({ children }) => <li className="text-white/80">{children}</li>,
-                                    code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-violet">{children}</code>,
-                                    hr: () => <hr className="border-white/10 my-3" />,
+                                    ul: ({ children }) => <ul className="list-disc list-inside text-sm text-foreground/90 mb-2 space-y-0.5">{children}</ul>,
+                                    ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-foreground/90 mb-2 space-y-0.5">{children}</ol>,
+                                    li: ({ children }) => <li className="text-foreground/90">{children}</li>,
+                                    code: ({ children }) => <code className="bg-muted rounded px-1 py-0.5 text-xs font-mono text-accent-violet">{children}</code>,
+                                    hr: () => <hr className="border-border my-3" />,
                                   }}
                                 >
                                   {part.text}
@@ -857,7 +857,7 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
                     })
                 ) && (
                   <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                    <div className="bg-muted/30 border border-border rounded-lg px-3 py-2">
                       <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                     </div>
                   </div>
@@ -887,14 +887,14 @@ export function AiCoachPanel({ open, onOpenChange }: AiCoachPanelProps) {
               setInput("")
             }
           }}
-          className="px-4 py-3 border-t border-white/10"
+          className="px-4 py-3 border-t border-border"
         >
           <div className="flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent-violet/50"
+              className="flex-1 bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent-violet/50"
               disabled={status !== "ready"}
             />
             <Button

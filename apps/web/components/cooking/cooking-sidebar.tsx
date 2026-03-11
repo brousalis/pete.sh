@@ -760,9 +760,9 @@ export function HorizontalMealPlan({ onRecipeClick }: { onRecipeClick?: (recipeI
   )
 }
 
-// ── Cook Completion Dialog ──
+// ── Cook Completion Dialog (exported for dashboard day cards) ──
 
-function CookCompletionDialog({
+export function CookCompletionDialog({
   recipeName,
   onSubmit,
   onCancel,

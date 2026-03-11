@@ -259,7 +259,7 @@ export function CommandBar() {
   const accentLine = accentLineColors[focusType] || 'via-accent-slate/40'
 
   return (
-    <div className="relative bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05]">
+    <div className="relative bg-card/80 backdrop-blur-md border-b border-border">
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6">
         {/* Left: clock + greeting */}
         <div className="flex items-center gap-3 min-w-0 flex-1">

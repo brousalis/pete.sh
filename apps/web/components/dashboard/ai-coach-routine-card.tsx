@@ -63,7 +63,7 @@ function DiffEntryRow({ entry }: { entry: { action: string; exerciseName: string
         <Plus className="h-2.5 w-2.5 text-accent-sage flex-shrink-0" />
         <span>
           {entry.exerciseName}
-          {entry.after && <span className="text-white/40"> — {entry.after}</span>}
+          {entry.after && <span className="text-muted-foreground"> — {entry.after}</span>}
         </span>
       </div>
     )
@@ -90,7 +90,7 @@ function DiffEntryRow({ entry }: { entry: { action: string; exerciseName: string
       <span>
         {entry.exerciseName}
         {entry.field && (
-          <span className="text-white/40">
+          <span className="text-muted-foreground">
             {" "}{entry.field}: {entry.before} <ArrowRight className="h-2.5 w-2.5 inline text-accent-azure/60" /> {entry.after}
           </span>
         )}
@@ -140,7 +140,7 @@ export function RoutineVersionPreviewCard({
           <span className="text-xs font-medium text-accent-sage">
             Draft v{appliedVersion.versionNumber} created
           </span>
-          <span className="text-[11px] text-white/40 ml-1">
+          <span className="text-[11px] text-muted-foreground ml-1">
             {proposal.commitMessage}
           </span>
         </div>
@@ -155,24 +155,24 @@ export function RoutineVersionPreviewCard({
         <Dumbbell className="h-3.5 w-3.5 text-accent-violet" />
         <span className="text-xs font-semibold text-accent-violet">Proposed Routine Changes</span>
         {proposal.changesApplied != null && (
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="text-[10px] text-muted-foreground ml-auto">
             {proposal.changesApplied} change{proposal.changesApplied !== 1 ? "s" : ""}
           </span>
         )}
       </div>
 
       <div className="p-3 space-y-2.5">
-        <p className="text-xs font-medium text-white/90">{proposal.commitMessage}</p>
+        <p className="text-xs font-medium text-foreground">{proposal.commitMessage}</p>
 
         {/* Workout changes */}
         {Object.entries(grouped).map(([day, sections]) => (
           <div key={day} className="space-y-1">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-white/40 capitalize">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground capitalize">
               {day}
             </span>
             {Object.entries(sections).map(([section, entries]) => (
               <div key={`${day}-${section}`} className="space-y-0.5 ml-2">
-                <span className="text-[10px] text-white/30">
+                <span className="text-[10px] text-muted-foreground/80">
                   {SECTION_LABELS[section] || section}
                 </span>
                 {entries.map((entry, i) => (
@@ -191,7 +191,7 @@ export function RoutineVersionPreviewCard({
                 ? <Sun className="h-2.5 w-2.5 text-accent-gold" />
                 : <Moon className="h-2.5 w-2.5 text-accent-violet" />
               }
-              <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {DAILY_ROUTINE_LABELS[routineType] || routineType}
               </span>
             </div>
@@ -221,7 +221,7 @@ export function RoutineVersionPreviewCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs border-white/10 text-white/60 hover:text-white"
+              className="h-7 text-xs border-border text-muted-foreground hover:text-foreground"
               onClick={onDismiss}
               disabled={applying}
             >
@@ -240,8 +240,8 @@ export function RoutineVersionPreviewCard({
 
 export function RoutineDismissedBadge() {
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
-      <div className="flex items-center gap-2 text-white/40">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <X className="h-3 w-3" />
         <span>Proposed changes dismissed</span>
       </div>

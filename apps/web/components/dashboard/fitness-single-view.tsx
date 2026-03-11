@@ -480,6 +480,8 @@ function FitnessDatePicker({
 
 interface FitnessSingleViewProps {
   initialDate?: Date | null
+  /** When set, date is controlled by parent (e.g. dashboard). Hides date picker and week strip. */
+  controlledDate?: Date | null
   onSwitchToEdit?: () => void
   onSwitchToWeek?: () => void
 }
@@ -500,6 +502,7 @@ interface FitnessSingleViewProps {
  */
 export function FitnessSingleView({
   initialDate,
+  controlledDate,
   onSwitchToEdit,
   onSwitchToWeek,
 }: FitnessSingleViewProps) {
@@ -543,6 +546,15 @@ export function FitnessSingleView({
   )
   const [dayPickerOpen, setDayPickerOpen] = useState(false)
 
+  // When controlled, derive everything from controlledDate
+  const isControlled = controlledDate != null
+  const effectiveViewingDate = isControlled ? controlledDate : viewingDate
+  const effectiveViewingDay = isControlled
+    ? (controlledDate
+        .toLocaleDateString('en-US', { weekday: 'long' })
+        .toLowerCase() as DayOfWeek)
+    : (selectedDay || null)
+
   // Track viewport size to prevent dual-Popover portal conflicts
   // Both desktop (hidden sm:flex) and mobile (sm:hidden) headers have a Popover
   // sharing the same open state. Without this guard, both Portals mount when open=true
@@ -568,12 +580,14 @@ export function FitnessSingleView({
 
   const today = getCurrentDay()
   // Fix: Compare actual dates, not just day names (e.g., both Jan 27 and Feb 3 could be "tuesday")
-  const isViewingToday = viewingDate ? isSameDay(viewingDate, new Date()) : (selectedDay === null || selectedDay === today)
-  const viewingDay = selectedDay || today
+  const isViewingToday = effectiveViewingDate
+    ? isSameDay(effectiveViewingDate, new Date())
+    : (effectiveViewingDay === null || effectiveViewingDay === today)
+  const viewingDay = effectiveViewingDay || today
 
   // Get the week number for the date being viewed
-  const viewingWeekNumber = viewingDate
-    ? getWeekNumber(viewingDate)
+  const viewingWeekNumber = effectiveViewingDate
+    ? getWeekNumber(effectiveViewingDate)
     : getCurrentWeekNumber()
 
   // Fetch all data
@@ -671,6 +685,13 @@ export function FitnessSingleView({
     }
   }, [])
 
+  // When controlled, fetch workout when controlledDate changes
+  useEffect(() => {
+    if (isControlled && effectiveViewingDate && !isViewingToday) {
+      fetchSelectedDayWorkout(viewingDay, effectiveViewingDate)
+    }
+  }, [isControlled, effectiveViewingDate, isViewingToday, viewingDay, fetchSelectedDayWorkout])
+
   // Handle day selection
   const handleDaySelect = (day: DayOfWeek) => {
     if (day === today) {
@@ -720,14 +741,14 @@ export function FitnessSingleView({
 
   // Navigate to previous day
   const handlePrevDay = useCallback(() => {
-    const currentDate = viewingDate || new Date()
+    const currentDate = effectiveViewingDate || new Date()
     const prevDate = subDays(startOfDay(currentDate), 1)
     navigateToDate(prevDate)
-  }, [viewingDate, navigateToDate])
+  }, [effectiveViewingDate, navigateToDate])
 
   // Navigate to next day (allow future dates within current week for preview)
   const handleNextDay = useCallback(() => {
-    const currentDate = viewingDate || new Date()
+    const currentDate = effectiveViewingDate || new Date()
     const nextDate = addDays(startOfDay(currentDate), 1)
     // Allow navigating to future dates within the week for preview
     const weekEnd = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6)
@@ -736,13 +757,13 @@ export function FitnessSingleView({
       return
     }
     navigateToDate(nextDate)
-  }, [viewingDate, navigateToDate])
+  }, [effectiveViewingDate, navigateToDate])
 
   const handleGoToToday = useCallback(() => {
     navigateToDate(new Date())
   }, [navigateToDate])
 
-  const dayNavLabel = format(viewingDate || new Date(), 'EEE, MMM d')
+  const dayNavLabel = format(effectiveViewingDate || new Date(), 'EEE, MMM d')
 
   useEffect(() => {
     fetchData()
@@ -854,8 +875,8 @@ export function FitnessSingleView({
       if (!response.success) throw new Error('Failed')
       await fetchData()
       // Refetch selected day workout if viewing a different day
-      if (!isViewingToday && viewingDate) {
-        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      if (!isViewingToday && effectiveViewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, effectiveViewingDate)
       }
       toast.success('Workout completed!')
     } catch {
@@ -876,8 +897,8 @@ export function FitnessSingleView({
       if (!response.success) throw new Error('Failed')
       await fetchData()
       // Refetch selected day workout if viewing a different day
-      if (!isViewingToday && viewingDate) {
-        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      if (!isViewingToday && effectiveViewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, effectiveViewingDate)
       }
       toast.success('Workout unmarked')
     } catch {
@@ -900,8 +921,8 @@ export function FitnessSingleView({
       if (!response.success) throw new Error('Failed')
       await fetchData()
       // Refetch selected day workout if viewing a different day
-      if (!isViewingToday && viewingDate) {
-        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      if (!isViewingToday && effectiveViewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, effectiveViewingDate)
       }
       toast.success('Workout skipped')
     } catch {
@@ -922,8 +943,8 @@ export function FitnessSingleView({
       if (!response.success) throw new Error('Failed')
       await fetchData()
       // Refetch selected day workout if viewing a different day
-      if (!isViewingToday && viewingDate) {
-        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      if (!isViewingToday && effectiveViewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, effectiveViewingDate)
       }
       toast.success('Skip undone')
     } catch {
@@ -986,8 +1007,8 @@ export function FitnessSingleView({
       if (!response.success) throw new Error('Failed')
       await fetchData()
       // Refetch selected day workout if viewing a different day
-      if (!isViewingToday && viewingDate) {
-        await fetchSelectedDayWorkout(day as DayOfWeek, viewingDate)
+      if (!isViewingToday && effectiveViewingDate) {
+        await fetchSelectedDayWorkout(day as DayOfWeek, effectiveViewingDate)
       }
       toast.success('Day skipped')
     } catch {
@@ -1052,7 +1073,7 @@ export function FitnessSingleView({
   // Pre-compute activity data for inline header layout
   const headerWorkouts = (() => {
     const workouts = isViewingToday ? appleWorkouts : selectedDayAppleWorkouts
-    const target = viewingDate || new Date()
+    const target = effectiveViewingDate || new Date()
     return workouts.filter(w => {
       const d = new Date(w.start_date)
       return d.getDate() === target.getDate() && d.getMonth() === target.getMonth() && d.getFullYear() === target.getFullYear()
@@ -1070,13 +1091,14 @@ export function FitnessSingleView({
           secondaryRowClassName="sm:border-t-0"
           secondaryRow={
             <>
-              {/* Week Strip - Day selector */}
+              {/* Week Strip - Day selector (hidden when date is controlled by parent) */}
               <div className="px-3 py-1.5">
                 {/* Desktop: Unified header layout */}
                 <div className="hidden sm:flex">
                   {/* Left column */}
                   <div className="flex flex-col justify-between min-w-0 flex-1 gap-1.5">
-                    {/* Top: DateNav + Date Picker */}
+                    {/* Top: DateNav + Date Picker (hidden when controlled) */}
+                    {!isControlled && (
                     <div className="flex items-center gap-1.5">
                       <DateNavigator
                         label={dayNavLabel}
@@ -1097,7 +1119,7 @@ export function FitnessSingleView({
                           <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
                             <FitnessDatePicker
                               currentDate={new Date()}
-                              selectedDate={viewingDate}
+                              selectedDate={effectiveViewingDate}
                               routine={routine}
                               onSelectDate={navigateToDate}
                               onClose={() => setDayPickerOpen(false)}
@@ -1116,6 +1138,19 @@ export function FitnessSingleView({
                         />
                       )}
                     </div>
+                    )}
+                    {isControlled && onSwitchToWeek && (
+                      <div className="flex items-center gap-1.5">
+                        <ViewToggle
+                          options={[
+                            { value: 'day' as const, label: 'Day', icon: <CalendarDays className="size-3.5" /> },
+                            { value: 'week' as const, label: 'Week', icon: <Columns3 className="size-3.5" /> },
+                          ]}
+                          value="day"
+                          onChange={(val) => { if (val === 'week') onSwitchToWeek() }}
+                        />
+                      </div>
+                    )}
 
                     {/* Bottom: Workout pills */}
                     <div className="flex items-center gap-2">
@@ -1177,14 +1212,15 @@ export function FitnessSingleView({
                     </div>
                   </div>
 
-                  {/* Center: Week strip */}
+                  {/* Center: Week strip (hidden when controlled) */}
+                  {!isControlled && (
                   <div className="flex items-center gap-1 rounded-xl bg-muted/20 p-1.5 shrink-0 self-center mx-3">
                     {DAYS_OF_WEEK.map((day, index) => {
                       const daySchedule = routine.schedule[day]
-                      const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
+                      const weekStart = startOfWeek(effectiveViewingDate || new Date(), { weekStartsOn: 1 })
                       const dayDate = addDays(weekStart, index)
                       const isTodayDay = isDateToday(dayDate)
-                      const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
+                      const isSelected = effectiveViewingDate ? isSameDay(dayDate, effectiveViewingDate) : isTodayDay
                       const isFutureDate = dayDate > new Date() && !isTodayDay
                       const focus = daySchedule?.focus || 'Rest'
                       const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
@@ -1246,6 +1282,7 @@ export function FitnessSingleView({
                       )
                     })}
                   </div>
+                  )}
 
                   {/* Right column */}
                   <div className="flex flex-col justify-between min-w-0 flex-1 items-end gap-1.5">
@@ -1266,7 +1303,7 @@ export function FitnessSingleView({
                           <DialogHeader>
                             <DialogTitle>Skip Day</DialogTitle>
                             <DialogDescription>
-                              Skip all fitness activities for {isViewingToday ? 'today' : format(viewingDate || new Date(), 'EEEE, MMM d')}.
+                              Skip all fitness activities for {isViewingToday ? 'today' : format(effectiveViewingDate || new Date(), 'EEEE, MMM d')}.
                             </DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
@@ -1395,14 +1432,15 @@ export function FitnessSingleView({
                   </div>
                 </div>
 
-                {/* Mobile week strip */}
+                {/* Mobile week strip (hidden when controlled) */}
+                {!isControlled && (
                 <div className="sm:hidden flex items-center justify-between gap-1">
                   {DAYS_OF_WEEK.map((day, index) => {
                     const daySchedule = routine.schedule[day]
-                    const weekStart = startOfWeek(viewingDate || new Date(), { weekStartsOn: 1 })
+                    const weekStart = startOfWeek(effectiveViewingDate || new Date(), { weekStartsOn: 1 })
                     const dayDate = addDays(weekStart, index)
                     const isTodayDay = isDateToday(dayDate)
-                    const isSelected = viewingDate ? isSameDay(dayDate, viewingDate) : isTodayDay
+                    const isSelected = effectiveViewingDate ? isSameDay(dayDate, effectiveViewingDate) : isTodayDay
                     const isFutureDate = dayDate > new Date() && !isTodayDay
                     const focus = daySchedule?.focus || 'Rest'
                     const isRestDay = focus === 'Rest' || focus === 'Active Recovery'
@@ -1452,6 +1490,7 @@ export function FitnessSingleView({
                     )
                   })}
                 </div>
+                )}
               </div>
 
               {/* Activity Summary - mobile only (desktop shows inline with week strip) */}
@@ -1464,7 +1503,7 @@ export function FitnessSingleView({
                       workouts={isViewingToday ? appleWorkouts : selectedDayAppleWorkouts}
                       metrics={isViewingToday ? dailyMetrics : null}
                       consistencyStats={consistencyStats}
-                      viewingDate={viewingDate}
+                      viewingDate={effectiveViewingDate}
                       onWorkoutClick={id => router.push(`/fitness/activity?workout=${id}`)}
                       onViewAll={() => router.push('/fitness/activity')}
                     />
@@ -1477,41 +1516,46 @@ export function FitnessSingleView({
             {/* ============================================
                 COMPACT HEADER FOR ALL MOBILE DEVICES
                 Optimized 2-row layout for screens < 640px (sm breakpoint)
+                Date nav hidden when controlled
                 ============================================ */}
             <div className="sm:hidden">
-              {/* Row 1: Date + Nav + Actions */}
+              {/* Row 1: Date + Nav + Actions (Date nav hidden when controlled) */}
               <div className="flex items-center justify-between gap-1.5 px-3 py-2">
-                {/* Left: Date Navigator + Date Picker */}
+                {/* Left: Date Navigator + Date Picker (hidden when controlled) */}
                 <div className="flex items-center gap-1">
-                  <DateNavigator
-                    label={dayNavLabel}
-                    onPrev={handlePrevDay}
-                    onNext={handleNextDay}
-                    onToday={handleGoToToday}
-                    onLabelClick={() => setDayPickerOpen(true)}
-                    isAtToday={isViewingToday}
-                    disableNext={isViewingToday}
-                    size="sm"
-                  />
+                  {!isControlled && (
+                    <>
+                      <DateNavigator
+                        label={dayNavLabel}
+                        onPrev={handlePrevDay}
+                        onNext={handleNextDay}
+                        onToday={handleGoToToday}
+                        onLabelClick={() => setDayPickerOpen(true)}
+                        isAtToday={isViewingToday}
+                        disableNext={isViewingToday}
+                        size="sm"
+                      />
 
-                  <Popover open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <Calendar className="size-3.5 text-muted-foreground" />
-                      </Button>
-                    </PopoverTrigger>
-                    {!isSmScreen && (
-                      <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
-                        <FitnessDatePicker
-                          currentDate={new Date()}
-                          selectedDate={viewingDate}
-                          routine={routine}
-                          onSelectDate={navigateToDate}
-                          onClose={() => setDayPickerOpen(false)}
-                        />
-                      </PopoverContent>
-                    )}
-                  </Popover>
+                      <Popover open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Calendar className="size-3.5 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        {!isSmScreen && (
+                          <PopoverContent className="z-[100] w-auto p-3" align="start" side="bottom">
+                            <FitnessDatePicker
+                              currentDate={new Date()}
+                              selectedDate={effectiveViewingDate}
+                              routine={routine}
+                              onSelectDate={navigateToDate}
+                              onClose={() => setDayPickerOpen(false)}
+                            />
+                          </PopoverContent>
+                        )}
+                      </Popover>
+                    </>
+                  )}
 
                   {/* Skip Day - on left side so right actions match Week view */}
                   <Dialog open={skipDayDialogOpen} onOpenChange={setSkipDayDialogOpen}>

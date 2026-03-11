@@ -166,9 +166,9 @@ export function OfficeQuickControls() {
   // Don't render if loading or error
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 backdrop-blur-sm">
-        <div className="size-4 animate-pulse rounded bg-white/10" />
-        <div className="h-3 w-16 animate-pulse rounded bg-white/10" />
+      <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2 backdrop-blur-sm">
+        <div className="size-4 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-16 animate-pulse rounded bg-muted" />
       </div>
     )
   }
@@ -179,7 +179,7 @@ export function OfficeQuickControls() {
 
   return (
     <motion.div
-      className="flex flex-col gap-2 rounded-xl bg-white/5 px-4 py-3 backdrop-blur-sm"
+      className="flex flex-col gap-2 rounded-xl bg-muted/50 px-4 py-3 backdrop-blur-sm"
       initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: 0.35 }}
@@ -190,17 +190,17 @@ export function OfficeQuickControls() {
           <div
             className={cn(
               'flex size-7 items-center justify-center rounded-lg transition-colors',
-              isOn ? 'bg-accent-gold/20' : 'bg-white/10'
+              isOn ? 'bg-accent-gold/20' : 'bg-muted'
             )}
           >
             <Lightbulb
               className={cn(
                 'size-4 transition-colors',
-                isOn ? 'text-accent-gold' : 'text-white/40'
+                isOn ? 'text-accent-gold' : 'text-muted-foreground'
               )}
             />
           </div>
-          <span className="text-xs font-medium text-white/70">Office</span>
+          <span className="text-xs font-medium text-foreground/90">Office</span>
         </div>
 
         {/* Power button */}
@@ -211,7 +211,7 @@ export function OfficeQuickControls() {
             'hover:scale-105 active:scale-95',
             isOn
               ? 'bg-accent-gold/30 text-accent-gold hover:bg-accent-gold/40'
-              : 'bg-white/10 text-white/40 hover:bg-white/20 hover:text-white/60'
+              : 'bg-muted text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
           aria-label={isOn ? 'Turn off office lights' : 'Turn on office lights'}
         >
@@ -235,7 +235,7 @@ export function OfficeQuickControls() {
                   'hover:scale-105 active:scale-95',
                   isActive
                     ? 'bg-brand/30 text-brand ring-brand/40 ring-1'
-                    : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                 )}
               >
                 {label}
@@ -250,7 +250,7 @@ export function OfficeQuickControls() {
         <Sun
           className={cn(
             'size-3 shrink-0 transition-colors',
-            isOn ? 'text-white/50' : 'text-white/20'
+            isOn ? 'text-muted-foreground' : 'text-muted-foreground/50'
           )}
         />
         <Slider
@@ -260,12 +260,12 @@ export function OfficeQuickControls() {
           max={100}
           step={5}
           disabled={!isOn}
-          className="flex-1 [&_[data-slot=slider-range]]:bg-accent-gold/60 [&_[data-slot=slider-thumb]]:size-3 [&_[data-slot=slider-thumb]]:border-accent-gold [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-track]]:bg-white/10"
+          className="flex-1 [&_[data-slot=slider-range]]:bg-accent-gold/60 [&_[data-slot=slider-thumb]]:size-3 [&_[data-slot=slider-thumb]]:border-accent-gold [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-track]]:bg-muted"
         />
         <span
           className={cn(
             'w-7 text-right text-[10px] font-medium tabular-nums',
-            isOn ? 'text-white/50' : 'text-white/20'
+            isOn ? 'text-muted-foreground' : 'text-muted-foreground/50'
           )}
         >
           {brightness}%

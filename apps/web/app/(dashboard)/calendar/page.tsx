@@ -346,9 +346,11 @@ export default function CalendarPage() {
     return generateMealPlanEvents(mealPlan, recipes, weekStart, weekEnd)
   }, [mealPlan, recipes, currentDate])
 
-  // Merge calendar events with fitness and meal plan events
+  // Merge calendar events with fitness and meal plan events.
+  // Place meal plan events FIRST so the Cooking feature's meal plan takes precedence
+  // over any meal-related events from Google Calendar (e.g. from another meal app).
   const allEvents = useMemo(() => {
-    return [...events, ...fitnessEvents, ...mealPlanEvents]
+    return [...mealPlanEvents, ...fitnessEvents, ...events]
   }, [events, fitnessEvents, mealPlanEvents])
 
   // Filter events based on search

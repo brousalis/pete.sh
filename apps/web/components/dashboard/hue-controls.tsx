@@ -346,7 +346,7 @@ export function HueControls() {
   if (zones.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex size-16 items-center justify-center rounded-2xl bg-white/5">
+        <div className="flex size-16 items-center justify-center rounded-2xl bg-muted/50">
           <Lightbulb className="size-8 text-muted-foreground" />
         </div>
         <h3 className="mt-4 text-lg font-semibold">No rooms found</h3>
@@ -375,7 +375,7 @@ export function HueControls() {
               <div
                 className={cn(
                   'flex size-9 items-center justify-center rounded-lg transition-all',
-                  status?.anyOn ? 'bg-brand/20 text-brand' : 'bg-white/5 text-muted-foreground'
+                  status?.anyOn ? 'bg-brand/20 text-brand' : 'bg-muted/50 text-muted-foreground'
                 )}
               >
                 <Power className="size-4" strokeWidth={2.5} />
@@ -410,7 +410,7 @@ export function HueControls() {
               </div>
             </div>
 
-            <div className="h-10 w-px bg-white/10 hidden sm:block" />
+            <div className="h-10 w-px bg-muted hidden sm:block" />
 
             {/* Quick Scenes */}
             {favoriteScenes.length > 0 && (
@@ -441,7 +441,7 @@ export function HueControls() {
               </div>
             )}
 
-            <div className="h-10 w-px bg-white/10 hidden lg:block" />
+            <div className="h-10 w-px bg-muted hidden lg:block" />
 
             {/* Office Brightness */}
             {officeZone && (
@@ -460,7 +460,7 @@ export function HueControls() {
                         disabled={isReadOnly}
                         className={cn(
                           'h-7 gap-1 px-2 text-[11px]',
-                          isActive && 'bg-white/10 text-foreground'
+                          isActive && 'bg-muted text-foreground'
                         )}
                       >
                         <Icon className="size-3" />
@@ -492,7 +492,7 @@ export function HueControls() {
             {/* Hue Sync */}
             {syncArea && (
               <>
-                <div className="h-10 w-px bg-white/10 hidden xl:block" />
+                <div className="h-10 w-px bg-muted hidden xl:block" />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ export function HueControls() {
                           'flex size-7 items-center justify-center rounded-md transition-all',
                           syncStatus?.active
                             ? 'bg-accent-violet/20 text-accent-violet'
-                            : 'bg-white/5 text-muted-foreground'
+                            : 'bg-muted/50 text-muted-foreground'
                         )}
                       >
                         <Monitor className="size-3.5" />
@@ -511,7 +511,7 @@ export function HueControls() {
                         <div
                           className={cn(
                             'size-1.5 rounded-full',
-                            syncStatus?.active ? 'animate-pulse bg-accent-sage' : 'bg-white/20'
+                            syncStatus?.active ? 'animate-pulse bg-accent-sage' : 'bg-muted-foreground/20'
                           )}
                         />
                       </div>
@@ -778,7 +778,7 @@ function RoomCard({
       return 'bg-accent-ember/15 text-accent-ember hover:bg-accent-ember/25'
     if (n.includes('game'))
       return 'bg-accent-sage/15 text-accent-sage hover:bg-accent-sage/25'
-    return 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+    return 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
   }
 
   const isLarge = size === 'large'
@@ -787,7 +787,7 @@ function RoomCard({
     <div
       className={cn(
         'group relative overflow-hidden rounded-2xl transition-all duration-200',
-        on ? 'bg-brand/[0.08]' : 'bg-white/[0.03] hover:bg-white/[0.05]',
+        on ? 'bg-brand/[0.08]' : 'bg-muted/30 hover:bg-muted/50',
         'p-3'
       )}
     >
@@ -802,7 +802,7 @@ function RoomCard({
           <div
             className={cn(
               'flex items-center justify-center rounded-xl transition-all duration-200',
-              on ? 'bg-brand text-background' : 'bg-white/5 text-muted-foreground',
+              on ? 'bg-brand text-background' : 'bg-muted/50 text-muted-foreground',
               isLarge ? 'size-12' : 'size-10'
             )}
           >
@@ -877,7 +877,7 @@ function RoomCard({
             {sortedScenes.length > (isLarge ? 5 : 4) && !scenesExpanded && (
               <button
                 onClick={() => setScenesExpanded(true)}
-                className="rounded-md bg-white/5 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/10"
+                className="rounded-md bg-muted/50 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted"
               >
                 +{sortedScenes.length - (isLarge ? 5 : 4)}
               </button>
@@ -898,7 +898,7 @@ function RoomCard({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="mt-2 space-y-1 border-t border-white/5 pt-3">
+          <div className="mt-2 space-y-1 border-t border-border/50 pt-3">
             {loadingLights ? (
               <div className="flex items-center justify-center py-4">
                 <div className="size-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
@@ -935,18 +935,18 @@ function LoadingSkeleton() {
       <div className="rounded-xl border border-border/50 bg-card/40">
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-3">
-            <div className="size-10 shrink-0 animate-pulse rounded-xl bg-white/5" />
+            <div className="size-10 shrink-0 animate-pulse rounded-xl bg-muted/50" />
             <div className="space-y-1.5">
-              <div className="h-5 w-24 animate-pulse rounded bg-white/5" />
-              <div className="h-3 w-32 animate-pulse rounded bg-white/5" />
+              <div className="h-5 w-24 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-32 animate-pulse rounded bg-muted/50" />
             </div>
           </div>
-          <div className="h-8 w-16 animate-pulse rounded bg-white/5" />
+          <div className="h-8 w-16 animate-pulse rounded bg-muted/50" />
         </div>
         <div className="flex flex-wrap gap-4 border-t border-border/30 px-3 py-2">
-          <div className="h-12 w-28 animate-pulse rounded-lg bg-white/5" />
-          <div className="h-12 w-36 animate-pulse rounded-lg bg-white/5" />
-          <div className="h-12 w-32 animate-pulse rounded-lg bg-white/5" />
+          <div className="h-12 w-28 animate-pulse rounded-lg bg-muted/50" />
+          <div className="h-12 w-36 animate-pulse rounded-lg bg-muted/50" />
+          <div className="h-12 w-32 animate-pulse rounded-lg bg-muted/50" />
         </div>
       </div>
 
@@ -956,7 +956,7 @@ function LoadingSkeleton() {
           <div
             key={i}
             className={cn(
-              'animate-pulse rounded-2xl bg-white/[0.03]',
+              'animate-pulse rounded-2xl bg-muted/30',
               i <= 2 ? 'h-44' : 'h-36'
             )}
             style={{ animationDelay: `${i * 60}ms` }}

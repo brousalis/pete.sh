@@ -1,14 +1,29 @@
 petehome
 
+
+improvements:
+
+	foundation knowledge with textbooks
+
+	knowledge graph development
+		- graph queries, graph transformer for langchain experiemental
+	
+
+	have the langchain tools creates cripts to talk to each other instead of tokens
+
+	arcade credits for ai chef and coaching advice
+		- monthly
+
+	wizard for chef and coach onboarding
+		- first hit
+
+
+---
+
 # dashboard
 
 # fitness
-- possible to background the location/sync checking on watch/iphone
-- redesign the morning/nightly stretch routine
-	- move some icons around, make sure no truncate, no inline timers
-- remove the timers for the main workout
 - workout audibles, how to show recorded sessions that dont fit in the main workout section better
-- maybe we need to put the ai coach, activity, and routine managemenet settings in a navbar in fitness?
 
 	# activity dashboard
 	- figure out a better area for the rings stream info. top right of header
@@ -22,10 +37,6 @@ petehome
 - rounded content area for the calendar
 
 # cooking
-- mobile
-- tinder style recipe chooser for the meal plan builder
-- shopping list press whole thing 
-- help find common recipes for the meal plan for the week - share ingredients 
 
 # cta
 - need to support opposite direction

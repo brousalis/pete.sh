@@ -15,7 +15,7 @@ import type {
     ShoppingList,
     WeeklyMeals,
 } from '@/lib/types/cooking.types'
-import { startOfWeek } from 'date-fns'
+import { format, startOfWeek } from 'date-fns'
 import type { ReactNode } from 'react'
 import {
     createContext,
@@ -169,7 +169,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     setMealPlanLoading(true)
     try {
       const response = await apiGet<MealPlan>(
-        `/api/cooking/meal-plans?week_start=${currentWeek.toISOString()}`
+        `/api/cooking/meal-plans?week_start=${format(currentWeek, 'yyyy-MM-dd')}`
       )
       if (response.success && response.data) {
         setMealPlan(response.data)

@@ -30,7 +30,8 @@ export async function GET(
     const exerciseToWorkouts = await workoutAutocompleteService.getLinkedWorkoutsForDay(
       day,
       weekNumber,
-      year
+      year,
+      adapter.getCurrentRoutineId()
     )
 
     // Get unique workout IDs and fetch their details

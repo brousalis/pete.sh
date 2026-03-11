@@ -95,7 +95,7 @@ export function AssistantModalProvider({ children }: { children: React.ReactNode
               onPointerMove={handleResizePointerMove}
               onPointerUp={handleResizePointerUp}
               onPointerCancel={handleResizePointerUp}
-              className="absolute left-0 top-0 z-10 h-full w-3 cursor-col-resize touch-none border-l border-transparent hover:border-white/30 hover:bg-white/10 active:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-violet/50"
+              className="absolute left-0 top-0 z-10 h-full w-3 cursor-col-resize touch-none border-l border-transparent hover:border-border hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-violet/50"
             />
             <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden pl-2">
               <CookingProvider>

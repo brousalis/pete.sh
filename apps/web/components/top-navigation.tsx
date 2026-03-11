@@ -7,38 +7,26 @@ import {
 } from '@/components/command-palette'
 import { useConnectivity } from '@/components/connectivity-provider'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useIOSSync } from '@/hooks/use-ios-sync'
 import { transitions } from '@/lib/animations'
-import { apiGet, apiPost } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Calendar,
   ChefHat,
-  Dog,
   Dumbbell,
   Grid3x3,
   Home,
   Loader2,
   Menu,
-  Monitor,
   MoreHorizontal,
-  Music,
   RefreshCw,
   Settings,
   Sparkles,
-  Tv,
-  User,
   X
 } from 'lucide-react'
 import Link from 'next/link'
@@ -57,19 +45,15 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home, shortcut: '`' },
   { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
-  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
-  // CTA sunset – hidden from nav, code kept
+  { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
   // { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
-  // Concerts sunset – hidden from nav, code kept
   // { href: '/concerts', label: 'Concerts', icon: Ticket, shortcut: '5' },
-  // Lights sunset – hidden from nav, code kept
   // { href: '/lights', label: 'Lights', icon: Lightbulb, shortcut: '6' },
-  { href: '/music', label: 'Music', icon: Music, shortcut: '4' },
-  // Coffee sunset – hidden from nav, code kept
+  // { href: '/music', label: 'Music', icon: Music, shortcut: '4' },
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
-  { href: '/maple', label: 'Maple', icon: Dog, shortcut: '5' },
-  { href: '/me', label: 'Me', icon: User, shortcut: '6' },
+  // { href: '/maple', label: 'Maple', icon: Dog, shortcut: '5' },
+  // { href: '/me', label: 'Me', icon: User, shortcut: '6' },
 ]
 
 // Mobile bottom nav items (Assistant opens modal from bar, not listed here as route)
@@ -78,12 +62,9 @@ const mobileBottomItems: NavItem[] = [
   { href: '/fitness', label: 'Fitness', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
-  { href: '/music', label: 'Music', icon: Music },
-  // CTA sunset – hidden from nav, code kept
+  // { href: '/music', label: 'Music', icon: Music },
   // { href: '/transit', label: 'CTA', icon: Bus },
-  // Lights sunset – hidden from nav, code kept
   // { href: '/lights', label: 'Lights', icon: Lightbulb },
-  // Coffee sunset – hidden from nav
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]
 
@@ -91,12 +72,13 @@ export function TopNavigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [displaySwitching, setDisplaySwitching] = useState<
-    'hdmi' | 'displayport' | null
-  >(null)
-  const [currentInput, setCurrentInput] = useState<
-    'hdmi' | 'displayport' | 'unknown' | null
-  >(null)
+  // KVM display switching - commented out (not working); resume another day
+  // const [displaySwitching, setDisplaySwitching] = useState<
+  //   'hdmi' | 'displayport' | null
+  // >(null)
+  // const [currentInput, setCurrentInput] = useState<
+  //   'hdmi' | 'displayport' | 'unknown' | null
+  // >(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isLocalAvailable, isInitialized } = useConnectivity()
   const { isIOSApp, isSyncing, openSyncSheet } = useIOSSync()
@@ -104,48 +86,48 @@ export function TopNavigation() {
   const { setOpen: setAssistantOpen } = useAssistantModal()
 
   // Fetch current display input when local is available
-  useEffect(() => {
-    if (!isLocalAvailable) {
-      setCurrentInput(null)
-      return
-    }
-
-    const fetchCurrentInput = async () => {
-      try {
-        const response = await apiGet<{
-          currentInput: 'hdmi' | 'displayport' | 'unknown'
-        }>('/api/desktop/kvm')
-        if (response.success && response.data) {
-          setCurrentInput(response.data.currentInput ?? 'unknown')
-        }
-      } catch (error) {
-        console.error('Failed to fetch display input:', error)
-      }
-    }
-
-    fetchCurrentInput()
-  }, [isLocalAvailable])
+  // useEffect(() => {
+  //   if (!isLocalAvailable) {
+  //     setCurrentInput(null)
+  //     return
+  //   }
+  //
+  //   const fetchCurrentInput = async () => {
+  //     try {
+  //       const response = await apiGet<{
+  //         currentInput: 'hdmi' | 'displayport' | 'unknown'
+  //       }>('/api/desktop/kvm')
+  //       if (response.success && response.data) {
+  //         setCurrentInput(response.data.currentInput ?? 'unknown')
+  //       }
+  //     } catch (error) {
+  //       console.error('Failed to fetch display input:', error)
+  //     }
+  //   }
+  //
+  //   fetchCurrentInput()
+  // }, [isLocalAvailable])
 
   // Display input switch handler
-  const handleDisplaySwitch = async (target: 'hdmi' | 'displayport') => {
-    if (displaySwitching) return
-    setDisplaySwitching(target)
-    try {
-      const response = await apiPost<{ success: boolean; target: string }>(
-        '/api/desktop/kvm',
-        { target }
-      )
-      if (response.success) {
-        setCurrentInput(target)
-      } else {
-        console.error('Display switch failed:', response.error)
-      }
-    } catch (error) {
-      console.error('Display switch error:', error)
-    } finally {
-      setDisplaySwitching(null)
-    }
-  }
+  // const handleDisplaySwitch = async (target: 'hdmi' | 'displayport') => {
+  //   if (displaySwitching) return
+  //   setDisplaySwitching(target)
+  //   try {
+  //     const response = await apiPost<{ success: boolean; target: string }>(
+  //       '/api/desktop/kvm',
+  //       { target }
+  //     )
+  //     if (response.success) {
+  //       setCurrentInput(target)
+  //     } else {
+  //       console.error('Display switch failed:', response.error)
+  //     }
+  //   } catch (error) {
+  //     console.error('Display switch error:', error)
+  //   } finally {
+  //     setDisplaySwitching(null)
+  //   }
+  // }
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -398,8 +380,8 @@ export function TopNavigation() {
               </TooltipContent>
             </Tooltip>
 
-            {/* Display input - dropdown (HDMI / DisplayPort) */}
-            {mounted && isLocalAvailable && (
+            {/* Display input - commented out (KVM not working; resume another day) */}
+            {/* {mounted && isLocalAvailable && (
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -446,7 +428,7 @@ export function TopNavigation() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            )} */}
 
             {/* Settings Link */}
             <Link

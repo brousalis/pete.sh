@@ -30,7 +30,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const weekStart = weekStartParam ? new Date(weekStartParam) : undefined
+    // Parse week_start safely: date-only strings (YYYY-MM-DD) are parsed as local noon
+    // to avoid UTC-midnight shifting to the previous day in western timezones.
+    let weekStart: Date | undefined
+    if (weekStartParam) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(weekStartParam)) {
+        weekStart = new Date(weekStartParam + 'T12:00:00')
+      } else {
+        weekStart = new Date(weekStartParam)
+      }
+    }
     const mealPlan = await mealPlanningService.getMealPlan(weekStart)
 
     const response = withCors(

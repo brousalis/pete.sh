@@ -14,33 +14,33 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { TagMultiSelect } from '@/components/ui/tag-multi-select'
 import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
 import type {
-  Recipe,
-  RecipeWithIngredients,
+    Recipe,
+    RecipeWithIngredients,
 } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  CalendarDays,
-  ChefHat,
-  Expand,
-  Filter,
-  ImageIcon,
-  Plus,
-  Search,
-  ShoppingCart,
-  Snowflake,
-  Star,
-  X,
+    CalendarDays,
+    ChefHat,
+    Expand,
+    Filter,
+    ImageIcon,
+    Plus,
+    Search,
+    ShoppingCart,
+    Snowflake,
+    Star,
+    X,
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'

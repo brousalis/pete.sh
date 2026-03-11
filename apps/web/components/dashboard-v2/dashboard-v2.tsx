@@ -1,33 +1,82 @@
 'use client'
 
+import { FitnessPageContent } from '@/components/dashboard/fitness-page-content'
 import { CommandBar } from '@/components/dashboard-v2/command-bar'
-import { ContextPanel } from '@/components/dashboard-v2/context-panel'
 import {
   DashboardV2Provider,
   useDashboardV2,
 } from '@/components/dashboard-v2/dashboard-v2-provider'
+import { DashboardCalendarSection } from '@/components/dashboard-v2/dashboard-calendar-section'
+import { DashboardCookingSection } from '@/components/dashboard-v2/dashboard-cooking-section'
 import { DayFlowMobile } from '@/components/dashboard-v2/day-flow-mobile'
 import {
+  type DashboardSection,
+  SectionTabs,
+} from '@/components/dashboard-v2/section-tabs'
+import {
   CommandBarSkeleton,
-  ContextPanelSkeleton,
   WeekHorizonSkeleton,
   WorkoutStageSkeleton,
 } from '@/components/dashboard-v2/skeletons'
 import { WeekHorizon } from '@/components/dashboard-v2/week-horizon'
-import { WorkoutStage } from '@/components/dashboard-v2/workout-stage'
+import { CookCompletionDialog } from '@/components/cooking/cooking-sidebar'
+import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { CookingProvider, useCooking } from '@/hooks/use-cooking-data'
+import type { DayOfWeek } from '@/lib/types/fitness.types'
+import { addDays, startOfWeek } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
-import { addDays } from 'date-fns'
-import { useEffect } from 'react'
+import { MessageSquare, SkipForward } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+
+/** Syncs CookingProvider's currentWeek with dashboard selectedDate */
+function CookingWeekSync() {
+  const { selectedDate } = useDashboardV2()
+  const { setCurrentWeek, currentWeek } = useCooking()
+  const targetWeek = startOfWeek(selectedDate, { weekStartsOn: 1 })
+
+  useEffect(() => {
+    if (targetWeek.getTime() !== currentWeek.getTime()) {
+      setCurrentWeek(targetWeek)
+    }
+  }, [selectedDate, targetWeek, currentWeek, setCurrentWeek])
+
+  return null
+}
 
 function DashboardContent() {
   const {
     loading,
     selectedDate,
-    navDirection,
     navigateToDay,
     goToToday,
     completeRoutine,
   } = useDashboardV2()
+
+  const [activeSection, setActiveSection] = useState<DashboardSection>('fitness')
+  const [pickerSlot, setPickerSlot] = useState<{
+    day: DayOfWeek
+    meal: string
+  } | null>(null)
+  const [skipNoteDay, setSkipNoteDay] = useState<DayOfWeek | null>(null)
+  const [skipNoteText, setSkipNoteText] = useState('')
+  const [ratingSlot, setRatingSlot] = useState<{
+    day: DayOfWeek
+    meal: string
+    recipeId: string
+  } | null>(null)
+  const [randomizingDay, setRandomizingDay] = useState<DayOfWeek | null>(null)
+  const cooking = useCooking()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -68,17 +117,71 @@ function DashboardContent() {
     return () => window.removeEventListener('keydown', handler)
   }, [selectedDate, navigateToDay, goToToday, completeRoutine])
 
+  const handleRecipeClick = (recipeId: string) => {
+    cooking.setSelectedRecipeId(recipeId)
+  }
+
+  const handleMealSelect = async (recipeId: string) => {
+    if (!pickerSlot) return
+    await cooking.updateMealSlot(pickerSlot.day, pickerSlot.meal, recipeId)
+    setPickerSlot(null)
+  }
+
+  const handleMarkCooked = useCallback(
+    (day: DayOfWeek, meal: string, recipeId: string) => {
+      const existing = cooking.isSlotCompleted(day, meal)
+      if (existing) {
+        cooking.deleteCompletion(existing.id)
+      } else {
+        setRatingSlot({ day, meal, recipeId })
+      }
+    },
+    [cooking]
+  )
+
+  const handleRatingSubmit = useCallback(
+    async (rating?: number, notes?: string) => {
+      if (!ratingSlot) return
+      await cooking.createCompletion({
+        recipe_id: ratingSlot.recipeId,
+        meal_plan_id: cooking.mealPlan?.id ?? '',
+        day_of_week: ratingSlot.day,
+        meal_type: ratingSlot.meal,
+        rating,
+        notes: notes?.trim() || undefined,
+      })
+      setRatingSlot(null)
+    },
+    [ratingSlot, cooking]
+  )
+
+  const confirmSkip = useCallback(async () => {
+    if (!skipNoteDay) return
+    await cooking.skipDay(skipNoteDay, skipNoteText || undefined)
+    setSkipNoteDay(null)
+    setSkipNoteText('')
+  }, [skipNoteDay, skipNoteText, cooking])
+
+  const handleRandomFill = useCallback(
+    async (day: DayOfWeek) => {
+      setRandomizingDay(day)
+      try {
+        await cooking.randomFillDinner(day)
+      } finally {
+        setRandomizingDay(null)
+      }
+    },
+    [cooking]
+  )
+
   if (loading) {
     return (
       <div className="flex flex-col h-full">
         <CommandBarSkeleton />
         <WeekHorizonSkeleton />
-        <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_320px] xl:grid-cols-[1fr_350px] overflow-hidden">
-          <div className="p-3 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="p-3 overflow-y-auto h-full">
             <WorkoutStageSkeleton />
-          </div>
-          <div className="hidden md:block border-l border-white/[0.04] overflow-y-auto">
-            <ContextPanelSkeleton />
           </div>
         </div>
       </div>
@@ -87,44 +190,115 @@ function DashboardContent() {
 
   return (
     <div className="flex flex-col h-full">
+      <CookingWeekSync />
       <CommandBar />
-      <WeekHorizon />
+      <WeekHorizon
+        onAddDinner={(day) => setPickerSlot({ day, meal: 'dinner' })}
+        onRecipeClick={handleRecipeClick}
+        onMarkCooked={handleMarkCooked}
+        onRemoveMeal={(day, meal) => cooking.updateMealSlot(day, meal, null)}
+        onAddToShopping={(recipeId) => cooking.addRecipeToShoppingList(recipeId)}
+        onRandomFill={handleRandomFill}
+        onSkipDay={(day) => setSkipNoteDay(day)}
+        onUnskipDay={(day) => cooking.unskipDay(day)}
+        isSlotCompleted={cooking.isSlotCompleted}
+        randomizingDay={randomizingDay}
+      />
+      <SectionTabs activeSection={activeSection} onSectionChange={setActiveSection} />
       <DayFlowMobile />
 
-      {/* 2-column: workout stage + context panel */}
-      <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_320px] xl:grid-cols-[1fr_350px] 2xl:grid-cols-[1fr_380px] overflow-hidden">
-        {/* Center: Workout Stage */}
-        <div className="overflow-y-auto scrollbar-hide p-3">
-          <AnimatePresence mode="wait" custom={navDirection}>
-            <motion.div
-              key={selectedDate.toISOString()}
-              initial={{
-                x: navDirection === 'forward' ? 150 : navDirection === 'backward' ? -150 : 0,
-                opacity: 0,
+      {activeSection === 'fitness' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <FitnessPageContent
+            embedded
+            selectedDate={selectedDate}
+            onDateChange={(date) =>
+              navigateToDay(date, date > selectedDate ? 'forward' : 'backward')
+            }
+          />
+        </div>
+      )}
+
+      {activeSection === 'cooking' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DashboardCookingSection />
+        </div>
+      )}
+
+      {activeSection === 'calendar' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DashboardCalendarSection />
+        </div>
+      )}
+
+      <RecipePickerDialog
+        open={!!pickerSlot}
+        onOpenChange={(open) => !open && setPickerSlot(null)}
+        onSelect={handleMealSelect}
+        selectedId={
+          pickerSlot
+            ? (() => {
+                const dm = cooking.mealPlan?.meals[pickerSlot.day]
+                const id = dm?.[pickerSlot.meal as keyof typeof dm]
+                return typeof id === 'string' ? id : undefined
+              })()
+            : undefined
+        }
+      />
+
+      {/* Skip day dialog */}
+      <Dialog open={!!skipNoteDay} onOpenChange={(open) => !open && (setSkipNoteDay(null), setSkipNoteText(''))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Skip {skipNoteDay ? skipNoteDay.charAt(0).toUpperCase() + skipNoteDay.slice(1) : ''}
+            </DialogTitle>
+            <DialogDescription>Add an optional note</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="skip-day-reason">Reason</Label>
+              <div className="relative">
+                <MessageSquare className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="skip-day-reason"
+                  placeholder="Reason for skipping..."
+                  value={skipNoteText}
+                  onChange={(e) => setSkipNoteText(e.target.value)}
+                  className="pl-9"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmSkip()
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSkipNoteDay(null)
+                setSkipNoteText('')
               }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{
-                x: navDirection === 'forward' ? -150 : 150,
-                opacity: 0,
-              }}
-              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="h-full"
             >
-              <WorkoutStage />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+              Cancel
+            </Button>
+            <Button onClick={confirmSkip}>Skip Day</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Right: Context Panel */}
-        <div className="hidden md:flex md:flex-col border-l border-white/[0.04] overflow-hidden min-w-0">
-          <ContextPanel />
-        </div>
-      </div>
-
-      {/* Mobile: context panel stacked */}
-      <div className="md:hidden">
-        <ContextPanel />
-      </div>
+      {/* Mark as cooked / rating dialog */}
+      <AnimatePresence>
+        {ratingSlot && (
+          <CookCompletionDialog
+            recipeName={cooking.getRecipeById(ratingSlot.recipeId)?.name || ''}
+            onSubmit={(rating, notes) => handleRatingSubmit(rating, notes)}
+            onCancel={() => setRatingSlot(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -132,7 +306,9 @@ function DashboardContent() {
 export function DashboardV2() {
   return (
     <DashboardV2Provider>
-      <DashboardContent />
+      <CookingProvider>
+        <DashboardContent />
+      </CookingProvider>
     </DashboardV2Provider>
   )
 }

@@ -1699,7 +1699,14 @@
             "routineVersionId": "f19333cc-2c31-40d1-bcc7-5e3e17b4f680"
           }
         },
-        "tuesday": {},
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-03-10T23:33:27.651Z",
+            "routineVersionId": "f19333cc-2c31-40d1-bcc7-5e3e17b4f680"
+          }
+        },
         "wednesday": {},
         "thursday": {},
         "friday": {},
@@ -1986,5 +1993,5 @@
       }
     }
   ],
-  "updatedAt": "2026-03-10T04:01:58.380Z"
+  "updatedAt": "2026-03-10T23:33:27.658Z"
 }

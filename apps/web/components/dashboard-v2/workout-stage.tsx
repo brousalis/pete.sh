@@ -268,8 +268,9 @@ export function WorkoutStage() {
   const completedCount = allExercises.filter(e =>
     completedExercises.has(e.id)
   ).length
+  const displayCompleted = Math.min(completedCount, totalExercises)
   const overallProgress =
-    totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0
+    totalExercises > 0 ? (displayCompleted / totalExercises) * 100 : 0
 
   const schedule = routine?.schedule[dayOfWeek]
 
@@ -281,9 +282,9 @@ export function WorkoutStage() {
     const nightRoutine = routine?.dailyRoutines.night
 
     return (
-      <div className="rounded-2xl overflow-hidden overflow-y-auto scrollbar-hide border border-white/[0.06] bg-white/[0.015]">
+      <div className="rounded-2xl overflow-hidden overflow-y-auto scrollbar-hide border border-border bg-card shadow-sm ring-1 ring-border/40 ring-inset">
         {/* Rest day header */}
-        <div className="bg-gradient-to-r from-accent-slate/8 via-accent-slate/4 to-transparent px-5 py-4 border-b border-white/[0.04]">
+        <div className="bg-gradient-to-r from-accent-slate/8 via-accent-slate/4 to-transparent px-5 py-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="size-10 rounded-full bg-accent-slate/10 flex items-center justify-center">
               <Footprints className="size-5 text-accent-slate" />
@@ -378,10 +379,10 @@ export function WorkoutStage() {
 
   if (!workout) {
     return (
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] flex items-center justify-center p-12">
+      <div className="rounded-2xl border border-border bg-card flex items-center justify-center p-12 shadow-sm ring-1 ring-border/40 ring-inset">
         <div className="text-center">
-          <Dumbbell className="size-8 text-white/10 mx-auto mb-3" />
-          <p className="text-sm text-white/30">No workout loaded for this day</p>
+          <Dumbbell className="size-8 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No workout loaded for this day</p>
         </div>
       </div>
     )
@@ -390,20 +391,20 @@ export function WorkoutStage() {
   const FocusIcon = focusConfig.icon
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col min-h-0 border border-white/[0.06] bg-white/[0.015]">
+    <div className="rounded-2xl overflow-hidden flex flex-col min-h-0 border border-border bg-card shadow-sm ring-1 ring-border/40 ring-inset">
       {/* Hero header */}
       <div
         className={cn(
-          'px-5 py-4 bg-gradient-to-r border-b border-white/[0.04]',
+          'px-5 py-4 bg-gradient-to-r border-b border-border',
           focusConfig.gradient
         )}
       >
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="text-lg font-semibold text-foreground">
             {workout.name}
           </h2>
           {routine?.updatedAt && (
-            <span className="text-[9px] font-medium bg-white/[0.08] text-white/40 px-1.5 py-0.5 rounded-full">
+            <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
               v{routine.weeks.length || 1}
             </span>
           )}
@@ -414,22 +415,22 @@ export function WorkoutStage() {
             </Badge>
           )}
         </div>
-        <p className="text-xs text-white/50 mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           {schedule?.focus} · {schedule?.goal}
         </p>
       </div>
 
       {/* Progress bar */}
-      <div className="px-5 py-2.5 flex items-center gap-3 border-b border-white/[0.03]">
-        <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+      <div className="px-5 py-2.5 flex items-center gap-3 border-b border-border">
+        <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-accent-sage/60"
             animate={{ width: `${overallProgress}%` }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
           />
         </div>
-        <span className="text-[11px] text-white/50 shrink-0 tabular-nums">
-          {completedCount}/{totalExercises}
+        <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums" title={`${displayCompleted} of ${totalExercises} exercises completed`}>
+          {displayCompleted}/{totalExercises}
         </span>
       </div>
 
@@ -495,7 +496,7 @@ export function WorkoutStage() {
 
         {/* Notes */}
         {workout.notes && workout.notes.length > 0 && (
-          <div className="bg-muted/20 rounded-xl mx-5 mb-4 mt-2 p-4 border-l-2 border-border/20">
+          <div className="bg-muted/30 rounded-xl mx-5 mb-4 mt-2 p-4 border-l-2 border-muted-foreground/30">
             <p className="text-xs font-medium text-muted-foreground mb-1.5">
               Notes
             </p>
@@ -514,12 +515,12 @@ export function WorkoutStage() {
       </div>
 
       {/* Bottom actions */}
-      <div className="border-t border-white/[0.05] px-5 py-3 flex items-center justify-between bg-white/[0.02]">
-        <span className="text-xs text-white/45 tabular-nums">
-          {completedCount}/{totalExercises} exercises
+      <div className="border-t border-border px-5 py-3 flex items-center justify-between bg-muted/30">
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {displayCompleted} of {totalExercises} completed
         </span>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-white/50 hover:text-white/80">
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground">
             <SkipForward className="size-3.5" />
             Skip
           </Button>

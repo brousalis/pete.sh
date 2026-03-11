@@ -574,7 +574,7 @@ function ZoneAnalysisCard({ advice, zones }: { advice: WorkoutAdvice; zones: Hea
                 style={{ width: `${zone.percentage}%`, opacity: 0.9 }}
               >
                 {zone.percentage >= 15 && (
-                  <span className="text-[10px] font-semibold text-white/90">{zone.percentage}%</span>
+                  <span className="text-[10px] font-semibold text-foreground">{zone.percentage}%</span>
                 )}
               </div>
             )

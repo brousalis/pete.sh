@@ -24,13 +24,13 @@ export function ShoppingSummary() {
     .slice(0, 3)
 
   return (
-    <div className="rounded-xl p-4 border border-white/[0.06] bg-white/[0.02]">
+    <div className="rounded-xl p-4 border border-border bg-card shadow-sm ring-1 ring-border/40 ring-inset">
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="size-3.5 text-white/40" />
-          <span className="text-xs font-semibold text-white/80">Shopping</span>
+          <ShoppingCart className="size-3.5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">Shopping</span>
         </div>
-        <span className="text-[10px] text-white/45 tabular-nums">
+        <span className="text-[10px] text-muted-foreground tabular-nums">
           {checked}/{total}
         </span>
       </div>
@@ -38,13 +38,13 @@ export function ShoppingSummary() {
       <Progress value={progress} className="h-1 mb-3" />
 
       {uncheckedItems.length > 0 && (
-        <div className="space-y-1.5 mb-2.5">
+        <div className="space-y-2 mb-2.5">
           {uncheckedItems.map(item => (
-            <div key={item.ingredient} className="flex items-center gap-2">
-              <div className="size-[5px] rounded-full bg-white/10 shrink-0" />
-              <span className="text-[11px] text-white/55 truncate">{item.ingredient}</span>
+            <div key={item.ingredient} className="flex items-center gap-2 py-0.5">
+              <div className="size-[5px] rounded-full bg-muted-foreground/40 shrink-0" />
+              <span className="text-[11px] text-muted-foreground truncate">{item.ingredient}</span>
               {item.amount && (
-                <span className="text-[10px] text-white/35 shrink-0 ml-auto">
+                <span className="text-[10px] text-muted-foreground/80 shrink-0 ml-auto">
                   {item.amount} {item.unit}
                 </span>
               )}
@@ -53,7 +53,7 @@ export function ShoppingSummary() {
         </div>
       )}
 
-      <Link href="/cooking" className="text-[10px] text-white/35 hover:text-white/60 transition-colors">
+      <Link href="/cooking" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
         View all →
       </Link>
     </div>

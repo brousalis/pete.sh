@@ -44,6 +44,10 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   private fitnessService: FitnessService
   private currentRoutineId: string = 'climber-physique'
 
+  getCurrentRoutineId(): string {
+    return this.currentRoutineId
+  }
+
   constructor(debug: boolean = false) {
     super({ serviceName: 'fitness', debug })
     this.fitnessService = new FitnessService()

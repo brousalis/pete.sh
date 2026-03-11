@@ -22,6 +22,8 @@ interface CalendarWeekViewProps {
   onSelectDate: (date: Date) => void
   onSelectEvent: (event: CalendarEvent) => void
   direction?: 'left' | 'right'
+  /** 0 = Sunday, 1 = Monday. Use 1 to align with dashboard day cards. */
+  weekStartsOn?: 0 | 1
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -34,10 +36,11 @@ export function CalendarWeekView({
   onSelectDate,
   onSelectEvent,
   direction = 'right',
+  weekStartsOn = 0,
 }: CalendarWeekViewProps) {
-  const weekDays = getWeekDays(currentDate, selectedDate, events)
+  const weekDays = getWeekDays(currentDate, selectedDate, events, weekStartsOn)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
+  const weekStart = startOfWeek(currentDate, { weekStartsOn })
 
   // Scroll to 8 AM on mount and date change so the working day (8am-8pm) is visible
   useEffect(() => {
@@ -186,7 +189,7 @@ export function CalendarWeekView({
                 ))}
               </div>
 
-              {/* Day columns */}
+              {/* Day columns - use same grid as week horizon for alignment */}
               <div className="relative grid flex-1 grid-cols-7">
                 {/* Hour lines */}
                 {HOURS.map(hour => (
@@ -198,7 +201,7 @@ export function CalendarWeekView({
                 ))}
 
                 {/* Current time indicator */}
-                <CurrentTimeIndicator />
+                <CurrentTimeIndicator weekStartsOn={weekStartsOn} />
 
                 {/* Day columns with events */}
                 {weekDays.map(day => {
@@ -274,15 +277,16 @@ export function CalendarWeekView({
   )
 }
 
-function CurrentTimeIndicator() {
+function CurrentTimeIndicator({ weekStartsOn = 0 }: { weekStartsOn?: 0 | 1 }) {
   const now = new Date()
   const hours = now.getHours()
   const minutes = now.getMinutes()
   const top = (hours * 60 + minutes) * (HOUR_HEIGHT / 60)
 
-  // Get current day of week (0-6)
+  // Get current day of week: 0=Sun, 1=Mon, ... 6=Sat
   const dayOfWeek = now.getDay()
-  const leftPercent = (dayOfWeek / 7) * 100
+  const columnIndex = weekStartsOn === 1 ? (dayOfWeek + 6) % 7 : dayOfWeek
+  const leftPercent = (columnIndex / 7) * 100
 
   return (
     <div

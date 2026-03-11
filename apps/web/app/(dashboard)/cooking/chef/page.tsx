@@ -89,7 +89,7 @@ function ToolInvocationBadge({
           ) : (
             <X className="h-3 w-3 text-accent-rose" />
           )}
-          <span className="font-medium text-white/80">{r.message}</span>
+          <span className="font-medium text-foreground">{r.message}</span>
         </div>
       </div>
     )
@@ -101,16 +101,16 @@ function ToolInvocationBadge({
   }
 
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin text-accent-gold" />
         ) : (
           <Wrench className="h-3 w-3 text-accent-sage" />
         )}
-        <span className="font-medium text-white/80">{meta.label}</span>
+        <span className="font-medium text-foreground">{meta.label}</span>
         {Object.keys(args).length > 0 && toolName !== 'suggestWeekPlan' && (
-          <span className="text-white/30">
+          <span className="text-muted-foreground">
             ({Object.entries(args)
               .filter(([k]) => k !== 'plan')
               .map(([k, v]) => `${k}: ${v}`)
@@ -173,15 +173,15 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
   return (
     <div className="my-3 rounded-lg border border-accent-gold/20 bg-gradient-to-b from-accent-gold/5 to-transparent overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4 text-accent-gold" />
-            <span className="text-sm font-semibold text-white/90">
+            <span className="text-sm font-semibold text-foreground">
               {plan.weekTheme || 'Suggested Meal Plan'}
             </span>
           </div>
-          <span className="text-xs text-white/40 mt-0.5">{plan.estimatedPrepTime}</span>
+          <span className="text-xs text-muted-foreground mt-0.5">{plan.estimatedPrepTime}</span>
         </div>
         {applied ? (
           <div className="flex items-center gap-1.5 text-xs text-accent-sage">
@@ -206,12 +206,12 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
       </div>
 
       {/* Day grid */}
-      <div className="grid grid-cols-7 divide-x divide-white/5">
+      <div className="grid grid-cols-7 divide-x divide-border">
         {dayOrder.map((day) => {
           const meals = dayMap.get(day)
           return (
             <div key={day} className="p-2 min-w-0">
-              <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1.5 text-center">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 text-center">
                 {dayLabels[day]}
               </div>
               {meals && meals.length > 0 ? (
@@ -219,16 +219,16 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
                   {meals.map((m, i) => (
                     <div
                       key={i}
-                      className="rounded-md bg-white/5 px-1.5 py-1.5 group relative"
+                      className="rounded-md bg-muted/30 px-1.5 py-1.5 group relative"
                       title={m.reasoning}
                     >
-                      <div className="text-[11px] font-medium text-white/80 leading-tight line-clamp-2">
+                      <div className="text-[11px] font-medium text-foreground leading-tight line-clamp-2">
                         {m.recipeName}
                       </div>
                       {m.prepTime && (
                         <div className="flex items-center gap-0.5 mt-0.5">
-                          <Clock className="h-2.5 w-2.5 text-white/25" />
-                          <span className="text-[9px] text-white/25">{m.prepTime}m</span>
+                          <Clock className="h-2.5 w-2.5 text-muted-foreground" />
+                          <span className="text-[9px] text-muted-foreground">{m.prepTime}m</span>
                         </div>
                       )}
                     </div>
@@ -236,7 +236,7 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
                 </div>
               ) : (
                 <div className="h-10 flex items-center justify-center">
-                  <span className="text-[10px] text-white/15">—</span>
+                  <span className="text-[10px] text-muted-foreground">—</span>
                 </div>
               )}
             </div>
@@ -261,7 +261,7 @@ function MessageMetadata({ metadata }: { metadata?: Record<string, unknown> }) {
   if (!tokens && !model && !createdAt) return null
 
   return (
-    <div className="flex items-center gap-3 mt-1 text-[10px] text-white/20">
+    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
       {model && (
         <span className="flex items-center gap-0.5">
           <ChefHat className="h-2.5 w-2.5" />
@@ -348,23 +348,23 @@ function PreferencesPanel({
   )
 
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-border">
       <button
-        className="flex items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-white/60 hover:text-white/80 transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
         <span className="flex items-center gap-1.5">
           <UtensilsCrossed className="h-3.5 w-3.5" />
           Preferences
         </span>
-        <span className="text-[10px] text-white/30">{collapsed ? '+' : '−'}</span>
+        <span className="text-[10px] text-muted-foreground">{collapsed ? '+' : '−'}</span>
       </button>
 
       {!collapsed && (
         <div className="px-3 pb-3 space-y-3">
           {/* Dislikes */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Dislikes
             </label>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -392,14 +392,14 @@ function PreferencesPanel({
                 value={newDislike}
                 onChange={(e) => setNewDislike(e.target.value)}
                 placeholder="Add dislike..."
-                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
+                className="w-full bg-muted/30 border border-border rounded px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
               />
             </form>
           </div>
 
           {/* Allergies */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Allergies
             </label>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -427,14 +427,14 @@ function PreferencesPanel({
                 value={newAllergy}
                 onChange={(e) => setNewAllergy(e.target.value)}
                 placeholder="Add allergy..."
-                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
+                className="w-full bg-muted/30 border border-border rounded px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
               />
             </form>
           </div>
 
           {/* Dietary */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Dietary
             </label>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -445,7 +445,7 @@ function PreferencesPanel({
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.dietary.includes(d)
                       ? 'bg-accent-sage/15 text-accent-sage border-accent-sage/30'
-                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                      : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
                   )}
                   onClick={() => toggleChip('dietary', d)}
                 >
@@ -457,7 +457,7 @@ function PreferencesPanel({
 
           {/* Cuisine Preferences */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Cuisines
             </label>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -468,7 +468,7 @@ function PreferencesPanel({
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.cuisinePreferences.includes(c)
                       ? 'bg-accent-gold/15 text-accent-gold border-accent-gold/30'
-                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                      : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
                   )}
                   onClick={() => toggleChip('cuisinePreferences', c)}
                 >
@@ -480,12 +480,12 @@ function PreferencesPanel({
 
           {/* Household Size */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Household
             </label>
             <div className="flex items-center gap-2 mt-1">
               <button
-                className="h-5 w-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors"
+                className="h-5 w-5 rounded bg-muted/30 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() =>
                   onUpdate({
                     ...preferences,
@@ -495,11 +495,11 @@ function PreferencesPanel({
               >
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="text-xs font-medium text-white/70 tabular-nums w-4 text-center">
+              <span className="text-xs font-medium text-foreground tabular-nums w-4 text-center">
                 {preferences.householdSize}
               </span>
               <button
-                className="h-5 w-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors"
+                className="h-5 w-5 rounded bg-muted/30 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() =>
                   onUpdate({
                     ...preferences,
@@ -509,13 +509,13 @@ function PreferencesPanel({
               >
                 <Plus className="h-3 w-3" />
               </button>
-              <span className="text-[10px] text-white/30">people</span>
+              <span className="text-[10px] text-muted-foreground">people</span>
             </div>
           </div>
 
           {/* Cooking Time */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Weeknight Time
             </label>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -526,7 +526,7 @@ function PreferencesPanel({
                     'rounded-full px-2 py-0.5 text-[10px] transition-colors border',
                     preferences.cookingTimePreference === t.value
                       ? 'bg-accent-azure/15 text-accent-azure border-accent-azure/30'
-                      : 'bg-white/5 text-white/40 border-white/10 hover:text-white/60'
+                      : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
                   )}
                   onClick={() =>
                     onUpdate({ ...preferences, cookingTimePreference: t.value as CookingPreferences['cookingTimePreference'] })
@@ -540,7 +540,7 @@ function PreferencesPanel({
 
           {/* Notes */}
           <div>
-            <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Notes
             </label>
             <textarea
@@ -548,7 +548,7 @@ function PreferencesPanel({
               onChange={(e) => onUpdate({ ...preferences, notes: e.target.value })}
               placeholder="Any other preferences..."
               rows={2}
-              className="mt-1 w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent-gold/30 resize-none"
+              className="mt-1 w-full bg-muted/30 border border-border rounded px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent-gold/30 resize-none"
             />
           </div>
         </div>
@@ -627,7 +627,7 @@ function ChatHistorySidebar({
   if (!isOpen) return null
 
   return (
-    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-white/10 bg-card/50">
+    <div className="flex w-[260px] flex-shrink-0 flex-col border-r border-border bg-card/50">
       {/* Preferences */}
       <PreferencesPanel
         preferences={preferences}
@@ -635,15 +635,15 @@ function ChatHistorySidebar({
       />
 
       {/* Sidebar header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 text-white/50" />
-          <span className="text-xs font-semibold text-white/70">History</span>
+          <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">History</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 text-white/50 hover:text-white"
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
           onClick={onNewChat}
           title="New Chat"
         >
@@ -655,9 +655,9 @@ function ChatHistorySidebar({
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <MessageSquare className="h-8 w-8 text-white/10 mb-2" />
-            <p className="text-xs text-white/30">No conversations yet</p>
-            <p className="text-[10px] text-white/20 mt-1">
+            <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground">No conversations yet</p>
+            <p className="text-[10px] text-muted-foreground mt-1">
               Start a chat to see it here
             </p>
           </div>
@@ -668,7 +668,7 @@ function ChatHistorySidebar({
               if (!items || items.length === 0) return null
               return (
                 <div key={groupName}>
-                  <div className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-white/25">
+                  <div className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     {groupName}
                   </div>
                   <div className="space-y-0.5">
@@ -681,20 +681,20 @@ function ChatHistorySidebar({
                           className={cn(
                             'group relative flex items-center rounded-md px-2 py-2 cursor-pointer transition-all',
                             isActive
-                              ? 'bg-white/10 border-l-2 border-accent-gold pl-1.5'
-                              : 'hover:bg-white/5 border-l-2 border-transparent'
+                              ? 'bg-muted border-l-2 border-accent-gold pl-1.5'
+                              : 'hover:bg-muted/50 border-l-2 border-transparent'
                           )}
                           onClick={() => onSelect(conv.id)}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="truncate text-xs font-medium text-white/70 group-hover:text-white/90">
+                            <div className="truncate text-xs font-medium text-foreground group-hover:text-foreground">
                               {conv.title}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-white/25">
+                              <span className="text-[10px] text-muted-foreground">
                                 {formatRelativeTime(conv.updatedAt)}
                               </span>
-                              <span className="text-[10px] text-white/20">
+                              <span className="text-[10px] text-muted-foreground">
                                 {conv.messageCount} msgs
                               </span>
                             </div>
@@ -712,7 +712,7 @@ function ChatHistorySidebar({
                                 Delete
                               </button>
                               <button
-                                className="rounded px-1.5 py-0.5 text-[10px] text-white/40 hover:text-white/60 transition-colors"
+                                className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setConfirmDeleteId(null)
@@ -723,7 +723,7 @@ function ChatHistorySidebar({
                             </div>
                           ) : (
                             <button
-                              className="ml-1 rounded p-1 text-white/0 group-hover:text-white/30 hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
+                              className="ml-1 rounded p-1 text-transparent group-hover:text-muted-foreground hover:!text-accent-rose hover:bg-accent-rose/10 transition-all"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setConfirmDeleteId(conv.id)
@@ -1020,11 +1020,11 @@ function AiChefPageContent() {
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-white/50 hover:text-white"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen((v) => !v)}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
           >
@@ -1034,7 +1034,7 @@ function AiChefPageContent() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-white/60 hover:text-white"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               Cooking
@@ -1042,14 +1042,14 @@ function AiChefPageContent() {
           </Link>
           <div className="flex items-center gap-2">
             <ChefHat className="h-5 w-5 text-accent-gold" />
-            <h1 className="text-lg font-semibold text-white">AI Chef</h1>
+            <h1 className="text-lg font-semibold text-foreground">AI Chef</h1>
           </div>
           <div className="flex-1" />
           {messages.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-xs text-white/50 hover:text-white"
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               onClick={handleNewChat}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -1068,10 +1068,10 @@ function AiChefPageContent() {
             <div className="mx-auto max-w-2xl mt-8">
               <div className="text-center mb-8">
                 <ChefHat className="h-12 w-12 text-accent-gold/50 mx-auto mb-3" />
-                <h2 className="text-xl font-medium text-white/70 mb-1">
+                <h2 className="text-xl font-medium text-foreground mb-1">
                   What should we cook?
                 </h2>
-                <p className="text-sm text-white/30">
+                <p className="text-sm text-muted-foreground">
                   Plan meals, get recipe suggestions, or ask about what to cook tonight.
                 </p>
               </div>
@@ -1081,7 +1081,7 @@ function AiChefPageContent() {
                     key={action.label}
                     variant="outline"
                     size="sm"
-                    className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
+                    className="h-auto py-3 px-4 text-left justify-start text-foreground hover:text-foreground border-border hover:border-border"
                     onClick={() => handleQuickAction(action.prompt)}
                   >
                     <Sparkles className="h-3.5 w-3.5 mr-2 flex-shrink-0 text-accent-gold/70" />
@@ -1106,7 +1106,7 @@ function AiChefPageContent() {
                     className={`max-w-[80%] rounded-lg px-4 py-3 text-sm ${
                       message.role === 'user'
                         ? 'bg-accent-gold/30 text-white'
-                        : 'bg-white/5 text-white/80 border border-white/10'
+                        : 'bg-muted/30 text-foreground border border-border'
                     }`}
                   >
                     <div>
@@ -1119,27 +1119,27 @@ function AiChefPageContent() {
                               <ReactMarkdown
                                 components={{
                                   h1: ({ children }) => (
-                                    <h1 className="text-base font-bold text-white mt-3 mb-1.5 first:mt-0">
+                                    <h1 className="text-base font-bold text-foreground mt-3 mb-1.5 first:mt-0">
                                       {children}
                                     </h1>
                                   ),
                                   h2: ({ children }) => (
-                                    <h2 className="text-sm font-semibold text-white mt-3 mb-1 first:mt-0">
+                                    <h2 className="text-sm font-semibold text-foreground mt-3 mb-1 first:mt-0">
                                       {children}
                                     </h2>
                                   ),
                                   h3: ({ children }) => (
-                                    <h3 className="text-sm font-medium text-white/90 mt-2 mb-1 first:mt-0">
+                                    <h3 className="text-sm font-medium text-foreground mt-2 mb-1 first:mt-0">
                                       {children}
                                     </h3>
                                   ),
                                   p: ({ children }) => (
-                                    <p className="text-sm text-white/80 mb-2 last:mb-0 leading-relaxed">
+                                    <p className="text-sm text-foreground mb-2 last:mb-0 leading-relaxed">
                                       {children}
                                     </p>
                                   ),
                                   strong: ({ children }) => (
-                                    <strong className="font-semibold text-white">
+                                    <strong className="font-semibold text-foreground">
                                       {children}
                                     </strong>
                                   ),
@@ -1149,27 +1149,27 @@ function AiChefPageContent() {
                                     </em>
                                   ),
                                   ul: ({ children }) => (
-                                    <ul className="list-disc list-inside text-sm text-white/80 mb-2 space-y-0.5">
+                                    <ul className="list-disc list-inside text-sm text-foreground mb-2 space-y-0.5">
                                       {children}
                                     </ul>
                                   ),
                                   ol: ({ children }) => (
-                                    <ol className="list-decimal list-inside text-sm text-white/80 mb-2 space-y-0.5">
+                                    <ol className="list-decimal list-inside text-sm text-foreground mb-2 space-y-0.5">
                                       {children}
                                     </ol>
                                   ),
                                   li: ({ children }) => (
-                                    <li className="text-white/80">
+                                    <li className="text-foreground">
                                       {children}
                                     </li>
                                   ),
                                   code: ({ children }) => (
-                                    <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-gold/70">
+                                    <code className="bg-muted rounded px-1 py-0.5 text-xs font-mono text-accent-gold/70">
                                       {children}
                                     </code>
                                   ),
                                   hr: () => (
-                                    <hr className="border-white/10 my-3" />
+                                    <hr className="border-border my-3" />
                                   ),
                                 }}
                               >
@@ -1248,7 +1248,7 @@ function AiChefPageContent() {
                     })
                 ) && (
                   <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+                    <div className="bg-muted/30 border border-border rounded-lg px-4 py-3">
                       <Loader2 className="h-4 w-4 animate-spin text-accent-gold" />
                     </div>
                   </div>
@@ -1270,7 +1270,7 @@ function AiChefPageContent() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-white/10 px-6 py-4">
+        <div className="border-t border-border px-6 py-4">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -1286,7 +1286,7 @@ function AiChefPageContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your AI chef..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent-gold/50"
+              className="flex-1 bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent-gold/50"
               disabled={status !== 'ready'}
             />
             <Button

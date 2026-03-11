@@ -2,7 +2,8 @@
 
 import { AssistantModalProvider } from '@/components/assistant-modal-provider'
 import { useRoundedLayout } from '@/components/settings-provider'
-import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
+// Top nav and mobile bottom nav commented out for one-page app UX
+// import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
 import { cn } from '@/lib/utils'
 import type React from 'react'
 
@@ -31,18 +32,18 @@ export default function DashboardLayout({
             // isRounded && 'rounded-2xl sm:rounded-3xl'
           )}
         >
-          {/* Top Navigation - fixed height, shrink-0 to prevent compression */}
-          <div className="shrink-0">
+          {/* Top Navigation - commented out for one-page app */}
+          {/* <div className="shrink-0">
             <TopNavigation />
-          </div>
+          </div> */}
 
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
           <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 md:px-6 md:py-6">
             <div className="h-full">{children}</div>
           </main>
 
-          {/* Mobile bottom navigation - icon-based tab bar */}
-          <MobileBottomNavigation />
+          {/* Mobile bottom navigation - commented out for one-page app */}
+          {/* <MobileBottomNavigation /> */}
         </div>
       </div>
     </div>

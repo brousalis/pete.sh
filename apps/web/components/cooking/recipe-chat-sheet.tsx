@@ -89,16 +89,16 @@ function ToolBadge({
   const isComplete = state === 'result' || state === 'output-available'
 
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin text-accent-gold" />
         ) : isComplete ? (
           <Wrench className="h-3 w-3 text-accent-sage" />
         ) : (
-          <Wrench className="h-3 w-3 text-white/30" />
+          <Wrench className="h-3 w-3 text-muted-foreground/70" />
         )}
-        <span className="font-medium text-white/80">{meta.label}</span>
+        <span className="font-medium text-foreground/90">{meta.label}</span>
         {isRunning ? (
           <span className="ml-auto text-accent-gold/70">working...</span>
         ) : isComplete ? (
@@ -160,7 +160,7 @@ function VersionPreviewCard({
 
       <div className="p-3 space-y-2.5">
         {/* Commit message */}
-        <p className="text-xs font-medium text-white/90">{commitMessage}</p>
+        <p className="text-xs font-medium text-foreground">{commitMessage}</p>
 
         {/* Meta changes */}
         {metaChanges.length > 0 && (
@@ -176,7 +176,7 @@ function VersionPreviewCard({
         {/* Ingredient changes */}
         {(addedIngredients.length > 0 || removedIngredients.length > 0 || modifiedIngredients.length > 0) && (
           <div className="space-y-0.5">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">Ingredients</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">Ingredients</span>
             {addedIngredients.map((ing) => (
               <div key={`add-${ing.name}`} className="text-[11px] text-accent-sage/80 flex items-center gap-1.5">
                 <Plus className="h-2.5 w-2.5 text-accent-sage" />
@@ -204,7 +204,7 @@ function VersionPreviewCard({
         {/* Instructions changed */}
         {instructionsChanged && (
           <div className="space-y-0.5">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-white/30">Instructions</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">Instructions</span>
             <div className="text-[11px] text-accent-azure/80">
               {proposed.instructions.length} steps (was {current.instructions.length})
             </div>
@@ -229,7 +229,7 @@ function VersionPreviewCard({
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs border-white/10 text-white/60 hover:text-white"
+            className="h-7 text-xs border-border text-muted-foreground hover:text-foreground"
             onClick={onDismiss}
             disabled={applying}
           >
@@ -357,7 +357,7 @@ export function RecipeChatSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg p-0 flex flex-col bg-card border-l border-white/10"
+        className="w-full sm:max-w-lg p-0 flex flex-col bg-card border-l border-border"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>AI Chef — {recipe.name}</SheetTitle>
@@ -365,16 +365,16 @@ export function RecipeChatSheet({
         </SheetHeader>
 
         {/* Header */}
-        <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3 shrink-0">
+        <div className="flex items-center gap-2.5 border-b border-border px-4 py-3 shrink-0">
           <ChefHat className="h-4 w-4 text-accent-gold shrink-0" />
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-white truncate">AI Chef</h2>
-            <p className="text-[11px] text-white/40 truncate">Discussing: {recipe.name}</p>
+            <h2 className="text-sm font-semibold text-foreground truncate">AI Chef</h2>
+            <p className="text-[11px] text-muted-foreground truncate">Discussing: {recipe.name}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-white/40 hover:text-white shrink-0"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
             onClick={() => onOpenChange(false)}
           >
             <X className="h-4 w-4" />
@@ -391,7 +391,7 @@ export function RecipeChatSheet({
             <div className="mt-4">
               <div className="text-center mb-5">
                 <ChefHat className="h-8 w-8 text-accent-gold/40 mx-auto mb-2" />
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-muted-foreground/70">
                   Ask me anything about this recipe — improvements, substitutions, or variations.
                 </p>
               </div>
@@ -401,7 +401,7 @@ export function RecipeChatSheet({
                     key={action.label}
                     variant="outline"
                     size="sm"
-                    className="h-auto py-2.5 px-3 text-left justify-start text-[11px] text-white/60 hover:text-white border-white/10 hover:border-white/20"
+                    className="h-auto py-2.5 px-3 text-left justify-start text-[11px] text-muted-foreground hover:text-foreground border-border hover:border-border/80"
                     onClick={() => handleSend(action.prompt)}
                     disabled={isLoading}
                   >
@@ -425,8 +425,8 @@ export function RecipeChatSheet({
                     className={cn(
                       'max-w-[85%] rounded-lg px-3 py-2.5 text-sm',
                       message.role === 'user'
-                        ? 'bg-accent-gold/30 text-white'
-                        : 'bg-white/5 text-white/80 border border-white/10'
+                        ? 'bg-accent-gold/30 text-foreground'
+                        : 'bg-muted/30 text-foreground/90 border border-border'
                     )}
                   >
                     {message.parts.map((part, index) => {
@@ -437,17 +437,17 @@ export function RecipeChatSheet({
                           <div key={index} className="recipe-chat-markdown">
                             <ReactMarkdown
                               components={{
-                                h1: ({ children }) => <h1 className="text-sm font-bold text-white mt-2.5 mb-1 first:mt-0">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-[13px] font-semibold text-white mt-2.5 mb-1 first:mt-0">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-[13px] font-medium text-white/90 mt-2 mb-0.5 first:mt-0">{children}</h3>,
-                                p: ({ children }) => <p className="text-[13px] text-white/80 mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
-                                strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                                h1: ({ children }) => <h1 className="text-sm font-bold text-foreground mt-2.5 mb-1 first:mt-0">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-[13px] font-semibold text-foreground mt-2.5 mb-1 first:mt-0">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-[13px] font-medium text-foreground mt-2 mb-0.5 first:mt-0">{children}</h3>,
+                                p: ({ children }) => <p className="text-[13px] text-foreground/90 mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
+                                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
                                 em: ({ children }) => <em className="text-accent-gold">{children}</em>,
-                                ul: ({ children }) => <ul className="list-disc list-inside text-[13px] text-white/80 mb-1.5 space-y-0.5">{children}</ul>,
-                                ol: ({ children }) => <ol className="list-decimal list-inside text-[13px] text-white/80 mb-1.5 space-y-0.5">{children}</ol>,
-                                li: ({ children }) => <li className="text-white/80">{children}</li>,
-                                code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs font-mono text-accent-gold">{children}</code>,
-                                hr: () => <hr className="border-white/10 my-2" />,
+                                ul: ({ children }) => <ul className="list-disc list-inside text-[13px] text-foreground/90 mb-1.5 space-y-0.5">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal list-inside text-[13px] text-foreground/90 mb-1.5 space-y-0.5">{children}</ol>,
+                                li: ({ children }) => <li className="text-foreground/90">{children}</li>,
+                                code: ({ children }) => <code className="bg-muted rounded px-1 py-0.5 text-xs font-mono text-accent-gold">{children}</code>,
+                                hr: () => <hr className="border-border my-2" />,
                               }}
                             >
                               {part.text}
@@ -493,8 +493,8 @@ export function RecipeChatSheet({
                           }
                           if (dismissed.has(toolCallId)) {
                             return (
-                              <div key={index} className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
-                                <div className="flex items-center gap-2 text-white/40">
+                              <div key={index} className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                   <X className="h-3 w-3" />
                                   <span>Proposed changes dismissed</span>
                                 </div>
@@ -541,7 +541,7 @@ export function RecipeChatSheet({
                     })
                 ) && (
                   <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5">
+                    <div className="bg-muted/30 border border-border rounded-lg px-3 py-2.5">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-accent-gold" />
                     </div>
                   </div>
@@ -561,7 +561,7 @@ export function RecipeChatSheet({
         </div>
 
         {/* Input */}
-        <div className="border-t border-white/10 px-4 py-3 shrink-0">
+        <div className="border-t border-border px-4 py-3 shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -573,7 +573,7 @@ export function RecipeChatSheet({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={`Ask about ${recipe.name}...`}
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent-gold/50"
+              className="flex-1 bg-muted/30 border border-border rounded-lg px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent-gold/50"
               disabled={status !== 'ready'}
             />
             <Button

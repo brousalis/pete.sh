@@ -106,16 +106,16 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
 
   return (
     <div className="my-3 rounded-lg border border-accent-gold/20 bg-gradient-to-b from-accent-gold/5 to-transparent overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4 text-accent-gold" />
-            <span className="text-sm font-semibold text-white/90">
+            <span className="text-sm font-semibold text-foreground">
               {plan.weekTheme || 'Suggested Meal Plan'}
             </span>
           </div>
           {plan.estimatedPrepTime && (
-            <span className="text-xs text-white/40 mt-0.5">{plan.estimatedPrepTime}</span>
+            <span className="text-xs text-muted-foreground mt-0.5">{plan.estimatedPrepTime}</span>
           )}
         </div>
         {applied ? (
@@ -135,19 +135,19 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-7 divide-x divide-white/5">
+      <div className="grid grid-cols-7 divide-x divide-border">
         {dayOrder.map((day) => {
           const meals = dayMap.get(day)
           return (
             <div key={day} className="p-2 min-w-0">
-              <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1.5 text-center">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 text-center">
                 {dayLabels[day]}
               </div>
               {meals?.length ? (
                 <div className="space-y-1">
                   {meals.map((m, i) => (
-                    <div key={i} className="rounded-md bg-white/5 px-1.5 py-1.5" title={m.reasoning}>
-                      <div className="text-[11px] font-medium text-white/80 leading-tight line-clamp-2">
+                    <div key={i} className="rounded-md bg-muted/30 px-1.5 py-1.5" title={m.reasoning}>
+                      <div className="text-[11px] font-medium text-foreground leading-tight line-clamp-2">
                         {m.recipeName}
                       </div>
                     </div>
@@ -155,7 +155,7 @@ function WeekPlanPreview({ plan }: { plan: WeekPlanSuggestion }) {
                 </div>
               ) : (
                 <div className="h-10 flex items-center justify-center">
-                  <span className="text-[10px] text-white/15">—</span>
+                  <span className="text-[10px] text-muted-foreground">—</span>
                 </div>
               )}
             </div>
@@ -185,16 +185,16 @@ function ToolInvocationBadge({
   const isRunning = state === 'call' || state === 'partial-call' || state === 'input-streaming' || state === 'input-available'
 
   return (
-    <div className="my-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+    <div className="my-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
       <div className="flex items-center gap-2">
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin text-accent-violet" />
         ) : (
           <Wrench className="h-3 w-3 text-accent-sage" />
         )}
-        <span className="font-medium text-white/80">{meta.label}</span>
+        <span className="font-medium text-foreground">{meta.label}</span>
         {Object.keys(args).length > 0 && toolName !== 'suggestWeekPlan' && (
-          <span className="text-white/30 truncate">
+          <span className="text-muted-foreground truncate">
             ({Object.entries(args).filter(([k]) => k !== 'plan').map(([k, v]) => `${k}: ${v}`).join(', ')})
           </span>
         )}
@@ -247,20 +247,20 @@ function HistoryDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-white/60 hover:text-white">
+        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
           <History className="h-4 w-4" />
           History
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 border-white/10 bg-card">
+      <SheetContent side="left" className="w-72 border-border bg-card">
         <SheetHeader>
-          <SheetTitle className="text-white">Conversations</SheetTitle>
+          <SheetTitle className="text-foreground">Conversations</SheetTitle>
         </SheetHeader>
         <div className="mt-4 flex flex-col gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="w-full justify-start gap-2 border-white/10 text-white/70 hover:text-white"
+            className="w-full justify-start gap-2 border-border text-foreground hover:text-foreground"
             onClick={() => {
               onNewChat()
               onOpenChange(false)
@@ -269,7 +269,7 @@ function HistoryDrawer({
             <Plus className="h-4 w-4" />
             New conversation
           </Button>
-          <p className="text-xs text-white/40 px-1">
+          <p className="text-xs text-muted-foreground px-1">
             Your memory is shared across all conversations.
           </p>
           <div className="mt-2 flex-1 overflow-y-auto space-y-1">
@@ -278,7 +278,7 @@ function HistoryDrawer({
                 key={c.id}
                 className={cn(
                   'group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer',
-                  c.id === activeChatId ? 'bg-accent-violet/20 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  c.id === activeChatId ? 'bg-accent-violet/20 text-white' : 'text-foreground hover:bg-muted/50 hover:text-foreground'
                 )}
               >
                 <button
@@ -295,7 +295,7 @@ function HistoryDrawer({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-accent-rose"
+                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-accent-rose"
                   onClick={(e) => {
                     e.stopPropagation()
                     onDelete(c.id)
@@ -550,15 +550,15 @@ export function AssistantPageContent({
 
   return (
     <div className={cn('flex h-full flex-col bg-card', fullScreen && 'w-full')}>
-      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
         {onClose ? (
-            <Button variant="ghost" size="sm" className="gap-1.5 text-white/60 hover:text-white" onClick={onClose}>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={onClose}>
               <ArrowLeft className="h-4 w-4" />
               Close
             </Button>
           ) : (
             <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-1.5 text-white/60 hover:text-white">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Home
               </Button>
@@ -566,11 +566,11 @@ export function AssistantPageContent({
           )}
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent-violet" />
-          <h1 className="text-lg font-semibold text-white">Assistant</h1>
+          <h1 className="text-lg font-semibold text-foreground">Assistant</h1>
         </div>
         <div className="flex-1" />
         {sessionUsage.totalTokens > 0 && (
-          <div className="hidden sm:flex items-center gap-2 text-[11px] text-white/40 tabular-nums">
+          <div className="hidden sm:flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
             <span>~{(sessionUsage.totalTokens / 1000).toFixed(1)}k tokens</span>
             <span>·</span>
             <span>~${sessionUsage.estimatedCostUsd.toFixed(3)}</span>
@@ -586,7 +586,7 @@ export function AssistantPageContent({
           onOpenChange={setHistoryDrawerOpen}
         />
         {messages.length > 0 && (
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-white/50 hover:text-white" onClick={handleNewChat}>
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={handleNewChat}>
             <Plus className="h-3.5 w-3.5" />
             New conversation
           </Button>
@@ -598,11 +598,11 @@ export function AssistantPageContent({
           <div className={cn('mx-auto mt-8', contentWidthClass)}>
             <div className="text-center mb-8">
               <Sparkles className="h-12 w-12 text-accent-violet/50 mx-auto mb-3" />
-              <h2 className="text-xl font-medium text-white/70 mb-1">What can I help with?</h2>
-              <p className="text-sm text-white/30 mb-1">
+              <h2 className="text-xl font-medium text-foreground mb-1">What can I help with?</h2>
+              <p className="text-sm text-muted-foreground mb-1">
                 I remember our conversations and get better over time.
               </p>
-              <p className="text-xs text-white/25">
+              <p className="text-xs text-muted-foreground">
                 I know your routines, goals, and preferences across meals and fitness.
               </p>
             </div>
@@ -612,7 +612,7 @@ export function AssistantPageContent({
                   key={action.label}
                   variant="outline"
                   size="sm"
-                  className="h-auto py-3 px-4 text-left justify-start text-white/70 hover:text-white border-white/10 hover:border-white/20"
+                  className="h-auto py-3 px-4 text-left justify-start text-foreground hover:text-foreground border-border hover:border-border"
                   onClick={() => {
                     setChatError(null)
                     sendMessage({ text: action.prompt })
@@ -633,7 +633,7 @@ export function AssistantPageContent({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white/50 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={loadOlder}
                   disabled={loadingOlder}
                 >
@@ -651,10 +651,10 @@ export function AssistantPageContent({
                 <div key={key}>
                   {showDateDivider && (
                     <div className="sticky top-0 z-10 py-1 flex items-center gap-2">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {thisGroup}
                       </span>
-                      <div className="flex-1 h-px bg-white/10" />
+                      <div className="flex-1 h-px bg-border" />
                     </div>
                   )}
                   <div className={showDateDivider ? 'mt-2' : ''}>
@@ -666,7 +666,7 @@ export function AssistantPageContent({
                           'max-w-[80%] rounded-lg px-4 py-3 text-sm',
                           message.role === 'user'
                             ? 'bg-accent-violet/30 text-white'
-                            : 'bg-white/5 text-white/80 border border-white/10'
+                            : 'bg-muted/30 text-foreground border border-border'
                         )}
                       >
                         <div>
@@ -680,12 +680,12 @@ export function AssistantPageContent({
                                 <div key={index} className="prose prose-invert prose-sm max-w-none">
                                   <ReactMarkdown
                                     components={{
-                                      p: ({ children }) => <p className="text-sm text-white/80 mb-2 last:mb-0">{children}</p>,
-                                      strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-                                      ul: ({ children }) => <ul className="list-disc list-inside text-sm text-white/80 mb-2">{children}</ul>,
-                                      ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-white/80 mb-2">{children}</ol>,
-                                      li: ({ children }) => <li className="text-white/80">{children}</li>,
-                                      code: ({ children }) => <code className="bg-white/10 rounded px-1 py-0.5 text-xs">{children}</code>,
+                                      p: ({ children }) => <p className="text-sm text-foreground mb-2 last:mb-0">{children}</p>,
+                                      strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                      ul: ({ children }) => <ul className="list-disc list-inside text-sm text-foreground mb-2">{children}</ul>,
+                                      ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-foreground mb-2">{children}</ol>,
+                                      li: ({ children }) => <li className="text-foreground">{children}</li>,
+                                      code: ({ children }) => <code className="bg-muted rounded px-1 py-0.5 text-xs">{children}</code>,
                                     }}
                                   >
                                     {part.text}
@@ -757,7 +757,7 @@ export function AssistantPageContent({
                           })}
                         </div>
                         {message.role === 'assistant' && (message.metadata as Record<string, unknown>)?.totalTokens != null && (
-                          <div className="mt-1 text-[10px] text-white/20">
+                          <div className="mt-1 text-[10px] text-muted-foreground">
                             {(message.metadata as Record<string, unknown>).totalTokens as number} tokens
                           </div>
                         )}
@@ -770,7 +770,7 @@ export function AssistantPageContent({
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+                <div className="bg-muted/30 border border-border rounded-lg px-4 py-3">
                   <Loader2 className="h-4 w-4 animate-spin text-accent-violet" />
                 </div>
               </div>
@@ -786,7 +786,7 @@ export function AssistantPageContent({
         )}
       </div>
 
-      <div className="border-t border-white/10 px-6 py-4">
+      <div className="border-t border-border px-6 py-4">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -813,7 +813,7 @@ export function AssistantPageContent({
               }}
               placeholder="Ask about meals, workouts, or anything... (Shift+Enter for new line)"
               rows={2}
-              className="flex-1 min-h-[2.5rem] max-h-32 resize-y overflow-y-auto bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent-violet/50"
+              className="flex-1 min-h-[2.5rem] max-h-32 resize-y overflow-y-auto bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent-violet/50"
               disabled={status !== 'ready'}
             />
             <Button type="submit" disabled={status !== 'ready' || !input.trim()} className="bg-accent-violet hover:bg-accent-violet/90 text-white px-6 shrink-0 self-end">

@@ -66,13 +66,15 @@ export function getMonthDays(
 
 /**
  * Get days for a week view
+ * @param weekStartsOn 0 = Sunday, 1 = Monday (default 0 for standalone calendar)
  */
 export function getWeekDays(
   date: Date,
   selectedDate: Date | null,
-  events: CalendarEvent[]
+  events: CalendarEvent[],
+  weekStartsOn: 0 | 1 = 0
 ): WeekDay[] {
-  const weekStart = startOfWeek(date, { weekStartsOn: 0 })
+  const weekStart = startOfWeek(date, { weekStartsOn })
   const days = eachDayOfInterval({
     start: weekStart,
     end: addDays(weekStart, 6),

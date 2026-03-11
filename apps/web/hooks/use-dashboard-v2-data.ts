@@ -21,6 +21,27 @@ import type {
 import { format, startOfWeek } from 'date-fns'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+/** Activity metrics from aggregate API (for ActivitySummary) */
+export interface ActivityDailyMetrics {
+  steps: number | null
+  active_calories: number | null
+  exercise_minutes: number | null
+  stand_hours: number | null
+  move_goal: number | null
+  exercise_goal: number | null
+  stand_goal: number | null
+  resting_heart_rate: number | null
+  heart_rate_variability: number | null
+}
+
+export interface ActivityWeeklySummary {
+  totalWorkouts: number
+  totalDurationMin: number
+  totalCalories: number
+  totalDistanceMiles: number
+  avgHr: number | null
+}
+
 export interface DashboardV2Data {
   routine: WeeklyRoutine | null
   workout: Workout | null
@@ -32,6 +53,8 @@ export interface DashboardV2Data {
   weather: WeatherObservation | null
   forecast: WeatherForecast | null
   spotifyTrack: SpotifyPlayback | null
+  activityDaily: ActivityDailyMetrics | null
+  activityWeekly: ActivityWeeklySummary | null
 }
 
 export interface SpotifyPlayback {
@@ -105,13 +128,25 @@ export function useDashboardV2Data(): DashboardV2State {
     weather: null,
     forecast: null,
     spotifyTrack: null,
+    activityDaily: null,
+    activityWeekly: null,
   })
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<
     Partial<Record<keyof DashboardV2Data, string>>
   >({})
 
-  const workoutCacheRef = useRef<Map<string, Workout>>(new Map())
+  /** Cache full aggregate response per (day, weekStart) for date navigation */
+  const aggregateCacheRef = useRef<
+    Map<string, { data: DashboardV2Data; errors: Partial<Record<keyof DashboardV2Data, string>> }>
+  >(new Map())
+  /** Week-level cache: routine, mealPlan, etc. don't change by day - use for fast day nav */
+  const weekCacheRef = useRef<
+    Map<
+      string,
+      Omit<DashboardV2Data, 'workout'> & { errors: Partial<Record<keyof DashboardV2Data, string>> }
+    >
+  >(new Map())
   const fetchIdRef = useRef(0)
 
   const dayOfWeek = getDayOfWeek(selectedDate)
@@ -123,7 +158,7 @@ export function useDashboardV2Data(): DashboardV2State {
     focusType === 'Rest' || focusType === 'Active Recovery'
 
   const fetchAllData = useCallback(
-    async (date: Date, isInitialLoad = false) => {
+    async (date: Date, isInitialLoad = false, forceRefresh = false) => {
       const fetchId = ++fetchIdRef.current
       if (isInitialLoad) setLoading(true)
 
@@ -131,10 +166,112 @@ export function useDashboardV2Data(): DashboardV2State {
       const week = getWeekNumber(date)
       const weekStart = startOfWeek(date, { weekStartsOn: 1 })
       const weekStartStr = format(weekStart, 'yyyy-MM-dd')
+      const cacheKey = `${day}-${weekStartStr}`
+
+      // Check cache first for date navigation (skip when force refresh)
+      const cached = !forceRefresh ? aggregateCacheRef.current.get(cacheKey) : null
+      if (cached) {
+        setData(prev => ({ ...prev, ...cached.data }))
+        setErrors(cached.errors)
+        setLoading(false)
+        return
+      }
+
+      // If we have week-level cache, only fetch workout (much faster)
+      const weekCache = !forceRefresh ? weekCacheRef.current.get(weekStartStr) : null
+      if (weekCache) {
+        const workoutParams = new URLSearchParams({
+          day,
+          week: String(week),
+          year: String(date.getFullYear()),
+        })
+        const workoutRes = await apiGet<Workout>(`/api/dashboard/workout?${workoutParams.toString()}`)
+        if (fetchId !== fetchIdRef.current) return
+        const workout = workoutRes?.success && workoutRes.data ? workoutRes.data : null
+        const newData: DashboardV2Data = {
+          ...weekCache,
+          workout,
+        }
+        const newErrors = { ...weekCache.errors }
+        if (!workoutRes?.success && workoutRes?.error) newErrors.workout = 'Failed to load workout'
+        aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+        setData(prev => ({ ...prev, ...newData }))
+        setErrors(newErrors)
+        setLoading(false)
+        return
+      }
+
+      interface DashboardApiData {
+        routine: WeeklyRoutine | null
+        workout: Workout | null
+        consistencyStats: ConsistencyStats | null
+        mealPlan: MealPlan | null
+        recipes: Recipe[]
+        shoppingList: ShoppingList | null
+        calendarEvents: CalendarEvent[]
+        weather: WeatherObservation | null
+        forecast: WeatherForecast | null
+        activityDaily: ActivityDailyMetrics | null
+        activityWeekly: ActivityWeeklySummary | null
+      }
+
+      interface DashboardApiResponse {
+        success: boolean
+        data?: DashboardApiData
+        errors?: Partial<Record<keyof DashboardV2Data, string>>
+      }
+
+      const params = new URLSearchParams({
+        day,
+        week_start: weekStartStr,
+        week: String(week),
+        year: String(date.getFullYear()),
+        max_calendar_results: '10',
+      })
+      const aggregateRes = await apiGet<DashboardApiData>(`/api/dashboard?${params.toString()}`) as DashboardApiResponse
+
+      if (fetchId !== fetchIdRef.current) return
+
+      if (aggregateRes.success && aggregateRes.data) {
+        const agg = aggregateRes.data
+        const newData: DashboardV2Data = {
+          routine: agg.routine ?? null,
+          workout: agg.workout ?? null,
+          consistencyStats: agg.consistencyStats ?? null,
+          mealPlan: agg.mealPlan ?? null,
+          recipes: agg.recipes ?? [],
+          shoppingList: agg.shoppingList ?? null,
+          calendarEvents: agg.calendarEvents ?? [],
+          weather: agg.weather ?? null,
+          forecast: agg.forecast ?? null,
+          spotifyTrack: null,
+          activityDaily: agg.activityDaily ?? null,
+          activityWeekly: agg.activityWeekly ?? null,
+        }
+        const newErrors = aggregateRes.errors ?? {}
+        aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+        weekCacheRef.current.set(weekStartStr, {
+          routine: newData.routine,
+          consistencyStats: newData.consistencyStats,
+          mealPlan: newData.mealPlan,
+          recipes: newData.recipes,
+          shoppingList: newData.shoppingList,
+          calendarEvents: newData.calendarEvents,
+          weather: newData.weather,
+          forecast: newData.forecast,
+          spotifyTrack: newData.spotifyTrack,
+          activityDaily: newData.activityDaily,
+          activityWeekly: newData.activityWeekly,
+          errors: newErrors,
+        })
+        setData(prev => ({ ...prev, ...newData }))
+        setErrors(newErrors)
+        setLoading(false)
+        return
+      }
+
+      // Fallback to legacy parallel fetch
       const newErrors: Partial<Record<keyof DashboardV2Data, string>> = {}
-
-      const cachedWorkout = workoutCacheRef.current.get(day)
-
       const [
         routineRes,
         workoutRes,
@@ -144,58 +281,54 @@ export function useDashboardV2Data(): DashboardV2State {
         calendarRes,
         weatherRes,
         forecastRes,
+        activityDailyRes,
+        activityWeeklyRes,
       ] = await Promise.all([
         apiGet<WeeklyRoutine>('/api/fitness/routine').catch(() => null),
-        cachedWorkout
-          ? Promise.resolve({ success: true, data: cachedWorkout })
-          : apiGet<Workout>(`/api/fitness/workout/${day}`).catch(() => null),
+        apiGet<Workout>(`/api/fitness/workout/${day}?week=${week}&year=${date.getFullYear()}`).catch(() => null),
         apiGet<ConsistencyStats>('/api/fitness/consistency').catch(() => null),
-        apiGet<MealPlan>(
-          `/api/cooking/meal-plans?week_start=${weekStartStr}`
-        ).catch(() => null),
+        apiGet<MealPlan>(`/api/cooking/meal-plans?week_start=${weekStartStr}`).catch(() => null),
         apiGet<Recipe[]>('/api/cooking/recipes').catch(() => null),
-        apiGet<{ events: CalendarEvent[] }>(
-          '/api/calendar/upcoming?maxResults=10'
-        ).catch(() => null),
+        apiGet<{ events: CalendarEvent[] }>('/api/calendar/upcoming?maxResults=10').catch(() => null),
         apiGet<WeatherObservation>('/api/weather/current').catch(() => null),
         apiGet<WeatherForecast>('/api/weather/forecast').catch(() => null),
+        apiGet<ActivityDailyMetrics[] | ActivityDailyMetrics>('/api/apple-health/daily?days=1').catch(() => null),
+        apiGet<{ type: string; weeks: ActivityWeeklySummary[] }>('/api/apple-health/summary?weeks=1&type=weekly').catch(() => null),
       ])
 
       if (fetchId !== fetchIdRef.current) return
 
-      const workout =
-        workoutRes?.success && workoutRes.data ? workoutRes.data : null
-      if (workout) workoutCacheRef.current.set(day, workout)
-      if (!workoutRes?.success) newErrors.workout = 'Failed to load workout'
-
-      const routine =
-        routineRes?.success && routineRes.data ? routineRes.data : null
+      const routine = routineRes?.success && routineRes.data ? routineRes.data : null
       if (!routineRes?.success) newErrors.routine = 'Failed to load routine'
 
+      const workout = workoutRes?.success && workoutRes.data ? workoutRes.data : null
+      if (!workoutRes?.success) newErrors.workout = 'Failed to load workout'
+
       const consistencyStats =
-        consistencyRes?.success && consistencyRes.data
-          ? consistencyRes.data
-          : null
+        consistencyRes?.success && consistencyRes.data ? consistencyRes.data : null
 
-      const mealPlan =
-        mealPlanRes?.success && mealPlanRes.data ? mealPlanRes.data : null
-      if (!mealPlanRes?.success)
-        newErrors.mealPlan = 'Failed to load meal plan'
+      const mealPlan = mealPlanRes?.success && mealPlanRes.data ? mealPlanRes.data : null
+      if (!mealPlanRes?.success) newErrors.mealPlan = 'Failed to load meal plan'
 
-      const recipes =
-        recipesRes?.success && recipesRes.data ? recipesRes.data : []
+      const recipes = recipesRes?.success && recipesRes.data ? recipesRes.data : []
 
       const calendarEvents =
-        calendarRes?.success && calendarRes.data?.events
-          ? calendarRes.data.events
-          : []
-      if (!calendarRes?.success)
-        newErrors.calendarEvents = 'Failed to load calendar'
+        calendarRes?.success && calendarRes.data?.events ? calendarRes.data.events : []
+      if (!calendarRes?.success) newErrors.calendarEvents = 'Failed to load calendar'
 
-      const weather =
-        weatherRes?.success && weatherRes.data ? weatherRes.data : null
-      const forecast =
-        forecastRes?.success && forecastRes.data ? forecastRes.data : null
+      const weather = weatherRes?.success && weatherRes.data ? weatherRes.data : null
+      const forecast = forecastRes?.success && forecastRes.data ? forecastRes.data : null
+
+      let activityDaily: ActivityDailyMetrics | null = null
+      if (activityDailyRes?.success && activityDailyRes.data) {
+        const d = activityDailyRes.data
+        activityDaily = Array.isArray(d) ? d[0] ?? null : d
+      }
+
+      let activityWeekly: ActivityWeeklySummary | null = null
+      if (activityWeeklyRes?.success && activityWeeklyRes.data?.weeks?.[0]) {
+        activityWeekly = activityWeeklyRes.data.weeks[0]
+      }
 
       let shoppingList: ShoppingList | null = null
       if (mealPlan) {
@@ -211,8 +344,7 @@ export function useDashboardV2Data(): DashboardV2State {
 
       if (fetchId !== fetchIdRef.current) return
 
-      setData(prev => ({
-        ...prev,
+      const newData: DashboardV2Data = {
         routine,
         workout,
         consistencyStats,
@@ -222,7 +354,26 @@ export function useDashboardV2Data(): DashboardV2State {
         calendarEvents,
         weather,
         forecast,
-      }))
+        spotifyTrack: null,
+        activityDaily,
+        activityWeekly,
+      }
+      aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+      weekCacheRef.current.set(weekStartStr, {
+        routine: newData.routine,
+        consistencyStats: newData.consistencyStats,
+        mealPlan: newData.mealPlan,
+        recipes: newData.recipes,
+        shoppingList: newData.shoppingList,
+        calendarEvents: newData.calendarEvents,
+        weather: newData.weather,
+        forecast: newData.forecast,
+        spotifyTrack: newData.spotifyTrack,
+        activityDaily: newData.activityDaily,
+        activityWeekly: newData.activityWeekly,
+        errors: newErrors,
+      })
+      setData(prev => ({ ...prev, ...newData }))
       setErrors(newErrors)
       setLoading(false)
     },
@@ -248,21 +399,21 @@ export function useDashboardV2Data(): DashboardV2State {
     return () => clearInterval(interval)
   }, [isInitialized])
 
-  // Poll spotify every 15 seconds
-  useEffect(() => {
-    if (!isInitialized) return
-    const fetchSpotify = async () => {
-      const res = await apiGet<SpotifyPlayback>('/api/spotify/player').catch(
-        () => null
-      )
-      if (res?.success && res.data) {
-        setData(prev => ({ ...prev, spotifyTrack: res.data! }))
-      }
-    }
-    fetchSpotify()
-    const interval = setInterval(fetchSpotify, 15_000)
-    return () => clearInterval(interval)
-  }, [isInitialized])
+  // // Poll spotify every 15 seconds
+  // useEffect(() => {
+  //   if (!isInitialized) return
+  //   const fetchSpotify = async () => {
+  //     const res = await apiGet<SpotifyPlayback>('/api/spotify/player').catch(
+  //       () => null
+  //     )
+  //     if (res?.success && res.data) {
+  //       setData(prev => ({ ...prev, spotifyTrack: res.data! }))
+  //     }
+  //   }
+  //   fetchSpotify()
+  //   const interval = setInterval(fetchSpotify, 15_000)
+  //   return () => clearInterval(interval)
+  // }, [isInitialized])
 
   const navigateToDay = useCallback(
     (date: Date, direction: 'forward' | 'backward') => {
@@ -372,7 +523,7 @@ export function useDashboardV2Data(): DashboardV2State {
   )
 
   const refetch = useCallback(() => {
-    fetchAllData(selectedDate, true)
+    fetchAllData(selectedDate, true, true)
   }, [selectedDate, fetchAllData])
 
   return {

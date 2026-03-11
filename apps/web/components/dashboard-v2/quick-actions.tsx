@@ -42,7 +42,7 @@ export function QuickActions() {
           'flex-1 min-w-0 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-all border overflow-hidden',
           morningDone
             ? 'bg-accent-sage/[0.07] border-accent-sage/20 hover:bg-accent-sage/[0.12]'
-            : 'bg-white/[0.02] border-white/[0.06] hover:bg-accent-gold/[0.06] hover:border-accent-gold/20'
+            : 'bg-card border-border hover:bg-accent-gold/[0.06] hover:border-accent-gold/20 shadow-sm ring-1 ring-border/40 ring-inset'
         )}
       >
         <div
@@ -58,10 +58,10 @@ export function QuickActions() {
           )}
         </div>
         <div className="min-w-0 flex-1 text-left overflow-hidden">
-          <p className={cn('text-[11px] font-medium leading-tight truncate', morningDone ? 'text-accent-sage' : 'text-white/90')}>
+          <p className={cn('text-[11px] font-medium leading-tight truncate', morningDone ? 'text-accent-sage' : 'text-foreground')}>
             {routine?.dailyRoutines.morning.name || 'Morning'}
           </p>
-          <p className="text-[10px] text-white/40">
+          <p className="text-[10px] text-muted-foreground">
             {morningDone && morningAt
               ? format(new Date(morningAt), 'h:mm a')
               : `${routine?.dailyRoutines.morning.duration || 5}m`}
@@ -76,7 +76,7 @@ export function QuickActions() {
           'flex-1 min-w-0 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-all border overflow-hidden',
           nightDone
             ? 'bg-accent-sage/[0.07] border-accent-sage/20 hover:bg-accent-sage/[0.12]'
-            : 'bg-white/[0.02] border-white/[0.06] hover:bg-accent-violet/[0.06] hover:border-accent-violet/20'
+            : 'bg-card border-border hover:bg-accent-violet/[0.06] hover:border-accent-violet/20 shadow-sm ring-1 ring-border/40 ring-inset'
         )}
       >
         <div
@@ -92,10 +92,10 @@ export function QuickActions() {
           )}
         </div>
         <div className="min-w-0 flex-1 text-left overflow-hidden">
-          <p className={cn('text-[11px] font-medium leading-tight truncate', nightDone ? 'text-accent-sage' : 'text-white/90')}>
+          <p className={cn('text-[11px] font-medium leading-tight truncate', nightDone ? 'text-accent-sage' : 'text-foreground')}>
             {routine?.dailyRoutines.night.name || 'Night'}
           </p>
-          <p className="text-[10px] text-white/40">
+          <p className="text-[10px] text-muted-foreground">
             {nightDone && nightAt
               ? format(new Date(nightAt), 'h:mm a')
               : `${routine?.dailyRoutines.night.duration || 9}m`}

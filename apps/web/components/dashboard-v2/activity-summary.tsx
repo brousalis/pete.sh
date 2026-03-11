@@ -1,7 +1,6 @@
 'use client'
 
-import { useConnectivity } from '@/components/connectivity-provider'
-import { apiGet } from '@/lib/api/client'
+import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import { cn } from '@/lib/utils'
 import {
   Activity,
@@ -14,27 +13,6 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-
-interface DailyMetrics {
-  steps: number | null
-  active_calories: number | null
-  exercise_minutes: number | null
-  stand_hours: number | null
-  move_goal: number | null
-  exercise_goal: number | null
-  stand_goal: number | null
-  resting_heart_rate: number | null
-  heart_rate_variability: number | null
-}
-
-interface WeeklySummary {
-  totalWorkouts: number
-  totalDurationMin: number
-  totalCalories: number
-  totalDistanceMiles: number
-  avgHr: number | null
-}
 
 function MiniRing({
   value,
@@ -93,50 +71,21 @@ function StatItem({
 }) {
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
-      <Icon className="size-3 text-white/35 shrink-0" />
+      <Icon className="size-3 text-muted-foreground shrink-0" />
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold tabular-nums text-white/90 leading-none">
+        <p className="text-[11px] font-semibold tabular-nums text-foreground leading-none">
           {value ?? '--'}
-          {unit && <span className="text-[9px] text-white/45 ml-0.5">{unit}</span>}
+          {unit && <span className="text-[9px] text-muted-foreground/80 ml-0.5">{unit}</span>}
         </p>
-        <p className="text-[8px] text-white/35 leading-none mt-0.5">{label}</p>
+        <p className="text-[8px] text-muted-foreground leading-none mt-0.5">{label}</p>
       </div>
     </div>
   )
 }
 
 export function ActivitySummary() {
-  const { isInitialized } = useConnectivity()
-  const [daily, setDaily] = useState<DailyMetrics | null>(null)
-  const [weekly, setWeekly] = useState<WeeklySummary | null>(null)
-  const [stale, setStale] = useState(false)
-
-  useEffect(() => {
-    if (!isInitialized) return
-    const fetchData = async () => {
-      try {
-        const [dailyRes, summaryRes] = await Promise.all([
-          apiGet<DailyMetrics[]>('/api/apple-health/daily?days=1'),
-          apiGet<{ type: string; weeks: WeeklySummary[] }>(
-            '/api/apple-health/summary?weeks=1&type=weekly'
-          ),
-        ])
-
-        if (dailyRes.success && dailyRes.data?.[0]) {
-          setDaily(dailyRes.data[0])
-        } else {
-          setStale(true)
-        }
-
-        if (summaryRes.success && summaryRes.data?.weeks?.[0]) {
-          setWeekly(summaryRes.data.weeks[0])
-        }
-      } catch {
-        setStale(true)
-      }
-    }
-    fetchData()
-  }, [isInitialized])
+  const { activityDaily: daily, activityWeekly: weekly, loading } = useDashboardV2()
+  const stale = !loading && !daily
 
   const moveVal = daily?.active_calories ?? 0
   const moveGoal = daily?.move_goal ?? 600
@@ -147,7 +96,7 @@ export function ActivitySummary() {
 
   return (
     <Link href="/fitness/activity" className="block">
-      <div className="rounded-xl px-3.5 py-3 border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all group">
+      <div className="rounded-xl px-3.5 py-3 border border-border bg-card hover:bg-muted/50 transition-all group shadow-sm ring-1 ring-border/40 ring-inset">
         {/* Header */}
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5">

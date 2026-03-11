@@ -37,7 +37,7 @@ export function CookingWidget() {
 
       const [mealPlanRes, recipesRes] = await Promise.all([
         apiGet<MealPlan>(
-          `/api/cooking/meal-plans?week_start=${weekStart.toISOString()}`
+          `/api/cooking/meal-plans?week_start=${format(weekStart, 'yyyy-MM-dd')}`
         ),
         apiGet<Recipe[]>('/api/cooking/recipes'),
       ])

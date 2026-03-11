@@ -47,9 +47,9 @@ export function MealSpotlight() {
 
   if (!dayMeals?.dinner && !dayMeals?.breakfast && !dayMeals?.lunch) {
     return (
-      <div className="rounded-xl p-5 text-center border border-white/[0.06] bg-white/[0.02]">
-        <UtensilsCrossed className="size-7 text-white/10 mx-auto mb-2" />
-        <p className="text-sm text-white/40">No meals planned</p>
+      <div className="rounded-xl p-5 text-center border border-border bg-card shadow-sm ring-1 ring-border/40 ring-inset">
+        <UtensilsCrossed className="size-7 text-muted-foreground/30 mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">No meals planned</p>
         <Link href="/cooking">
           <Button
             variant="ghost"
@@ -64,20 +64,20 @@ export function MealSpotlight() {
   }
 
   return (
-    <div className="rounded-xl overflow-hidden group border border-white/[0.06]">
+    <div className="rounded-xl overflow-hidden group border border-border shadow-sm ring-1 ring-border/40 ring-inset">
       {/* Breakfast/lunch compact rows */}
       {(breakfast || lunch) && (
-        <div className="px-4 pt-3 pb-1 space-y-1 bg-white/[0.02]">
+        <div className="px-4 pt-3 pb-1 space-y-1 bg-card">
           {breakfast && (
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-medium uppercase tracking-wider text-white/35 w-10">Bfast</span>
-              <span className="text-[11px] text-white/60 truncate">{breakfast.name}</span>
+              <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60 w-10">Bfast</span>
+              <span className="text-[11px] text-muted-foreground truncate">{breakfast.name}</span>
             </div>
           )}
           {lunch && (
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-medium uppercase tracking-wider text-white/35 w-10">Lunch</span>
-              <span className="text-[11px] text-white/60 truncate">{lunch.name}</span>
+              <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60 w-10">Lunch</span>
+              <span className="text-[11px] text-muted-foreground truncate">{lunch.name}</span>
             </div>
           )}
         </div>
@@ -133,7 +133,7 @@ export function MealSpotlight() {
 
         <Link
           href="/cooking"
-          className="flex items-center gap-0.5 text-xs font-medium text-white/40 hover:text-white/70 mt-2 transition-colors"
+          className="flex items-center gap-0.5 text-xs font-medium text-white/70 hover:text-white mt-2 transition-colors"
         >
           Start Cooking
           <ChevronRight className="size-3" />

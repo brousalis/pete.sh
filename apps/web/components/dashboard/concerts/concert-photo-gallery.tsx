@@ -294,7 +294,7 @@ function Lightbox({
         {photo.caption && (
           <p className="mt-2 text-center text-sm text-white">{photo.caption}</p>
         )}
-        <p className="text-center text-xs text-white/50">
+        <p className="text-center text-xs text-muted-foreground">
           {currentIndex + 1} / {photos.length}
         </p>
       </div>
