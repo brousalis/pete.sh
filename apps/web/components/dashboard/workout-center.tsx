@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   Ban,
+  Check,
   ChevronDown,
   ChevronRight,
   Dumbbell,
@@ -664,7 +665,7 @@ export function WorkoutCenter({
 
         {/* Sections - Scrollable on desktop only */}
         <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
-          <div className="space-y-2 p-2">
+          <div className="">
             {sections.map(section => (
               <WorkoutSection
                 key={section.id}
@@ -688,7 +689,7 @@ export function WorkoutCenter({
 
             {/* Notes */}
             {workout.notes && workout.notes.length > 0 && (
-              <div className="bg-muted/30 border-muted rounded-md border p-2">
+              <div className="bg-muted/30 p-2">
                 <div className="text-muted-foreground mb-1 text-[11px] font-medium">
                   Notes
                 </div>
@@ -751,11 +752,11 @@ export function WorkoutCenter({
                       <Dialog open={skipDialogOpen} onOpenChange={setSkipDialogOpen}>
                         <DialogTrigger asChild>
                           <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-9 sm:h-8 gap-1 px-2.5 sm:px-2 text-muted-foreground hover:text-foreground touch-manipulation"
+               size="sm"
+                variant="ghost"
+                className="h-8 sm:h-6 px-3 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground hover:text-foreground gap-1 touch-manipulation"
                           >
-                            <Ban className="size-4 sm:size-3.5" />
+                            <Ban className="size-3.5 sm:size-3" />
                             <span className="hidden sm:inline">Skip</span>
                           </Button>
                         </DialogTrigger>
@@ -785,8 +786,9 @@ export function WorkoutCenter({
                           </div>
                           <DialogFooter className="gap-2 sm:gap-0">
                             <Button
-                              variant="outline"
-                              className="h-11 sm:h-10 touch-manipulation"
+               size="sm"
+                variant="ghost"
+                className="h-8 sm:h-6 px-3 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground hover:text-foreground gap-1 touch-manipulation"
                               onClick={() => {
                                 setSkipDialogOpen(false)
                                 setSkipReason('')
@@ -795,7 +797,9 @@ export function WorkoutCenter({
                               Cancel
                             </Button>
                             <Button
-                              className="h-11 sm:h-10 touch-manipulation"
+               size="sm"
+                variant="ghost"
+                className="h-8 sm:h-6 px-3 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground hover:text-foreground gap-1 touch-manipulation"
                               onClick={handleSkipSubmit}
                               disabled={!skipReason.trim() || isSkipping}
                             >
@@ -825,11 +829,13 @@ export function WorkoutCenter({
                       </div>
                     ) : (
                       <Button
-                        size="sm"
-                        className="h-10 sm:h-8 px-4 sm:px-3 text-sm sm:text-xs touch-manipulation"
+               size="sm"
+                variant="ghost"
+                className="h-8 sm:h-6 px-3 sm:px-2 text-[11px] sm:text-[10px] text-muted-foreground hover:text-foreground gap-1 touch-manipulation"
                         onClick={handleComplete}
                         disabled={isCompleting}
                       >
+                                     <Check className="size-3.5 sm:size-3" />
                         {isCompleting ? 'Completing...' : 'Complete'}
                       </Button>
                     )}
@@ -925,7 +931,7 @@ function WorkoutSection({
   const firstTimedExercise = timedExercises[0]
 
   return (
-    <div className={cn('overflow-hidden rounded-lg border', section.bgColor)}>
+    <div className={cn('overflow-hidden ', section.bgColor)}>
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger asChild>
           <button className="active:bg-muted/30 hover:bg-muted/30 flex w-full items-center gap-2 p-3 sm:p-2.5 text-left transition-colors touch-manipulation">

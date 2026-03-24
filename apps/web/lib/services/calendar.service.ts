@@ -4,6 +4,7 @@
  */
 
 import { config } from "@/lib/config"
+import type { GoogleCalendarListEntry } from "@/lib/types/calendar-account.types"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
 import { auth, calendar as googleCalendar } from "@googleapis/calendar"
 import { cookies } from "next/headers"
@@ -202,23 +203,31 @@ export class CalendarService {
   /**
    * Get authorization URL
    * @param forceConsent - If true, forces consent screen to ensure refresh token is obtained
+   * @param state - Optional state parameter for CSRF and returnTo support
    */
-  getAuthUrl(forceConsent: boolean = false): string {
+  getAuthUrl(forceConsent: boolean = false, state?: string): string {
     if (!this.isConfigured()) {
       throw new Error("Google Calendar not configured")
     }
 
-    const scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+    const scopes = [
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "openid",
+      "email",
+      "profile",
+    ]
 
     const authOptions: any = {
       access_type: "offline",
       scope: scopes,
     }
 
-    // Force consent screen to ensure we get a refresh token
-    // This is important for the first authorization
     if (forceConsent) {
       authOptions.prompt = "consent"
+    }
+
+    if (state) {
+      authOptions.state = state
     }
 
     return this.oauth2Client.generateAuthUrl(authOptions)
@@ -421,6 +430,80 @@ export class CalendarService {
           console.error("[CalendarService] Token refresh failed:", refreshError)
           throw new Error(`Google Calendar API error: Token refresh failed. Please re-authenticate.`)
         }
+      }
+      throw new Error(`Google Calendar API error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  /**
+   * Exchange an authorization code for tokens
+   */
+  async exchangeCode(code: string): Promise<{
+    access_token: string
+    refresh_token?: string
+    expiry_date?: number
+    id_token?: string
+  }> {
+    if (!this.isConfigured()) {
+      throw new Error("Google Calendar not configured")
+    }
+
+    const { tokens } = await this.oauth2Client.getToken(code)
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token ?? undefined,
+      expiry_date: tokens.expiry_date ?? undefined,
+      id_token: tokens.id_token ?? undefined,
+    }
+  }
+
+  /**
+   * List all calendars available to the authenticated user
+   */
+  async listCalendars(): Promise<GoogleCalendarListEntry[]> {
+    if (!this.isConfigured()) {
+      throw new Error("Google Calendar not configured")
+    }
+
+    if (!this.calendar) {
+      throw new Error("Calendar client not initialized")
+    }
+
+    try {
+      const response = await this.calendar.calendarList.list()
+      const items = response.data.items || []
+
+      return items.map((cal: any) => ({
+        id: cal.id,
+        summary: cal.summary || cal.id,
+        description: cal.description,
+        backgroundColor: cal.backgroundColor,
+        foregroundColor: cal.foregroundColor,
+        primary: cal.primary || false,
+        accessRole: cal.accessRole,
+        timeZone: cal.timeZone,
+      }))
+    } catch (error: any) {
+      if (error.code === 401 && this.oauth2Client.credentials?.refresh_token) {
+        const { credentials } = await this.oauth2Client.refreshAccessToken()
+        const updatedCredentials = {
+          ...credentials,
+          refresh_token: credentials.refresh_token || this.oauth2Client.credentials.refresh_token,
+        }
+        this.oauth2Client.setCredentials(updatedCredentials)
+
+        const response = await this.calendar.calendarList.list()
+        const items = response.data.items || []
+        return items.map((cal: any) => ({
+          id: cal.id,
+          summary: cal.summary || cal.id,
+          description: cal.description,
+          backgroundColor: cal.backgroundColor,
+          foregroundColor: cal.foregroundColor,
+          primary: cal.primary || false,
+          accessRole: cal.accessRole,
+          timeZone: cal.timeZone,
+        }))
       }
       throw new Error(`Google Calendar API error: ${error instanceof Error ? error.message : "Unknown error"}`)
     }

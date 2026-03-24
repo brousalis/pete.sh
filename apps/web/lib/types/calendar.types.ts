@@ -35,6 +35,13 @@ export interface CalendarEvent {
   htmlLink?: string
   created: string
   updated: string
+  /** Populated by CalendarAdapter when aggregating across accounts */
+  _source?: {
+    accountId: string
+    accountEmail: string
+    calendarId: string
+    calendarName?: string
+  }
 }
 
 export interface CalendarListResponse {

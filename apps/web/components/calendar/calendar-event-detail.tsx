@@ -114,10 +114,7 @@ export function CalendarEventDetail({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 20 }}
         transition={{ duration: 0.2 }}
-        className={cn(
-          'border-border/50 bg-card flex h-full w-full flex-col overflow-hidden rounded-2xl border shadow-lg',
-          'lg:w-[360px]'
-        )}
+        className="border-border/50 bg-card flex h-full w-full flex-col overflow-hidden border shadow-lg"
       >
         {/* Header */}
         <div

@@ -1,8 +1,8 @@
 'use client'
 
-import { apiPost, apiPut } from '@/lib/api/client'
 import { Slider } from '@/components/ui/slider'
 import { ToggleSwitch } from '@/components/ui/toggle-switch'
+import { apiPost, apiPut } from '@/lib/api/client'
 import type { HueLight } from '@/lib/types/hue.types'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'

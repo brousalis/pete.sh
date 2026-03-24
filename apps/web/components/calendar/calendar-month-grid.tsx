@@ -1,11 +1,11 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { getMonthDays } from "@/lib/utils/calendar-utils"
 import { getEventColor } from "@/lib/types/calendar-views.types"
 import type { CalendarEvent } from "@/lib/types/calendar.types"
+import { cn } from "@/lib/utils"
+import { getMonthDays } from "@/lib/utils/calendar-utils"
 import { format } from "date-fns"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 
 interface CalendarMonthGridProps {
   currentDate: Date

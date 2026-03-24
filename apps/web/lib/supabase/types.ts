@@ -202,6 +202,7 @@ export interface CalendarEventRow {
   id: string
   event_id: string
   calendar_id: string
+  account_id: string | null
   summary: string | null
   description: string | null
   location: string | null
@@ -392,6 +393,7 @@ export interface CalendarEventInsert {
   id?: string
   event_id: string
   calendar_id: string
+  account_id?: string | null
   summary?: string | null
   description?: string | null
   location?: string | null
@@ -1145,6 +1147,25 @@ export interface FridgeScanInsert {
   created_at?: string
 }
 
+// Homework Response types
+export interface HomeworkResponseRow {
+  id: string
+  homework_id: string
+  respondent_id: string
+  responses: Record<string, string>
+  created_at: string
+  updated_at: string
+}
+
+export interface HomeworkResponseInsert {
+  id?: string
+  homework_id: string
+  respondent_id: string
+  responses?: Record<string, string>
+  created_at?: string
+  updated_at?: string
+}
+
 // Database type for Supabase client
 export type Database = {
   public: {
@@ -1376,6 +1397,13 @@ export type Database = {
         Row: FridgeScanRow
         Insert: FridgeScanInsert
         Update: Partial<FridgeScanInsert>
+        Relationships: []
+      }
+      // Homework responses table
+      homework_responses: {
+        Row: HomeworkResponseRow
+        Insert: HomeworkResponseInsert
+        Update: Partial<HomeworkResponseInsert>
         Relationships: []
       }
     }

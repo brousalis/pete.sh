@@ -46,6 +46,7 @@ export async function PUT(request: Request) {
       'display_monitor',
       'display_primary_input',
       'display_secondary_input',
+      'calendar_config',
     ]
     const updates: Record<string, unknown> = {}
 
@@ -127,6 +128,29 @@ export async function PUT(request: Request) {
         { error: 'display_secondary_input must be one of: hdmi, displayport' },
         { status: 400 }
       )
+    }
+
+    if ('calendar_config' in updates) {
+      const cc = updates.calendar_config
+      if (typeof cc !== 'object' || cc === null) {
+        return NextResponse.json(
+          { error: 'calendar_config must be an object' },
+          { status: 400 }
+        )
+      }
+      const validViews = ['month', 'week', 'day', 'agenda']
+      if ('default_view' in cc && !validViews.includes((cc as Record<string, unknown>).default_view as string)) {
+        return NextResponse.json(
+          { error: 'calendar_config.default_view must be one of: month, week, day, agenda' },
+          { status: 400 }
+        )
+      }
+      if ('week_starts_on' in cc && ![0, 1].includes((cc as Record<string, unknown>).week_starts_on as number)) {
+        return NextResponse.json(
+          { error: 'calendar_config.week_starts_on must be 0 (Sunday) or 1 (Monday)' },
+          { status: 400 }
+        )
+      }
     }
 
     const settings = await settingsService.updateSettings(updates)

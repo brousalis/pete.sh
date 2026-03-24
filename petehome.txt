@@ -89,6 +89,8 @@ petehome-cli
 
 petetrain watch
 - cache workout routine data so it doesn't need to keep goin
+	- still broken?
+- syncing doesn't work. but from the phone it does!
 
 ----------------------------------------------------------------------
 

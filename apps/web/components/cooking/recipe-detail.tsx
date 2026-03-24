@@ -51,6 +51,334 @@ import { AddToMealPlanPopover } from './add-to-meal-plan-popover'
 import { RecipeChatSheet } from './recipe-chat-sheet'
 import { RecipeVersionHistory } from './recipe-version-history'
 
+// ── Shared inline recipe content (used by both Sheet and Day view) ──
+
+interface RecipeDetailInlineProps {
+  recipe: RecipeWithIngredients
+  showImage?: boolean
+  onRefetch?: () => void
+  tabsLayoutId?: string
+  className?: string
+}
+
+export function RecipeDetailInline({
+  recipe,
+  showImage = true,
+  onRefetch,
+  tabsLayoutId = 'recipe-detail-tabs',
+  className,
+}: RecipeDetailInlineProps) {
+  const [scaledServings, setScaledServings] = useState<number | null>(null)
+
+  useEffect(() => {
+    setScaledServings(null)
+  }, [recipe.id])
+
+  const scaleFactor = useMemo(() => {
+    if (!recipe?.servings || !scaledServings) return 1
+    return scaledServings / recipe.servings
+  }, [recipe?.servings, scaledServings])
+
+  const displayServings = scaledServings ?? recipe?.servings
+  const isScaled = scaledServings !== null && recipe?.servings !== scaledServings
+
+  const scaleAmount = (amount: number | undefined): string => {
+    if (!amount) return ''
+    const scaled = amount * scaleFactor
+    return scaled % 1 === 0 ? scaled.toString() : scaled.toFixed(1)
+  }
+
+  const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
+
+  const parsedInstructions = useMemo((): RecipeStep[] => {
+    if (!recipe?.instructions) return []
+    if (Array.isArray(recipe.instructions)) return recipe.instructions as RecipeStep[]
+    if (typeof recipe.instructions === 'string') {
+      try { return JSON.parse(recipe.instructions) as RecipeStep[] } catch { return [] }
+    }
+    return []
+  }, [recipe?.instructions])
+
+  const difficultyColors = {
+    easy: 'bg-accent-sage/10 text-accent-sage',
+    medium: 'bg-accent-gold/10 text-accent-gold',
+    hard: 'bg-accent-rose/10 text-accent-rose',
+  }
+
+  return (
+    <div className={cn('space-y-5', className)}>
+      {showImage && resolveRecipeImageUrl(recipe.image_url) && (
+        <div className="relative aspect-video w-full overflow-hidden rounded-xl">
+          <img
+            src={resolveRecipeImageUrl(recipe.image_url)!}
+            alt={recipe.name}
+            className="h-full w-full object-cover"
+          />
+          {recipe.source === 'trader_joes' && (
+            <Badge className="absolute right-3 top-3 bg-accent-rose text-white border-0">
+              Trader Joe's
+            </Badge>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {totalTime > 0 && (
+          <Badge variant="secondary" className="gap-1">
+            <Clock className="size-3" />
+            {totalTime} min
+            {recipe.prep_time && recipe.cook_time && (
+              <span className="text-muted-foreground ml-1 text-[10px]">
+                ({recipe.prep_time}p + {recipe.cook_time}c)
+              </span>
+            )}
+          </Badge>
+        )}
+        {recipe.difficulty && (
+          <Badge
+            className={cn(
+              'border-0',
+              difficultyColors[recipe.difficulty]
+            )}
+          >
+            {recipe.difficulty}
+          </Badge>
+        )}
+        {recipe.source === 'trader_joes' && recipe.source_url && (
+          <a
+            href={recipe.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Badge
+              variant="outline"
+              className="gap-1 cursor-pointer hover:bg-muted"
+            >
+              <ExternalLink className="size-3" />
+              View on TJ's
+            </Badge>
+          </a>
+        )}
+      </div>
+
+      {recipe.tags && recipe.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {recipe.tags.map((tag) => (
+            <Badge key={tag} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {recipe.calories_per_serving && (
+        <NutritionCard
+          calories={recipe.calories_per_serving}
+          protein={recipe.protein_g}
+          fat={recipe.fat_g}
+          carbs={recipe.carbs_g}
+          fiber={recipe.fiber_g}
+          sugar={recipe.sugar_g}
+          sodium={recipe.sodium_mg}
+          saturatedFat={recipe.saturated_fat_g}
+          categories={recipe.nutrition_category}
+          completeness={recipe.nutrition_completeness}
+          scaleFactor={scaleFactor}
+        />
+      )}
+
+      <Tabs defaultValue="ingredients">
+        <TabsList layoutId={tabsLayoutId} className="w-full">
+          <TabsTrigger value="ingredients" layoutId={tabsLayoutId} className="flex-1">
+            Ingredients
+          </TabsTrigger>
+          <TabsTrigger value="instructions" layoutId={tabsLayoutId} className="flex-1">
+            Steps
+          </TabsTrigger>
+          <TabsTrigger value="notes" layoutId={tabsLayoutId} className="flex-1">
+            Notes
+          </TabsTrigger>
+          <TabsTrigger value="cook-log" layoutId={tabsLayoutId} className="flex-1">
+            <CalendarCheck className="size-3.5 mr-1" />
+            Cook Log
+          </TabsTrigger>
+          <TabsTrigger value="history" layoutId={tabsLayoutId} className="flex-1">
+            <History className="size-3.5 mr-1" />
+            Versions
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="ingredients" className="mt-4">
+          {recipe.servings && (
+            <div className="flex items-center justify-between mb-4 rounded-lg border p-3">
+              <div>
+                <span className="text-sm font-medium">Servings</span>
+                {isScaled && (
+                  <span className="text-[10px] text-muted-foreground ml-2">
+                    Scaled from {recipe.servings}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isScaled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => setScaledServings(null)}
+                  >
+                    <RotateCcw className="size-3" />
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-7"
+                  onClick={() =>
+                    setScaledServings(
+                      Math.max(1, (displayServings || 1) - 1)
+                    )
+                  }
+                >
+                  <Minus className="size-3" />
+                </Button>
+                <span className="text-sm font-semibold w-6 text-center tabular-nums">
+                  {displayServings}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-7"
+                  onClick={() =>
+                    setScaledServings((displayServings || 1) + 1)
+                  }
+                >
+                  <Plus className="size-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {recipe.ingredients && recipe.ingredients.length > 0 ? (
+            <ul className="space-y-1">
+              {recipe.ingredients.map((ingredient, index) => {
+                const n = ingredient.nutrition
+                const grams = ingredient.weight_grams
+                const hasMacros = n && grams && grams > 0
+                const ingCal = hasMacros ? Math.round(((n.calories_per_100g ?? 0) * grams) / 100 * scaleFactor) : null
+                const ingProtein = hasMacros ? Math.round(((n.protein_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+                const ingFat = hasMacros ? Math.round(((n.fat_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+                const ingCarbs = hasMacros ? Math.round(((n.carbs_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
+
+                return (
+                  <li
+                    key={ingredient.id || index}
+                    className="rounded-lg p-2 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="size-5 rounded-full border-2 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-sm font-medium">
+                            {ingredient.name}
+                          </span>
+                          {(ingredient.amount || ingredient.unit) && (
+                            <span className="text-sm text-muted-foreground">
+                              {scaleAmount(ingredient.amount)}{' '}
+                              {ingredient.unit}
+                            </span>
+                          )}
+                          {ingredient.notes && (
+                            <span className="text-xs text-muted-foreground">
+                              ({ingredient.notes})
+                            </span>
+                          )}
+                        </div>
+                        {ingCal != null && (
+                          <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/70">
+                            <span>{ingCal} cal</span>
+                            {ingProtein ? <span>{ingProtein}g P</span> : null}
+                            {ingFat ? <span>{ingFat}g F</span> : null}
+                            {ingCarbs ? <span>{ingCarbs}g C</span> : null}
+                            {n?.data_source === 'ai_estimate' && (
+                              <span className="text-accent-gold/60 italic">est.</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No ingredients listed
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="instructions" className="mt-4">
+          {recipe.instructions && parsedInstructions.length > 0 ? (
+            <ol className="space-y-4">
+              {parsedInstructions.map((step, index) => (
+                <li key={index} className="flex gap-3">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                    {step.step_number}
+                  </div>
+                  <div className="flex-1 pt-0.5">
+                    <p className="text-sm leading-relaxed">
+                      {step.instruction}
+                    </p>
+                    {step.duration && (
+                      <Badge
+                        variant="outline"
+                        className="mt-1.5 text-[10px] gap-1"
+                      >
+                        <Clock className="size-2.5" />~
+                        {step.duration} min
+                      </Badge>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No instructions listed
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-4">
+          {recipe.notes ? (
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+              {recipe.notes}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No notes
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="cook-log" className="mt-4">
+          <RecipeCookLog recipeId={recipe.id} />
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4">
+          <RecipeVersionHistory
+            recipeId={recipe.id}
+            onRestore={onRefetch}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+// ── Recipe Detail Sheet (uses RecipeDetailInline) ──
+
 interface RecipeDetailSheetProps {
   recipeId: string | null
   open: boolean
@@ -73,15 +401,11 @@ export function RecipeDetailSheet({
   const [loading, setLoading] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [scaledServings, setScaledServings] = useState<number | null>(null)
   const [showRecipeChat, setShowRecipeChat] = useState(false)
 
   useEffect(() => {
     if (recipeId && open) {
       fetchRecipe(recipeId)
-    }
-    if (!open) {
-      setScaledServings(null)
     }
   }, [recipeId, open])
 
@@ -136,40 +460,6 @@ export function RecipeDetailSheet({
     }
   }
 
-  // Recipe scaling
-  const scaleFactor = useMemo(() => {
-    if (!recipe?.servings || !scaledServings) return 1
-    return scaledServings / recipe.servings
-  }, [recipe?.servings, scaledServings])
-
-  const displayServings = scaledServings ?? recipe?.servings
-  const isScaled = scaledServings !== null && recipe?.servings !== scaledServings
-
-  const scaleAmount = (amount: number | undefined): string => {
-    if (!amount) return ''
-    const scaled = amount * scaleFactor
-    return scaled % 1 === 0 ? scaled.toString() : scaled.toFixed(1)
-  }
-
-  const totalTime = recipe
-    ? (recipe.prep_time || 0) + (recipe.cook_time || 0)
-    : 0
-
-  const parsedInstructions = useMemo((): RecipeStep[] => {
-    if (!recipe?.instructions) return []
-    if (Array.isArray(recipe.instructions)) return recipe.instructions as RecipeStep[]
-    if (typeof recipe.instructions === 'string') {
-      try { return JSON.parse(recipe.instructions) as RecipeStep[] } catch { return [] }
-    }
-    return []
-  }, [recipe?.instructions])
-
-  const difficultyColors = {
-    easy: 'bg-accent-sage/10 text-accent-sage',
-    medium: 'bg-accent-gold/10 text-accent-gold',
-    hard: 'bg-accent-rose/10 text-accent-rose',
-  }
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -198,7 +488,6 @@ export function RecipeDetailSheet({
             </>
           ) : (
             <div className="flex h-full flex-col">
-              {/* Header */}
               <SheetHeader className="shrink-0 border-b p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -226,7 +515,6 @@ export function RecipeDetailSheet({
                   </Button>
                 </div>
 
-                {/* Action buttons */}
                 <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide pb-0.5 -mb-0.5">
                   {recipe.instructions && recipe.instructions.length > 0 && (
                     <Button
@@ -276,315 +564,25 @@ export function RecipeDetailSheet({
                 </div>
               </SheetHeader>
 
-              {/* Scrollable content */}
               <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="p-4 space-y-5">
-                  {/* Image */}
-                  {resolveRecipeImageUrl(recipe.image_url) && (
-                    <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-                      <img
-                        src={resolveRecipeImageUrl(recipe.image_url)!}
-                        alt={recipe.name}
-                        className="h-full w-full object-cover"
-                      />
-                      {recipe.source === 'trader_joes' && (
-                        <Badge className="absolute right-3 top-3 bg-accent-rose text-white border-0">
-                          Trader Joe's
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Meta pills */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {totalTime > 0 && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Clock className="size-3" />
-                        {totalTime} min
-                        {recipe.prep_time && recipe.cook_time && (
-                          <span className="text-muted-foreground ml-1 text-[10px]">
-                            ({recipe.prep_time}p + {recipe.cook_time}c)
-                          </span>
-                        )}
-                      </Badge>
-                    )}
-                    {recipe.difficulty && (
-                      <Badge
-                        className={cn(
-                          'border-0',
-                          difficultyColors[recipe.difficulty]
-                        )}
-                      >
-                        {recipe.difficulty}
-                      </Badge>
-                    )}
-                    {recipe.source === 'trader_joes' && recipe.source_url && (
-                      <a
-                        href={recipe.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Badge
-                          variant="outline"
-                          className="gap-1 cursor-pointer hover:bg-muted"
-                        >
-                          <ExternalLink className="size-3" />
-                          View on TJ's
-                        </Badge>
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Tags */}
-                  {recipe.tags && recipe.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {recipe.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Nutrition */}
-                  {recipe.calories_per_serving && (
-                    <NutritionCard
-                      calories={recipe.calories_per_serving}
-                      protein={recipe.protein_g}
-                      fat={recipe.fat_g}
-                      carbs={recipe.carbs_g}
-                      fiber={recipe.fiber_g}
-                      sugar={recipe.sugar_g}
-                      sodium={recipe.sodium_mg}
-                      saturatedFat={recipe.saturated_fat_g}
-                      categories={recipe.nutrition_category}
-                      completeness={recipe.nutrition_completeness}
-                      scaleFactor={scaleFactor}
-                    />
-                  )}
-
-                  {/* Content tabs */}
-                  <Tabs defaultValue="ingredients">
-                    <TabsList layoutId="recipe-detail-tabs" className="w-full">
-                      <TabsTrigger
-                        value="ingredients"
-                        layoutId="recipe-detail-tabs"
-                        className="flex-1"
-                      >
-                        Ingredients
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="instructions"
-                        layoutId="recipe-detail-tabs"
-                        className="flex-1"
-                      >
-                        Steps
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="notes"
-                        layoutId="recipe-detail-tabs"
-                        className="flex-1"
-                      >
-                        Notes
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="cook-log"
-                        layoutId="recipe-detail-tabs"
-                        className="flex-1"
-                      >
-                        <CalendarCheck className="size-3.5 mr-1" />
-                        Cook Log
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="history"
-                        layoutId="recipe-detail-tabs"
-                        className="flex-1"
-                      >
-                        <History className="size-3.5 mr-1" />
-                        Versions
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="ingredients" className="mt-4">
-                      {/* Servings adjuster */}
-                      {recipe.servings && (
-                        <div className="flex items-center justify-between mb-4 rounded-lg border p-3">
-                          <div>
-                            <span className="text-sm font-medium">Servings</span>
-                            {isScaled && (
-                              <span className="text-[10px] text-muted-foreground ml-2">
-                                Scaled from {recipe.servings}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isScaled && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-7"
-                                onClick={() => setScaledServings(null)}
-                              >
-                                <RotateCcw className="size-3" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="size-7"
-                              onClick={() =>
-                                setScaledServings(
-                                  Math.max(1, (displayServings || 1) - 1)
-                                )
-                              }
-                            >
-                              <Minus className="size-3" />
-                            </Button>
-                            <span className="text-sm font-semibold w-6 text-center tabular-nums">
-                              {displayServings}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="size-7"
-                              onClick={() =>
-                                setScaledServings((displayServings || 1) + 1)
-                              }
-                            >
-                              <Plus className="size-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                        <ul className="space-y-1">
-                          {recipe.ingredients.map((ingredient, index) => {
-                            const n = ingredient.nutrition
-                            const grams = ingredient.weight_grams
-                            const hasMacros = n && grams && grams > 0
-                            const ingCal = hasMacros ? Math.round(((n.calories_per_100g ?? 0) * grams) / 100 * scaleFactor) : null
-                            const ingProtein = hasMacros ? Math.round(((n.protein_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
-                            const ingFat = hasMacros ? Math.round(((n.fat_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
-                            const ingCarbs = hasMacros ? Math.round(((n.carbs_per_100g ?? 0) * grams) / 100 * scaleFactor * 10) / 10 : null
-
-                            return (
-                              <li
-                                key={ingredient.id || index}
-                                className="rounded-lg p-2 hover:bg-muted/50 transition-colors"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="size-5 rounded-full border-2 shrink-0 mt-0.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2 flex-wrap">
-                                      <span className="text-sm font-medium">
-                                        {ingredient.name}
-                                      </span>
-                                      {(ingredient.amount || ingredient.unit) && (
-                                        <span className="text-sm text-muted-foreground">
-                                          {scaleAmount(ingredient.amount)}{' '}
-                                          {ingredient.unit}
-                                        </span>
-                                      )}
-                                      {ingredient.notes && (
-                                        <span className="text-xs text-muted-foreground">
-                                          ({ingredient.notes})
-                                        </span>
-                                      )}
-                                    </div>
-                                    {ingCal != null && (
-                                      <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/70">
-                                        <span>{ingCal} cal</span>
-                                        {ingProtein ? <span>{ingProtein}g P</span> : null}
-                                        {ingFat ? <span>{ingFat}g F</span> : null}
-                                        {ingCarbs ? <span>{ingCarbs}g C</span> : null}
-                                        {n?.data_source === 'ai_estimate' && (
-                                          <span className="text-accent-gold/60 italic">est.</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                          No ingredients listed
-                        </p>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="instructions" className="mt-4">
-                      {recipe.instructions && parsedInstructions.length > 0 ? (
-                        <ol className="space-y-4">
-                          {parsedInstructions.map((step, index) => (
-                            <li key={index} className="flex gap-3">
-                              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                                {step.step_number}
-                              </div>
-                              <div className="flex-1 pt-0.5">
-                                <p className="text-sm leading-relaxed">
-                                  {step.instruction}
-                                </p>
-                                {step.duration && (
-                                  <Badge
-                                    variant="outline"
-                                    className="mt-1.5 text-[10px] gap-1"
-                                  >
-                                    <Clock className="size-2.5" />~
-                                    {step.duration} min
-                                  </Badge>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ol>
-                      ) : (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                          No instructions listed
-                        </p>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="notes" className="mt-4">
-                      {recipe.notes ? (
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {recipe.notes}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                          No notes
-                        </p>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="cook-log" className="mt-4">
-                      <RecipeCookLog recipeId={recipe.id} />
-                    </TabsContent>
-
-                    <TabsContent value="history" className="mt-4">
-                      <RecipeVersionHistory
-                        recipeId={recipe.id}
-                        onRestore={() => fetchRecipe(recipe.id)}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
+                <RecipeDetailInline
+                  recipe={recipe}
+                  onRefetch={() => fetchRecipe(recipe.id)}
+                  tabsLayoutId="recipe-sheet-tabs"
+                  className="p-4"
+                />
               </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
 
-      {/* Delete confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Recipe</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{recipe?.name}"? This action
+              Are you sure you want to delete &ldquo;{recipe?.name}&rdquo;? This action
               cannot be undone.
             </DialogDescription>
           </DialogHeader>

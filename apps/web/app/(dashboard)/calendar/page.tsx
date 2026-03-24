@@ -13,6 +13,7 @@ import {
   CalendarWeekView,
 } from '@/components/calendar'
 import { useConnectivity } from '@/components/connectivity-provider'
+import { useCalendarConfig } from '@/components/settings-provider'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useSwipe } from '@/hooks/use-swipe'
@@ -44,6 +45,8 @@ interface CalendarResponse {
 }
 
 export default function CalendarPage() {
+  const calendarConfig = useCalendarConfig()
+
   // State
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +54,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [viewMode, setViewMode] = useState<CalendarViewMode>('week')
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(calendarConfig.default_view)
   const [searchQuery, setSearchQuery] = useState('')
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
     'right'
@@ -182,7 +185,7 @@ export default function CalendarPage() {
     }
 
     const init = async () => {
-      const isAuthSuccess = searchParams.get('auth') === 'success'
+      const isAuthSuccess = searchParams.get('auth') === 'success' || searchParams.get('calendar_auth') === 'success'
 
       // Fetch calendar and fitness in parallel; meal plan is loaded by week-change effect below
       const [gotAuthData] = await Promise.all([
@@ -349,9 +352,14 @@ export default function CalendarPage() {
   // Merge calendar events with fitness and meal plan events.
   // Place meal plan events FIRST so the Cooking feature's meal plan takes precedence
   // over any meal-related events from Google Calendar (e.g. from another meal app).
+  // Respects calendar_config toggles for fitness and meal plan visibility.
   const allEvents = useMemo(() => {
-    return [...mealPlanEvents, ...fitnessEvents, ...events]
-  }, [events, fitnessEvents, mealPlanEvents])
+    const merged: CalendarEvent[] = []
+    if (calendarConfig.show_meal_plan_events) merged.push(...mealPlanEvents)
+    if (calendarConfig.show_fitness_events) merged.push(...fitnessEvents)
+    merged.push(...events)
+    return merged
+  }, [events, fitnessEvents, mealPlanEvents, calendarConfig.show_fitness_events, calendarConfig.show_meal_plan_events])
 
   // Filter events based on search
   const filteredEvents = filterEvents(allEvents, searchQuery)
@@ -417,7 +425,7 @@ export default function CalendarPage() {
     (source === 'cache' || source === 'none')
 
   return (
-    <div className="flex-col h-full overflow-scroll">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="relative">
         <CalendarHeader
@@ -655,10 +663,10 @@ export default function CalendarPage() {
             {selectedEvent && (
               <motion.aside
                 initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 'auto', opacity: 1 }}
+                animate={{ width: 360, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="border-border/50 hidden shrink-0 overflow-hidden border-l md:block"
+                className="border-border/50 hidden h-full shrink-0 overflow-hidden border-l md:block"
               >
                 <CalendarEventDetail
                   event={selectedEvent}

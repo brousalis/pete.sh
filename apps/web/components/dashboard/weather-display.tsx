@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { RefreshCw, Thermometer, Droplets, Wind, Gauge, Eye, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { WeatherObservation } from "@/lib/types/weather.types"
 import { apiGet } from "@/lib/api/client"
+import type { WeatherObservation } from "@/lib/types/weather.types"
+import { AlertCircle, Droplets, Eye, Gauge, RefreshCw, Wind } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function WeatherDisplay() {
   const [weather, setWeather] = useState<WeatherObservation | null>(null)

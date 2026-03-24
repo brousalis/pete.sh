@@ -7,61 +7,61 @@ import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import { DateNavigator } from '@/components/ui/date-navigator'
 import { PageHeader, PageHeaderRow } from '@/components/ui/page-header'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ViewToggle } from '@/components/ui/view-toggle'
 import { useDateNavigation } from '@/hooks/use-date-navigation'
 import { apiGet } from '@/lib/api/client'
-import type {
-  DailyRoutine,
-  DayOfWeek,
-  Exercise,
-  RoutineCompletion,
-  WeeklyRoutine,
-  Workout,
-  WorkoutCompletion,
-} from '@/lib/types/fitness.types'
 import { HEX } from '@/lib/constants/colors'
+import type {
+    DailyRoutine,
+    DayOfWeek,
+    Exercise,
+    RoutineCompletion,
+    WeeklyRoutine,
+    Workout,
+    WorkoutCompletion,
+} from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  DAYS_OF_WEEK,
-  DAY_LABELS,
-  FOCUS_CONFIG,
-  FOCUS_CONFIG_FALLBACK,
-  getDayCompletionProgress,
-  getFitnessStatusForDay,
-  getWeekNumber,
-  type FitnessStatus,
-  type FitnessStatusDetails,
-  type FocusConfigEntry,
+    DAYS_OF_WEEK,
+    DAY_LABELS,
+    FOCUS_CONFIG,
+    FOCUS_CONFIG_FALLBACK,
+    getDayCompletionProgress,
+    getFitnessStatusForDay,
+    getWeekNumber,
+    type FitnessStatus,
+    type FitnessStatusDetails,
+    type FocusConfigEntry,
 } from '@/lib/utils/fitness-ui'
 import {
-  addDays,
-  format,
-  isToday as isDateToday,
-  startOfWeek,
+    addDays,
+    format,
+    isToday as isDateToday,
+    startOfWeek,
 } from 'date-fns'
 import {
-  Activity,
-  ArrowRight,
-  Ban,
-  Calendar,
-  CalendarDays,
-  Check,
-  ChevronDown,
-  Columns3,
-  Dumbbell,
-  Moon,
-  Settings,
-  Sun,
+    Activity,
+    ArrowRight,
+    Ban,
+    Calendar,
+    CalendarDays,
+    Check,
+    ChevronDown,
+    Columns3,
+    Dumbbell,
+    Moon,
+    Settings,
+    Sun,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'

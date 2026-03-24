@@ -2,8 +2,8 @@
  * Calendar Adapter
  * Handles Google Calendar data with event snapshots to Supabase
  * 
- * Google Calendar requires OAuth authentication, so availability depends on
- * whether the user is authenticated. Supabase cache is used as fallback.
+ * Supports multiple Google accounts. Each active account's visible calendars
+ * are fetched in parallel using Promise.allSettled for error isolation.
  */
 
 import { BaseAdapter, SyncResult, getCurrentTimestamp } from './base.adapter'
@@ -12,12 +12,19 @@ import {
   loadCalendarTokensFromCookies, 
   updateCalendarTokenCookies 
 } from '@/lib/services/calendar.service'
+import { calendarAccountsService } from '@/lib/services/calendar-accounts.service'
+import {
+  getLegacyGoogleCalendarTokensRaw,
+  hasLegacyGoogleCalendarTokens,
+} from '@/lib/services/token-storage'
+import type { CalendarAccountRow } from '@/lib/types/calendar-account.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type { CalendarEventRow, CalendarEventInsert } from '@/lib/supabase/types'
 
 export interface CalendarFullState {
   events: CalendarEvent[]
   calendarId: string
+  accountId?: string
 }
 
 export interface CalendarCachedState {
@@ -26,81 +33,217 @@ export interface CalendarCachedState {
 }
 
 /**
- * Calendar Adapter - manages Google Calendar events
+ * Calendar Adapter - manages Google Calendar events across multiple accounts
  */
 export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCachedState> {
   private calendarService: CalendarService
   private defaultCalendarId: string = 'primary'
+  private multiAccountMode: boolean = false
 
   constructor(debug: boolean = false) {
     super({ serviceName: 'calendar', debug })
     this.calendarService = new CalendarService()
   }
 
-  /**
-   * Check if Calendar is configured
-   */
   isConfigured(): boolean {
     return this.calendarService.isConfigured()
   }
 
-  /**
-   * Check if Google Calendar API is available
-   * Calendar is an external API that requires OAuth - we consider it "available"
-   * if the service is configured. Authentication is handled separately.
-   */
   protected async checkServiceAvailability(): Promise<boolean> {
     return this.isConfigured()
   }
 
   /**
-   * Initialize the service with tokens from cookies
-   * Must be called in server context before fetching data
+   * Initialize the service with tokens.
+   * Tries multi-account mode first (DB), falls back to legacy tokens (cookies/file).
+   * Auto-migrates legacy .tokens.json tokens into calendar_accounts if DB is empty.
    */
-  async initializeWithTokens(): Promise<{ authenticated: boolean }> {
+  async initializeWithTokens(): Promise<{ authenticated: boolean; multiAccount: boolean }> {
     if (!this.isConfigured()) {
-      return { authenticated: false }
+      return { authenticated: false, multiAccount: false }
     }
 
+    // Try multi-account mode: check if we have any accounts in DB
+    try {
+      const hasAccounts = await calendarAccountsService.hasAnyAccounts()
+      if (hasAccounts) {
+        this.multiAccountMode = true
+        return { authenticated: true, multiAccount: true }
+      }
+
+      // No accounts in DB — check for legacy tokens to migrate
+      if (hasLegacyGoogleCalendarTokens()) {
+        const legacy = getLegacyGoogleCalendarTokensRaw()
+        if (legacy.accessToken || legacy.refreshToken) {
+          try {
+            console.log('[CalendarAdapter] Migrating legacy tokens to calendar_accounts')
+            await calendarAccountsService.upsertAccount({
+              email: 'Legacy Account',
+              display_name: 'Migrated from .tokens.json',
+              access_token: legacy.accessToken || 'needs-refresh',
+              refresh_token: legacy.refreshToken,
+              expiry_date: legacy.expiryDate,
+            })
+            this.multiAccountMode = true
+            return { authenticated: true, multiAccount: true }
+          } catch (migrationError) {
+            console.warn('[CalendarAdapter] Legacy token migration failed:', migrationError)
+          }
+        }
+      }
+    } catch {
+      // DB not available, fall through to legacy mode
+    }
+
+    // Legacy mode: load from cookies/file
+    this.multiAccountMode = false
     const { accessToken, refreshToken } = await loadCalendarTokensFromCookies(this.calendarService)
     return {
       authenticated: Boolean(accessToken || refreshToken),
+      multiAccount: false,
+    }
+  }
+
+  async updateCookiesIfNeeded(originalAccessToken: string | null): Promise<void> {
+    if (!this.multiAccountMode) {
+      await updateCalendarTokenCookies(this.calendarService, originalAccessToken)
     }
   }
 
   /**
-   * Update cookies after API call (if token was refreshed)
+   * Fetch events from a single account across its visible calendars
    */
-  async updateCookiesIfNeeded(originalAccessToken: string | null): Promise<void> {
-    await updateCalendarTokenCookies(this.calendarService, originalAccessToken)
+  private async fetchEventsForAccount(
+    account: CalendarAccountRow,
+    maxResults: number
+  ): Promise<CalendarEvent[]> {
+    const service = new CalendarService()
+    service.setCredentials({
+      access_token: account.access_token,
+      refresh_token: account.refresh_token ?? undefined,
+    })
+
+    const visibleCalendars = (account.selected_calendars ?? []).filter(c => c.visible)
+    const calendarIds = visibleCalendars.length > 0
+      ? visibleCalendars.map(c => c.calendarId)
+      : ['primary']
+
+    const allEvents: CalendarEvent[] = []
+
+    for (const calendarId of calendarIds) {
+      try {
+        const events = await service.getUpcomingEvents(calendarId, maxResults)
+        const calendarName = visibleCalendars.find(c => c.calendarId === calendarId)?.name
+
+        for (const event of events) {
+          event._source = {
+            accountId: account.id,
+            accountEmail: account.email,
+            calendarId,
+            calendarName,
+          }
+          allEvents.push(event)
+        }
+      } catch (error: any) {
+        this.logError(`Error fetching calendar ${calendarId} for ${account.email}`, error)
+      }
+    }
+
+    // Persist refreshed tokens if they changed
+    const creds = service.getCredentials()
+    if (creds.access_token && creds.access_token !== account.access_token) {
+      try {
+        await calendarAccountsService.updateTokens(account.id, {
+          access_token: creds.access_token,
+          refresh_token: creds.refresh_token,
+          expiry_date: creds.expiry_date,
+        })
+      } catch (err) {
+        this.logError('Failed to persist refreshed tokens', err)
+      }
+    }
+
+    return allEvents
   }
 
   /**
-   * Fetch calendar events from Google API
+   * Fetch events from all active accounts with error isolation
    */
+  private async fetchMultiAccountEvents(maxResults: number): Promise<{
+    events: CalendarEvent[]
+    warnings: string[]
+  }> {
+    let accounts: CalendarAccountRow[]
+    try {
+      accounts = await calendarAccountsService.listActiveAccounts()
+    } catch (error) {
+      this.logError('Failed to load accounts', error)
+      return { events: [], warnings: ['Failed to load calendar accounts'] }
+    }
+
+    if (accounts.length === 0) {
+      return { events: [], warnings: [] }
+    }
+
+    const results = await Promise.allSettled(
+      accounts.map(account => this.fetchEventsForAccount(account, maxResults))
+    )
+
+    const allEvents: CalendarEvent[] = []
+    const warnings: string[] = []
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        allEvents.push(...result.value)
+      } else {
+        const account = accounts[index]
+        const errorMsg = result.reason?.message || 'Unknown error'
+        if (account) {
+          warnings.push(`Failed to fetch events for ${account.email}: ${errorMsg}`)
+
+          // Mark account as needing re-auth if it's an auth error
+          if (errorMsg.includes('re-authenticate') || errorMsg.includes('invalid_grant')) {
+            calendarAccountsService.markNeedsReauth(account.id).catch(() => {})
+          }
+        } else {
+          warnings.push(`Failed to fetch events (account index ${index}): ${errorMsg}`)
+        }
+      }
+    })
+
+    // Sort all events by start time
+    allEvents.sort((a, b) => {
+      const aTime = a.start.dateTime ?? a.start.date ?? ''
+      const bTime = b.start.dateTime ?? b.start.date ?? ''
+      return aTime.localeCompare(bTime)
+    })
+
+    return { events: allEvents, warnings }
+  }
+
   protected async fetchFromService(): Promise<CalendarFullState> {
     if (!this.isConfigured()) {
       throw new Error('Google Calendar not configured')
+    }
+
+    if (this.multiAccountMode) {
+      const { events } = await this.fetchMultiAccountEvents(50)
+      return { events, calendarId: 'multi' }
     }
 
     const events = await this.calendarService.getUpcomingEvents(this.defaultCalendarId, 20)
     return { events, calendarId: this.defaultCalendarId }
   }
 
-  /**
-   * Fetch cached calendar events from Supabase
-   */
   protected async fetchFromCache(): Promise<CalendarCachedState | null> {
     const client = this.getReadClient()
-    if (!client) return null // Supabase not configured
+    if (!client) return null
 
     try {
-      // Get the most recent event snapshots
-      // Use DISTINCT ON event_id to get the latest snapshot for each event
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (client.from('calendar_events') as any)
         .select('*')
-        .gte('start_time', new Date().toISOString()) // Only future events
+        .gte('start_time', new Date().toISOString())
         .order('recorded_at', { ascending: false })
         .limit(50)
 
@@ -109,7 +252,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
 
       const rows = data as CalendarEventRow[]
 
-      // Deduplicate by event_id (keep most recent snapshot)
       const eventMap = new Map<string, CalendarEventRow>()
       for (const row of rows) {
         if (!eventMap.has(row.event_id)) {
@@ -117,7 +259,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
         }
       }
 
-      // Convert to CalendarEvent array and sort by start time
       const events = Array.from(eventMap.values())
         .map(row => row.event_data)
         .sort((a, b) => {
@@ -135,9 +276,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     }
   }
 
-  /**
-   * Write calendar events to Supabase
-   */
   protected async writeToCache(data: CalendarFullState): Promise<SyncResult> {
     const client = this.getWriteClient()
     if (!client) {
@@ -155,6 +293,7 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
         return {
           event_id: event.id,
           calendar_id: data.calendarId,
+          account_id: event._source?.accountId ?? data.accountId ?? null,
           summary: event.summary ?? null,
           description: event.description ?? null,
           location: event.location ?? null,
@@ -191,27 +330,31 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
   // High-level API methods
   // ==========================================
 
-  /**
-   * Get upcoming calendar events
-   */
   async getUpcomingEvents(
     calendarId?: string,
     maxResults: number = 10
   ): Promise<CalendarEvent[]> {
-    const targetCalendarId = calendarId ?? this.defaultCalendarId
     const isLocal = await this.isLocal()
 
     if (isLocal) {
       try {
-        const events = await this.calendarService.getUpcomingEvents(targetCalendarId, maxResults)
-        
+        let events: CalendarEvent[]
+
+        if (this.multiAccountMode) {
+          const result = await this.fetchMultiAccountEvents(maxResults)
+          events = result.events
+        } else {
+          const targetCalendarId = calendarId ?? this.defaultCalendarId
+          events = await this.calendarService.getUpcomingEvents(targetCalendarId, maxResults)
+        }
+
         // Write to cache in background
         if (this.isSupabaseAvailable()) {
-          this.writeToCache({ events, calendarId: targetCalendarId })
+          this.writeToCache({ events, calendarId: calendarId ?? 'multi' })
             .catch(err => this.logError('Failed to cache events', err))
         }
 
-        return events
+        return events.slice(0, maxResults)
       } catch (error) {
         this.logError('Error fetching events', error)
         throw error
@@ -225,20 +368,13 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
       return []
     }
 
-    // Limit results
     return cached.events.slice(0, maxResults)
   }
 
-  /**
-   * Get events (alias for getUpcomingEvents)
-   */
   async getEvents(calendarId?: string, maxResults: number = 10): Promise<CalendarEvent[]> {
     return this.getUpcomingEvents(calendarId, maxResults)
   }
 
-  /**
-   * Get simplified event data for display
-   */
   async getUpcomingEventsSimple(maxResults: number = 10): Promise<Array<{
     id: string
     title: string
@@ -267,7 +403,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
       }))
     }
 
-    // Production mode - read from cache
     const cached = await this.fetchFromCache()
     if (!cached) return []
 
@@ -284,9 +419,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     }))
   }
 
-  /**
-   * Get today's events
-   */
   async getTodaysEvents(): Promise<CalendarEvent[]> {
     const events = await this.getUpcomingEvents(undefined, 50)
     
@@ -304,16 +436,13 @@ export class CalendarAdapter extends BaseAdapter<CalendarFullState, CalendarCach
     })
   }
 
-  /**
-   * Get the next event
-   */
   async getNextEvent(): Promise<CalendarEvent | null> {
     const events = await this.getUpcomingEvents(undefined, 1)
     return events[0] ?? null
   }
 
   // ==========================================
-  // Auth pass-through methods
+  // Auth pass-through methods (legacy compat)
   // ==========================================
 
   getAuthUrl(forceConsent: boolean = false): string {

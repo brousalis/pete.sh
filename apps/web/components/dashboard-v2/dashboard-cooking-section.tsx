@@ -1,16 +1,18 @@
 'use client'
 
+import { CookingDayView } from '@/components/cooking/cooking-day-view'
 import { CookingMode } from '@/components/cooking/cooking-mode'
 import { ShoppingCard } from '@/components/cooking/cooking-sidebar'
+import { DayIngredientsSidebar } from '@/components/cooking/day-ingredients-sidebar'
 import { FridgeManager } from '@/components/cooking/fridge-manager'
 import { FridgeScanButton, FridgeScanner } from '@/components/cooking/fridge-scanner'
 import { MealPlanSwipeDialog } from '@/components/cooking/meal-plan-swipe-dialog'
 import { MealPlanWizardDialog } from '@/components/cooking/meal-plan-wizard-dialog'
 import { RecipeDetailSheet } from '@/components/cooking/recipe-detail'
 import { RecipeEditor } from '@/components/cooking/recipe-editor'
-import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
 import type { SourceFilter } from '@/components/cooking/recipe-list'
 import { RecipeList } from '@/components/cooking/recipe-list'
+import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
 import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
 import { TonightRecipeBox } from '@/components/cooking/tonight-recipe-box'
 import { WeekMenuView } from '@/components/cooking/week-menu-view'
@@ -20,18 +22,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { TagMultiSelect } from '@/components/ui/tag-multi-select'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ViewToggle } from '@/components/ui/view-toggle'
 import { useCooking } from '@/hooks/use-cooking-data'
@@ -39,20 +41,22 @@ import { apiGet } from '@/lib/api/client'
 import type { DayOfWeek, Recipe, RecipeWithIngredients } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChefHat, Dices, ImageIcon, Plus, Search, ShoppingCart, Snowflake, Star, Wand2, X } from 'lucide-react'
+import { ChefHat, Dices, ImageIcon, ListChecks, Play, Plus, Search, ShoppingCart, Snowflake, Star, Wand2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-type CookingView = 'week-menu' | 'browse'
+type CookingView = 'day' | 'week-menu' | 'browse'
 
 const STORAGE_KEY = 'cooking-view-preference'
 
+const VALID_VIEWS = new Set<CookingView>(['day', 'week-menu', 'browse'])
+
 function getStoredView(): CookingView {
-  if (typeof window === 'undefined') return 'week-menu'
+  if (typeof window === 'undefined') return 'day'
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'browse' || stored === 'week-menu') return stored
+    if (stored && VALID_VIEWS.has(stored as CookingView)) return stored as CookingView
   } catch {}
-  return 'week-menu'
+  return 'day'
 }
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
@@ -111,6 +115,7 @@ function DashboardCookingContent() {
   const [showShoppingFocus, setShowShoppingFocus] = useState(false)
   const [randomizingDay, setRandomizingDay] = useState<DayOfWeek | null>(null)
   const [pickerSlot, setPickerSlot] = useState<{ day: DayOfWeek; meal: string } | null>(null)
+  const [dayRecipe, setDayRecipe] = useState<RecipeWithIngredients | null>(null)
   const recipeListScrollRef = useRef<HTMLDivElement>(null)
 
   const handleViewChange = useCallback((view: CookingView) => {
@@ -241,7 +246,7 @@ function DashboardCookingContent() {
   }
 
   const handleOpenEditor = useCallback(() => {
-    if (cookingView === 'week-menu') handleViewChange('browse')
+    if (cookingView !== 'browse') handleViewChange('browse')
     setEditingRecipe(null)
     setShowEditor(true)
     setSelectedRecipeId(null)
@@ -329,11 +334,24 @@ function DashboardCookingContent() {
     [navigateToDay]
   )
 
+  const isDayView = cookingView === 'day'
   const isWeekView = cookingView === 'week-menu'
+  const isBrowseView = cookingView === 'browse'
+
+  const handleDayRecipeLoaded = useCallback((recipe: RecipeWithIngredients | null) => {
+    setDayRecipe(recipe)
+    if (recipe) setSidebarOpen(true)
+  }, [setSidebarOpen])
+
+  useEffect(() => {
+    if (isDayView && dayRecipe) {
+      setSidebarOpen(true)
+    }
+  }, [isDayView, dayRecipe, setSidebarOpen])
 
   return (
     <>
-      <div className={cn('flex flex-col', !isWeekView && 'h-full overflow-hidden')}>
+      <div className={cn('flex flex-col h-full', isBrowseView && 'overflow-hidden')}>
         {/* Top bar: Section title + meal plan controls */}
         <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-border/50 bg-card/40">
           <div className="flex items-center gap-2">
@@ -391,7 +409,7 @@ function DashboardCookingContent() {
         <MealPlanWizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
 
         {/* Main content area */}
-        <div className={cn('flex-1 min-h-0 flex', !isWeekView && 'overflow-hidden max-h-[488px]')}>
+        <div className={cn('flex-1 min-h-0 flex', isBrowseView && 'overflow-hidden max-h-[488px]')}>
           {/* Shopping sidebar - collapsible */}
           <AnimatePresence>
             {sidebarOpen && (
@@ -402,20 +420,28 @@ function DashboardCookingContent() {
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
                 className={cn(
                   'hidden shrink-0 lg:block',
-                  isWeekView ? 'relative' : 'h-full',
+                  isBrowseView ? 'h-full' : 'relative',
                 )}
                 style={{ display: 'block' }}
               >
                 <aside className={cn(
                   'flex flex-col overflow-hidden min-h-0 w-[280px]',
-                  isWeekView ? 'absolute inset-y-0 left-0 overflow-y-auto' : 'h-full',
+                  isBrowseView ? 'h-full' : 'absolute inset-y-0 left-0',
                 )}>
-                  <ScrollArea className="flex-1 min-h-0 h-full">
-                    <ShoppingCard
-                      onOpenFocusMode={() => setShowShoppingFocus(true)}
+                  {isDayView ? (
+                    <DayIngredientsSidebar
+                      recipe={dayRecipe}
+                      loading={!dayRecipe && !!mealPlan}
                       onCollapse={() => setSidebarOpen(false)}
                     />
-                  </ScrollArea>
+                  ) : (
+                    <ScrollArea className="flex-1 min-h-0 h-full">
+                      <ShoppingCard
+                        onOpenFocusMode={() => setShowShoppingFocus(true)}
+                        onCollapse={() => setSidebarOpen(false)}
+                      />
+                    </ScrollArea>
+                  )}
                 </aside>
               </motion.div>
             )}
@@ -427,18 +453,29 @@ function DashboardCookingContent() {
             <div className="border-b border-border/40">
               <div className="flex items-center gap-2.5 px-3 py-2">
                 {!sidebarOpen && (
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="flex items-center justify-center size-7 rounded-md transition-all shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-                    title="Show shopping list"
-                  >
-                    <ShoppingCart className="size-3.5" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="flex items-center justify-center size-7 rounded-md transition-all shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      >
+                        {isDayView ? (
+                          <ListChecks className="size-3.5" />
+                        ) : (
+                          <ShoppingCart className="size-3.5" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isDayView ? 'Show ingredients' : 'Show shopping list'}
+                    </TooltipContent>
+                  </Tooltip>
                 )}
 
                 {/* View toggle */}
                 <ViewToggle
                   options={[
+                    { value: 'day' as CookingView, label: 'Day' },
                     { value: 'week-menu' as CookingView, label: 'This Week' },
                     { value: 'browse' as CookingView, label: 'Browse' },
                   ]}
@@ -447,7 +484,7 @@ function DashboardCookingContent() {
                 />
 
                 {/* Browse-mode controls */}
-                {!isWeekView && (
+                {isBrowseView && (
                   <>
                     <div className="relative flex-1 min-w-0 max-w-md">
                       <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50" />
@@ -522,9 +559,20 @@ function DashboardCookingContent() {
                   </>
                 )}
 
-                {/* Week-view right-side: just New button */}
-                {isWeekView && (
+                {/* Day/Week view right-side controls */}
+                {(isDayView || isWeekView) && (
                   <div className="ml-auto flex items-center gap-1 shrink-0">
+                    {isDayView && dayRecipe && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => handleWeekStartCooking(dayRecipe as Recipe)}
+                      >
+                        <Play className="size-3" />
+                        <span className="hidden sm:inline">Cook</span>
+                      </Button>
+                    )}
                     {fridgeIngredients.length > 0 && (
                       <button
                         onClick={() => setShowFridgeManager(true)}
@@ -548,7 +596,7 @@ function DashboardCookingContent() {
               </div>
 
               {/* Filter bar - browse mode only */}
-              {!isWeekView && (
+              {isBrowseView && (
                 <div className="flex items-center gap-2 px-3 py-1.5 border-t border-border/20 flex-wrap">
                   <div className="flex items-center rounded-lg border border-border/40 p-0.5 shrink-0 bg-muted/30">
                     {[
@@ -633,9 +681,35 @@ function DashboardCookingContent() {
             </div>
 
             {/* Main content */}
-            <main className={cn('flex-1 min-h-0', !isWeekView && 'overflow-hidden')}>
+            <main className={cn('flex-1 min-h-0', isBrowseView && 'overflow-hidden')}>
               <AnimatePresence mode="wait" initial={false}>
-                {isWeekView ? (
+                {isDayView && (
+                  <motion.div
+                    key="day"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="h-full"
+                  >
+                    <CookingDayView
+                      selectedDate={selectedDate}
+                      mealPlan={mealPlan}
+                      getRecipeById={getRecipeById}
+                      mealPlanMode={mealPlanMode}
+                      isSlotCompleted={cooking.isSlotCompleted}
+                      onRecipeClick={handleWeekRecipeClick}
+                      onStartCooking={handleWeekStartCooking}
+                      onAddDinner={(day) => setPickerSlot({ day, meal: 'dinner' })}
+                      onRandomFill={handleWeekRandomFill}
+                      onUnskipDay={handleWeekUnskipDay}
+                      onPlanWeek={() => setWizardOpen(true)}
+                      onRecipeLoaded={handleDayRecipeLoaded}
+                      randomizingDay={randomizingDay}
+                    />
+                  </motion.div>
+                )}
+                {isWeekView && (
                   <motion.div
                     key="week-menu"
                     initial={{ opacity: 0 }}
@@ -664,7 +738,8 @@ function DashboardCookingContent() {
                       randomizingDay={randomizingDay}
                     />
                   </motion.div>
-                ) : (
+                )}
+                {isBrowseView && (
                   <motion.div
                     key="browse"
                     initial={{ opacity: 0 }}

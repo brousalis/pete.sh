@@ -122,6 +122,35 @@ export function clearGoogleCalendarTokens(): void {
   console.log('[TokenStorage] Google Calendar tokens cleared')
 }
 
+/**
+ * Check if legacy Google Calendar tokens exist in .tokens.json.
+ * Used by the migration logic to detect tokens that need to be
+ * imported into the calendar_accounts table.
+ */
+export function hasLegacyGoogleCalendarTokens(): boolean {
+  const tokens = readTokens()
+  return Boolean(tokens.google_calendar?.access_token || tokens.google_calendar?.refresh_token)
+}
+
+/**
+ * Get the raw legacy tokens for migration purposes.
+ * Returns both access and refresh token regardless of expiry.
+ */
+export function getLegacyGoogleCalendarTokensRaw(): {
+  accessToken: string | null
+  refreshToken: string | null
+  expiryDate: number | null
+} {
+  const tokens = readTokens()
+  const ct = tokens.google_calendar
+  if (!ct) return { accessToken: null, refreshToken: null, expiryDate: null }
+  return {
+    accessToken: ct.access_token || null,
+    refreshToken: ct.refresh_token || null,
+    expiryDate: ct.expiry_date || null,
+  }
+}
+
 // ============================================
 // Spotify Tokens
 // ============================================

@@ -5,6 +5,9 @@
 
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 
+import type { CalendarConfig } from '@/lib/types/settings.types'
+import { DEFAULT_CALENDAR_CONFIG } from '@/lib/types/settings.types'
+
 export type DisplayInput = 'hdmi' | 'displayport'
 
 export interface AppSettings {
@@ -16,6 +19,8 @@ export interface AppSettings {
   display_monitor: string
   display_primary_input: DisplayInput
   display_secondary_input: DisplayInput
+  // Calendar configuration
+  calendar_config: CalendarConfig
   created_at: string
   updated_at: string
 }
@@ -29,6 +34,7 @@ export type AppSettingsUpdate = Partial<
     | 'display_monitor'
     | 'display_primary_input'
     | 'display_secondary_input'
+    | 'calendar_config'
   >
 >
 
@@ -44,6 +50,7 @@ export const DEFAULT_SETTINGS: Omit<
   display_monitor: '\\\\.\\DISPLAY2',
   display_primary_input: 'displayport',
   display_secondary_input: 'hdmi',
+  calendar_config: DEFAULT_CALENDAR_CONFIG,
 }
 
 class SettingsService {

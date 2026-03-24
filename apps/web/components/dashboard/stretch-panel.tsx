@@ -483,7 +483,7 @@ export function StretchPanel({
 
         {/* Exercise List - Scrollable on desktop only */}
         <div className="md:flex-1 md:overflow-y-auto md:min-h-0">
-          <div className="p-1.5 sm:p-2 space-y-1">
+          <div className="">
             {routine.exercises.map((exercise, idx) => {
               const isExerciseCompleted = completedExercises.has(idx)
               const isTimerActive = activeTimerIdx === idx
@@ -494,10 +494,10 @@ export function StretchPanel({
                 <div
                   key={idx}
                   className={cn(
-                    "rounded-md border transition-colors",
+                    "border transition-colors",
                     isExerciseCompleted
-                      ? "bg-muted/30 border-transparent"
-                      : "bg-muted/30 border-transparent",
+                      ? " border-transparent"
+                      : " border-transparent",
                     isTimerActive && "ring-1 ring-accent-azure/50"
                   )}
                 >
@@ -644,8 +644,8 @@ export function StretchPanel({
         {/* Footer - larger button for touch */}
         <div className={cn("p-2 border-t space-y-2", themeColors.borderColor)}>
           {isPreview ? (
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">Not completed</span>
+            <div className="flex items-center justify-end">
+              {/* <span className="text-[11px] text-muted-foreground">Not completed</span> */}
               <Button
                 size="sm"
                 variant="ghost"

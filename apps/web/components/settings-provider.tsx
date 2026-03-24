@@ -1,11 +1,13 @@
 'use client'
 
-import type { AppSettings, AppSettingsUpdate } from '@/lib/types/settings.types'
+import type { AppSettings, AppSettingsUpdate, CalendarConfig } from '@/lib/types/settings.types'
+import { DEFAULT_CALENDAR_CONFIG } from '@/lib/types/settings.types'
 import React, {
     createContext,
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from 'react'
 
@@ -19,6 +21,7 @@ const DEFAULT_SETTINGS: Omit<AppSettings, 'id' | 'created_at' | 'updated_at'> =
     display_monitor: '\\\\.\\DISPLAY2',
     display_primary_input: 'displayport',
     display_secondary_input: 'hdmi',
+    calendar_config: DEFAULT_CALENDAR_CONFIG,
   }
 
 interface SettingsContextType {
@@ -135,4 +138,16 @@ export function useRoundedLayout() {
   const { settings, isLoading } = useSettings()
   // Default to true while loading for a smoother experience
   return isLoading ? true : (settings?.rounded_layout ?? true)
+}
+
+/**
+ * Hook to get calendar display preferences with defaults
+ */
+export function useCalendarConfig(): CalendarConfig {
+  const { settings } = useSettings()
+  return useMemo(() => {
+    const stored = settings?.calendar_config
+    if (!stored) return DEFAULT_CALENDAR_CONFIG
+    return { ...DEFAULT_CALENDAR_CONFIG, ...stored }
+  }, [settings?.calendar_config])
 }

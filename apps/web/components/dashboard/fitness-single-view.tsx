@@ -2,8 +2,8 @@
 
 import { AiCoachPanel } from '@/components/dashboard/ai-coach-panel'
 import type {
-  AppleWorkout,
-  DailyMetrics,
+    AppleWorkout,
+    DailyMetrics,
 } from '@/components/dashboard/fitness-dashboard'
 import { MiniDayProgressRing } from '@/components/dashboard/mini-day-progress-ring'
 import { StretchPanel } from '@/components/dashboard/stretch-panel'
@@ -11,83 +11,83 @@ import { WorkoutCenter } from '@/components/dashboard/workout-center'
 import { Button } from '@/components/ui/button'
 import { DateNavigator } from '@/components/ui/date-navigator'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ViewToggle } from '@/components/ui/view-toggle'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
 import { HEX } from '@/lib/constants/colors'
 import type {
-  ConsistencyStats,
-  DayOfWeek,
-  WeeklyRoutine,
-  Workout,
+    ConsistencyStats,
+    DayOfWeek,
+    WeeklyRoutine,
+    Workout,
 } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
 import {
-  DAYS_OF_WEEK,
-  DAY_LABELS,
-  FOCUS_CONFIG,
-  FOCUS_CONFIG_FALLBACK,
-  WEEKDAY_LABELS,
-  getDayCompletionProgress,
-  getFitnessStatusForDay,
-  getWeekNumber
+    DAYS_OF_WEEK,
+    DAY_LABELS,
+    FOCUS_CONFIG,
+    FOCUS_CONFIG_FALLBACK,
+    WEEKDAY_LABELS,
+    getDayCompletionProgress,
+    getFitnessStatusForDay,
+    getWeekNumber
 } from '@/lib/utils/fitness-ui'
 import { getWorkoutDisplayLabel } from '@/lib/utils/workout-labels'
 import {
-  addDays,
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isToday as isDateToday,
-  isSameDay,
-  isSameMonth,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-  subMonths,
+    addDays,
+    addMonths,
+    eachDayOfInterval,
+    endOfMonth,
+    endOfWeek,
+    format,
+    isToday as isDateToday,
+    isSameDay,
+    isSameMonth,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    subDays,
+    subMonths,
 } from 'date-fns'
 import {
-  Activity,
-  ArrowLeft,
-  Ban,
-  Calendar,
-  CalendarDays,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Columns3,
-  Dumbbell,
-  Flame,
-  Footprints,
-  Moon,
-  Settings,
-  Sun,
-  Target,
-  Zap
+    Activity,
+    ArrowLeft,
+    Ban,
+    Calendar,
+    CalendarDays,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Columns3,
+    Dumbbell,
+    Flame,
+    Footprints,
+    Moon,
+    Settings,
+    Sun,
+    Target,
+    Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'

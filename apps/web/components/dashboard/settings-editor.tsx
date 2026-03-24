@@ -1,5 +1,6 @@
 'use client'
 
+import { CalendarSettingsSection } from '@/components/dashboard/calendar-settings-section'
 import { ColorThemePicker } from '@/components/color-theme'
 import { DiagnosticsCard } from '@/components/dashboard/diagnostics-card'
 import { useSettings } from '@/components/settings-provider'
@@ -407,6 +408,9 @@ export function SettingsEditor() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Calendar Section */}
+      <CalendarSettingsSection />
 
       {/* Display/KVM Section */}
       <Card>

@@ -5,10 +5,10 @@ import { getEventColor } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import { cn } from '@/lib/utils'
 import {
-  calculateEventPositions,
-  formatEventTime,
-  getEventsForDay,
-  isAllDayEvent,
+    calculateEventPositions,
+    formatEventTime,
+    getEventsForDay,
+    isAllDayEvent,
 } from '@/lib/utils/calendar-utils'
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'

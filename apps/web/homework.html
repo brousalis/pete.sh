@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    background: #fff;
+    line-height: 1.65;
+    font-size: 14.5px;
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  /* Cover */
+  .cover {
+    text-align: center;
+    padding: 80px 0 60px;
+    border-bottom: 3px solid #0A1628;
+    margin-bottom: 48px;
+  }
+  .cover-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #00C2B2;
+    margin-bottom: 12px;
+  }
+  .cover h1 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #0A1628;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    color: #64748B;
+    font-weight: 400;
+    max-width: 520px;
+    margin: 0 auto 32px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  /* Instructions box */
+  .instructions {
+    background: #F1F5F9;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+  }
+  .instructions h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0A1628;
+    margin-bottom: 10px;
+  }
+  .instructions p {
+    color: #475569;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .instructions p:last-child { margin-bottom: 0; }
+  .instructions strong { color: #0A1628; }
+
+  /* Page divider */
+  .page-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #00C2B2;
+    padding: 6px 14px;
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    border-radius: 6px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .page-divider {
+    margin: 56px 0 40px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .page-divider h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0A1628;
+    margin-top: 4px;
+  }
+
+  /* Assignment section */
+  .assignment {
+    margin-bottom: 52px;
+    page-break-inside: avoid;
+  }
+  .assignment-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .section-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0A1628;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .assignment-header h3 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0A1628;
+    line-height: 1.25;
+  }
+  .priority {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .priority.high { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .priority.medium { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  .priority.low { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+  /* Screenshot placeholder */
+  .screenshot-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+  }
+  .screenshot-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .screenshot-label svg {
+    width: 14px;
+    height: 14px;
+    stroke: #94a3b8;
+    fill: none;
+    stroke-width: 2;
+  }
+  .screenshot-placeholder {
+    background: #e2e8f0;
+    border-radius: 8px;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #64748B;
+    font-size: 13px;
+    text-align: center;
+    padding: 24px;
+  }
+  .screenshot-placeholder .crop-note {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* What this does box */
+  .context-box {
+    background: #f0fdfa;
+    border-left: 3px solid #00C2B2;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 16px;
+  }
+  .context-box .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #00C2B2;
+    margin-bottom: 4px;
+  }
+  .context-box p {
+    font-size: 13.5px;
+    color: #334155;
+  }
+
+  /* Assessment box */
+  .assessment-box {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 16px;
+  }
+  .assessment-box .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #3b82f6;
+    margin-bottom: 4px;
+  }
+  .assessment-box p {
+    font-size: 13.5px;
+    color: #334155;
+  }
+
+  /* Homework prompts */
+  .homework {
+    margin-top: 16px;
+  }
+  .homework-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0A1628;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .homework-title svg {
+    width: 18px;
+    height: 18px;
+    stroke: #0A1628;
+    fill: none;
+    stroke-width: 2;
+  }
+  .prompt {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    background: #fff;
+  }
+  .prompt-question {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0A1628;
+    margin-bottom: 6px;
+  }
+  .prompt-hint {
+    font-size: 12.5px;
+    color: #64748B;
+    line-height: 1.55;
+  }
+  .response-area {
+    margin-top: 10px;
+    border: 1.5px dashed #d1d5db;
+    border-radius: 6px;
+    min-height: 80px;
+    padding: 12px;
+    color: #94a3b8;
+    font-size: 12px;
+    font-style: italic;
+    background: #fafafa;
+  }
+
+  /* Tip callouts */
+  .tip {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+  .tip .tip-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #d97706;
+    margin-bottom: 4px;
+  }
+  .tip p {
+    font-size: 13px;
+    color: #78350f;
+  }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+  }
+
+  /* General section */
+  .general-section {
+    background: #0A1628;
+    color: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+  .general-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .general-section p {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+  }
+  .general-section strong { color: #00C2B2; }
+
+  /* Deadline table */
+  .deadline-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 13.5px;
+  }
+  .deadline-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    border-bottom: 1.5px solid #334155;
+  }
+  .deadline-table td {
+    padding: 10px 14px;
+    color: #e2e8f0;
+    border-bottom: 1px solid #1e293b;
+    vertical-align: top;
+  }
+  .deadline-table .section-ref {
+    color: #00C2B2;
+    font-weight: 600;
+  }
+
+  @media print {
+    body { padding: 24px; font-size: 12px; }
+    .assignment { page-break-inside: avoid; }
+    .page-divider { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-logo">Aeros Consulting</div>
+  <h1>Website Homework</h1>
+  <div class="subtitle">Your section-by-section guide to refining the copy, content, and credibility of the Aeros website.</div>
+  <div class="meta">March 2026 &nbsp;·&nbsp; Confidential</div>
+</div>
+
+<!-- INSTRUCTIONS -->
+<div class="instructions">
+  <h2>How This Works</h2>
+  <p>Below you'll find <strong>every section of the Aeros website</strong> — both the Main Page and the About Page — with a picture showing exactly which part of the site we're talking about.</p>
+  <p>For each section, you'll see <strong>what it does</strong> for the reader, <strong>our assessment</strong> of what's working and what isn't, and then <strong>your homework</strong> — specific questions and prompts for you to answer.</p>
+  <p><strong>Don't try to write marketing copy.</strong> Just answer the questions the way you'd explain things to a colleague. We'll take your raw answers and turn them into polished website text that sounds like you.</p>
+  <p><strong>Voice memos are great.</strong> If writing feels like a chore, open the voice recorder on your phone, read the question, and just talk through your answer. Send us the audio — it works extremely well.</p>
+  <p>Each section is marked with a priority: <span style="color:#dc2626;font-weight:700;">HIGH</span> means we're blocked without your input, <span style="color:#d97706;font-weight:700;">MEDIUM</span> means it significantly improves the site, and <span style="color:#16a34a;font-weight:700;">LOWER</span> means it can wait for a second pass.</p>
+</div>
+
+<!-- ========================================== -->
+<!-- MAIN PAGE -->
+<!-- ========================================== -->
+
+<div class="page-divider">
+  <span class="page-label">Main Page</span>
+  <h2>Homepage + Our Approach</h2>
+</div>
+
+<!-- SECTION 1: Hero -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">1</div>
+    <h3>Hero Section <span class="priority high">High Priority</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — Top Section</strong>
+      <div class="crop-note">Crop from the navigation bar through the "Are you leaving Sleep Apnea revenue on the table?" headline, the supporting text, the two buttons, and the hospital building image on the right.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>This is the first thing anyone sees. A hospital executive decides in 3–5 seconds whether to keep reading or leave. The job of this section is to make them think: "This is about me. This is a problem I haven't solved."</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>The headline is strong — financially framed and direct. The supporting text efficiently names the three forces creating urgency (CPAP decline, GLP-1s, neuromodulation). The two buttons give people a path whether they're ready to act or want to learn more. The hospital building image is fine but generic — a real photo of you would be stronger.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Does this headline feel right to you?</div>
+      <div class="prompt-hint">Read it out loud: "Are you leaving Sleep Apnea revenue on the table?" Does that capture the core question you want a hospital CEO to ask themselves? If you'd phrase it differently — the way you'd actually say it to a CEO sitting across from you — write that down.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Is the supporting text accurate?</div>
+      <div class="prompt-hint">Specifically: Is "CPAP compliance is collapsing" a claim you're comfortable making on your website? Is "own the market for the next decade" the right timeframe? Mark anything that feels overstated or understated and tell us how you'd adjust it.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">What image would you want here?</div>
+      <div class="prompt-hint">Options: (a) a professional photo of you, (b) your team in a working session, (c) an abstract/architectural image like what's there now, (d) something else. If you have photos available, send them our way.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: Mission Statement -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">2</div>
+    <h3>Mission Statement Banner <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — White Centered Text Section</strong>
+      <div class="crop-note">Crop the white section with: "At Aeros, we help hospitals unify fragmented sleep specialties — ENT, Pulmonology, Sleep Medicine, Bariatrics — into a single, coordinated service line." and the line below it about outcomes.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>After the hero grabs attention with a question, this section answers it clearly: here's who we are and what we do, in one sentence. This is your elevator pitch — the version someone repeats when they tell a colleague about you.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>This is well-written. The specialty callouts demonstrate domain knowledge immediately. The supporting line hits three outcomes for three different executives: patient outcomes (CMO), referral networks (COO), profit center (CFO/CEO). Strong as-is.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Are the right specialties listed?</div>
+      <div class="prompt-hint">Currently names ENT, Pulmonology, Sleep Medicine, and Bariatrics. Should Dentistry be here? Primary Care? Others? List every specialty that Aeros brings into the integrated model.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Are these the right three outcomes to promise?</div>
+      <div class="prompt-hint">"Better patient outcomes, stronger referral networks, and a high-margin profit center where a cost center used to be." If you could only promise a hospital CEO three things, are these the right three? Write down what you'd promise.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: Built on Clinical Experience -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">3</div>
+    <h3>"Built on Clinical Experience" + Metrics <span class="priority high">High Priority</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — Dark Navy Section with Image + Stats</strong>
+      <div class="crop-note">Crop the dark section with "Built on clinical experience, not theory," the hospital corridor image, and the three metrics below: 5,000+ / 3x / 30+</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>This section answers: "Why should I trust you?" It uses a bold claim ("experience, not theory"), a credibility image, and three hard numbers. For a hospital CFO, those numbers are the most important content on the entire page.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>The headline is excellent. "Not theory" is a powerful differentiator against big-firm consultants. However, the three metrics are the make-or-break element here. <strong>These numbers must be real and defensible.</strong> A hospital CFO may ask you to back them up. If they're accurate, they're extremely compelling. If they're approximations, we need to adjust.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="tip">
+      <div class="tip-label">Why This Matters</div>
+      <p>This is the most important homework item in this document. A hospital CFO lives in a world of numbers. Accurate, specific metrics are the single most powerful trust signal you can deploy. Vague or unverifiable numbers do the opposite — they raise red flags.</p>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"5,000+ patient lives managed through integrated sleep programs." — Is this real?</div>
+      <div class="prompt-hint">Where does this number come from? Your personal clinical career? A specific program you built? The combined team's experience? Be as specific as possible about the source.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"3x average revenue increase in restructured sleep service lines." — Can you back this up?</div>
+      <div class="prompt-hint">Can you point to a specific instance? Example: "At [Hospital X], the sleep service line was generating $[Y] annually. After restructuring, it generated $[Z] within [timeframe]." If the 3x figure is directionally correct but you don't have exact data, tell us what you do have.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"30+ years of combined clinical and administrative experience." — What's the real number?</div>
+      <div class="prompt-hint">Add up the relevant years across your team. If it's actually 40+ or 50+, use the real number — bigger is better here. List each team member's relevant experience and we'll total it.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Are there other numbers you could share?</div>
+      <div class="prompt-hint">Think about: number of hospitals you've worked with, procedures performed, referral networks built, patient satisfaction improvements — anything quantifiable. Write down every number, even rough ones. We'll pick the strongest three.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: What We Do -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">4</div>
+    <h3>"What We Do" — Methodology Grid <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — White Section with 6 Cards</strong>
+      <div class="crop-note">Crop the "What we do" heading through all six methodology cards: Service Line Assessment, Care Algorithm Design, Specialty Integration, Patient Education Platform, Administrative & Financial Structuring, Future-Proofing & Iteration.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>This is where a prospect learns how Aeros actually works. The six cards represent your methodology — the steps you take for a client, in a logical sequence. It turns the abstract promise ("we'll integrate your sleep program") into a concrete, repeatable process.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>This is well-structured and the descriptions are specific enough to feel substantive. The six steps cover the full scope. This section is in good shape — it just needs your expert eye to confirm accuracy and fill in any gaps.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Read each card description out loud. Is this actually what you do?</div>
+      <div class="prompt-hint">For each of the six cards, mark anything that's inaccurate, missing, or overstated. Cross out words that don't sound like you. Add anything that's missing.</div>
+      <div class="response-area">Card 1 — Service Line Assessment:
+
+Card 2 — Care Algorithm Design:
+
+Card 3 — Specialty Integration:
+
+Card 4 — Patient Education Platform:
+
+Card 5 — Administrative & Financial Structuring:
+
+Card 6 — Future-Proofing & Iteration:</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">What does a "care algorithm" actually look like?</div>
+      <div class="prompt-hint">Not for the website — for us to understand. Is it a decision tree? A referral flowchart? A set of protocols? The more concretely you describe it, the better we can explain it to your audience.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">What does "breaking down silos" look like in practice?</div>
+      <div class="prompt-hint">Is it joint meetings? Shared EMR workflows? A committee structure? A single coordinator role? Give us a real-world example.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Is "coding optimization" a major part of what you do?</div>
+      <div class="prompt-hint">Hospital CFOs will zero in on this because it directly impacts revenue. If you have specific expertise in sleep-related coding and billing, tell us — we should emphasize it more.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Is the order right?</div>
+      <div class="prompt-hint">The cards tell a story: assess → design → integrate → educate → structure → evolve. Does that match the actual sequence of an Aeros engagement? If you'd reorder, tell us.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: Why Aeros -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">5</div>
+    <h3>"Why Aeros" — Differentiation <span class="priority high">High Priority</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — Dark Section with Two Panels</strong>
+      <div class="crop-note">Crop the "Why Aeros" headline, the "Our Difference" left panel with four points, the teal-highlighted right panel with four points, and the Aeros logo in the center.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>This answers the question every buyer asks: "What makes you different from a general consultant, or from just hiring another sleep medicine physician?" The eight bullet points across two panels are the ammunition for that argument.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"Clinicians who have personally built and run sleep programs." — Expand on this.</div>
+      <div class="prompt-hint">This is your single most powerful differentiator. Which programs? At which institutions? What was the scale? We need the full story behind this claim so we can present it with maximum credibility.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"Measurable 12-month ROI." — Is 12 months the right number?</div>
+      <div class="prompt-hint">If a hospital CEO asks "When will I see results?" — what's your honest answer? First signs in 3 months? Revenue movement in 6? Full ROI in 12? Give us the real timeline.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">The 60-second pitch: Why hire Aeros instead of McKinsey, Huron, or a local sleep medicine consultant?</div>
+      <div class="prompt-hint">Don't think about the website. Just tell us what you'd actually say. A voice memo is perfect for this one.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: FAQ -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">6</div>
+    <h3>Common Questions from Hospital Leaders <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — FAQ Accordion Section</strong>
+      <div class="crop-note">Crop the "Common questions from hospital leaders" heading and the four expandable question rows below it.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>FAQs preemptively answer objections that might stop someone from reaching out. The four questions here map to the four most common pushbacks: "Why now?", "We're already doing this," "How long?", and "What am I buying?"</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>The questions are the right ones. Now we need your answers — written like you're actually talking to a CEO who just asked you directly.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework — Write the answer to each question
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"What makes sleep apnea a strategic priority right now?"</div>
+      <div class="prompt-hint">3–5 sentences. Hit the key forces: CPAP decline, GLP-1/neuromodulation emergence, competitive window, financial opportunity. Use a specific data point if you have one.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"We already have a sleep lab. Why do we need Aeros?"</div>
+      <div class="prompt-hint">This is the most important objection to handle well. Acknowledge the sleep lab. Then explain why a lab alone captures only a fraction of the opportunity. What's the difference between "having a sleep lab" and "having an integrated sleep service line"?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"How long does implementation typically take?"</div>
+      <div class="prompt-hint">Give a real answer. Hospital executives like ranges: "Most engagements show measurable results within [X] months, with full service line maturity in [Y–Z] months."</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"What does the engagement model look like?"</div>
+      <div class="prompt-hint">Walk through what the first 30, 60, and 90 days look like. What do you deliver? How often are you on-site vs. remote? Is there a fixed fee, a retainer, or a performance component?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Are there other questions you hear frequently?</div>
+      <div class="prompt-hint">Think about your last 5 conversations with hospital executives or physician leaders. What did they ask? Add those questions and your answers.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 7: Final CTA -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">7</div>
+    <h3>Final Call to Action + Footer <span class="priority low">Lower</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>Main Page Screenshot — Bottom CTA Card + Footer</strong>
+      <div class="crop-note">Crop from the "Ready to turn sleep apnea into your next high-performing service line?" card through the footer with newsletter signup and links.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>The CTA card is the final conversion push for someone who scrolled the entire page. The footer provides navigation, a newsletter signup, and establishes professional completeness.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">"Market Opportunity Audit" or "Market Opportunity Assessment"?</div>
+      <div class="prompt-hint">"Audit" implies thoroughness. "Assessment" is slightly softer. Pick one — we'll use it everywhere for consistency.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">What happens when someone clicks "Get Started"?</div>
+      <div class="prompt-hint">Do they fill out a form? Schedule a call? Get an email? Walk us through the process so we can set the right expectation on the site.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Rewrite the newsletter description in one sentence.</div>
+      <div class="prompt-hint">Currently says: "Subscribe to our newsletter for marketing insights, trends, & growth strategies to scale your business." That sounds like a marketing agency, not a healthcare firm. What would a hospital executive actually want to receive from you by email?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Do you plan to send a regular email?</div>
+      <div class="prompt-hint">If yes, how often? If no, we should remove the signup for now. A signup with no follow-through is worse than no signup.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- ABOUT PAGE -->
+<!-- ========================================== -->
+
+<div class="page-divider">
+  <span class="page-label">About Page</span>
+  <h2>About — Team & Credibility</h2>
+</div>
+
+<!-- SECTION 8: About Hero -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">8</div>
+    <h3>About Page Hero <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>About Page Screenshot — Top Section</strong>
+      <div class="crop-note">Crop from the navigation through the "Precision methodology, measurable outcomes." headline, the supporting text, and the wide conference-room team photo.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>Anyone who clicks "About" is trying to answer one question: "Who are these people, and should I trust them?" This first section sets the tone. It should feel more personal and human than the homepage — this is where you tell your story.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>The headline ("Precision methodology, measurable outcomes") is a tagline, not a story. It works on the homepage but feels impersonal here. The About page hero should lead with the team or the founder's story. The stock conference photo should be replaced with a real team photo when available.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Which approach do you prefer for this section?</div>
+      <div class="prompt-hint"><strong>Option A:</strong> Lead with a personal statement. "I spent [X] years building integrated sleep programs inside hospital systems. I started Aeros because..."<br><br><strong>Option B:</strong> Lead with team identity. "Clinicians, educators, and health system operators with decades of frontline experience."<br><br><strong>Option C:</strong> Keep the current tagline approach and save personal story for below.<br><br>Pick one or tell us another direction.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Do you have a real team photo?</div>
+      <div class="prompt-hint">Even a candid one from a meeting, conference, or office setting would be stronger than the stock image. If not, this is worth scheduling.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 9: Clinical Credibility -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">9</div>
+    <h3>"Clinical Credibility Meets Operational Rigor" <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>About Page Screenshot — Text Left / Photo Right Section</strong>
+      <div class="crop-note">Crop the "Clinical credibility meets operational rigor" headline, the body paragraph, the three checkmark bullet points, and the photo of two people in conversation.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>This bridges clinical expertise ("we know the medicine") with operational capability ("we know how hospitals work"). That bridge is the core of Aeros's value — most advisors have one or the other, not both.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>Very well written. "Not observing from the outside" is a subtle but effective shot at traditional consultants. The three checkmarks hit clinical, operational, and financial dimensions. This section is close to final — just needs more specificity.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Make each claim more specific.</div>
+      <div class="prompt-hint"><strong>"Clinical experts with decades in surgical and medical sleep care"</strong> — How many years, exactly? Which procedures? Which institutions?<br><br><strong>"Proven across employed-physician and private-practice models"</strong> — How many systems? In how many states or regions?<br><br><strong>"Fluent in payor dynamics, coding optimization, and health system finance"</strong> — Can you give an example of a coding or financial insight that surprised a client?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 10: Framework -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">10</div>
+    <h3>"A Framework Built for Hospital Operations" <span class="priority low">Lower</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>About Page Screenshot — Image Left / Text Right Section</strong>
+      <div class="crop-note">Crop the abstract image on the left and the "A framework built for the realities of hospital operations" text with the three methodology items listed below.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>A condensed version of the methodology, presented in the context of "we understand how hospitals actually work." Reinforces that Aeros's approach isn't theoretical — it's designed around real operational constraints.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">What do hospital leaders most often say about why integration is hard?</div>
+      <div class="prompt-hint">Things like: "Our ENT and pulmonology departments don't talk to each other" or "We tried to build a sleep program but nobody owned it." Write down what you hear most. We'll weave it into this section.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Give us two contrasting examples of how your approach adapts.</div>
+      <div class="prompt-hint">E.g., "A 200-bed community hospital with no sleep lab needs X. A 600-bed academic medical center with a fragmented program needs Y." This makes the adaptability claim concrete.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 11: Forces Reshaping -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">11</div>
+    <h3>"The Forces Reshaping Sleep Medicine" <span class="priority medium">Medium</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>About Page Screenshot — Four Stacked Cards</strong>
+      <div class="crop-note">Crop "The forces reshaping sleep medicine" heading and all four cards: CPAP Compliance Crisis, GLP-1 Disruption, Neuromodulation Growth, Regulatory Pipeline.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>Positions Aeros as experts who understand the forces driving change. Educates the reader on "why now" — and implicitly says, "If you don't understand all four of these forces, you need an advisor who does."</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p>Excellent content. These four forces are the backbone of the Aeros thesis, explained concisely and accurately. Just needs your fact-check and any additional nuance.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework — Fact-check each card
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">CPAP Compliance Crisis: Is "below 50%" the right adherence number?</div>
+      <div class="prompt-hint">Do you have a source for this? A specific study or published figure? We'll cite it if we have one.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">GLP-1 Disruption: Is the semaglutide/tirzepatide characterization accurate?</div>
+      <div class="prompt-hint">Any nuance to add? Other GLP-1 agents worth naming? Anything overstated?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Neuromodulation Growth: Is "Inspire and successors" the right framing?</div>
+      <div class="prompt-hint">Are there specific competing devices or next-gen technologies you'd want to name?</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Regulatory Pipeline: What's coming that excites you most?</div>
+      <div class="prompt-hint">Name specific therapies or devices. Specificity builds credibility — "multiple platforms approaching FDA approval" is fine, but naming them is better.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Is there a 5th force you'd add?</div>
+      <div class="prompt-hint">Consider: value-based care incentives, home sleep testing, AI diagnostics, employer screening programs, direct-to-consumer awareness.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 12: Meet Our Leadership -->
+<div class="assignment">
+  <div class="assignment-header">
+    <div class="section-number">12</div>
+    <h3>"Meet Our Leadership" — Team Bios <span class="priority high">High Priority</span></h3>
+  </div>
+
+  <div class="screenshot-area">
+    <div class="screenshot-label">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      CURRENT WEBSITE — INSERT SCREENSHOT
+    </div>
+    <div class="screenshot-placeholder">
+      <strong>About Page Screenshot — Dark Leadership Section</strong>
+      <div class="crop-note">Crop the "Meet our leadership" heading and the empty/placeholder area below it.</div>
+    </div>
+  </div>
+
+  <div class="context-box">
+    <div class="label">What This Section Does</div>
+    <p>For a consulting firm, the team is the product. Hospital executives aren't buying a methodology — they're buying confidence in the people who will be in their boardroom. This section makes those people real, credible, and trustworthy.</p>
+  </div>
+
+  <div class="assessment-box">
+    <div class="label">Our Assessment</div>
+    <p><strong>This is the biggest gap on the entire website.</strong> An empty leadership section on a consulting firm's About page is a red flag for any sophisticated buyer. Filling this section is the single highest-priority task in this entire document.</p>
+  </div>
+
+  <div class="homework">
+    <div class="homework-title">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Your Homework — This is the #1 priority
+    </div>
+
+    <div class="tip">
+      <div class="tip-label">Why This Is #1</div>
+      <p>A prospect will visit this page, scroll to the team section, and make a judgment call on whether to reach out. If it's empty or vague, the answer is almost always no. Fill this section first, above everything else in this document.</p>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Your bio — answer each of these:</div>
+      <div class="prompt-hint">We'll take your answers and craft a polished bio. Just give us the raw material.</div>
+      <div class="response-area">Full name and credentials (e.g., MD, FACS):
+
+How many years in ENT / sleep medicine:
+
+Institutions where you've held positions (name them):
+
+Specific roles held (Chief, Director, Medical Director, etc.):
+
+Clinical specialty and volume (procedures, patient counts):
+
+Have you built or run an integrated sleep program? Where? What happened?:
+
+Published research (list most relevant):
+
+Conference speaking (which ones?):
+
+In one sentence — why did you start Aeros?:</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Additional team members or consultants</div>
+      <div class="prompt-hint">For each person who will appear on the site:</div>
+      <div class="response-area">Name, title, credential:
+
+Area of expertise (clinical, educational, administrative):
+
+2–3 sentences on their relevant background:
+
+Their single most impressive credential in this space:</div>
+    </div>
+
+    <div class="prompt">
+      <div class="prompt-question">Do you have professional headshots?</div>
+      <div class="prompt-hint">For yourself and any team members. If not, schedule a photo session — it's $500–$1,500 for a half-day with a local commercial photographer. This is non-negotiable for a consulting website.</div>
+      <div class="response-area">Write your answer here...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- GENERAL HOMEWORK -->
+<!-- ========================================== -->
+
+<div class="page-divider">
+  <span class="page-label">General</span>
+  <h2>Applies to the Whole Site</h2>
+</div>
+
+<div class="general-section">
+  <h3>Photography</h3>
+  <p>Real photos of you and your team are the <strong>single highest-impact improvement</strong> you can make to this site. Stock images are fine for backgrounds, but anywhere a visitor is evaluating who you are — the hero, the credibility section, the leadership section — real photos build trust in a way nothing else can.</p>
+  <p><strong>Action:</strong> Schedule a half-day professional photo session. You need a headshot, 2–3 environmental shots (hospital hallway, boardroom, conference setting), and similar for any team members. Budget: $500–$1,500.</p>
+</div>
+
+<div class="general-section">
+  <h3>Your Voice</h3>
+  <p>Throughout this document, we've asked you to write things "the way you'd actually say it." That's intentional. The best copy for Aeros will sound like you — your authority, your directness, your understanding of how hospitals work.</p>
+  <p><strong>Don't try to write marketing language.</strong> Just talk. We'll do the polishing.</p>
+  <p><strong>Voice memos work great.</strong> Open the voice recorder on your phone, read the question, and just answer it. Send us the audio files. We'll transcribe and shape them into copy. This method produces more authentic material than written responses.</p>
+</div>
+
+<div class="general-section">
+  <h3>Deadlines</h3>
+  <table class="deadline-table">
+    <thead>
+      <tr>
+        <th>Deadline</th>
+        <th>Sections</th>
+        <th>What's Needed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Week 1</strong></td>
+        <td><span class="section-ref">Sections 1, 3, 5, 12</span></td>
+        <td>Hero headline, metrics verification, differentiation pitch, team bios — the four areas we're blocked on without your input</td>
+      </tr>
+      <tr>
+        <td><strong>Week 2</strong></td>
+        <td><span class="section-ref">Sections 2, 4, 6, 8, 9, 10, 11</span></td>
+        <td>Everything else — methodology cards, FAQ answers, About page refinements, trend fact-checks, photo planning</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top: 16px;">Send your responses in <strong>whatever format is easiest</strong> — a marked-up printout, a Word doc, an email, voice memos, or a mix. There are no wrong answers.</p>
+</div>
+
+<div style="text-align:center; padding: 40px 0 0; color: #94a3b8; font-size: 12px;">
+  <p>Questions? Don't hesitate to reach out. There are no wrong answers here — just your expertise, which is exactly what we need to build this right.</p>
+  <p style="margin-top: 12px;">Aeros Consulting · Confidential · March 2026</p>
+</div>
+
+</body>
+</html>

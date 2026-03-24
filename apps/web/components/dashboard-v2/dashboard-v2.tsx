@@ -3,7 +3,6 @@
 import { CookCompletionDialog } from '@/components/cooking/cooking-sidebar'
 import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
 import { CommandBar } from '@/components/dashboard-v2/command-bar'
-import { DashboardCalendarSection } from '@/components/dashboard-v2/dashboard-calendar-section'
 import { DashboardCookingSection } from '@/components/dashboard-v2/dashboard-cooking-section'
 import {
   DashboardV2Provider,
@@ -217,18 +216,18 @@ function DashboardContent() {
         </section>
 
         {/* Cooking — section title is inside content, same line as filters */}
-        <section className="min-h-[320px] shrink-0 flex flex-col border-b border-border">
-          <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
+        <section className="flex-1 min-h-[520px] flex flex-col border-b border-border">
+          <div className="flex-1 min-h-0 min-w-0">
             <DashboardCookingSection />
           </div>
         </section>
 
         {/* Calendar — section title is inside content, same line as view controls */}
-        <section className="shrink-0 flex flex-col border-b border-border">
+        {/* <section className="shrink-0 flex flex-col border-b border-border">
           <div className="flex-1 min-h-[280px] min-w-0 overflow-auto">
             <DashboardCalendarSection />
           </div>
-        </section>
+        </section> */}
       </div>
 
       <RecipePickerDialog
