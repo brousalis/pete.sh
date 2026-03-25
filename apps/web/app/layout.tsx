@@ -26,7 +26,7 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       data-brand="yellow"
     >
-      <body className="font-sans">
+      <body className="font-sans bg-white!">
         <Providers>
           <Suspense fallback={null}>
             {children}

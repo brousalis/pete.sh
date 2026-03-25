@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import '@/styles/homework.css'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const HOMEWORK_ID = 'aeros-website'
 const SAVE_DEBOUNCE_MS = 1500
@@ -146,6 +146,7 @@ interface SectionData {
   priority: 'high' | 'medium' | 'low'
   screenshotTitle: string
   screenshotCrop: string
+  screenshotSrc?: string
   contextTitle?: string
   context: string
   assessment?: string
@@ -200,12 +201,20 @@ function Section({
             <circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" strokeWidth={2} />
             <path d="m21 15-5-5L5 21" fill="none" stroke="currentColor" strokeWidth={2} />
           </svg>
-          CURRENT WEBSITE — INSERT SCREENSHOT
+          CURRENT WEBSITE
         </div>
-        <div className="hw-screenshot-placeholder">
-          <strong>{section.screenshotTitle}</strong>
-          <div className="hw-crop-note">{section.screenshotCrop}</div>
-        </div>
+        {section.screenshotSrc ? (
+          <img
+            src={section.screenshotSrc}
+            alt={section.screenshotTitle}
+            className="hw-screenshot-img"
+          />
+        ) : (
+          <div className="hw-screenshot-placeholder">
+            <strong>{section.screenshotTitle}</strong>
+            <div className="hw-crop-note">{section.screenshotCrop}</div>
+          </div>
+        )}
       </div>
 
       <div className="hw-context-box">
@@ -282,6 +291,7 @@ const SECTIONS: SectionData[] = [
     number: 1,
     title: 'Hero Section',
     priority: 'high',
+    screenshotSrc: '/homework/section-01-hero.png',
     screenshotTitle: 'Main Page Screenshot — Top Section',
     screenshotCrop:
       'Crop from the navigation bar through the "Are you leaving Sleep Apnea revenue on the table?" headline, the supporting text, the two buttons, and the hospital building image on the right.',
@@ -311,6 +321,7 @@ const SECTIONS: SectionData[] = [
     number: 2,
     title: 'Mission Statement Banner',
     priority: 'medium',
+    screenshotSrc: '/homework/section-02-mission.png',
     screenshotTitle: 'Main Page Screenshot — White Centered Text Section',
     screenshotCrop:
       'Crop the white section with: "At Aeros, we help hospitals unify fragmented sleep specialties — ENT, Pulmonology, Sleep Medicine, Bariatrics — into a single, coordinated service line." and the line below it about outcomes.',
@@ -335,6 +346,7 @@ const SECTIONS: SectionData[] = [
     number: 3,
     title: '"Built on Clinical Experience" + Metrics',
     priority: 'high',
+    screenshotSrc: '/homework/section-03-metrics.png',
     screenshotTitle: 'Main Page Screenshot — Dark Navy Section with Image + Stats',
     screenshotCrop:
       'Crop the dark section with "Built on clinical experience, not theory," the hospital corridor image, and the three metrics below: 5,000+ / 3x / 30+',
@@ -373,6 +385,7 @@ const SECTIONS: SectionData[] = [
     number: 4,
     title: '"What We Do" — Methodology Grid',
     priority: 'medium',
+    screenshotSrc: '/homework/section-04-methodology.png',
     screenshotTitle: 'Main Page Screenshot — White Section with 6 Cards',
     screenshotCrop:
       'Crop the "What we do" heading through all six methodology cards: Service Line Assessment, Care Algorithm Design, Specialty Integration, Patient Education Platform, Administrative & Financial Structuring, Future-Proofing & Iteration.',
@@ -414,6 +427,7 @@ const SECTIONS: SectionData[] = [
     number: 5,
     title: '"Why Aeros" — Differentiation',
     priority: 'high',
+    screenshotSrc: '/homework/section-05-why-aeros.png',
     screenshotTitle: 'Main Page Screenshot — Dark Section with Two Panels',
     screenshotCrop:
       'Crop the "Why Aeros" headline, the "Our Difference" left panel with four points, the teal-highlighted right panel with four points, and the Aeros logo in the center.',
@@ -444,6 +458,7 @@ const SECTIONS: SectionData[] = [
     number: 6,
     title: 'Common Questions from Hospital Leaders',
     priority: 'medium',
+    screenshotSrc: '/homework/section-06-faq.png',
     screenshotTitle: 'Main Page Screenshot — FAQ Accordion Section',
     screenshotCrop:
       'Crop the "Common questions from hospital leaders" heading and the four expandable question rows below it.',
@@ -486,6 +501,7 @@ const SECTIONS: SectionData[] = [
     number: 7,
     title: 'Final Call to Action + Footer',
     priority: 'low',
+    screenshotSrc: '/homework/section-07-cta-footer.png',
     screenshotTitle: 'Main Page Screenshot — Bottom CTA Card + Footer',
     screenshotCrop:
       'Crop from the "Ready to turn sleep apnea into your next high-performing service line?" card through the footer with newsletter signup and links.',
@@ -520,6 +536,7 @@ const SECTIONS: SectionData[] = [
     number: 8,
     title: 'About Page Hero',
     priority: 'medium',
+    screenshotSrc: '/homework/section-08-about-hero.png',
     screenshotTitle: 'About Page Screenshot — Top Section',
     screenshotCrop:
       'Crop from the navigation through the "Precision methodology, measurable outcomes." headline, the supporting text, and the wide conference-room team photo.',
@@ -544,6 +561,7 @@ const SECTIONS: SectionData[] = [
     number: 9,
     title: '"Clinical Credibility Meets Operational Rigor"',
     priority: 'medium',
+    screenshotSrc: '/homework/section-09-clinical-credibility.png',
     screenshotTitle: 'About Page Screenshot — Text Left / Photo Right Section',
     screenshotCrop:
       'Crop the "Clinical credibility meets operational rigor" headline, the body paragraph, the three checkmark bullet points, and the photo of two people in conversation.',
@@ -563,6 +581,7 @@ const SECTIONS: SectionData[] = [
     number: 10,
     title: '"A Framework Built for Hospital Operations"',
     priority: 'low',
+    screenshotSrc: '/homework/section-10-framework.png',
     screenshotTitle: 'About Page Screenshot — Image Left / Text Right Section',
     screenshotCrop:
       'Crop the abstract image on the left and the "A framework built for the realities of hospital operations" text with the three methodology items listed below.',
@@ -587,6 +606,7 @@ const SECTIONS: SectionData[] = [
     number: 11,
     title: '"The Forces Reshaping Sleep Medicine"',
     priority: 'medium',
+    screenshotSrc: '/homework/section-11-forces.png',
     screenshotTitle: 'About Page Screenshot — Four Stacked Cards',
     screenshotCrop:
       'Crop "The forces reshaping sleep medicine" heading and all four cards: CPAP Compliance Crisis, GLP-1 Disruption, Neuromodulation Growth, Regulatory Pipeline.',
@@ -630,6 +650,7 @@ const SECTIONS: SectionData[] = [
     number: 12,
     title: '"Meet Our Leadership" — Team Bios',
     priority: 'high',
+    screenshotSrc: '/homework/section-12-leadership.png',
     screenshotTitle: 'About Page Screenshot — Dark Leadership Section',
     screenshotCrop:
       'Crop the "Meet our leadership" heading and the empty/placeholder area below it.',
@@ -778,54 +799,10 @@ export function AerosHomework() {
       {/* Cover */}
       <div className="hw-cover">
         <div className="hw-cover-logo">Aeros Consulting</div>
-        <h1>Website Homework</h1>
-        <div className="hw-cover-subtitle">
-          Your section-by-section guide to refining the copy, content, and
-          credibility of the Aeros website.
-        </div>
-        <div className="hw-cover-meta">March 2026 &nbsp;·&nbsp; Confidential</div>
+        <h1>Website Copy Review</h1>
+        <div className="hw-cover-meta">March 2026 &nbsp;·&nbsp;</div>
       </div>
 
-      {/* Instructions */}
-      <div className="hw-instructions">
-        <h2>How This Works</h2>
-        <p>
-          Below you&apos;ll find <strong>every section of the Aeros website</strong>{' '}
-          — both the Main Page and the About Page — with a picture showing
-          exactly which part of the site we&apos;re talking about.
-        </p>
-        <p>
-          For each section, you&apos;ll see <strong>what it does</strong> for the
-          reader, <strong>our assessment</strong> of what&apos;s working and what
-          isn&apos;t, and then <strong>your homework</strong> — specific questions
-          and prompts for you to answer.
-        </p>
-        <p>
-          <strong>Don&apos;t try to write marketing copy.</strong> Just answer the
-          questions the way you&apos;d explain things to a colleague. We&apos;ll take
-          your raw answers and turn them into polished website text that sounds
-          like you.
-        </p>
-        <p>
-          <strong>Voice memos are great.</strong> If writing feels like a chore,
-          open the voice recorder on your phone, read the question, and just talk
-          through your answer. Send us the audio — it works extremely well.
-        </p>
-        <p>
-          Each section is marked with a priority:{' '}
-          <span style={{ color: '#dc2626', fontWeight: 700 }}>HIGH</span> means
-          we&apos;re blocked without your input,{' '}
-          <span style={{ color: '#d97706', fontWeight: 700 }}>MEDIUM</span> means
-          it significantly improves the site, and{' '}
-          <span style={{ color: '#16a34a', fontWeight: 700 }}>LOWER</span> means
-          it can wait for a second pass.
-        </p>
-        <p className="hw-instructions-autosave">
-          Your answers are <strong>saved automatically</strong> as you type. You
-          can close this page and come back using the same link to continue where
-          you left off.
-        </p>
-      </div>
 
       {/* Sections */}
       {SECTIONS.map((section) => {

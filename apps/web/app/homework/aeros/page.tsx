@@ -1,5 +1,5 @@
-import { Suspense } from 'react'
 import { AerosHomework } from '@/components/homework/aeros-homework'
+import { Suspense } from 'react'
 
 export default function AerosHomeworkPage() {
   return (
@@ -12,6 +12,7 @@ export default function AerosHomeworkPage() {
             alignItems: 'center',
             height: '100vh',
             fontFamily: 'Inter, sans-serif',
+            background: '#fff',
             color: '#64748b',
           }}
         >
