@@ -41,6 +41,7 @@ import {
 } from '@/lib/types/ai-coach.types'
 import type { DayOfWeek, Workout, DailyRoutine } from '@/lib/types/fitness.types'
 import type { Recipe } from '@/lib/types/cooking.types'
+import { deduplicateToolCallIds } from '@/lib/utils/ai-message-utils'
 import { applyRoutineChanges, applyDailyRoutineChanges, type ProgressiveOverloadEntry } from '@/lib/utils/routine-change-utils'
 import type { DailyRoutineChange } from '@/lib/types/ai-coach.types'
 
@@ -685,70 +686,95 @@ ${enrichedRecipes.length < recipeIds.size ? `Note: ${recipeIds.size - enrichedRe
 // TRAINING READINESS FROM DB DATA
 // ============================================
 
+/** Module-level cache: training readiness is expensive and rarely changes within minutes. */
+const TRAINING_READINESS_TTL_MS = 5 * 60 * 1000
+let readinessCache: {
+  promise: Promise<TrainingReadiness>
+  expiresAt: number
+} | null = null
+
+export function invalidateTrainingReadinessCache(): void {
+  readinessCache = null
+}
+
 export async function getTrainingReadinessFromData(): Promise<TrainingReadiness> {
-  const dailyMetrics = await appleHealthService.getDailyMetrics(7)
+  const now = Date.now()
+  if (readinessCache && readinessCache.expiresAt > now) {
+    return readinessCache.promise
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const metrics = dailyMetrics as any[]
-
-  const hrvValues = metrics
-    .filter((m) => m.heart_rate_variability != null)
-    .map((m) => m.heart_rate_variability as number)
-
-  const restingHrValues = metrics
-    .filter((m) => m.resting_heart_rate != null)
-    .map((m) => m.resting_heart_rate as number)
-
-  const sleepDurations = metrics
-    .filter((m) => m.sleep_duration != null)
-    .map((m) => (m.sleep_duration as number) / 3600)
-
-  // Recent training load from last 3 days of workouts
-  const recentWorkouts = await appleHealthService.getRecentWorkouts()
-  const threeDaysAgo = new Date()
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-  const recentTrainingLoad = recentWorkouts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((w: any) => new Date(w.start_date) >= threeDaysAgo)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((sum: number, w: any) => sum + (w.duration || 0) / 60, 0)
-
-  // Completion rate from weekly progress
-  const supabase = getSupabaseClientForOperation('read')
-  let completionRate = 0.75
-  let skippedDays = 0
-
-  if (supabase) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
+  const loader = async (): Promise<TrainingReadiness> => {
     const weekAgo = new Date()
     weekAgo.setDate(weekAgo.getDate() - 7)
 
-    const { data: progress } = await db
-      .from('fitness_progress')
-      .select('*')
-      .gte('created_at', weekAgo.toISOString())
+    const supabase = getSupabaseClientForOperation('read')
 
+    // Parallelize the three independent data sources (previously sequential,
+    // which cost ~sum of each query's latency).
+    const [dailyMetrics, recentWorkouts, progressResult] = await Promise.all([
+      appleHealthService.getDailyMetrics(7),
+      appleHealthService.getRecentWorkouts(),
+      supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? (supabase as any)
+            .from('fitness_progress')
+            .select('*')
+            .gte('created_at', weekAgo.toISOString())
+        : Promise.resolve({ data: null }),
+    ])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const metrics = dailyMetrics as any[]
+
+    const hrvValues = metrics
+      .filter((m) => m.heart_rate_variability != null)
+      .map((m) => m.heart_rate_variability as number)
+
+    const restingHrValues = metrics
+      .filter((m) => m.resting_heart_rate != null)
+      .map((m) => m.resting_heart_rate as number)
+
+    const sleepDurations = metrics
+      .filter((m) => m.sleep_duration != null)
+      .map((m) => (m.sleep_duration as number) / 3600)
+
+    const threeDaysAgo = new Date()
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+    const recentTrainingLoad = recentWorkouts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((w: any) => new Date(w.start_date) >= threeDaysAgo)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .reduce((sum: number, w: any) => sum + (w.duration || 0) / 60, 0)
+
+    let completionRate = 0.75
+    let skippedDays = 0
+    const progress = progressResult?.data
     if (progress && progress.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const completed = progress.filter((p: any) => p.workout_completed).length
       completionRate = completed / progress.length
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       skippedDays = progress.filter(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p: any) => !p.workout_completed && !p.morning_routine_completed
       ).length
     }
+
+    return computeTrainingReadiness({
+      hrvValues,
+      restingHrValues,
+      sleepDurations,
+      recentTrainingLoad,
+      completionRate,
+      skippedDays,
+    })
   }
 
-  return computeTrainingReadiness({
-    hrvValues,
-    restingHrValues,
-    sleepDurations,
-    recentTrainingLoad,
-    completionRate,
-    skippedDays,
+  const promise = loader()
+  readinessCache = { promise, expiresAt: now + TRAINING_READINESS_TTL_MS }
+  promise.catch(() => {
+    if (readinessCache?.promise === promise) readinessCache = null
   })
+  return promise
 }
 
 // ============================================
@@ -810,6 +836,20 @@ Today's date: ${getLocalDateString()}`,
 }
 
 // ============================================
+// STREAMING CHAT — helpers
+// ============================================
+
+const MAX_COACH_CONTEXT_MESSAGES = 30
+
+function trimMessages(messages: UIMessage[]): UIMessage[] {
+  if (messages.length <= MAX_COACH_CONTEXT_MESSAGES) return messages
+  const trimmed = messages.slice(-MAX_COACH_CONTEXT_MESSAGES)
+  console.log(`[AI Coach] Trimmed messages: ${messages.length} → ${trimmed.length}`)
+  return trimmed
+}
+
+
+// ============================================
 // STREAMING CHAT
 // ============================================
 
@@ -818,7 +858,10 @@ export async function createChatStream(
   systemContext: string
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(uiMessages)
+  const modelMessages = deduplicateToolCallIds(
+    await convertToModelMessages(trimMessages(uiMessages)),
+    'AI Coach'
+  )
 
   return streamText({
     model,

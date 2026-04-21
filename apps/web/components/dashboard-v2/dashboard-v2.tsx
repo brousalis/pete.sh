@@ -8,6 +8,7 @@ import {
   DashboardV2Provider,
   useDashboardV2,
 } from '@/components/dashboard-v2/dashboard-v2-provider'
+import type { DashboardV2SeedData } from '@/hooks/use-dashboard-v2-data'
 import { DayFlowMobile } from '@/components/dashboard-v2/day-flow-mobile'
 import {
   CommandBarSkeleton,
@@ -302,10 +303,15 @@ function DashboardContent() {
   )
 }
 
-export function DashboardV2() {
+export function DashboardV2({ seed }: { seed?: DashboardV2SeedData }) {
   return (
-    <DashboardV2Provider>
-      <CookingProvider>
+    <DashboardV2Provider seed={seed}>
+      <CookingProvider
+        initialRecipes={seed?.data.recipes}
+        initialMealPlan={seed?.data.mealPlan}
+        initialShoppingList={seed?.data.shoppingList}
+        initialFridgeScan={seed?.data.latestFridgeScan}
+      >
         <DashboardContent />
       </CookingProvider>
     </DashboardV2Provider>

@@ -6,6 +6,7 @@
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
   Recipe,
+  RecipeListItem,
   RecipeWithIngredients,
   RecipeIngredient,
   RecipeVersion,
@@ -19,6 +20,13 @@ import type {
   IngredientChange,
   CacheSanitizationReport,
 } from '@/lib/types/cooking.types'
+
+/**
+ * Slimmed field list for recipe list views. Excludes the large `instructions`
+ * jsonb column and `notes` text column which dominate payload size.
+ */
+const RECIPE_LIST_FIELDS =
+  'id,name,description,source,source_url,prep_time,cook_time,servings,difficulty,tags,image_url,is_favorite,calories_per_serving,protein_g,fat_g,carbs_g,nutrition_category,created_at,updated_at'
 import {
   sanitizeIngredientName,
   sanitizeIngredientUnit,
@@ -29,13 +37,27 @@ import { maybeRecomputeNutrition } from '@/lib/services/nutrition.service'
 
 export class CookingService {
   /**
-   * Get recipes with optional filters
+   * Get recipes with optional filters.
+   *
+   * By default returns the slim `RecipeListItem` shape without `instructions` /
+   * `notes` / extended nutrition columns. Pass `{ fullShape: true }` to retrieve
+   * complete `Recipe` rows (used by detail views / AI reasoning / exports).
    */
-  async getRecipes(filters?: RecipeFilters): Promise<Recipe[]> {
+  async getRecipes(
+    filters: RecipeFilters & { fullShape: true }
+  ): Promise<Recipe[]>
+  async getRecipes(
+    filters?: RecipeFilters & { fullShape?: false }
+  ): Promise<RecipeListItem[]>
+  async getRecipes(
+    filters?: RecipeFilters & { fullShape?: boolean }
+  ): Promise<RecipeListItem[] | Recipe[]> {
     const supabase = getSupabaseClientForOperation('read')
     if (!supabase) {
       throw new Error('Supabase not configured')
     }
+
+    const selectFields = filters?.fullShape ? '*' : RECIPE_LIST_FIELDS
 
     // When ingredientSearch is used alongside other filters, we run two
     // queries and intersect: one for ingredient match (requires JOIN) and
@@ -56,12 +78,15 @@ export class CookingService {
       const matchingIds = new Set((ingData || []).map((r: { id: string }) => r.id))
       if (matchingIds.size === 0) return []
 
-      const remaining = { ...filters, ingredientSearch: undefined }
+      const remaining = { ...filters, ingredientSearch: undefined } as RecipeFilters & { fullShape?: false }
       const allRecipes = await this.getRecipes(remaining)
-      return allRecipes.filter((r) => matchingIds.has(r.id))
+      return allRecipes.filter((r) => matchingIds.has(r.id)) as Recipe[] | RecipeListItem[]
     }
 
-    let query = supabase.from('recipes').select('*').order('created_at', { ascending: false })
+    let query = supabase
+      .from('recipes')
+      .select(selectFields)
+      .order('created_at', { ascending: false })
 
     if (filters?.search) {
       query = query.ilike('name', `%${filters.search}%`)
@@ -94,7 +119,7 @@ export class CookingService {
       throw new Error(`Failed to fetch recipes: ${error.message}`)
     }
 
-    return (data || []) as Recipe[]
+    return (data || []) as unknown as RecipeListItem[] | Recipe[]
   }
 
   /**

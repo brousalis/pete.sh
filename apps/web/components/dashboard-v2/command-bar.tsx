@@ -23,7 +23,7 @@ import {
     startOfWeek,
     subMonths,
 } from 'date-fns'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
     Calendar,
     ChevronLeft,
@@ -204,12 +204,10 @@ export function CommandBar() {
     weekNumber,
   } = useDashboardV2()
 
-  const [time, setTime] = useState(new Date())
-  const [mounted, setMounted] = useState(false)
+  const [time, setTime] = useState(() => new Date())
   const [pickerOpen, setPickerOpen] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
@@ -234,9 +232,15 @@ export function CommandBar() {
   const showFeelsLike = feelsLikeF != null && tempF != null && feelsLikeF !== tempF
   const conditionText = weather?.properties.textDescription || ''
 
-  const greeting = mounted
-    ? getGreeting(time.getHours(), focusType, isRestDay, morningDone, workoutDone, nightDone, allDone)
-    : ''
+  const greeting = getGreeting(
+    time.getHours(),
+    focusType,
+    isRestDay,
+    morningDone,
+    workoutDone,
+    nightDone,
+    allDone
+  )
 
   const handlePrev = () => navigateToDay(addDays(selectedDate, -1), 'backward')
   const handleNext = () => navigateToDay(addDays(selectedDate, 1), 'forward')
@@ -263,19 +267,21 @@ export function CommandBar() {
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6">
         {/* Left: clock + greeting */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          {mounted && (
-            <>
-              <span className="text-2xl md:text-3xl font-bold tabular-nums text-foreground">
-                {format(time, 'h:mm')}
-                <span className="text-base md:text-lg font-medium text-muted-foreground/50 ml-1">
-                  {format(time, 'a')}
-                </span>
-              </span>
-              <span className="hidden sm:block text-sm font-medium text-muted-foreground truncate">
-                {greeting}
-              </span>
-            </>
-          )}
+          <span
+            suppressHydrationWarning
+            className="text-2xl md:text-3xl font-bold tabular-nums text-foreground"
+          >
+            {format(time, 'h:mm')}
+            <span className="text-base md:text-lg font-medium text-muted-foreground/50 ml-1">
+              {format(time, 'a')}
+            </span>
+          </span>
+          <span
+            suppressHydrationWarning
+            className="hidden sm:block text-sm font-medium text-muted-foreground truncate"
+          >
+            {greeting}
+          </span>
         </div>
 
         {/* Center: date nav + picker */}
@@ -328,25 +334,16 @@ export function CommandBar() {
             <Calendar className="size-4" />
           </button>
 
-          <AnimatePresence>
-            {!isToday && (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToToday}
-                  className="h-6 px-2.5 text-xs rounded-full"
-                >
-                  Today
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!isToday && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToToday}
+              className="h-6 px-2.5 text-xs rounded-full"
+            >
+              Today
+            </Button>
+          )}
         </div>
 
         {/* Right: weather */}

@@ -15,28 +15,12 @@
     },
     "exercises": [
       {
-        "id": "friday-circuit-a",
-        "form": "Lie face down on incline bench. Arms form a Y.",
-        "name": "Incline DB \"Y\" Raises",
-        "reps": 15,
-        "notes": "12-15 reps"
-      },
-      {
-        "id": "friday-circuit-b",
-        "form": "Fast tempo",
-        "name": "Push-ups",
-        "reps": 20,
-        "notes": "15-20 reps",
-        "youtubeVideoId": "WDIpL0pjun0"
-      },
-      {
-        "id": "friday-circuit-c",
-        "form": "Neutral grip.",
-        "name": "Chest-Supported Row",
-        "reps": 15,
-        "notes": "12-15 reps",
-        "isElbowSafe": true,
-        "youtubeVideoId": "FTwvmczf7bE"
+        "id": "friday-ai-1774906821829-27",
+        "form": "30s ALL OUT sprint, 90s easy spin recovery",
+        "name": "VO2 Max Bike Sprints",
+        "rest": 90,
+        "sets": 8,
+        "duration": 30
       }
     ],
     "metabolicFlush": {
@@ -72,57 +56,71 @@
           "name": "New Exercise",
           "reps": 10,
           "sets": 3
+        },
+        {
+          "id": "monday-ai-1772844419192-0",
+          "form": "Only 45-degree knee bend. Squeeze towel between knees",
+          "name": "VMO Wall Sits",
+          "sets": 3,
+          "duration": 45
+        },
+        {
+          "id": "monday-ai-1772844419192-1",
+          "form": "15 reps per leg. Wakes up glute medius to stop knee caving",
+          "name": "Side-Lying Clamshells",
+          "reps": 15,
+          "sets": 3
+        },
+        {
+          "id": "monday-ai-1772844419192-2",
+          "form": "10 per side. Replaces deep squat hold",
+          "name": "Quadruped T-Spine Rotations",
+          "reps": 10
+        },
+        {
+          "id": "monday-ai-1772844419192-3",
+          "form": "Combined exercise for shin strength and elbow rehab",
+          "name": "Tibialis Wall Raises & Finger Extensions",
+          "reps": 25,
+          "sets": 3
         }
       ]
     },
     "exercises": [
       {
-        "id": "mon-5",
-        "form": "Neutral grip (palms facing each other). Full range of motion.",
-        "name": "Neutral Grip Lat Pulldowns",
-        "reps": 10,
+        "id": "monday-ai-1774906821829-5",
+        "form": "45-degree knee bend, squeeze towel between knees",
+        "name": "VMO Wall Sits",
         "sets": 3,
-        "notes": "12-15 reps",
-        "isElbowSafe": true,
-        "youtubeVideoId": "G9uNaXGTJ4w"
+        "duration": 45
       },
       {
-        "id": "monday-a2",
-        "form": "Slow 3-second lower. Explosive up.",
-        "name": "DB Push Press",
-        "reps": 5,
-        "rest": 120,
-        "sets": 3,
-        "notes": "4-6 reps",
-        "youtubeVideoId": "sElIkjcfyNY"
-      },
-      {
-        "id": "monday-b1",
-        "form": "Use Straps. Push hips back. Feel hamstring stretch.",
-        "name": "Romanian Deadlift (RDL)",
-        "reps": 8,
-        "rest": 90,
-        "sets": 3,
-        "notes": "5-6 reps",
-        "youtubeVideoId": "7j-2w4-P14I"
-      },
-      {
-        "id": "monday-b2",
-        "form": "Rear foot elevated. Focus on front leg drive.",
-        "name": "Single-Leg Bulgarian Split Squats",
-        "reps": 10,
-        "sets": 3,
-        "notes": "8-10 reps per leg",
-        "youtubeVideoId": "Q2k3kYbtOcI"
-      },
-      {
-        "id": "monday-c",
-        "form": "Hold heavy DB, 3s up, 4s down on affected leg. Achilles strengthening.",
-        "name": "Heavy Slow Resistance (HSR) Calf Raises",
+        "id": "monday-ai-1774906821829-6",
+        "form": "3s up, 4s down, focus on affected leg for Achilles strengthening",
+        "name": "Heavy Slow Calf Raises",
         "reps": 15,
+        "sets": 3
+      },
+      {
+        "id": "monday-ai-1774906821829-7",
+        "form": "Side plank with top leg supported, focus on adductor engagement",
+        "name": "Short-Lever Copenhagen Planks",
         "sets": 3,
-        "notes": "Max Time",
-        "isElbowSafe": true
+        "duration": 20
+      },
+      {
+        "id": "monday-ai-1774906821829-8",
+        "form": "Band around knee, extend from 30-degree bend to full extension",
+        "name": "Banded TKEs (Terminal Knee Extensions)",
+        "reps": 20,
+        "sets": 3
+      },
+      {
+        "id": "monday-ai-1774906821829-9",
+        "form": "Heels on ball, bridge up and curl ball toward glutes",
+        "name": "Swiss Ball Hamstring Curls",
+        "reps": 12,
+        "sets": 3
       }
     ],
     "metabolicFlush": {
@@ -155,11 +153,10 @@
     "focus": "recovery",
     "exercises": [
       {
-        "id": "sun-walk",
-        "form": "Adidas Ultraboost shoes. 5-6 miles easy pace. Aerobic base building.",
-        "name": "Zone 2 Treadmill Bank",
-        "notes": "No gym. Walk outside.",
-        "duration": 3600
+        "id": "sunday-ai-1774906821829-31",
+        "form": "60-second hang from pull-up bar for spine decompression",
+        "name": "Neutral-Grip Dead Hang",
+        "duration": 60
       }
     ]
   },
@@ -174,37 +171,10 @@
     ],
     "exercises": [
       {
-        "id": "tuesday-b",
-        "form": "Lower back glued to floor. Rock like a boat. Ribs down.",
-        "name": "Hollow Body Rocks",
-        "sets": 3,
-        "notes": "30-45 secs per set",
-        "duration": 45,
-        "isElbowSafe": true
-      },
-      {
-        "id": "tuesday-ai-1771599567921-7",
-        "form": "Jump up, lower for slow 5-second count. Neutral grip only.",
-        "name": "Neutral Grip Pull-up Negatives",
-        "reps": 5,
-        "sets": 3
-      },
-      {
-        "id": "tuesday-a2",
-        "form": "Walk hands out to plank, walk back. Slow and controlled.",
-        "name": "Hand Walkouts (Inchworms)",
-        "reps": 10,
-        "sets": 3,
-        "notes": "8-10 reps"
-      },
-      {
-        "id": "tuesday-a1",
-        "form": "Controlled rotation. 15 reps per side.",
-        "name": "Cable Woodchoppers",
-        "reps": 15,
-        "sets": 3,
-        "notes": "12 reps/side",
-        "youtubeVideoId": "xeFp4MXad98"
+        "id": "tuesday-ai-1774906821829-14",
+        "form": "4 min run / 1 min walk intervals. 170-175 cadence, flat foot strike, ASICS Kayanos",
+        "name": "Run/Walk Intervals",
+        "duration": 1800
       }
     ],
     "metabolicFlush": {
@@ -233,11 +203,10 @@
     ],
     "exercises": [
       {
-        "id": "sat-intervals",
-        "form": "Saucony Triumph 23 shoes. Conversational pace (~11:30/mi). Follow 10K roadmap distances.",
-        "name": "OUTDOOR Long Run",
-        "notes": "30 seconds Sprint (9.0+ mph) / 90 seconds Walk. 20 Mins total.",
-        "duration": 3600
+        "id": "saturday-ai-1774906821829-29",
+        "form": "35-40 min run/walk intervals, future 6-mile continuous run. Conversational pace",
+        "name": "Long Run Intervals",
+        "duration": 2400
       }
     ]
   },
@@ -255,11 +224,10 @@
     ],
     "exercises": [
       {
-        "id": "thu-run",
-        "form": "45 minutes easy pace. Complete rest day for legs.",
-        "name": "Active Recovery Bike",
-        "notes": "4.0 to 5.0 Miles. Lubricate toes. Playlist: 170 BPM.",
-        "duration": 2700
+        "id": "thursday-ai-1774906821829-23",
+        "form": "25-30 min intervals, eventually 4-5 mile tempo run. 170-175 cadence",
+        "name": "Run/Walk Intervals - Tempo",
+        "duration": 1800
       }
     ]
   },
@@ -275,11 +243,46 @@
     ],
     "exercises": [
       {
-        "id": "wed-phase1",
-        "form": "Saucony Triumph 23 shoes. Negative splits practice. 3-4 miles.",
-        "name": "OUTDOOR Tempo Run",
-        "notes": "2 Miles. Playlist: 170 BPM.",
-        "duration": 2400
+        "id": "wednesday-ai-1774906821829-16",
+        "form": "Neutral grip, full range of motion, elbow-safe",
+        "name": "Neutral-Grip Lat Pulldowns",
+        "reps": 10,
+        "sets": 3
+      },
+      {
+        "id": "wednesday-ai-1774906821829-17",
+        "form": "Neutral grip, chest supported",
+        "name": "DB Rows",
+        "reps": 10,
+        "sets": 3
+      },
+      {
+        "id": "wednesday-ai-1774906821829-18",
+        "form": "45-degree incline, controlled tempo",
+        "name": "Incline DB Bench Press",
+        "reps": 10,
+        "sets": 3
+      },
+      {
+        "id": "wednesday-ai-1774906821829-19",
+        "form": "Neutral grip, full range of motion",
+        "name": "Seated DB Shoulder Press",
+        "reps": 10,
+        "sets": 3
+      },
+      {
+        "id": "wednesday-ai-1774906821829-20",
+        "form": "Neutral grip, controlled tempo",
+        "name": "DB Hammer Curls",
+        "reps": 12,
+        "sets": 3
+      },
+      {
+        "id": "wednesday-ai-1774906821829-21",
+        "form": "Rope attachment, full extension",
+        "name": "Tricep Rope Pushdowns",
+        "reps": 12,
+        "sets": 3
       }
     ]
   }

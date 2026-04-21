@@ -10,7 +10,7 @@ import type {
   WeekDay,
 } from '@/lib/types/calendar-views.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
-import type { DayOfWeek as CookingDayOfWeek, MealPlan, Recipe } from '@/lib/types/cooking.types'
+import type { DayOfWeek as CookingDayOfWeek, MealPlan, Recipe, RecipeListItem } from '@/lib/types/cooking.types'
 import type { DayOfWeek, WeeklyRoutine } from '@/lib/types/fitness.types'
 import {
   addDays,
@@ -538,14 +538,14 @@ export function isFitnessEvent(event: CalendarEvent): boolean {
  */
 export function generateMealPlanEvents(
   mealPlan: MealPlan | null | undefined,
-  recipes: Recipe[],
+  recipes: Recipe[] | RecipeListItem[],
   startDate: Date,
   endDate: Date
 ): CalendarEvent[] {
   if (!mealPlan?.meals) return []
 
-  const recipeMap = new Map<string, Recipe>()
-  recipes.forEach(r => recipeMap.set(r.id, r))
+  const recipeMap = new Map<string, Recipe | RecipeListItem>()
+  ;(recipes as (Recipe | RecipeListItem)[]).forEach(r => recipeMap.set(r.id, r))
 
   const events: CalendarEvent[] = []
   const days = eachDayOfInterval({ start: startDate, end: endDate })

@@ -40,6 +40,18 @@ import { BaseAdapter, SUPABASE_QUERY_TIMEOUT, SyncResult, getCurrentTimestamp, w
  * This adapter uses Supabase as the primary data store.
  * The JSON file is used as a fallback/seed when Supabase has no data.
  */
+/**
+ * Short-lived cache for getRoutine results. A single dashboard request may call
+ * getRoutine many times (aggregate, workout-definitions, readiness, etc.); this
+ * collapses them into one Supabase round-trip.
+ */
+const ROUTINE_CACHE_TTL_MS = 5_000
+let routineCache: {
+  routineId: string
+  promise: Promise<WeeklyRoutine | null>
+  expiresAt: number
+} | null = null
+
 export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
   private fitnessService: FitnessService
   private currentRoutineId: string = 'climber-physique'
@@ -106,25 +118,28 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clientAny = client as any
 
-      // Get the routine
-      const { data: routineData, error: routineError } = await clientAny
-        .from('fitness_routines')
-        .select('*')
-        .eq('id', this.currentRoutineId)
-        .single()
+      // Parallelize routine + weeks queries — they're independent.
+      const [routineResp, weeksResp] = await Promise.all([
+        clientAny
+          .from('fitness_routines')
+          .select('*')
+          .eq('id', this.currentRoutineId)
+          .single(),
+        clientAny
+          .from('fitness_weeks')
+          .select('*')
+          .eq('routine_id', this.currentRoutineId)
+          .order('year', { ascending: false })
+          .order('week_number', { ascending: false }),
+      ])
+
+      const { data: routineData, error: routineError } = routineResp
+      const { data: weeksData, error: weeksError } = weeksResp
 
       if (routineError || !routineData) {
         this.log('No routine found in Supabase')
         return null
       }
-
-      // Get weeks for this routine
-      const { data: weeksData, error: weeksError } = await clientAny
-        .from('fitness_weeks')
-        .select('*')
-        .eq('routine_id', this.currentRoutineId)
-        .order('year', { ascending: false })
-        .order('week_number', { ascending: false })
 
       if (weeksError) throw weeksError
 
@@ -165,6 +180,8 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
    * Save routine to Supabase
    */
   private async saveRoutineToSupabase(routine: WeeklyRoutine): Promise<SyncResult> {
+    // Any save must invalidate the memoized cache so readers see fresh data.
+    FitnessAdapter.invalidateRoutineCache()
     if (!this.isSupabaseAvailable()) {
       return { success: false, recordsWritten: 0, error: 'Supabase not configured' }
     }
@@ -269,27 +286,60 @@ export class FitnessAdapter extends BaseAdapter<WeeklyRoutine, WeeklyRoutine> {
    * Tries Supabase first, falls back to JSON file, then seeds Supabase
    */
   async getRoutine(): Promise<WeeklyRoutine | null> {
-    // Try Supabase first
-    if (this.isSupabaseAvailable()) {
-      const supabaseRoutine = await this.getRoutineFromSupabase()
-      if (supabaseRoutine) {
-        return supabaseRoutine
-      }
-
-      // No data in Supabase - try to seed from JSON file
-      this.log('No routine in Supabase, attempting to seed from JSON file')
-      try {
-        const fileRoutine = await this.fetchFromService()
-        await this.saveRoutineToSupabase(fileRoutine)
-        this.log('Seeded Supabase from JSON file')
-        return fileRoutine
-      } catch (error) {
-        this.logError('Failed to seed from JSON file', error)
-      }
+    // Dedupe concurrent / near-simultaneous calls within a short TTL so a single
+    // page load that calls getRoutine from many places only hits Supabase once.
+    const now = Date.now()
+    if (
+      routineCache &&
+      routineCache.routineId === this.currentRoutineId &&
+      routineCache.expiresAt > now
+    ) {
+      return routineCache.promise
     }
 
-    // Fallback to JSON file
-    return this.fitnessService.getRoutine()
+    const loader = async (): Promise<WeeklyRoutine | null> => {
+      // Try Supabase first
+      if (this.isSupabaseAvailable()) {
+        const supabaseRoutine = await this.getRoutineFromSupabase()
+        if (supabaseRoutine) {
+          return supabaseRoutine
+        }
+
+        // No data in Supabase - try to seed from JSON file
+        this.log('No routine in Supabase, attempting to seed from JSON file')
+        try {
+          const fileRoutine = await this.fetchFromService()
+          await this.saveRoutineToSupabase(fileRoutine)
+          this.log('Seeded Supabase from JSON file')
+          return fileRoutine
+        } catch (error) {
+          this.logError('Failed to seed from JSON file', error)
+        }
+      }
+
+      // Fallback to JSON file
+      return this.fitnessService.getRoutine()
+    }
+
+    const promise = loader()
+    routineCache = {
+      routineId: this.currentRoutineId,
+      promise,
+      expiresAt: now + ROUTINE_CACHE_TTL_MS,
+    }
+    // If the loader rejects, invalidate the cache so retries re-run it.
+    promise.catch(() => {
+      if (routineCache?.promise === promise) routineCache = null
+    })
+    return promise
+  }
+
+  /**
+   * Invalidate the getRoutine cache. Call after mutations (update/upsert) so
+   * subsequent reads see fresh data.
+   */
+  static invalidateRoutineCache(): void {
+    routineCache = null
   }
 
   /**

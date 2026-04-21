@@ -1,21 +1,54 @@
 'use client'
 
 import { CookingDayView } from '@/components/cooking/cooking-day-view'
-import { CookingMode } from '@/components/cooking/cooking-mode'
 import { ShoppingCard } from '@/components/cooking/cooking-sidebar'
 import { DayIngredientsSidebar } from '@/components/cooking/day-ingredients-sidebar'
-import { FridgeManager } from '@/components/cooking/fridge-manager'
-import { FridgeScanButton, FridgeScanner } from '@/components/cooking/fridge-scanner'
-import { MealPlanSwipeDialog } from '@/components/cooking/meal-plan-swipe-dialog'
-import { MealPlanWizardDialog } from '@/components/cooking/meal-plan-wizard-dialog'
-import { RecipeDetailSheet } from '@/components/cooking/recipe-detail'
-import { RecipeEditor } from '@/components/cooking/recipe-editor'
+// Camera/canvas + dialog — load on demand when opened.
+import { FridgeScanButton } from '@/components/cooking/fridge-scanner'
 import type { SourceFilter } from '@/components/cooking/recipe-list'
 import { RecipeList } from '@/components/cooking/recipe-list'
-import { RecipePickerDialog } from '@/components/cooking/recipe-picker'
-import { ShoppingFocusMode } from '@/components/cooking/shopping-focus-mode'
 import { TonightRecipeBox } from '@/components/cooking/tonight-recipe-box'
 import { WeekMenuView } from '@/components/cooking/week-menu-view'
+import dynamic from 'next/dynamic'
+
+// Heavy dialog / drill-down modules — dynamically imported so they don't bloat
+// the initial dashboard bundle. Each is only loaded when its trigger fires.
+const CookingMode = dynamic(() =>
+  import('@/components/cooking/cooking-mode').then(m => ({ default: m.CookingMode })),
+  { ssr: false }
+)
+const FridgeManager = dynamic(() =>
+  import('@/components/cooking/fridge-manager').then(m => ({ default: m.FridgeManager })),
+  { ssr: false }
+)
+const FridgeScanner = dynamic(() =>
+  import('@/components/cooking/fridge-scanner').then(m => ({ default: m.FridgeScanner })),
+  { ssr: false }
+)
+const MealPlanSwipeDialog = dynamic(() =>
+  import('@/components/cooking/meal-plan-swipe-dialog').then(m => ({ default: m.MealPlanSwipeDialog })),
+  { ssr: false }
+)
+const MealPlanWizardDialog = dynamic(() =>
+  import('@/components/cooking/meal-plan-wizard-dialog').then(m => ({ default: m.MealPlanWizardDialog })),
+  { ssr: false }
+)
+const RecipeDetailSheet = dynamic(() =>
+  import('@/components/cooking/recipe-detail').then(m => ({ default: m.RecipeDetailSheet })),
+  { ssr: false }
+)
+const RecipeEditor = dynamic(() =>
+  import('@/components/cooking/recipe-editor').then(m => ({ default: m.RecipeEditor })),
+  { ssr: false }
+)
+const RecipePickerDialog = dynamic(() =>
+  import('@/components/cooking/recipe-picker').then(m => ({ default: m.RecipePickerDialog })),
+  { ssr: false }
+)
+const ShoppingFocusMode = dynamic(() =>
+  import('@/components/cooking/shopping-focus-mode').then(m => ({ default: m.ShoppingFocusMode })),
+  { ssr: false }
+)
 import { useDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

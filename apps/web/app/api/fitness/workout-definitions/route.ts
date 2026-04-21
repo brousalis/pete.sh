@@ -13,14 +13,16 @@ export async function GET(request: NextRequest) {
     const routineId = searchParams.get('routineId') ?? 'climber-physique'
 
     const adapter = getFitnessAdapter()
-    const definitions = await adapter.getWorkoutDefinitions(routineId)
 
-    // Get version info from active version
-    const versions = await adapter.getVersions(routineId)
+    // Parallelize the three independent reads so total latency is the max of
+    // them instead of the sum (previously ~3x the slowest call).
+    const [definitions, versions, routine] = await Promise.all([
+      adapter.getWorkoutDefinitions(routineId),
+      adapter.getVersions(routineId),
+      adapter.getRoutine(),
+    ])
+
     const activeVersion = versions.activeVersion
-
-    // Get training time from routine for watch notification scheduling
-    const routine = await adapter.getRoutine()
     const trainingTime = routine?.userProfile?.schedule?.trainingTime ?? null
 
     return successResponse({

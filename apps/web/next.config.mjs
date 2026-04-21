@@ -1,5 +1,10 @@
+import path from 'path'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: path.resolve(import.meta.dirname, '../..'),
+  },
   // Disable default Next.js request logging (we use custom logging in server.mjs)
   logging: {
     fetches: {

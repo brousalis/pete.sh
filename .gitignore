@@ -110,3 +110,6 @@ logs
 .env.production
 
 *.next*
+
+# local DB dumps
+tmp/

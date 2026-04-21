@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import type { DayOfWeek, MealPlan, Recipe } from '@/lib/types/cooking.types'
+import type { DayOfWeek, MealPlan, Recipe, RecipeListItem } from '@/lib/types/cooking.types'
 import { cn } from '@/lib/utils'
 import { format, isSameDay } from 'date-fns'
 import {
@@ -17,7 +17,7 @@ import { useMemo } from 'react'
 
 interface CalendarMealPlanSidebarProps {
   mealPlan: MealPlan | null
-  recipes: Recipe[]
+  recipes: Recipe[] | RecipeListItem[]
   selectedDate: Date | null
   loading?: boolean
 }
@@ -53,8 +53,8 @@ export function CalendarMealPlanSidebar({
   const dayOfWeek = getDayOfWeekFromDate(viewDate)
 
   const recipeMap = useMemo(() => {
-    const map = new Map<string, Recipe>()
-    recipes.forEach(r => map.set(r.id, r))
+    const map = new Map<string, Recipe | RecipeListItem>()
+    ;(recipes as (Recipe | RecipeListItem)[]).forEach(r => map.set(r.id, r))
     return map
   }, [recipes])
 

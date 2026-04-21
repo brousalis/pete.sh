@@ -1,6 +1,6 @@
 {
   "id": "climber-physique",
-  "name": "AI Coach Suggestion v17",
+  "name": "AI Coach Suggestion v21",
   "userProfile": {
     "goal": "Climber Physique (Wire-strong, vascular, 185 lb target)",
     "stats": {
@@ -91,28 +91,54 @@
       "id": "release-the-brakes",
       "name": "The Night Release Routine",
       "type": "night",
-      "duration": 12,
+      "duration": 13,
       "exercises": [
         {
-          "why": "Fixes tight hip flexors from running and hiking",
-          "name": "Couch Stretch (Mandatory)",
-          "action": "Knee against wall. Squeeze glute. Hold: 2 Minutes per side.",
+          "why": "",
+          "name": "Psoas Drop",
+          "action": "",
           "duration": 240,
-          "description": "The #1 stretch. Running and hiking tighten hip flexors causing lower back pain and weak glutes."
+          "description": "2 min/side",
+          "youtubeDemo": ""
         },
         {
-          "why": "Opens hips and inner thighs",
-          "name": "Frog Stretch",
-          "action": "Knees wide, hips back. Hold 2 Mins.",
+          "why": "",
+          "name": "Straight-leg lunge",
+          "action": "",
+          "duration": 60,
+          "description": "60s per side",
+          "youtubeDemo": ""
+        },
+        {
+          "why": "",
+          "name": "Wide-knee frog stretch",
+          "action": "",
           "duration": 120,
-          "description": "Deep hip opener for climbing and squatting mobility."
+          "description": "2 min, knees at 90 degree",
+          "youtubeDemo": ""
         },
         {
-          "why": "Elbow rehab - lengthens forearm flexors",
+          "why": "",
           "name": "Wrist Flexor Stretch",
-          "action": "Gentle pull back on fingers. Hold 30s.",
-          "duration": 30,
-          "description": "Part of elbow remodeling protocol. Lengthens tight forearm flexors."
+          "action": "",
+          "duration": 60,
+          "description": "30s side",
+          "youtubeDemo": ""
+        },
+        {
+          "why": "",
+          "name": "Bedtime Ankle Glides",
+          "action": "",
+          "duration": 60,
+          "description": "",
+          "youtubeDemo": ""
+        },
+        {
+          "why": "Opens psoas and hip flexors after training week",
+          "name": "Couch Stretch",
+          "action": "Back foot elevated on couch, front leg in lunge position, sink hips forward and hold",
+          "duration": 240,
+          "description": "2 minutes per side - deep hip flexor stretch"
         }
       ],
       "description": "Do this right before bed."
@@ -121,7 +147,7 @@
       "id": "oil-the-hinge",
       "name": "The Morning Armor Routine",
       "type": "morning",
-      "duration": 10,
+      "duration": 6,
       "exercises": [
         {
           "why": "Rebuilds Achilles tendon strength through isometric loading",
@@ -132,26 +158,35 @@
           "description": "Primary Achilles rehab exercise. Isometric holds build tendon resilience."
         },
         {
-          "why": "Opens ankles, knees, and hips for the day",
-          "name": "Deep Squat Hold (Active)",
-          "action": "Drop into deep squat. Use doorframe for balance if needed. Duration: 60 seconds.",
-          "duration": 60,
-          "description": "Opens ankles, knees, and hips. Essential for climbing high-step moves."
+          "why": "",
+          "name": "VMO Wall Sit",
+          "action": "",
+          "duration": 45,
+          "description": "3x45, 45 degree bend knee use towel",
+          "youtubeDemo": ""
         },
         {
-          "why": "Prevents hunchback posture from pulling and carrying",
-          "name": "T-Spine Rotations",
-          "action": "From squat or hands/knees, reach arm to sky. 5 reps per side.",
+          "why": "",
+          "name": "Clamshells",
+          "action": "",
           "duration": 60,
-          "description": "Prevents developing a hunchback posture from all the pulling and carrying."
+          "description": "3x15",
+          "youtubeDemo": ""
         },
         {
-          "why": "Elbow rehab and grip balance",
-          "name": "Finger Extensions",
-          "reps": 25,
-          "sets": 2,
-          "action": "Rubber band on fingers. Open wide. 2 sets x 25 reps.",
-          "description": "Counterbalances grip work and aids elbow remodeling."
+          "why": "",
+          "name": "Tibialis Wall Raises",
+          "action": "",
+          "duration": 60,
+          "description": "3x25",
+          "youtubeDemo": ""
+        },
+        {
+          "why": "Decompresses spine after week of training stress",
+          "name": "Neutral-Grip Dead Hang",
+          "action": "Grab pull-up bar with neutral grip, hang for 60 seconds, let gravity decompress spine",
+          "duration": 60,
+          "description": "60-second hang from pull-up bar for spine decompression"
         }
       ],
       "description": "Do this immediately after waking up. Sequence matters."
@@ -1808,6 +1843,32 @@
       }
     },
     {
+      "weekNumber": 14,
+      "startDate": "2026-03-30T05:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
+      }
+    },
+    {
+      "weekNumber": 17,
+      "startDate": "2026-04-20T05:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
+      }
+    },
+    {
       "weekNumber": 48,
       "startDate": "2026-11-23T06:00:00.000Z",
       "days": {
@@ -2086,5 +2147,5 @@
       }
     }
   ],
-  "updatedAt": "2026-03-21T14:10:26.343Z"
+  "updatedAt": "2026-04-21T22:16:39.326Z"
 }

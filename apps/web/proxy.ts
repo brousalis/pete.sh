@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 /**
- * Middleware to handle CORS for API routes
+ * Proxy to handle CORS for API routes
  *
  * This allows the production site (pete.sh) to make requests to the local
  * development server when the user is at home with local services available.
@@ -32,7 +32,7 @@ function isLocalOrigin(origin: string): boolean {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Redirect legacy /dashboard to root
   if (
     request.nextUrl.pathname === '/dashboard' ||
@@ -96,7 +96,7 @@ export function middleware(request: NextRequest) {
   return response
 }
 
-// Configure which paths the middleware runs on
+// Configure which paths the proxy runs on
 export const config = {
   matcher: ['/dashboard', '/dashboard/', '/api/:path*'],
 }

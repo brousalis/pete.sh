@@ -11,13 +11,17 @@ import { withCors, corsOptionsResponse } from '@/lib/api/cors'
 
 /**
  * GET /api/cooking/recipes
- * List recipes with optional filters
+ * List recipes with optional filters. Returns slim `RecipeListItem[]` by default
+ * (no `instructions`, no `notes`, no extended nutrition). Pass `?full=1` to get
+ * full `Recipe[]` rows (used by detail/export callers).
+ *
  * Query params:
  *   - search: Search by name
  *   - tags: Comma-separated tags
  *   - source: 'trader_joes' | 'custom'
  *   - difficulty: 'easy' | 'medium' | 'hard'
  *   - is_favorite: 'true' | 'false'
+ *   - full: '1' to include instructions/notes (default: slim)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -45,14 +49,22 @@ export async function GET(request: NextRequest) {
       filters.is_favorite = searchParams.get('is_favorite') === 'true'
     }
 
-    const recipes = await cookingService.getRecipes(filters)
+    const fullShape = searchParams.get('full') === '1'
+    const recipes = fullShape
+      ? await cookingService.getRecipes({ ...filters, fullShape: true })
+      : await cookingService.getRecipes(filters)
 
-    return withCors(
-      NextResponse.json({
-        success: true,
-        data: recipes,
-      })
+    const response = NextResponse.json({
+      success: true,
+      data: recipes,
+    })
+    // Recipe library changes rarely; allow a minute of fresh caching plus a
+    // long SWR window so the dashboard repaint is instant after the first load.
+    response.headers.set(
+      'Cache-Control',
+      'private, max-age=60, stale-while-revalidate=600'
     )
+    return withCors(response)
   } catch (error) {
     console.error('Error fetching recipes:', error)
     return withCors(

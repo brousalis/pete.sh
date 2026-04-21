@@ -76,6 +76,25 @@ export interface RecipeWithIngredients extends Recipe {
   ingredients: RecipeIngredient[]
 }
 
+/**
+ * Slim shape for recipe list views (dashboard, pickers, week view).
+ *
+ * Excludes the large `instructions` (RecipeStep[]) and `notes` fields, which
+ * collectively dominate the payload size of /api/cooking/recipes. Detail views
+ * should load the full Recipe via /api/cooking/recipes/[id].
+ */
+export type RecipeListItem = Omit<
+  Recipe,
+  | 'instructions'
+  | 'notes'
+  | 'fiber_g'
+  | 'sugar_g'
+  | 'sodium_mg'
+  | 'saturated_fat_g'
+  | 'nutrition_completeness'
+  | 'nutrition_updated_at'
+>
+
 export interface RecipeVersion {
   id: string
   recipe_id: string

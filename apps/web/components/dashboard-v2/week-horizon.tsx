@@ -15,7 +15,6 @@ import {
     isSameDay,
     startOfWeek,
 } from 'date-fns'
-import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 
 const DAY_KEYS: DayOfWeek[] = [
@@ -148,11 +147,9 @@ export function WeekHorizon({
       {completedDays > 0 && (
         <div className="px-3 pb-1.5">
           <div className="h-[2px] rounded-full bg-muted overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-green-500/60 to-green-400/40"
-              initial={{ width: 0 }}
-              animate={{ width: `${momentumPct}%` }}
-              transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-green-500/60 to-green-400/40 transition-[width] duration-300 ease-out"
+              style={{ width: `${momentumPct}%` }}
             />
           </div>
         </div>

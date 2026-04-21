@@ -303,11 +303,7 @@ export function WeekDayCell({
         )}
       />
       {isActive && (
-        <motion.div
-          className="absolute top-0 inset-x-0 h-[3px] bg-[var(--brand)]"
-          layoutId="activeDayBar"
-          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-        />
+        <div className="absolute top-0 inset-x-0 h-[3px] bg-[var(--brand)]" />
       )}
 
       {/* Row 1: Day + Date + Focus badge + Dots */}

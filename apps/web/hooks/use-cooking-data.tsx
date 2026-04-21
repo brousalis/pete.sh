@@ -11,6 +11,7 @@ import type {
     MealPlan,
     MealPlanMode,
     Recipe,
+    RecipeListItem,
     RecipeWithIngredients,
     ShoppingList,
     WeeklyMeals,
@@ -23,6 +24,7 @@ import {
     useContext,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react'
 
@@ -92,19 +94,53 @@ interface CookingContextValue {
 
 const CookingContext = createContext<CookingContextValue | null>(null)
 
-export function CookingProvider({ children }: { children: ReactNode }) {
+interface CookingProviderProps {
+  children: ReactNode
+  /**
+   * Server-seeded recipes list; when provided, skips the initial /api/cooking/recipes
+   * fetch. Accepts slim `RecipeListItem[]` (from dashboard aggregate) or full `Recipe[]`.
+   * Detail views (recipe-detail, recipe-editor, cooking-mode) independently fetch the
+   * full shape by id, so slim is safe for list rendering.
+   */
+  initialRecipes?: RecipeListItem[] | Recipe[]
+  /** Server-seeded meal plan; when provided, skips the initial /api/cooking/meal-plans fetch. */
+  initialMealPlan?: MealPlan | null
+  /** Server-seeded shopping list; when provided, skips the initial shopping-list fetch. */
+  initialShoppingList?: ShoppingList | null
+  /** Server-seeded latest fridge scan; when provided, skips the initial fridge-scan fetch. */
+  initialFridgeScan?: FridgeScan | null
+}
+
+export function CookingProvider({
+  children,
+  initialRecipes,
+  initialMealPlan,
+  initialShoppingList,
+  initialFridgeScan,
+}: CookingProviderProps) {
   const { toast } = useToast()
 
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [recipesLoading, setRecipesLoading] = useState(true)
+  const hasSeededRecipes = Array.isArray(initialRecipes)
+  const hasSeededMealPlan = initialMealPlan !== undefined
+  const hasSeededShoppingList = initialShoppingList !== undefined
+  const hasSeededFridgeScan = initialFridgeScan !== undefined
+
+  const [recipes, setRecipes] = useState<Recipe[]>(
+    (initialRecipes ?? []) as Recipe[]
+  )
+  const [recipesLoading, setRecipesLoading] = useState(!hasSeededRecipes)
 
   const [currentWeek, setCurrentWeek] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
   )
-  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null)
-  const [mealPlanLoading, setMealPlanLoading] = useState(true)
+  const [mealPlan, setMealPlan] = useState<MealPlan | null>(
+    initialMealPlan ?? null
+  )
+  const [mealPlanLoading, setMealPlanLoading] = useState(!hasSeededMealPlan)
 
-  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null)
+  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(
+    initialShoppingList ?? null
+  )
   const [shoppingListLoading, setShoppingListLoading] = useState(false)
   const [mealPlanVersion, setMealPlanVersion] = useState(0)
 
@@ -131,9 +167,22 @@ export function CookingProvider({ children }: { children: ReactNode }) {
   const [cookingRecipe, setCookingRecipe] =
     useState<RecipeWithIngredients | null>(null)
 
-  const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([])
+  const [fridgeIngredients, setFridgeIngredients] = useState<string[]>(() => {
+    if (!initialFridgeScan) return []
+    const scanDate = new Date(initialFridgeScan.created_at)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    if (scanDate < sevenDaysAgo) return []
+    const items =
+      initialFridgeScan.confirmed_items.length > 0
+        ? initialFridgeScan.confirmed_items
+        : initialFridgeScan.identified_items
+    return items
+  })
   const [fridgeFilterActive, setFridgeFilterActive] = useState(false)
-  const [latestScan, setLatestScan] = useState<FridgeScan | null>(null)
+  const [latestScan, setLatestScan] = useState<FridgeScan | null>(
+    initialFridgeScan ?? null
+  )
 
   const [completions, setCompletions] = useState<MealCompletion[]>([])
 
@@ -333,18 +382,29 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     [mealPlan, currentWeek, toast]
   )
 
+  // Skip initial fetch if server provided seed data; revalidation happens on demand.
+  // Strict-mode-safe: separate `hasSeeded` flag from the one-shot `didInitialFetch`
+  // ref so React 18 dev double-invokes can't flip the guard and retrigger fetches.
+  const didInitialRecipesFetchRef = useRef(false)
   useEffect(() => {
+    if (hasSeededRecipes) return
+    if (didInitialRecipesFetchRef.current) return
+    didInitialRecipesFetchRef.current = true
     refreshRecipes()
-  }, [refreshRecipes])
+  }, [refreshRecipes, hasSeededRecipes])
 
-  // Load latest fridge scan on mount
+  // Load latest fridge scan on mount — only when no seed, and only once even under
+  // React strict mode double-invoke.
+  const didInitialFridgeFetchRef = useRef(false)
   useEffect(() => {
+    if (hasSeededFridgeScan) return
+    if (didInitialFridgeFetchRef.current) return
+    didInitialFridgeFetchRef.current = true
     async function loadLatestScan() {
       try {
         const response = await apiGet<FridgeScan>('/api/cooking/fridge-scan?latest=true')
         if (response.success && response.data) {
           const scan = response.data
-          // Only use scans from the last 7 days
           const scanDate = new Date(scan.created_at)
           const sevenDaysAgo = new Date()
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
@@ -361,7 +421,7 @@ export function CookingProvider({ children }: { children: ReactNode }) {
       }
     }
     loadLatestScan()
-  }, [])
+  }, [hasSeededFridgeScan])
 
   const saveFridgeItems = useCallback(async (items: string[]) => {
     try {
@@ -589,9 +649,13 @@ export function CookingProvider({ children }: { children: ReactNode }) {
     [completions, mealPlan?.id]
   )
 
+  const didInitialMealPlanFetchRef = useRef(false)
   useEffect(() => {
+    if (hasSeededMealPlan) return
+    if (didInitialMealPlanFetchRef.current) return
+    didInitialMealPlanFetchRef.current = true
     refreshMealPlan()
-  }, [refreshMealPlan])
+  }, [refreshMealPlan, hasSeededMealPlan])
 
   // Refresh shopping list display (without regenerating) when meal plan changes
   useEffect(() => {

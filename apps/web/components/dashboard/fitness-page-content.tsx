@@ -1,11 +1,20 @@
 'use client'
 
-import { FitnessKanbanView } from '@/components/dashboard/fitness-kanban-view'
 import { FitnessSingleView } from '@/components/dashboard/fitness-single-view'
-import { RoutineEditor } from '@/components/dashboard/routine-editor'
 import { format, isValid, parseISO } from 'date-fns'
+import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
+
+// Kanban view + routine editor are secondary tabs — only load when user switches away from 'today'.
+const FitnessKanbanView = dynamic(() =>
+  import('@/components/dashboard/fitness-kanban-view').then(m => ({ default: m.FitnessKanbanView })),
+  { ssr: false }
+)
+const RoutineEditor = dynamic(() =>
+  import('@/components/dashboard/routine-editor').then(m => ({ default: m.RoutineEditor })),
+  { ssr: false }
+)
 
 type FitnessTab = 'today' | 'week' | 'edit'
 

@@ -38,7 +38,8 @@ import {
   type FitnessProfile,
   type RecipeHints,
 } from '@/lib/types/ai-chef.types'
-import type { DayMeals, DayOfWeek, MealPlan, Recipe, WeeklyMeals } from '@/lib/types/cooking.types'
+import type { DayMeals, DayOfWeek, MealPlan, Recipe, RecipeListItem, WeeklyMeals } from '@/lib/types/cooking.types'
+import { deduplicateToolCallIds } from '@/lib/utils/ai-message-utils'
 
 // ============================================
 // LANGUAGE MODEL MIDDLEWARE
@@ -250,7 +251,7 @@ async function getRecipeCatalogSummary(): Promise<string> {
     if (recipes.length === 0) return 'No recipes yet.'
 
     // Dense format: id|name|source|time|tags|cal|protein|nutrition_category
-    function formatRecipe(r: Recipe): string {
+    function formatRecipe(r: RecipeListItem): string {
       const src = r.source === 'trader_joes' ? 'TJ' : 'C'
       const time = (r.prep_time || 0) + (r.cook_time || 0)
       const parts = [r.id, r.name, src]
@@ -265,8 +266,8 @@ async function getRecipeCatalogSummary(): Promise<string> {
       return parts.join('|')
     }
 
-    const custom = recipes.filter((r: Recipe) => r.source === 'custom')
-    const tj = recipes.filter((r: Recipe) => r.source === 'trader_joes')
+    const custom = recipes.filter((r) => r.source === 'custom')
+    const tj = recipes.filter((r) => r.source === 'trader_joes')
     const lines: string[] = [`${recipes.length} recipes (${custom.length} custom, ${tj.length} TJ). Format: id|name|source|time|tags|cal|protein`]
 
     if (custom.length > 0) {
@@ -288,7 +289,7 @@ async function getCurrentMealPlanContext(): Promise<string> {
     if (!plan) return 'No meal plan for the current week yet.'
 
     const recipes = await cookingService.getRecipes()
-    const recipeMap = new Map(recipes.map((r: Recipe) => [r.id, r]))
+    const recipeMap = new Map(recipes.map((r) => [r.id, r]))
 
     const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     const lines: string[] = [`Week of ${plan.week_start_date}:`]
@@ -327,7 +328,7 @@ async function getRecentMealPlansContext(weeks: number = 2): Promise<string> {
     if (plans.length === 0) return 'No recent meal plan history.'
 
     const recipes = await cookingService.getRecipes()
-    const recipeMap = new Map(recipes.map((r: Recipe) => [r.id, r]))
+    const recipeMap = new Map(recipes.map((r) => [r.id, r]))
 
     return plans
       .map((plan: MealPlan) => {
@@ -485,7 +486,10 @@ export async function createRecipeChatStream(
   recipeId: string
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
+  const modelMessages = deduplicateToolCallIds(
+    await convertToModelMessages(trimMessages(uiMessages)),
+    'AI Chef Recipe'
+  )
 
   return streamText({
     model,
@@ -619,7 +623,10 @@ export async function createChatStream(
   systemContext: string
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
+  const modelMessages = deduplicateToolCallIds(
+    await convertToModelMessages(trimMessages(uiMessages)),
+    'AI Chef'
+  )
 
   return streamText({
     model,
@@ -797,6 +804,7 @@ export async function findCandidateRecipes(
         candidates = await cookingService.getRecipes({
           nutritionCategory: [...categories, 'high-protein'],
           ingredientSearch: primaryKeyword,
+          fullShape: true,
         })
       } catch {
         candidates = []
@@ -808,6 +816,7 @@ export async function findCandidateRecipes(
       try {
         const tier2 = await cookingService.getRecipes({
           nutritionCategory: [...categories, 'high-protein'],
+          fullShape: true,
         })
         const existingIds = new Set(candidates.map((r) => r.id))
         for (const r of tier2) {
@@ -821,6 +830,7 @@ export async function findCandidateRecipes(
       try {
         const tier3 = await cookingService.getRecipes({
           ingredientSearch: primaryKeyword,
+          fullShape: true,
         })
         const existingIds = new Set(candidates.map((r) => r.id))
         for (const r of tier3) {
@@ -832,7 +842,7 @@ export async function findCandidateRecipes(
     // Tier 4: all recipes as last resort
     if (candidates.length < 3) {
       try {
-        const tier4 = await cookingService.getRecipes()
+        const tier4 = await cookingService.getRecipes({ fullShape: true })
         const existingIds = new Set(candidates.map((r) => r.id))
         for (const r of tier4) {
           if (!existingIds.has(r.id)) candidates.push(r)
@@ -917,7 +927,10 @@ export async function createFitnessPlanStream(
   uiMessages: UIMessage[]
 ) {
   const model = getModel()
-  const modelMessages = await convertToModelMessages(trimMessages(uiMessages))
+  const modelMessages = deduplicateToolCallIds(
+    await convertToModelMessages(trimMessages(uiMessages)),
+    'AI Chef Fitness'
+  )
   const candidateContext = formatCandidatesContext(candidates)
   const preferences = await getPreferences()
 
@@ -1054,14 +1067,45 @@ export async function loadFitnessProfile(): Promise<FitnessProfile | null> {
 
 const DAY_NAMES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const FITNESS_KEYWORDS = ['carb', 'protein', 'workout', 'fitness', 'macro', 'calories', 'lifting', 'cardio', 'zone 2', 'interval', 'recovery']
+const MEAL_PLAN_KEYWORDS = ['meal', 'dinner', 'lunch', 'breakfast', 'recipe', 'cook', 'food', 'snack', 'nutrition plan']
+const MEAL_PLAN_WORD_BOUNDARY = ['eat', 'eating']
+const WORKOUT_ONLY_KEYWORDS = ['routine', 'sets', 'reps', 'exercise', 'stretches', 'planks', 'curls', 'press', 'run/walk', 'sprint', 'decompression']
+const WORKOUT_INTENT_PHRASES = [
+  'workout routine', 'training routine', 'exercise routine',
+  'update the routine', 'updates to the routine', 'updates to our routine',
+  'update my routine', 'modify the routine', 'change the routine',
+  'weekly routine', 'workout plan', 'training plan', 'exercise plan',
+  'workout schedule', 'training schedule',
+]
 
 export function isFitnessMealPlanRequest(msg: string): boolean {
   if (msg.length < 200) return false
   const lower = msg.toLowerCase()
+
+  // Explicit workout intent in the opening text trumps everything
+  const opening = lower.slice(0, 300)
+  if (WORKOUT_INTENT_PHRASES.some((p) => opening.includes(p))) {
+    return false
+  }
+
   const dayCount = DAY_NAMES.filter((d) => lower.includes(d)).length
   if (dayCount < 3) return false
   const keywordCount = FITNESS_KEYWORDS.filter((k) => lower.includes(k)).length
-  return keywordCount >= 2
+  if (keywordCount < 2) return false
+
+  // Use word-boundary regex for short keywords that cause substring false positives
+  const substringCount = MEAL_PLAN_KEYWORDS.filter((k) => lower.includes(k)).length
+  const wordBoundaryCount = MEAL_PLAN_WORD_BOUNDARY.filter((k) =>
+    new RegExp(`\\b${k}\\b`).test(lower)
+  ).length
+  const mealKeywordCount = substringCount + wordBoundaryCount
+
+  const workoutOnlyCount = WORKOUT_ONLY_KEYWORDS.filter((k) => lower.includes(k)).length
+  if (mealKeywordCount === 0 && workoutOnlyCount >= 3) {
+    return false
+  }
+
+  return true
 }
 
 export function isFitnessProfileTrigger(msg: string): boolean {

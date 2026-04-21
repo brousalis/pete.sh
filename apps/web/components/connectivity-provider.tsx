@@ -62,8 +62,8 @@ const CACHE_TTL_SUCCESS = 60_000 // 1 minute
 /** How long to cache a failed connectivity check (ms) */
 const CACHE_TTL_FAILURE = 60_000 // 1 minute
 
-/** Timeout for connectivity check requests (ms) */
-const CHECK_TIMEOUT = 3_000 // 3 seconds
+/** Timeout for connectivity check requests (ms). Kept short so it never blocks perceived load. */
+const CHECK_TIMEOUT = 750 // 750ms
 
 /** Maximum consecutive failures before giving up periodic checks */
 const MAX_FAILURES_BEFORE_BACKOFF = 5

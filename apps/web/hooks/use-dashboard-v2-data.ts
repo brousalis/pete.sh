@@ -1,11 +1,17 @@
 'use client'
 
-import { useConnectivity } from '@/components/connectivity-provider'
 import { apiDelete, apiGet, apiPost } from '@/lib/api/client'
+import {
+  buildDashboardCacheKey,
+  readCachedSnapshot,
+  writeCachedSnapshot,
+} from '@/lib/cache/dashboard-cache'
+import type { TrainingReadiness } from '@/lib/types/ai-coach.types'
 import type { CalendarEvent } from '@/lib/types/calendar.types'
 import type {
+    FridgeScan,
     MealPlan,
-    Recipe,
+    RecipeListItem,
     ShoppingList,
 } from '@/lib/types/cooking.types'
 import type {
@@ -42,12 +48,19 @@ export interface ActivityWeeklySummary {
   avgHr: number | null
 }
 
+export interface WorkoutDefinitionsVersion {
+  number: number
+  name: string
+  activatedAt?: string
+  trainingTime: string | null
+}
+
 export interface DashboardV2Data {
   routine: WeeklyRoutine | null
   workout: Workout | null
   consistencyStats: ConsistencyStats | null
   mealPlan: MealPlan | null
-  recipes: Recipe[]
+  recipes: RecipeListItem[]
   shoppingList: ShoppingList | null
   calendarEvents: CalendarEvent[]
   weather: WeatherObservation | null
@@ -55,6 +68,10 @@ export interface DashboardV2Data {
   spotifyTrack: SpotifyPlayback | null
   activityDaily: ActivityDailyMetrics | null
   activityWeekly: ActivityWeeklySummary | null
+  workoutDefinitionsVersion: WorkoutDefinitionsVersion | null
+  appleWorkouts: unknown[]
+  latestFridgeScan: FridgeScan | null
+  aiCoachReadiness: TrainingReadiness | null
 }
 
 export interface SpotifyPlayback {
@@ -110,31 +127,54 @@ function getInitialDate(): Date {
   return new Date()
 }
 
-export function useDashboardV2Data(): DashboardV2State {
-  const { isInitialized } = useConnectivity()
-  const [selectedDate, setSelectedDate] = useState<Date>(getInitialDate)
+export interface DashboardV2SeedData {
+  data: DashboardV2Data
+  errors?: Partial<Record<keyof DashboardV2Data, string>>
+  /** The date the seed snapshot was fetched for */
+  selectedDateISO: string
+  /** Monday of the week the seed was fetched for (yyyy-MM-dd) */
+  weekStartISO: string
+}
+
+export function useDashboardV2Data(
+  seed?: DashboardV2SeedData
+): DashboardV2State {
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (seed?.selectedDateISO) {
+      const seeded = new Date(seed.selectedDateISO)
+      if (!isNaN(seeded.getTime())) return seeded
+    }
+    return getInitialDate()
+  })
   const [navDirection, setNavDirection] = useState<
     'forward' | 'backward' | null
   >(null)
 
-  const [data, setData] = useState<DashboardV2Data>({
-    routine: null,
-    workout: null,
-    consistencyStats: null,
-    mealPlan: null,
-    recipes: [],
-    shoppingList: null,
-    calendarEvents: [],
-    weather: null,
-    forecast: null,
-    spotifyTrack: null,
-    activityDaily: null,
-    activityWeekly: null,
+  const [data, setData] = useState<DashboardV2Data>(() => {
+    if (seed?.data) return seed.data
+    return {
+      routine: null,
+      workout: null,
+      consistencyStats: null,
+      mealPlan: null,
+      recipes: [],
+      shoppingList: null,
+      calendarEvents: [],
+      weather: null,
+      forecast: null,
+      spotifyTrack: null,
+      activityDaily: null,
+      activityWeekly: null,
+      workoutDefinitionsVersion: null,
+      appleWorkouts: [],
+      latestFridgeScan: null,
+      aiCoachReadiness: null,
+    }
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!seed)
   const [errors, setErrors] = useState<
     Partial<Record<keyof DashboardV2Data, string>>
-  >({})
+  >(seed?.errors ?? {})
 
   /** Cache full aggregate response per (day, weekStart) for date navigation */
   const aggregateCacheRef = useRef<
@@ -149,6 +189,60 @@ export function useDashboardV2Data(): DashboardV2State {
   >(new Map())
   const fetchIdRef = useRef(0)
 
+  // Seed in-memory cache from server-provided snapshot so date nav is instant.
+  const seededRef = useRef(false)
+  if (seed && !seededRef.current) {
+    seededRef.current = true
+    const seedDay = getDayOfWeek(new Date(seed.selectedDateISO))
+    const seedCacheKey = `${seedDay}-${seed.weekStartISO}`
+    aggregateCacheRef.current.set(seedCacheKey, {
+      data: seed.data,
+      errors: seed.errors ?? {},
+    })
+    weekCacheRef.current.set(seed.weekStartISO, {
+      routine: seed.data.routine,
+      consistencyStats: seed.data.consistencyStats,
+      mealPlan: seed.data.mealPlan,
+      recipes: seed.data.recipes,
+      shoppingList: seed.data.shoppingList,
+      calendarEvents: seed.data.calendarEvents,
+      weather: seed.data.weather,
+      forecast: seed.data.forecast,
+      spotifyTrack: seed.data.spotifyTrack,
+      activityDaily: seed.data.activityDaily,
+      activityWeekly: seed.data.activityWeekly,
+      workoutDefinitionsVersion: seed.data.workoutDefinitionsVersion,
+      appleWorkouts: seed.data.appleWorkouts,
+      latestFridgeScan: seed.data.latestFridgeScan,
+      aiCoachReadiness: seed.data.aiCoachReadiness,
+      errors: seed.errors ?? {},
+    })
+  }
+
+  // Hydrate from IndexedDB cache on first render if we don't already have seed data.
+  // This paints a prior dashboard instantly while the network revalidates.
+  const hydratedFromIdbRef = useRef(false)
+  useEffect(() => {
+    if (seed || hydratedFromIdbRef.current) return
+    hydratedFromIdbRef.current = true
+    const day = getDayOfWeek(selectedDate)
+    const weekStartStr = format(
+      startOfWeek(selectedDate, { weekStartsOn: 1 }),
+      'yyyy-MM-dd'
+    )
+    const key = buildDashboardCacheKey(day, weekStartStr)
+    void readCachedSnapshot<{
+      data: DashboardV2Data
+      errors: Partial<Record<keyof DashboardV2Data, string>>
+    }>(key).then(entry => {
+      if (!entry) return
+      if (fetchIdRef.current > 0) return // live data has already arrived
+      setData(prev => ({ ...prev, ...entry.data.data }))
+      setErrors(entry.data.errors)
+      aggregateCacheRef.current.set(`${day}-${weekStartStr}`, entry.data)
+    })
+  }, [seed, selectedDate])
+
   const dayOfWeek = getDayOfWeek(selectedDate)
   const weekNumber = getWeekNumber(selectedDate)
 
@@ -160,7 +254,6 @@ export function useDashboardV2Data(): DashboardV2State {
   const fetchAllData = useCallback(
     async (date: Date, isInitialLoad = false, forceRefresh = false) => {
       const fetchId = ++fetchIdRef.current
-      if (isInitialLoad) setLoading(true)
 
       const day = getDayOfWeek(date)
       const week = getWeekNumber(date)
@@ -180,6 +273,8 @@ export function useDashboardV2Data(): DashboardV2State {
       // If we have week-level cache, only fetch workout (much faster)
       const weekCache = !forceRefresh ? weekCacheRef.current.get(weekStartStr) : null
       if (weekCache) {
+        // Don't flash the full-page skeleton — we already have nearly
+        // everything painted from week cache; just the workout card updates.
         const workoutParams = new URLSearchParams({
           day,
           week: String(week),
@@ -195,24 +290,36 @@ export function useDashboardV2Data(): DashboardV2State {
         const newErrors = { ...weekCache.errors }
         if (!workoutRes?.success && workoutRes?.error) newErrors.workout = 'Failed to load workout'
         aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+        void writeCachedSnapshot(buildDashboardCacheKey(day, weekStartStr), {
+          data: newData,
+          errors: newErrors,
+        })
         setData(prev => ({ ...prev, ...newData }))
         setErrors(newErrors)
         setLoading(false)
         return
       }
 
+      // True cold path — no seed, no in-memory cache, no IndexedDB hydration yet.
+      // Only flip the skeleton on NOW so seeded mounts never see it.
+      if (isInitialLoad) setLoading(true)
+
       interface DashboardApiData {
         routine: WeeklyRoutine | null
         workout: Workout | null
         consistencyStats: ConsistencyStats | null
         mealPlan: MealPlan | null
-        recipes: Recipe[]
+        recipes: RecipeListItem[]
         shoppingList: ShoppingList | null
         calendarEvents: CalendarEvent[]
         weather: WeatherObservation | null
         forecast: WeatherForecast | null
         activityDaily: ActivityDailyMetrics | null
         activityWeekly: ActivityWeeklySummary | null
+        workoutDefinitionsVersion?: WorkoutDefinitionsVersion | null
+        appleWorkouts?: unknown[]
+        latestFridgeScan?: FridgeScan | null
+        aiCoachReadiness?: TrainingReadiness | null
       }
 
       interface DashboardApiResponse {
@@ -247,9 +354,17 @@ export function useDashboardV2Data(): DashboardV2State {
           spotifyTrack: null,
           activityDaily: agg.activityDaily ?? null,
           activityWeekly: agg.activityWeekly ?? null,
+          workoutDefinitionsVersion: agg.workoutDefinitionsVersion ?? null,
+          appleWorkouts: agg.appleWorkouts ?? [],
+          latestFridgeScan: agg.latestFridgeScan ?? null,
+          aiCoachReadiness: agg.aiCoachReadiness ?? null,
         }
         const newErrors = aggregateRes.errors ?? {}
         aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+        void writeCachedSnapshot(buildDashboardCacheKey(day, weekStartStr), {
+          data: newData,
+          errors: newErrors,
+        })
         weekCacheRef.current.set(weekStartStr, {
           routine: newData.routine,
           consistencyStats: newData.consistencyStats,
@@ -262,6 +377,10 @@ export function useDashboardV2Data(): DashboardV2State {
           spotifyTrack: newData.spotifyTrack,
           activityDaily: newData.activityDaily,
           activityWeekly: newData.activityWeekly,
+          workoutDefinitionsVersion: newData.workoutDefinitionsVersion,
+          appleWorkouts: newData.appleWorkouts,
+          latestFridgeScan: newData.latestFridgeScan,
+          aiCoachReadiness: newData.aiCoachReadiness,
           errors: newErrors,
         })
         setData(prev => ({ ...prev, ...newData }))
@@ -288,7 +407,7 @@ export function useDashboardV2Data(): DashboardV2State {
         apiGet<Workout>(`/api/fitness/workout/${day}?week=${week}&year=${date.getFullYear()}`).catch(() => null),
         apiGet<ConsistencyStats>('/api/fitness/consistency').catch(() => null),
         apiGet<MealPlan>(`/api/cooking/meal-plans?week_start=${weekStartStr}`).catch(() => null),
-        apiGet<Recipe[]>('/api/cooking/recipes').catch(() => null),
+        apiGet<RecipeListItem[]>('/api/cooking/recipes').catch(() => null),
         apiGet<{ events: CalendarEvent[] }>('/api/calendar/upcoming?maxResults=10').catch(() => null),
         apiGet<WeatherObservation>('/api/weather/current').catch(() => null),
         apiGet<WeatherForecast>('/api/weather/forecast').catch(() => null),
@@ -357,8 +476,16 @@ export function useDashboardV2Data(): DashboardV2State {
         spotifyTrack: null,
         activityDaily,
         activityWeekly,
+        workoutDefinitionsVersion: null,
+        appleWorkouts: [],
+        latestFridgeScan: null,
+        aiCoachReadiness: null,
       }
       aggregateCacheRef.current.set(cacheKey, { data: newData, errors: newErrors })
+      void writeCachedSnapshot(buildDashboardCacheKey(day, weekStartStr), {
+        data: newData,
+        errors: newErrors,
+      })
       weekCacheRef.current.set(weekStartStr, {
         routine: newData.routine,
         consistencyStats: newData.consistencyStats,
@@ -371,6 +498,10 @@ export function useDashboardV2Data(): DashboardV2State {
         spotifyTrack: newData.spotifyTrack,
         activityDaily: newData.activityDaily,
         activityWeekly: newData.activityWeekly,
+        workoutDefinitionsVersion: newData.workoutDefinitionsVersion,
+        appleWorkouts: newData.appleWorkouts,
+        latestFridgeScan: newData.latestFridgeScan,
+        aiCoachReadiness: newData.aiCoachReadiness,
         errors: newErrors,
       })
       setData(prev => ({ ...prev, ...newData }))
@@ -381,13 +512,11 @@ export function useDashboardV2Data(): DashboardV2State {
   )
 
   useEffect(() => {
-    if (!isInitialized) return
     fetchAllData(selectedDate, true)
-  }, [isInitialized, fetchAllData, selectedDate])
+  }, [fetchAllData, selectedDate])
 
   // Poll calendar events every 5 minutes
   useEffect(() => {
-    if (!isInitialized) return
     const interval = setInterval(async () => {
       const res = await apiGet<{ events: CalendarEvent[] }>(
         '/api/calendar/upcoming?maxResults=10'
@@ -397,7 +526,7 @@ export function useDashboardV2Data(): DashboardV2State {
       }
     }, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [isInitialized])
+  }, [])
 
   // // Poll spotify every 15 seconds
   // useEffect(() => {

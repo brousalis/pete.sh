@@ -1,6 +1,13 @@
 'use client'
 
-import { AiCoachPanel } from '@/components/dashboard/ai-coach-panel'
+import { useOptionalDashboardV2 } from '@/components/dashboard-v2/dashboard-v2-provider'
+import dynamic from 'next/dynamic'
+
+// AI Coach panel is only opened on user click; defer bundle until then.
+const AiCoachPanel = dynamic(() =>
+  import('@/components/dashboard/ai-coach-panel').then(m => ({ default: m.AiCoachPanel })),
+  { ssr: false }
+)
 import type {
     AppleWorkout,
     DailyMetrics,
@@ -91,7 +98,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 
@@ -510,17 +517,36 @@ export function FitnessSingleView({
   onSwitchToWeek,
 }: FitnessSingleViewProps) {
   const router = useRouter()
-  const [routine, setRoutine] = useState<WeeklyRoutine | null>(null)
-  const [todayWorkout, setTodayWorkout] = useState<Workout | null>(null)
+  // When rendered inside DashboardV2Provider, consume pre-fetched data to avoid
+  // duplicating /api/fitness/routine, /api/fitness/workout, /api/fitness/consistency,
+  // /api/apple-health/workout, /api/apple-health/daily, and /api/fitness/workout-definitions.
+  const dashboardCtx = useOptionalDashboardV2()
+  // `DashboardV2State` spreads the data fields flat, so we read from the context
+  // directly rather than a nested `.data` property.
+  const seededData = dashboardCtx
+  const hasSeed = !!seededData?.routine || !!seededData?.workout
+  type AW = AppleWorkout
+  const seededAppleWorkouts = (seededData?.appleWorkouts ?? []) as AW[]
+
+  const [routine, setRoutine] = useState<WeeklyRoutine | null>(
+    seededData?.routine ?? null
+  )
+  const [todayWorkout, setTodayWorkout] = useState<Workout | null>(
+    seededData?.workout ?? null
+  )
   const [selectedDayWorkout, setSelectedDayWorkout] = useState<Workout | null>(
     null
   )
   const [consistencyStats, setConsistencyStats] =
-    useState<ConsistencyStats | null>(null)
-  const [appleWorkouts, setAppleWorkouts] = useState<AppleWorkout[]>([])
+    useState<ConsistencyStats | null>(seededData?.consistencyStats ?? null)
+  const [appleWorkouts, setAppleWorkouts] = useState<AppleWorkout[]>(
+    seededAppleWorkouts
+  )
   const [selectedDayAppleWorkouts, setSelectedDayAppleWorkouts] = useState<AppleWorkout[]>([])
-  const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics | null>(
+    (seededData?.activityDaily ?? null) as DailyMetrics | null
+  )
+  const [loading, setLoading] = useState(!hasSeed)
   const [completingMorning, setCompletingMorning] = useState(false)
   const [completingNight, setCompletingNight] = useState(false)
   const [completingWorkout, setCompletingWorkout] = useState(false)
@@ -528,9 +554,13 @@ export function FitnessSingleView({
   const [openVideoId, setOpenVideoId] = useState<string | null>(null)
   const [skipDayDialogOpen, setSkipDayDialogOpen] = useState(false)
   const [skipDayReason, setSkipDayReason] = useState('')
-  const [activeVersionNumber, setActiveVersionNumber] = useState<number | null>(null)
+  const [activeVersionNumber, setActiveVersionNumber] = useState<number | null>(
+    seededData?.workoutDefinitionsVersion?.number ?? null
+  )
   const [aiCoachOpen, setAiCoachOpen] = useState(false)
-  const [aiCoachReadiness, setAiCoachReadiness] = useState<number | undefined>(undefined)
+  const [aiCoachReadiness, setAiCoachReadiness] = useState<number | undefined>(
+    seededData?.aiCoachReadiness?.score ?? undefined
+  )
 
   // Derive initial day from initial date
   const getInitialDay = (): DayOfWeek | null => {
@@ -646,17 +676,37 @@ export function FitnessSingleView({
     }
   }, [])
 
-  // Fetch AI Coach readiness score (background, non-blocking)
+  // Fetch AI Coach readiness score — truly deferred until browser is idle so it
+  // never competes with LCP-critical resources. Skipped entirely when the
+  // dashboard seed already supplied the score.
+  const hasSeededReadiness = seededData?.aiCoachReadiness?.score != null
   useEffect(() => {
-    fetch('/api/fitness/ai-coach/readiness')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.data?.score != null) {
-          setAiCoachReadiness(data.data.score)
-        }
-      })
-      .catch(() => {})
-  }, [])
+    if (hasSeededReadiness) return
+    const run = () => {
+      fetch('/api/fitness/ai-coach/readiness')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.data?.score != null) {
+            setAiCoachReadiness(data.data.score)
+          }
+        })
+        .catch(() => {})
+    }
+    const ric = (
+      window as Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number
+      }
+    ).requestIdleCallback
+    if (ric) {
+      const id = ric(run, { timeout: 4000 })
+      return () => {
+        const cic = (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback
+        if (cic) cic(id)
+      }
+    }
+    const timeoutId = setTimeout(run, 2000)
+    return () => clearTimeout(timeoutId)
+  }, [hasSeededReadiness])
 
   // Fetch workout for selected day
   const fetchSelectedDayWorkout = useCallback(async (day: DayOfWeek, date?: Date) => {
@@ -768,9 +818,34 @@ export function FitnessSingleView({
 
   const dayNavLabel = format(effectiveViewingDate || new Date(), 'EEE, MMM d')
 
+  // When embedded in DashboardV2Provider, the dashboard context is the source of
+  // truth for all aggregate data — never mount-fetch from here (standalone /fitness
+  // is still handled below). Also guard against React 18 strict-mode double-invoke.
+  const isEmbeddedInDashboard = dashboardCtx !== null
+  const didMountFetchRef = useRef(false)
   useEffect(() => {
+    if (isEmbeddedInDashboard) return
+    if (didMountFetchRef.current) return
+    didMountFetchRef.current = true
     fetchData()
-  }, [fetchData])
+  }, [isEmbeddedInDashboard, fetchData])
+
+  // Re-sync local state when dashboard context refreshes (e.g. after mutation, day nav).
+  useEffect(() => {
+    if (!seededData) return
+    if (seededData.routine) setRoutine(seededData.routine)
+    if (seededData.workout !== undefined) setTodayWorkout(seededData.workout ?? null)
+    if (seededData.consistencyStats) setConsistencyStats(seededData.consistencyStats)
+    if (seededData.activityDaily !== undefined) {
+      setDailyMetrics((seededData.activityDaily ?? null) as DailyMetrics | null)
+    }
+    if (Array.isArray(seededData.appleWorkouts) && seededData.appleWorkouts.length > 0) {
+      setAppleWorkouts(seededData.appleWorkouts as AW[])
+    }
+    if (seededData.workoutDefinitionsVersion?.number != null) {
+      setActiveVersionNumber(seededData.workoutDefinitionsVersion.number)
+    }
+  }, [seededData])
 
   // Fetch the initial day's workout if provided and different from today
   useEffect(() => {

@@ -45,9 +45,11 @@ export async function route(
 
   // Fitness plan branch (no LLM)
   if (hasFitnessProfile && isFitnessProfileTrigger(trimmed)) {
+    console.log('[Assistant Router] Matched fitness_plan via profile trigger')
     return 'fitness_plan'
   }
   if (isFitnessMealPlanRequest(trimmed)) {
+    console.log('[Assistant Router] Matched fitness_plan via inline fitness request')
     return 'fitness_plan'
   }
 
@@ -70,6 +72,7 @@ export async function route(
     })
 
     const intent = experimental_output?.intent ?? 'coach'
+    console.log(`[Assistant Router] Haiku classified → ${intent}`)
     return intent
   } catch (err) {
     console.error('[Assistant] Router classifier failed:', err)
