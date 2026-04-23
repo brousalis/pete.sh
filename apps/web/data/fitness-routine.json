@@ -1860,7 +1860,18 @@
       "startDate": "2026-04-20T05:00:00.000Z",
       "days": {
         "monday": {},
-        "tuesday": {},
+        "tuesday": {
+          "morningRoutine": {
+            "routineId": "oil-the-hinge",
+            "completed": true,
+            "completedAt": "2026-04-21T23:44:21.089Z"
+          },
+          "nightRoutine": {
+            "routineId": "release-the-brakes",
+            "completed": true,
+            "completedAt": "2026-04-21T23:44:20.935Z"
+          }
+        },
         "wednesday": {},
         "thursday": {},
         "friday": {},
@@ -2147,5 +2158,5 @@
       }
     }
   ],
-  "updatedAt": "2026-04-21T22:16:39.326Z"
+  "updatedAt": "2026-04-21T23:44:21.089Z"
 }
