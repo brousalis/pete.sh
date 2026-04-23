@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function V3Loading() {
+export default function DashboardLoading() {
   return (
     <div className="-m-3 sm:-m-5 md:-mx-6 md:-my-6 h-[calc(100%+1.5rem)] sm:h-[calc(100%+2.5rem)] md:h-[calc(100%+3rem)]">
       <div className="flex flex-col h-full">

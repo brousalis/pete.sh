@@ -39,16 +39,16 @@ export function HudBar({ onOpenCommand }: { onOpenCommand: () => void }) {
 
   const greeting = allDone
     ? 'Done for the day'
-    : `${getGreeting(time.getHours())}, athlete`
+    : `${getGreeting(time.getHours())}`
 
   return (
-    <div className="relative bg-card/95 backdrop-blur border-b border-border">
+    <div className="bg-card/95 border-border relative border-b backdrop-blur">
       <div className="flex h-12 items-center gap-3 px-4">
         {/* Brand + time */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div
             className={cn(
-              'size-7 rounded-md flex items-center justify-center shrink-0',
+              'flex size-7 shrink-0 items-center justify-center rounded-md',
               focusConfig.bgStrong
             )}
           >
@@ -56,18 +56,18 @@ export function HudBar({ onOpenCommand }: { onOpenCommand: () => void }) {
           </div>
           <span
             suppressHydrationWarning
-            className="text-sm font-bold tabular-nums text-foreground leading-none"
+            className="text-foreground text-sm leading-none font-bold tabular-nums"
           >
             {format(time, 'h:mm')}
-            <span className="text-[10px] text-muted-foreground/60 ml-0.5">
+            <span className="text-muted-foreground/60 ml-0.5 text-[10px]">
               {format(time, 'a')}
             </span>
           </span>
-          <div className="hidden md:flex items-center gap-2 min-w-0">
-            <span className="text-[11px] text-muted-foreground/40">·</span>
+          <div className="hidden min-w-0 items-center gap-2 md:flex">
+            <span className="text-muted-foreground/40 text-[11px]">·</span>
             <span
               suppressHydrationWarning
-              className="text-xs font-medium text-muted-foreground truncate"
+              className="text-muted-foreground truncate text-xs font-medium"
             >
               {greeting}
             </span>
@@ -75,22 +75,27 @@ export function HudBar({ onOpenCommand }: { onOpenCommand: () => void }) {
         </div>
 
         {/* Center: Focus identity */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <div
             className={cn(
-              'flex items-center gap-2 px-3 py-1 rounded-full border',
+              'flex items-center gap-2 rounded-full border px-3 py-1',
               focusConfig.bg,
               'border-transparent'
             )}
           >
-            <span className={cn('text-[10px] font-semibold uppercase tracking-wider', focusConfig.color)}>
+            <span
+              className={cn(
+                'text-[10px] font-semibold tracking-wider uppercase',
+                focusConfig.color
+              )}
+            >
               {focusType}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-muted-foreground text-[10px]">
               · Week {weekNumber}
             </span>
             {!isToday && (
-              <span className="text-[10px] text-accent-gold ml-1">
+              <span className="text-accent-gold ml-1 text-[10px]">
                 {format(selectedDate, 'MMM d')}
               </span>
             )}
@@ -103,18 +108,18 @@ export function HudBar({ onOpenCommand }: { onOpenCommand: () => void }) {
             variant="ghost"
             size="sm"
             onClick={onOpenCommand}
-            className="h-7 gap-1.5 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground h-7 gap-1.5 px-2 text-[10px]"
           >
             <Command className="size-3" />
             <span className="hidden sm:inline">Jump</span>
-            <kbd className="hidden md:inline-flex h-4 items-center px-1 rounded border border-border/50 bg-muted/50 text-[9px] font-mono tabular-nums">
+            <kbd className="border-border/50 bg-muted/50 hidden h-4 items-center rounded border px-1 font-mono text-[9px] tabular-nums md:inline-flex">
               ⌘K
             </kbd>
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground size-7"
           >
             <Settings className="size-3.5" />
           </Button>
