@@ -1880,6 +1880,32 @@
       }
     },
     {
+      "weekNumber": 18,
+      "startDate": "2026-04-27T05:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
+      }
+    },
+    {
+      "weekNumber": 23,
+      "startDate": "2026-06-01T05:00:00.000Z",
+      "days": {
+        "monday": {},
+        "tuesday": {},
+        "wednesday": {},
+        "thursday": {},
+        "friday": {},
+        "saturday": {},
+        "sunday": {}
+      }
+    },
+    {
       "weekNumber": 48,
       "startDate": "2026-11-23T06:00:00.000Z",
       "days": {
@@ -2158,5 +2184,5 @@
       }
     }
   ],
-  "updatedAt": "2026-04-21T23:44:21.089Z"
+  "updatedAt": "2026-05-31T22:10:26.686Z"
 }

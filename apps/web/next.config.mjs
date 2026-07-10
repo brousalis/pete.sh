@@ -71,7 +71,14 @@ const nextConfig = {
     'www.pete.sh',
     'boufos.local',
     '192.168.1.*',
-  ]
+  ],
+
+  async redirects() {
+    return [
+      { source: '/sw', destination: '/stopwatch', permanent: false },
+      { source: '/sw/', destination: '/stopwatch', permanent: false },
+    ]
+  },
 }
 
 export default nextConfig

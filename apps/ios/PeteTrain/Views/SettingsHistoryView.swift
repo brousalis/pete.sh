@@ -10,6 +10,7 @@ struct SettingsHistoryView: View {
     @State private var syncManager = SyncManager.shared
     @State private var workoutDataManager = WorkoutDataManager.shared
     @State private var mapleWalkManager = MapleWalkManager.shared
+    @State private var hrBroadcastManager = HRBroadcastManager.shared
 
     @AppStorage("devModeEnabled") private var devModeEnabled = false
     @AppStorage("devDayOverride") private var devDayOverride = 1
@@ -18,12 +19,16 @@ struct SettingsHistoryView: View {
     @State private var showHistoricalSync = false
     @State private var historicalSyncResult: HistoricalSyncResult?
     @State private var showMapleWalk = false
+    @State private var showHRBroadcast = false
     @State private var showConcurrentWorkoutAlert = false
 
     var body: some View {
         List {
             // MARK: - Maple Walk Section
             mapleWalkSection
+
+            // MARK: - HR Broadcast Section
+            hrBroadcastSection
 
             // MARK: - Sync & Data Section (at top)
             syncDataSection
@@ -43,6 +48,9 @@ struct SettingsHistoryView: View {
         }
         .fullScreenCover(isPresented: $showMapleWalk) {
             MapleWalkView()
+        }
+        .fullScreenCover(isPresented: $showHRBroadcast) {
+            HRBroadcastView()
         }
         .alert("Workout Active", isPresented: $showConcurrentWorkoutAlert) {
             Button("OK", role: .cancel) {}
@@ -136,6 +144,57 @@ struct SettingsHistoryView: View {
             }
         }
         .listRowBackground(Color.green.opacity(0.06))
+        .listRowInsets(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8))
+    }
+
+    // MARK: - HR Broadcast Section
+
+    @ViewBuilder
+    private var hrBroadcastSection: some View {
+        Button {
+            showHRBroadcast = true
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.red.opacity(0.15))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.red)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("HR Broadcast")
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.red)
+
+                    if hrBroadcastManager.isActive {
+                        Text("Broadcasting...")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.red.opacity(0.7))
+                    } else {
+                        Text("Use watch as a bike HR sensor")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if hrBroadcastManager.isActive {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 8, height: 8)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .listRowBackground(Color.red.opacity(0.06))
         .listRowInsets(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8))
     }
 

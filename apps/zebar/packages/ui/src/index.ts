@@ -43,3 +43,18 @@ export {
   CollapsibleContent,
 } from './components/collapsible';
 export * from './components/context-menu';
+export { usePersistedStopwatch } from './hooks/use-persisted-stopwatch';
+export { usePersistedCountdown } from './hooks/use-persisted-countdown';
+export { useTimerPreferences } from './hooks/use-timer-preferences';
+export {
+  formatCompactMs,
+  formatFullMs,
+  formatChipMs,
+} from './utils/timer-format';
+export { playTimerCompleteChime } from './utils/timer-chime';
+export type {
+  StopwatchState,
+  CountdownState,
+  TimerPreferences,
+  TimerTab,
+} from './utils/timer-storage';

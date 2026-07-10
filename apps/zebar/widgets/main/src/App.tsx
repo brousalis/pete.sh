@@ -6,9 +6,11 @@ import { LeftButtons } from './components/leftButtons';
 import Media from './components/media';
 import RightButtons from './components/rightButtons/RightButtons';
 import { SitStandWidget } from './components/sitStand';
+import { StopwatchChip } from './components/stopwatch';
 import StatProviders from './components/statProviders';
 import Systray from './components/systray';
 import { TimeDisplay } from './components/TimeDisplay';
+import { WeatherWorkoutChip } from './components/weatherWorkout';
 import VolumeControl from './components/volume';
 import { WindowTitle } from './components/windowTitle/WindowTitle';
 import { WorkspaceControls } from './components/WorkspaceControls';
@@ -20,7 +22,6 @@ const providers = zebar.createProviderGroup({
   network: { type: 'network' },
   glazewm: { type: 'glazewm' },
   cpu: { type: 'cpu' },
-  date: { type: 'date', formatting: 'EEE d MMM t', locale: 'en-GB' },
   memory: { type: 'memory' },
   weather: { type: 'weather' },
   audio: { type: 'audio' },
@@ -78,6 +79,12 @@ function App() {
           <SitStandWidget />
         </div>
         <div className="flex items-center h-full">
+          <StopwatchChip />
+        </div>
+        <div className="flex items-center h-full">
+          <WeatherWorkoutChip />
+        </div>
+        <div className="flex items-center h-full">
           <StatProviders
             weather={output.weather}
             battery={output.battery}
@@ -94,7 +101,7 @@ function App() {
         <div className="h-full flex items-center px-0.5">
           <Systray systray={output.systray} />
         </div>
-        <TimeDisplay dateOutput={output.date} />
+        <TimeDisplay />
         <div
           className="flex items-center h-full"
           style={{ paddingRight: `${paddingRight}px` }}

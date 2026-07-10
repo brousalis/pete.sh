@@ -24,7 +24,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next out dist build .turbo",
-    "migrate": "node scripts/run-migrations.js"
+    "migrate": "node scripts/run-migrations.js",
+    "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.44",
@@ -124,6 +125,7 @@
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^4.2.0",
+    "tsx": "^4.21.0",
     "tw-animate-css": "^1.3.3",
     "typescript": "^5.9.3"
   },

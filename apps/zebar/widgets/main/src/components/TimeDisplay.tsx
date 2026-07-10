@@ -1,13 +1,15 @@
 import { useWidgetSetting } from '@petehome/config';
-import { DateOutput } from 'zebar';
+import { useEffect, useState } from 'react';
 
-interface TimeDisplayProps {
-  dateOutput: DateOutput | null;
-}
-
-export function TimeDisplay({ dateOutput }: TimeDisplayProps) {
+export function TimeDisplay() {
+  const [now, setNow] = useState(() => new Date());
   const [timeFormat] = useWidgetSetting('main', 'timeFormat');
   const [timeLocale] = useWidgetSetting('main', 'timeLocale');
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Ensure we have valid values (useWidgetSetting might return undefined initially)
   const safeTimeFormat = timeFormat || 'EEE d MMM t';
@@ -41,7 +43,7 @@ export function TimeDisplay({ dateOutput }: TimeDisplayProps) {
       return (
         <div className="h-full flex items-center justify-center px-1">
           {new Intl.DateTimeFormat(safeTimeLocale, formatOptions)
-            .format(new Date())
+            .format(now)
             .replace(/,/g, '')}
         </div>
       );
@@ -50,33 +52,31 @@ export function TimeDisplay({ dateOutput }: TimeDisplayProps) {
       try {
         return (
           <div className="h-full flex items-center justify-center px-1">
-            {new Date().toLocaleTimeString(safeTimeLocale)}
+            {now.toLocaleTimeString(safeTimeLocale)}
           </div>
         );
       } catch (fallbackError) {
         // Ultimate fallback - no locale
         return (
           <div className="h-full flex items-center justify-center px-1">
-            {new Date().toLocaleTimeString()}
+            {now.toLocaleTimeString()}
           </div>
         );
       }
     }
   }
 
-  // Use default provider output
   return (
     <div className="h-full flex items-center justify-center px-1">
-      {dateOutput?.formatted ??
-        new Intl.DateTimeFormat('en-GB', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short',
-          hour: 'numeric',
-          minute: 'numeric',
-        })
-          .format(new Date())
-          .replace(/,/g, '')}
+      {new Intl.DateTimeFormat('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: 'numeric',
+      })
+        .format(now)
+        .replace(/,/g, '')}
     </div>
   );
 }

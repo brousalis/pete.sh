@@ -39,6 +39,12 @@ struct MainTabView: View {
                     Label("Activity", systemImage: "figure.run")
                 }
                 .tag(3)
+
+            HeartRateBroadcastView()
+                .tabItem {
+                    Label("Broadcast", systemImage: "dot.radiowaves.left.and.right")
+                }
+                .tag(4)
         }
         .tint(.white)
         .task {

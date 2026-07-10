@@ -145,6 +145,82 @@
       ]
     },
     {
+      "name": "stopwatch-widget",
+      "htmlPath": "./widgets/stopwatch-widget/dist/index.html",
+      "zOrder": "top_most",
+      "shownInTaskbar": false,
+      "focused": true,
+      "resizable": true,
+      "transparent": true,
+      "includeFiles": [
+        "widgets/stopwatch-widget/dist/index.html",
+        "widgets/stopwatch-widget/dist/assets/**"
+      ],
+      "caching": {
+        "defaultDuration": 604800,
+        "rules": []
+      },
+      "privileges": {
+        "shellCommands": []
+      },
+      "presets": [
+        {
+          "name": "default",
+          "anchor": "top_right",
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "width": "380px",
+          "height": "440px",
+          "monitorSelection": {
+            "type": "primary"
+          },
+          "dockToEdge": {
+            "enabled": false,
+            "edge": null,
+            "windowMargin": "0px"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weather-workout-widget",
+      "htmlPath": "./widgets/weather-workout-widget/dist/index.html",
+      "zOrder": "top_most",
+      "shownInTaskbar": false,
+      "focused": true,
+      "resizable": true,
+      "transparent": true,
+      "includeFiles": [
+        "widgets/weather-workout-widget/dist/index.html",
+        "widgets/weather-workout-widget/dist/assets/**"
+      ],
+      "caching": {
+        "defaultDuration": 604800,
+        "rules": []
+      },
+      "privileges": {
+        "shellCommands": []
+      },
+      "presets": [
+        {
+          "name": "default",
+          "anchor": "top_right",
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "width": "540px",
+          "height": "800px",
+          "monitorSelection": {
+            "type": "primary"
+          },
+          "dockToEdge": {
+            "enabled": false,
+            "edge": null,
+            "windowMargin": "0px"
+          }
+        }
+      ]
+    },
+    {
       "name": "config-widget",
       "htmlPath": "./widgets/config-widget/dist/index.html",
       "zOrder": "normal",
@@ -187,3 +263,4 @@
     }
   ]
 }
+

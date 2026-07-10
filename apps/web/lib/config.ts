@@ -116,6 +116,8 @@ export const config = {
       'user-library-read',
       'playlist-read-private',
       'playlist-read-collaborative',
+      'playlist-modify-private',
+      'playlist-modify-public',
       'streaming',
       'user-read-email',
       'user-read-private',

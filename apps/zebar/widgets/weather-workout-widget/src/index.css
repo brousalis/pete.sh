@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.weather-workout-panel {
+  font-family:
+    "Segoe UI Variable", "Segoe UI", system-ui, -apple-system,
+    BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0;
+}
+
+.weather-workout-panel .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

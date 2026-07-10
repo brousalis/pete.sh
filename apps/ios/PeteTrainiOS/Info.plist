@@ -9,7 +9,10 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>bluetooth-peripheral</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>petehome broadcasts your Apple Watch heart rate over Bluetooth so your bike computer can use it as a heart rate sensor.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>petehome connects to your local server for real-time smart home control when you're on your home network.</string>
 	<key>NSBonjourServices</key>

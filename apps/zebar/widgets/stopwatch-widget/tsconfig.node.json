@@ -1,0 +1,4 @@
+{
+  "extends": "@petehome/typescript/vite.json",
+  "include": ["vite.config.ts"]
+}

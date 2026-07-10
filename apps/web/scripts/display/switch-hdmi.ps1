@@ -1,12 +1,9 @@
 # switch-hdmi.ps1
-# Switches the target monitor to HDMI input
-# Uses ControlMyMonitor (NirSoft) to send DDC/CI commands
+# Switches the Dell U2713H to HDMI 1 (Mac)
 
-$monitorTool = "D:\applications\ControlMyMonitor.exe"
+. "$PSScriptRoot\_display-common.ps1"
 
-# Target monitor - DISPLAY2 = Dell U2713H
-$targetMonitor = "\\.\DISPLAY2"
+$monitorTool = Get-MonitorTool
+$targetMonitor = Get-U2713HMonitorId -Tool $monitorTool
 
-# VCP code 60 = Input Source
-# Value 17 = HDMI
-& $monitorTool /SetValue $targetMonitor 60 17
+Set-U2713HInput -Tool $monitorTool -MonitorId $targetMonitor -Value 17 -Label "HDMI (Mac)"

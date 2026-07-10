@@ -1,13 +1,15 @@
 # get-display-input.ps1
-# Reads the current input source from the target monitor
-# Uses ControlMyMonitor (NirSoft) to query DDC/CI values
+# Reads the current input source from the Dell U2713H
+# Returns: 15 = DisplayPort (PC), 17 = HDMI (Mac)
 
-$monitorTool = "D:\applications\ControlMyMonitor.exe"
+. "$PSScriptRoot\_display-common.ps1"
 
-# Target monitor - DISPLAY2 = Dell U2713H
-$targetMonitor = "\\.\DISPLAY2"
-
-# VCP code 60 = Input Source
-# Returns: 15 = DisplayPort, 17 = HDMI
+$monitorTool = Get-MonitorTool
+$targetMonitor = Get-U2713HMonitorId -Tool $monitorTool
 $value = & $monitorTool /GetValue $targetMonitor 60
-Write-Output $value.Trim()
+
+if ($value) {
+    Write-Output $value.Trim()
+} else {
+    Write-Output (Get-U2713HInput -Tool $monitorTool -MonitorId $targetMonitor)
+}

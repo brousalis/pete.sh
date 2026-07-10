@@ -1,0 +1,1 @@
+export { WeatherWorkoutChip } from './WeatherWorkoutChip';

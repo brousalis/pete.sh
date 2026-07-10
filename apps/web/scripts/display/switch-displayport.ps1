@@ -1,12 +1,9 @@
 # switch-displayport.ps1
-# Switches the target monitor to DisplayPort input
-# Uses ControlMyMonitor (NirSoft) to send DDC/CI commands
+# Switches the Dell U2713H to DisplayPort (PC)
 
-$monitorTool = "D:\applications\ControlMyMonitor.exe"
+. "$PSScriptRoot\_display-common.ps1"
 
-# Target monitor - DISPLAY2 = Dell U2713H
-$targetMonitor = "\\.\DISPLAY2"
+$monitorTool = Get-MonitorTool
+$targetMonitor = Get-U2713HMonitorId -Tool $monitorTool
 
-# VCP code 60 = Input Source
-# Dell U2713H: Value 15 = DisplayPort
-& $monitorTool /SetValue $targetMonitor 60 15
+Set-U2713HInput -Tool $monitorTool -MonitorId $targetMonitor -Value 15 -Label "DisplayPort (PC)"
