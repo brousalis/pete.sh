@@ -45,23 +45,18 @@ function checkEnvironment(): void {
   }
 
   const secret = process.env.COACH_SESSION_SECRET
-  if (!secret) {
-    record(
-      'COACH_SESSION_SECRET',
-      'fail',
-      'missing — /coach is unauthenticated on a public origin',
-      'openssl rand -base64 48'
-    )
-  } else if (secret.length < 32) {
-    record('COACH_SESSION_SECRET', 'fail', `only ${secret.length} chars; 32 minimum`)
+  if (secret) {
+    record('COACH_SESSION_SECRET', 'ok', 'set (unused — coach gate is open)')
   } else {
-    record('COACH_SESSION_SECRET', 'ok', 'set')
+    record('COACH_SESSION_SECRET', 'ok', 'not required — coach gate is open')
   }
 
   const code = process.env.COACH_ACCESS_CODE
-  if (!code) record('COACH_ACCESS_CODE', 'fail', 'missing — cannot sign in to /coach')
-  else if (code.length < 8) record('COACH_ACCESS_CODE', 'fail', 'shorter than 8 characters')
-  else record('COACH_ACCESS_CODE', 'ok', 'set')
+  if (code) {
+    record('COACH_ACCESS_CODE', 'ok', 'set (unused — coach gate is open)')
+  } else {
+    record('COACH_ACCESS_CODE', 'ok', 'not required — coach gate is open')
+  }
 
   const apiKey = process.env.COACH_API_KEY
   if (!apiKey) {

@@ -1,23 +1,15 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-import {
-  COACH_SESSION_COOKIE,
-  isCoachAuthConfigured,
-  verifyCoachBearer,
-  verifySessionToken,
-} from '@/lib/auth/coach-auth'
-
 /**
- * Proxy to handle CORS for API routes, and to gate the PeteCoach section.
+ * Proxy to handle CORS for API routes.
  *
  * CORS allows the production site (pete.sh) to make requests to the local
  * development server when the user is at home with local services available.
  *
- * The coach gate is separate: /coach pages and /api/coach routes hold medical
- * data and require a signed session cookie or the coach bearer key. They also
- * never get a wildcard CORS origin, since that would prevent credentialed
- * requests and would be wrong for this data anyway.
+ * /coach and /api/coach are open like the rest of the dashboard. Machine
+ * clients that need a shared secret (ICS calendar key, MCP bearer) check
+ * COACH_API_KEY inside their own route handlers.
  */
 
 // Allowed origins for CORS
@@ -44,27 +36,6 @@ function isLocalOrigin(origin: string): boolean {
   }
 }
 
-/**
- * Routes under /api/coach that the session gate must not intercept.
- *
- * /auth issues the session in the first place. /calendar is subscribed to by
- * Apple Calendar, which cannot send an Authorization header, so it does its
- * own key check on a query parameter.
- */
-const COACH_PUBLIC_API = ['/api/coach/auth', '/api/coach/calendar']
-
-async function isCoachAuthorized(request: NextRequest): Promise<boolean> {
-  if (verifyCoachBearer(request.headers.get('authorization'))) return true
-
-  const token = request.cookies.get(COACH_SESSION_COOKIE)?.value
-  if (await verifySessionToken(token)) return true
-
-  // A fresh clone with no secrets configured still runs locally.
-  if (!isCoachAuthConfigured() && process.env.NODE_ENV === 'development') return true
-
-  return false
-}
-
 function withCoachCors(response: NextResponse, origin: string | null): NextResponse {
   if (origin && (ALLOWED_ORIGINS.includes(origin) || isLocalOrigin(origin))) {
     response.headers.set('Access-Control-Allow-Origin', origin)
@@ -86,36 +57,18 @@ export async function proxy(request: NextRequest) {
 
   const origin = request.headers.get('origin')
 
-  // ---- PeteCoach gate -------------------------------------------------
+  // ---- PeteCoach ------------------------------------------------------
+  // Open like the rest of the dashboard. Still mark responses no-store and
+  // apply credentialed CORS for /api/coach.
   const isCoachApi = pathname.startsWith('/api/coach')
-  const isCoachPage =
-    (pathname === '/coach' || pathname.startsWith('/coach/')) &&
-    !pathname.startsWith('/coach/login')
+  const isCoachPage = pathname === '/coach' || pathname.startsWith('/coach/')
 
   if (isCoachApi || isCoachPage) {
-    const isPublicCoachApi = COACH_PUBLIC_API.some((p) => pathname.startsWith(p))
-
     if (request.method === 'OPTIONS') {
       return withCoachCors(new NextResponse(null, { status: 204 }), origin)
     }
 
-    if (!isPublicCoachApi && !(await isCoachAuthorized(request))) {
-      if (isCoachApi) {
-        return withCoachCors(
-          NextResponse.json(
-            { success: false, error: 'Unauthorized', code: 'COACH_AUTH_REQUIRED' },
-            { status: 401 }
-          ),
-          origin
-        )
-      }
-      const loginUrl = new URL('/coach/login', request.url)
-      loginUrl.searchParams.set('next', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-
     const response = NextResponse.next()
-    // Never cache medical responses at the edge or in the browser.
     response.headers.set('Cache-Control', 'no-store, private')
     return isCoachApi ? withCoachCors(response, origin) : response
   }

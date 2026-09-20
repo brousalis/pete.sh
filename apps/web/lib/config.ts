@@ -163,7 +163,7 @@ export const config = {
     dailyBudgetUsd: env.COACH_DAILY_BUDGET_USD ? parseFloat(env.COACH_DAILY_BUDGET_USD) : 8,
     monthlyBudgetUsd: env.COACH_MONTHLY_BUDGET_USD ? parseFloat(env.COACH_MONTHLY_BUDGET_USD) : 120,
     isConfigured: Boolean(env.ANTHROPIC_API_KEY),
-    isAuthConfigured: Boolean(env.COACH_SESSION_SECRET && env.COACH_ACCESS_CODE),
+    isAuthConfigured: true,
     isEmbeddingConfigured: Boolean(env.VOYAGE_API_KEY),
   },
 } as const

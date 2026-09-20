@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, Bell, DollarSign, Loader2, LogOut } from 'lucide-react'
+import { AlertTriangle, Bell, DollarSign, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -102,11 +102,6 @@ export default function CoachSettingsPage() {
     } catch {
       setPushState('denied')
     }
-  }
-
-  async function signOut() {
-    await fetch('/api/coach/auth', { method: 'DELETE', credentials: 'include' })
-    window.location.href = '/coach/login'
   }
 
   if (loading) {
@@ -267,15 +262,6 @@ export default function CoachSettingsPage() {
           <p className="text-xs text-muted-foreground">
             Cost caps above default to $8/day and $120/month. Injury red-flags stay exempt.
           </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-5">
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="mr-1.5 size-3.5" />
-            Sign out of PeteCoach
-          </Button>
         </CardContent>
       </Card>
     </div>
