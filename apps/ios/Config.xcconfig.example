@@ -1,0 +1,14 @@
+// PeteTrain build configuration
+//
+// Copy to Config.xcconfig (gitignored) and set the values below, then in Xcode:
+//   1. Project > Info > Configurations > set Debug and Release to use Config.xcconfig
+//   2. For each target, add these Info.plist entries:
+//        PETEHOME_API_KEY    = $(PETEHOME_API_KEY)
+//        PETEHOME_SERVER_URL = $(PETEHOME_SERVER_URL)
+//
+// KeychainHelper migrates PETEHOME_API_KEY into the Keychain on first read, so
+// the seed only matters for a fresh install. The old key that was committed to
+// this repo has been rotated and must not be reused.
+
+PETEHOME_API_KEY = replace-me-with-the-rotated-key
+PETEHOME_SERVER_URL = https:/$()/www.pete.sh

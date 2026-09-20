@@ -147,6 +147,21 @@ export interface SwimmingMetrics {
   poolLengthMeters?: number
   /** pool | openWater | unknown */
   swimmingLocation?: 'pool' | 'openWater' | 'unknown' | string
+  /** Per-length detail; the basis for SWOLF and technique tracking */
+  lengths?: SwimLength[]
+}
+
+export interface SwimLength {
+  lengthNumber: number
+  startDate: string
+  durationSeconds: number
+  strokeCount?: number
+  /** freestyle | backstroke | breaststroke | butterfly | mixed | unknown */
+  strokeStyle?: string
+  /** Seconds + strokes for the length. Lower is better. */
+  swolf?: number
+  /** True when the gap is rest rather than a swum length */
+  isRest?: boolean
 }
 
 // ============================================
@@ -334,17 +349,38 @@ export interface DailyHealthMetrics {
   restingHeartRate?: number
   heartRateVariability?: number // HRV in ms (SDNN)
 
+  /**
+   * Overnight HRV. Apple samples SDNN sporadically rather than producing one
+   * nightly value, so the mean across the sleep window is the comparable
+   * number; the morning reading is tracked separately because a deliberate
+   * post-wake Breathe session is the most repeatable measurement available.
+   */
+  hrvOvernightAvg?: number
+  hrvMorning?: number
+  hrvSampleCount?: number
+  hrvSamples?: HrvSample[]
+
   // Cardio fitness
   vo2Max?: number
+  /** Apple's own training load, stored alongside our computed TSS */
+  appleTrainingLoad?: number
 
   // Sleep (if tracked)
-  sleepDuration?: number // seconds
+  sleepDuration?: number // seconds asleep
+  sleepInBed?: number // seconds in bed
+  sleepStart?: string // ISO 8601
+  sleepEnd?: string // ISO 8601
   sleepStages?: {
     awake: number
     rem: number
     core: number
     deep: number
   }
+
+  // Overnight vitals
+  respiratoryRate?: number // breaths per minute
+  wristTempDelta?: number // °C deviation from personal baseline
+  oxygenSaturation?: number // percent
 
   // Walking metrics
   walkingHeartRateAverage?: number
@@ -379,6 +415,14 @@ export interface AppleHealthWorkoutPayload {
 /**
  * Payload for syncing daily health metrics
  */
+export interface HrvSample {
+  timestamp: string
+  sdnnMs: number
+  /** 'sleep' readings are comparable to each other; waking ones are not */
+  context?: 'sleep' | 'waking' | 'unknown' | string
+  source?: string
+}
+
 export interface DailyHealthMetricsPayload {
   metrics: DailyHealthMetrics
 }

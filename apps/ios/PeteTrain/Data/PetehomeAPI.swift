@@ -6,10 +6,15 @@ final class PetehomeAPI {
     
     static let shared = PetehomeAPI()
     
-    // MARK: - Configuration (hardcoded)
+    // MARK: - Configuration (Keychain-backed)
 
-    private let baseURL = URL(string: KeychainHelper.serverURL)!
-    private let apiKey = KeychainHelper.apiKey
+    /// Resolved on each use so a credential set after launch takes effect
+    /// without restarting the app.
+    private var baseURL: URL {
+        URL(string: KeychainHelper.serverURL) ?? URL(string: "https://www.pete.sh")!
+    }
+
+    private var apiKey: String { KeychainHelper.apiKey }
 
     private let session: URLSession
     private let encoder: JSONEncoder
@@ -34,13 +39,12 @@ final class PetehomeAPI {
 
     // MARK: - Public API
 
-    /// Always configured with hardcoded values
-    var isConfigured: Bool { true }
+    /// True once an API key is present in the Keychain (or seeded at build time)
+    var isConfigured: Bool { KeychainHelper.hasAPIKey }
 
     /// Get current configuration for debugging
     var configurationSummary: String {
-        let keyPreview = "\(apiKey.prefix(8))...\(apiKey.suffix(4))"
-        return "URL: \(baseURL.absoluteString), Key: \(keyPreview)"
+        "URL: \(baseURL.absoluteString), Key: \(KeychainHelper.redactedAPIKey)"
     }
 
     /// Sync a single workout to Petehome

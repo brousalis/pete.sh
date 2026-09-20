@@ -3,13 +3,16 @@
 import { useDashboardV3 } from '@/components/dashboard-v3/dashboard-v3-provider'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Heart, Moon, Sparkles, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-const STATUS_ICONS = {
-  hrv: TrendingUp,
-  'resting hr': Heart,
-  sleep: Moon,
-} as const
+/** Flags serious enough to show on a glanceable dashboard card. */
+const SERIOUS_FLAGS = new Set([
+  'mechanical_red_flag',
+  'pain_threshold_exceeded',
+  'possible_illness_or_overreaching',
+  'acwr_spike',
+])
 
 function ReadinessRing({
   score,
@@ -67,33 +70,44 @@ function ReadinessRing({
   )
 }
 
-function computeFallbackReadiness(
-  hrv: number | null,
-  rhr: number | null
-): number {
-  if (hrv == null && rhr == null) return 0
-  let score = 60
-  if (hrv != null) {
-    if (hrv > 60) score += 15
-    else if (hrv > 40) score += 5
-    else if (hrv < 25) score -= 15
-  }
-  if (rhr != null) {
-    if (rhr < 55) score += 10
-    else if (rhr > 70) score -= 10
-  }
-  return Math.max(0, Math.min(100, score))
+interface CoachReadiness {
+  score: number
+  level: string
+  flags: string[]
+  guidance: { summary: string }
 }
 
 export function ReadinessCard() {
-  const { aiCoachReadiness, activityDaily } = useDashboardV3()
+  const { activityDaily } = useDashboardV3()
+  const [coachReadiness, setCoachReadiness] = useState<CoachReadiness | null>(null)
+
+  // Readiness v2 comes from the coach engine: HRV against the athlete's own
+  // rolling baseline, resting heart rate, sleep, training stress balance and
+  // symptom history. The old card scored HRV against fixed population
+  // thresholds and ignored pain entirely.
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const response = await fetch('/api/coach/readiness', { credentials: 'include' })
+        const payload = await response.json()
+        if (!cancelled && payload.success) setCoachReadiness(payload.data as CoachReadiness)
+      } catch {
+        // The card falls back to showing raw metrics.
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const hrv = activityDaily?.heart_rate_variability ?? null
   const rhr = activityDaily?.resting_heart_rate ?? null
 
-  const score =
-    aiCoachReadiness?.score ?? computeFallbackReadiness(hrv, rhr)
-  const level = aiCoachReadiness?.level ?? 'unknown'
+  const score = coachReadiness?.score ?? 0
+  const level = coachReadiness?.level ?? 'unknown'
 
   const color =
     score >= 80
@@ -158,28 +172,25 @@ export function ReadinessCard() {
                 <span className="font-semibold tabular-nums">{rhr}bpm</span>
               </div>
             )}
-            {aiCoachReadiness?.signals?.slice(0, 1).map(signal => {
-              const Icon =
-                STATUS_ICONS[
-                  signal.metric.toLowerCase() as keyof typeof STATUS_ICONS
-                ] ?? TrendingUp
-              return (
+            {coachReadiness?.flags
+              .filter(flag => SERIOUS_FLAGS.has(flag))
+              .slice(0, 1)
+              .map(flag => (
                 <div
-                  key={signal.metric}
-                  className="flex items-center gap-1 text-[9px] text-muted-foreground/70 mt-1"
+                  key={flag}
+                  className="flex items-center gap-1 text-[9px] text-accent-rose mt-1"
                 >
-                  <Icon className="size-2.5" />
-                  <span className="truncate">{signal.metric}</span>
+                  <AlertTriangle className="size-2.5 shrink-0" />
+                  <span className="truncate">{flag.replace(/_/g, ' ')}</span>
                 </div>
-              )
-            })}
+              ))}
           </div>
         </div>
       )}
 
-      {aiCoachReadiness?.todayRecommendation && (
+      {coachReadiness?.guidance?.summary && (
         <p className="text-[10px] text-muted-foreground/80 mt-2 pt-2 border-t border-border/30 leading-relaxed">
-          {aiCoachReadiness.todayRecommendation}
+          {coachReadiness.guidance.summary}
         </p>
       )}
     </div>

@@ -138,6 +138,11 @@ final class HealthKitSyncManager {
             HKQuantityType(.walkingStepLength),
             // Workout Effort
             HKQuantityType(.physicalEffort),
+            // Recovery signals used by readiness v2
+            HKCategoryType(.sleepAnalysis),
+            HKQuantityType(.respiratoryRate),
+            HKQuantityType(.appleSleepingWristTemperature),
+            HKQuantityType(.oxygenSaturation),
             // Activity Summary
             HKObjectType.activitySummaryType(),
             // Workouts & Routes
@@ -539,7 +544,7 @@ final class HealthKitSyncManager {
         async let walkingMetrics = queryWalkingMetrics(for: workout)
 
         // Query swimming metrics (pool/open-water swims)
-        let swimmingMetricsResult = querySwimmingMetrics(for: workout)
+        let swimmingMetricsResult = await querySwimmingMetrics(for: workout)
         
         // Query effort score (available for all workout types)
         async let effortScore = queryEffortScore(for: workout)
@@ -1286,7 +1291,7 @@ final class HealthKitSyncManager {
 
     // MARK: - Swimming Metrics
 
-    private func querySwimmingMetrics(for workout: HKWorkout) -> PetehomeSwimmingMetrics? {
+    private func querySwimmingMetrics(for workout: HKWorkout) async -> PetehomeSwimmingMetrics? {
         guard workout.workoutActivityType == .swimming else { return nil }
 
         let strokeCountValue = workout.statistics(for: HKQuantityType(.swimmingStrokeCount))?
@@ -1310,11 +1315,100 @@ final class HealthKitSyncManager {
             }
         }
 
+        let lengths = await querySwimLengths(for: workout)
+
         return PetehomeSwimmingMetrics(
             strokeCount: strokeCount,
             poolLengthMeters: poolLengthMeters,
-            swimmingLocation: swimmingLocation
+            swimmingLocation: swimmingLocation,
+            lengths: lengths.isEmpty ? nil : lengths
         )
+    }
+
+    /// Per-length swim detail.
+    ///
+    /// HealthKit emits one `swimmingStrokeCount` sample per pool length, with
+    /// the stroke style in metadata and the sample's own start/end bounding
+    /// the length. That gives SWOLF (seconds + strokes) directly, which is the
+    /// metric that distinguishes a technique gain from a fitness gain.
+    private func querySwimLengths(for workout: HKWorkout) async -> [PetehomeSwimLength] {
+        let predicate = HKQuery.predicateForObjects(from: workout)
+
+        let samples: [HKQuantitySample] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKQuantityType(.swimmingStrokeCount),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, results, _ in
+                continuation.resume(returning: (results as? [HKQuantitySample]) ?? [])
+            }
+            self.healthStore.execute(query)
+        }
+
+        guard !samples.isEmpty else { return [] }
+
+        var lengths: [PetehomeSwimLength] = []
+        var previousEnd: Date?
+
+        for (index, sample) in samples.enumerated() {
+            let duration = sample.endDate.timeIntervalSince(sample.startDate)
+            let strokes = Int(sample.quantity.doubleValue(for: .count()))
+
+            // A gap before this length is rest; record it so set structure and
+            // work-to-rest ratio can be reconstructed server side.
+            if let previousEnd {
+                let gap = sample.startDate.timeIntervalSince(previousEnd)
+                if gap > 5 {
+                    lengths.append(
+                        PetehomeSwimLength(
+                            lengthNumber: lengths.count + 1,
+                            startDate: previousEnd.iso8601String,
+                            durationSeconds: gap,
+                            strokeCount: nil,
+                            strokeStyle: nil,
+                            swolf: nil,
+                            isRest: true
+                        )
+                    )
+                }
+            }
+
+            lengths.append(
+                PetehomeSwimLength(
+                    lengthNumber: lengths.count + 1,
+                    startDate: sample.startDate.iso8601String,
+                    durationSeconds: duration,
+                    strokeCount: strokes,
+                    strokeStyle: Self.swimStrokeStyleName(from: sample.metadata),
+                    swolf: duration > 0 ? duration + Double(strokes) : nil,
+                    isRest: false
+                )
+            )
+
+            previousEnd = sample.endDate
+            _ = index
+        }
+
+        return lengths
+    }
+
+    private static func swimStrokeStyleName(from metadata: [String: Any]?) -> String? {
+        guard let raw = metadata?[HKMetadataKeySwimmingStrokeStyle] as? NSNumber,
+              let style = HKSwimmingStrokeStyle(rawValue: raw.intValue) else {
+            return nil
+        }
+
+        switch style {
+        case .freestyle: return "freestyle"
+        case .backstroke: return "backstroke"
+        case .breaststroke: return "breaststroke"
+        case .butterfly: return "butterfly"
+        case .mixed: return "mixed"
+        case .kickboard: return "kickboard"
+        case .unknown: return "unknown"
+        @unknown default: return "unknown"
+        }
     }
 
     private func enrichSwimLapDistances(
@@ -2039,8 +2133,36 @@ final class HealthKitSyncManager {
         async let bodyFatPct = queryMostRecentSample(.bodyFatPercentage, start: startOfDay, end: endOfDay)
         async let leanBodyMass = queryMostRecentSample(.leanBodyMass, start: startOfDay, end: endOfDay)
 
+        // Recovery signals. Sleep is resolved first because the HRV series,
+        // respiratory rate and wrist temperature are only meaningful when
+        // scoped to the actual sleep window rather than the calendar day.
+        let sleep = await querySleep(for: date)
+
+        let hrvWindowStart = sleep?.start ?? calendar.date(byAdding: .hour, value: -8, to: startOfDay) ?? startOfDay
+        let hrvWindowEnd = sleep?.end ?? endOfDay
+
+        async let hrvSeries = queryHRVSeries(
+            windowStart: hrvWindowStart,
+            windowEnd: hrvWindowEnd,
+            dayStart: startOfDay,
+            dayEnd: endOfDay
+        )
+        async let respiratoryRate = queryAverage(
+            .respiratoryRate,
+            start: hrvWindowStart,
+            end: hrvWindowEnd
+        )
+        async let wristTemp = queryMostRecentSample(
+            .appleSleepingWristTemperature,
+            start: startOfDay,
+            end: endOfDay
+        )
+        async let spo2 = queryAverage(.oxygenSaturation, start: hrvWindowStart, end: hrvWindowEnd)
+
         // Fetch activity summary including stand hours AND activity ring goals
         let activitySummary = await queryActivitySummary(for: date)
+
+        let hrvResult = await hrvSeries
 
         return await PetehomeDailyMetrics(
             date: date.dateOnlyString,
@@ -2054,9 +2176,21 @@ final class HealthKitSyncManager {
             standGoal: activitySummary.standGoal,
             restingHeartRate: restingHR != nil ? Int(restingHR!) : nil,
             heartRateVariability: hrv,
+            hrvOvernightAvg: hrvResult.overnightAverage,
+            hrvMorning: hrvResult.morningReading,
+            hrvSampleCount: hrvResult.samples.isEmpty ? nil : hrvResult.samples.count,
+            hrvSamples: hrvResult.samples.isEmpty ? nil : hrvResult.samples,
             vo2Max: vo2Max,
-            sleepDuration: nil,
-            sleepStages: nil,
+            sleepDuration: sleep?.asleepSeconds,
+            sleepStages: sleep?.stages,
+            sleepInBed: sleep?.inBedSeconds,
+            sleepStart: sleep?.start.iso8601String,
+            sleepEnd: sleep?.end.iso8601String,
+            respiratoryRate: await respiratoryRate,
+            // HealthKit already reports this as a deviation from the personal
+            // baseline, so it is stored as-is.
+            wristTempDelta: await wristTemp,
+            oxygenSaturation: (await spo2).map { $0 * 100 },
             walkingHeartRateAverage: walkingHR != nil ? Int(walkingHR!) : nil,
             walkingDoubleSupportPercentage: walkingDoubleSupport,
             walkingAsymmetryPercentage: walkingAsymmetry,
@@ -2068,6 +2202,206 @@ final class HealthKitSyncManager {
             source: "PeteTrain-iOS",
             recordedAt: Date().iso8601String
         )
+    }
+
+    // MARK: - Sleep
+
+    struct SleepWindow {
+        let start: Date
+        let end: Date
+        let inBedSeconds: Int
+        let asleepSeconds: Int
+        let stages: PetehomeSleepStages
+    }
+
+    /// Resolve the sleep window that *ended* on the given day. Sleep normally
+    /// starts the previous evening, so the query spans noon-to-noon rather
+    /// than midnight-to-midnight.
+    private func querySleep(for date: Date) async -> SleepWindow? {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let windowStart = calendar.date(byAdding: .hour, value: -12, to: startOfDay),
+              let windowEnd = calendar.date(byAdding: .hour, value: 12, to: startOfDay) else {
+            return nil
+        }
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: windowStart,
+            end: windowEnd,
+            options: .strictStartDate
+        )
+
+        let samples: [HKCategorySample] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKCategoryType(.sleepAnalysis),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, results, _ in
+                continuation.resume(returning: (results as? [HKCategorySample]) ?? [])
+            }
+            self.healthStore.execute(query)
+        }
+
+        guard !samples.isEmpty else { return nil }
+
+        // Prefer Apple Watch over manual/phone estimates when both exist.
+        let watchSamples = samples.filter { $0.sourceRevision.productType?.hasPrefix("Watch") == true }
+        let chosen = watchSamples.isEmpty ? samples : watchSamples
+
+        var awake = 0
+        var rem = 0
+        var core = 0
+        var deep = 0
+        var inBed = 0
+        var unspecifiedAsleep = 0
+
+        for sample in chosen {
+            let seconds = Int(sample.endDate.timeIntervalSince(sample.startDate))
+            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { continue }
+
+            switch value {
+            case .inBed:
+                inBed += seconds
+            case .awake:
+                awake += seconds
+            case .asleepREM:
+                rem += seconds
+            case .asleepCore:
+                core += seconds
+            case .asleepDeep:
+                deep += seconds
+            case .asleepUnspecified:
+                unspecifiedAsleep += seconds
+            @unknown default:
+                continue
+            }
+        }
+
+        let asleep = rem + core + deep + unspecifiedAsleep
+        guard asleep > 0 || inBed > 0 else { return nil }
+
+        let asleepSamples = chosen.filter { sample in
+            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return false }
+            return value != .inBed && value != .awake
+        }
+        let boundarySamples = asleepSamples.isEmpty ? chosen : asleepSamples
+
+        guard let start = boundarySamples.map(\.startDate).min(),
+              let end = boundarySamples.map(\.endDate).max() else {
+            return nil
+        }
+
+        return SleepWindow(
+            start: start,
+            end: end,
+            inBedSeconds: inBed > 0 ? inBed : asleep,
+            asleepSeconds: asleep,
+            stages: PetehomeSleepStages(
+                awake: awake,
+                rem: rem,
+                // Unspecified sleep is folded into core so the stage totals
+                // reconcile with asleepSeconds on nights the watch did not
+                // produce full stage detection.
+                core: core + unspecifiedAsleep,
+                deep: deep
+            )
+        )
+    }
+
+    // MARK: - HRV series
+
+    struct HRVSeriesResult {
+        let samples: [PetehomeHRVSample]
+        let overnightAverage: Double?
+        let morningReading: Double?
+    }
+
+    /// Collect every SDNN reading for the day, tag the ones inside the sleep
+    /// window, and derive the two numbers readiness uses.
+    private func queryHRVSeries(
+        windowStart: Date,
+        windowEnd: Date,
+        dayStart: Date,
+        dayEnd: Date
+    ) async -> HRVSeriesResult {
+        let queryStart = min(windowStart, dayStart)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: queryStart,
+            end: max(windowEnd, dayEnd),
+            options: .strictStartDate
+        )
+
+        let samples: [HKQuantitySample] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKQuantityType(.heartRateVariabilitySDNN),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, results, _ in
+                continuation.resume(returning: (results as? [HKQuantitySample]) ?? [])
+            }
+            self.healthStore.execute(query)
+        }
+
+        guard !samples.isEmpty else {
+            return HRVSeriesResult(samples: [], overnightAverage: nil, morningReading: nil)
+        }
+
+        let unit = HKUnit.secondUnit(with: .milli)
+        var overnightValues: [Double] = []
+        var morning: Double?
+        var payload: [PetehomeHRVSample] = []
+
+        for sample in samples {
+            let value = sample.quantity.doubleValue(for: unit)
+            let isOvernight = sample.startDate >= windowStart && sample.endDate <= windowEnd
+
+            if isOvernight {
+                overnightValues.append(value)
+            } else if morning == nil, sample.startDate >= windowEnd, sample.startDate <= dayEnd {
+                // First reading after wake
+                morning = value
+            }
+
+            payload.append(
+                PetehomeHRVSample(
+                    timestamp: sample.startDate.iso8601String,
+                    sdnnMs: value,
+                    context: isOvernight ? "sleep" : "waking",
+                    source: sample.sourceRevision.source.name
+                )
+            )
+        }
+
+        let average = overnightValues.isEmpty
+            ? nil
+            : overnightValues.reduce(0, +) / Double(overnightValues.count)
+
+        return HRVSeriesResult(samples: payload, overnightAverage: average, morningReading: morning)
+    }
+
+    /// Mean of a quantity type over a window (as opposed to the most recent
+    /// reading), used for overnight respiratory rate and SpO2.
+    private func queryAverage(
+        _ identifier: HKQuantityTypeIdentifier,
+        start: Date,
+        end: Date
+    ) async -> Double? {
+        let type = HKQuantityType(identifier)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        let unit = unitForType(identifier)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .discreteAverage
+            ) { _, statistics, _ in
+                continuation.resume(returning: statistics?.averageQuantity()?.doubleValue(for: unit))
+            }
+            self.healthStore.execute(query)
+        }
     }
 
     private func queryDailySum(_ identifier: HKQuantityTypeIdentifier, start: Date, end: Date) async -> Double {
@@ -2169,6 +2503,10 @@ final class HealthKitSyncManager {
         case .walkingStepLength: return .meter()
         case .bodyMass, .leanBodyMass: return .pound()
         case .bodyFatPercentage: return .percent()
+        case .respiratoryRate: return .count().unitDivided(by: .minute())
+        // Returned as a fraction; scaled to a percentage at the call site.
+        case .oxygenSaturation: return .percent()
+        case .appleSleepingWristTemperature: return .degreeCelsius()
         default: return .count()
         }
     }

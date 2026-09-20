@@ -63,7 +63,8 @@ export const navCategories: NavCategory[] = [
     id: 'wellness',
     label: 'Wellness',
     items: [
-      { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '2', keywords: ['workout', 'exercise', 'gym'] },
+      { href: '/coach', label: 'PeteCoach', icon: Dumbbell, shortcut: '2', keywords: ['workout', 'exercise', 'gym', 'triathlon', 'coach', 'training'] },
+      { href: '/fitness', label: 'Gym log (legacy)', icon: Dumbbell, keywords: ['routine', 'kanban', 'climber'] },
       { href: '/maple', label: 'Maple', icon: Dog, shortcut: '3', keywords: ['dog', 'pet', 'walk'] },
     ],
   },

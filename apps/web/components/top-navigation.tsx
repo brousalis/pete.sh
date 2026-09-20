@@ -44,7 +44,7 @@ type NavItem = {
 // All navigation items (Assistant is in the nav bar as a modal trigger, not a route link)
 const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home, shortcut: '`' },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell, shortcut: '1' },
+  { href: '/coach', label: 'Coach', icon: Dumbbell, shortcut: '1' },
   { href: '/cooking', label: 'Cooking', icon: ChefHat, shortcut: '3' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, shortcut: '2' },
   // { href: '/transit', label: 'CTA', icon: Bus, shortcut: '4' },
@@ -59,7 +59,7 @@ const navItems: NavItem[] = [
 // Mobile bottom nav items (Assistant opens modal from bar, not listed here as route)
 const mobileBottomItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell },
+  { href: '/coach', label: 'Coach', icon: Dumbbell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/cooking', label: 'Cooking', icon: ChefHat },
   // { href: '/music', label: 'Music', icon: Music },

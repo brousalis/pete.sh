@@ -5,6 +5,9 @@ const nextConfig = {
   turbopack: {
     root: path.resolve(import.meta.dirname, '../..'),
   },
+  // coach-core ships TypeScript source (no build step) so the worker and the
+  // web app always run identical analytics and guardrail code.
+  transpilePackages: ['@petehome/coach-core'],
   // Disable default Next.js request logging (we use custom logging in server.mjs)
   logging: {
     fetches: {

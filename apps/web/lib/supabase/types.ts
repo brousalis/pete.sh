@@ -705,12 +705,22 @@ export interface AppleHealthDailyMetricsInsert {
   stand_goal?: number | null
   resting_heart_rate?: number | null
   heart_rate_variability?: number | null
+  hrv_overnight_avg?: number | null
+  hrv_morning?: number | null
+  hrv_sample_count?: number | null
   vo2_max?: number | null
+  apple_training_load?: number | null
   sleep_duration?: number | null
+  sleep_in_bed?: number | null
+  sleep_start?: string | null
+  sleep_end?: string | null
   sleep_awake?: number | null
   sleep_rem?: number | null
   sleep_core?: number | null
   sleep_deep?: number | null
+  respiratory_rate?: number | null
+  wrist_temp_delta?: number | null
+  oxygen_saturation?: number | null
   walking_hr_average?: number | null
   walking_double_support_pct?: number | null
   walking_asymmetry_pct?: number | null

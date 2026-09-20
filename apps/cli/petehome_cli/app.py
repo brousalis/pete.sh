@@ -25,7 +25,7 @@ from textual.widgets import (
 )
 from textual_autocomplete import AutoComplete, DropdownItem
 
-from petehome_cli.commands import deploy, dev, git, migrate, pm2
+from petehome_cli.commands import coach, deploy, dev, git, migrate, pm2
 
 
 class DropUp(AutoComplete):
@@ -58,6 +58,7 @@ def _build_registry() -> None:
     dev.register(REGISTRY)
     deploy.register(REGISTRY)
     migrate.register(REGISTRY)
+    coach.register(REGISTRY)
 
 
 # ---------------------------------------------------------------------------
@@ -69,16 +70,46 @@ _COMMAND_DEFS: list[tuple[str, str]] = [
     ("status", "Show PM2 process status"),
     ("start main", "Start main server"),
     ("start notifications", "Start notifications"),
-    ("start all", "Start all services"),
+    ("start coach", "Start PeteCoach worker"),
+    ("start all", "Start all services (incl. coach)"),
     ("stop main", "Stop main server"),
     ("stop notifications", "Stop notifications"),
+    ("stop coach", "Stop PeteCoach worker"),
     ("stop all", "Stop all services"),
     ("restart main", "Restart main server"),
     ("restart notifications", "Restart notifications"),
+    ("restart coach", "Restart PeteCoach worker"),
     ("restart all", "Restart all services"),
     ("logs", "Stream all PM2 logs"),
     ("logs main", "Stream main logs"),
     ("logs notifications", "Stream notification logs"),
+    ("logs coach", "Stream PeteCoach worker logs"),
+    # PeteCoach
+    ("coach", "PeteCoach help"),
+    ("coach start", "Start petecoach-worker"),
+    ("coach stop", "Stop petecoach-worker"),
+    ("coach restart", "Restart petecoach-worker"),
+    ("coach status", "Worker + healthz + API status"),
+    ("coach health", "Worker /healthz"),
+    ("coach logs", "Stream worker logs"),
+    ("coach doctor", "Run coach:doctor"),
+    ("coach job briefing", "Run morning briefing now"),
+    ("coach job nightly", "Run nightly maintenance"),
+    ("coach job weekly-plan", "Generate weekly plan"),
+    ("coach job nudge", "Evening check-in nudge"),
+    ("coach job pt-morning", "PT morning reminder"),
+    ("coach job pt-evening", "PT evening reminder"),
+    ("coach worker", "Foreground coach worker"),
+    ("coach test", "Run coach-core tests"),
+    ("coach typecheck", "Type-check coach-core"),
+    ("coach eval", "Run golden evals (spends)"),
+    ("coach today", "Today's sessions + readiness"),
+    ("coach readiness", "Readiness snapshot"),
+    ("coach projection", "Race projection"),
+    ("coach spend", "Claude budget spend"),
+    ("coach ask", "Ask PeteCoach a question"),
+    ("coach open", "Open /coach in browser"),
+    ("pc", "PeteCoach alias"),
     # Git shortcuts
     ("gs", "Git status"),
     ("ga", "Git add all"),
@@ -149,7 +180,7 @@ class HelpScreen(Screen):
     }
     #help-dialog {
         width: 90;
-        height: 55;
+        height: 62;
         max-height: 95%;
         background: $surface;
         border: round $primary;
@@ -211,12 +242,25 @@ class HelpScreen(Screen):
                     "Services (PM2)",
                     [
                         ("status / s", "Show PM2 status"),
-                        ("start <name>", "Start (main/notifications/all)"),
+                        ("start <name>", "Start (main/notifications/coach/all)"),
                         ("stop <name>", "Stop service"),
                         ("restart <name>", "Restart service"),
                         ("logs [name]", "Stream logs"),
                     ],
                     border_style="green",
+                ),
+                _section(
+                    "PeteCoach",
+                    [
+                        ("coach start/stop/restart", "PM2 petecoach-worker"),
+                        ("coach status / health", "Worker + API / healthz"),
+                        ("coach doctor", "Env + pipeline check"),
+                        ("coach job <name>", "Run scheduled job now"),
+                        ("coach today / ask", "Today view / chat"),
+                        ("coach open", "Open /coach PWA"),
+                        ("pc", "Alias for coach"),
+                    ],
+                    border_style="bright_green",
                 ),
                 _section(
                     "Git",

@@ -76,14 +76,20 @@ async def cmd_status(_args: list[str], output: RichLog) -> None:
     output.write(table)
 
 
+_SERVICE_OPTIONS = "main, notifications, coach, all"
+
+
 async def cmd_start(args: list[str], output: RichLog) -> None:
     """Start a PM2 service."""
     if not args:
-        output.write("[yellow]![/] Usage: start <main|notifications|all>")
+        output.write(f"[yellow]![/] Usage: start <{_SERVICE_OPTIONS}>")
         return
 
-    _clear_next_cache(output)
     target = args[0].lower()
+
+    # .next wipe is for the Next main process; skip for coach-only starts.
+    if target != "coach":
+        _clear_next_cache(output)
 
     if target == "all":
         for _short, name in PM2_PROCESSES.items():
@@ -97,7 +103,7 @@ async def cmd_start(args: list[str], output: RichLog) -> None:
     name = _resolve_service_name(target)
     if not name:
         output.write(f"[red]✗[/] Unknown service: {target}")
-        output.write("[dim]Options: main, notifications, all[/]")
+        output.write(f"[dim]Options: {_SERVICE_OPTIONS}[/]")
         return
 
     ok, _ = await PM2Service.start(name)
@@ -110,7 +116,7 @@ async def cmd_start(args: list[str], output: RichLog) -> None:
 async def cmd_stop(args: list[str], output: RichLog) -> None:
     """Stop a PM2 service."""
     if not args:
-        output.write("[yellow]![/] Usage: stop <main|notifications|all>")
+        output.write(f"[yellow]![/] Usage: stop <{_SERVICE_OPTIONS}>")
         return
 
     target = args[0].lower()
@@ -144,11 +150,13 @@ async def cmd_stop(args: list[str], output: RichLog) -> None:
 async def cmd_restart(args: list[str], output: RichLog) -> None:
     """Restart a PM2 service."""
     if not args:
-        output.write("[yellow]![/] Usage: restart <main|notifications|all>")
+        output.write(f"[yellow]![/] Usage: restart <{_SERVICE_OPTIONS}>")
         return
 
-    _clear_next_cache(output)
     target = args[0].lower()
+
+    if target != "coach":
+        _clear_next_cache(output)
 
     if target == "all":
         processes = await PM2Service.get_status()

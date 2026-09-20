@@ -119,3 +119,11 @@ apps/desktop/display/mac-lan.local.ps1
 
 # local DB dumps
 tmp/
+
+# iOS build config (contains the Petehome API key seed)
+apps/ios/Config.xcconfig
+
+# PeteCoach local artifacts
+apps/coach-worker/.env
+packages/coach-core/dist/
+data/coach/

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "apps/coach-worker",
+    "packages/coach-core"
   ],
   "description": "petehome ecosystem - Smart home control center with web, desktop, mobile, and browser extension apps",
   "author": "Pete",
@@ -26,6 +28,18 @@
     "p:logs:stats": "node apps/web/scripts/pretty-logs.mjs --stats --last 1000",
     "p:logs:notifications": "pm2 logs petehome-notifications",
     "p:status": "pm2 status",
+
+    "p:start:coach": "pm2 start ecosystem.config.js --only petecoach-worker",
+    "p:stop:coach": "pm2 stop petecoach-worker",
+    "p:restart:coach": "pm2 restart petecoach-worker",
+    "p:logs:coach": "pm2 logs petecoach-worker",
+
+    "coach:worker": "cd apps/coach-worker && yarn dev",
+    "coach:job": "cd apps/coach-worker && yarn job",
+    "coach:test": "cd packages/coach-core && yarn test",
+    "coach:type-check": "cd packages/coach-core && yarn type-check",
+    "coach:doctor": "cd apps/web && yarn coach:doctor",
+    "coach:eval": "cd apps/web && yarn coach:eval",
 
     "sync": "cd apps/web && yarn sync",
     "sync:watch": "cd apps/web && yarn sync:watch",

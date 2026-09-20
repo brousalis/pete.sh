@@ -31,7 +31,7 @@ const items: Item[] = [
   { href: '/music', label: 'Music', icon: Music },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/transit', label: 'CTA', icon: Bus },
-  { href: '/fitness', label: 'Fitness', icon: Dumbbell },
+  { href: '/coach', label: 'Coach', icon: Dumbbell },
   // Coffee sunset – hidden from nav
   // { href: '/coffee', label: 'Coffee', icon: Coffee },
 ]

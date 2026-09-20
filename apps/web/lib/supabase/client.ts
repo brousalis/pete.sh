@@ -116,16 +116,33 @@ export function getSupabaseServiceClient(): AnySupabaseClient | null {
 }
 
 /**
- * Get the appropriate client based on operation type
- * - For reads: use anon client
- * - For writes: use service client (if available) or anon client
- * Returns null if Supabase is not configured
+ * Get the appropriate client based on operation type.
+ *
+ * Both reads and writes prefer the service client when the service role key is
+ * present, which is only ever true on the server. Health and coach tables deny
+ * anon entirely (see migrations 037/038), so server-side reads must not use the
+ * anon key. In the browser the service key is undefined, so this falls back to
+ * the anon client and RLS applies as normal.
+ *
+ * Returns null if Supabase is not configured.
  */
 export function getSupabaseClientForOperation(operation: 'read' | 'write'): AnySupabaseClient | null {
-  if (operation === 'write' && hasServiceRoleKey()) {
+  void operation
+  if (hasServiceRoleKey()) {
     return getSupabaseServiceClient()
   }
   return getSupabaseClient()
+}
+
+/**
+ * Get a client for medical/coach data (apple_health_*, coach_*).
+ *
+ * These tables are service_role only. Returns null when the service key is
+ * unavailable rather than silently degrading to an anon client that would fail
+ * every query with an empty result set.
+ */
+export function getSupabaseMedicalClient(): AnySupabaseClient | null {
+  return getSupabaseServiceClient()
 }
 
 // Export types for convenience

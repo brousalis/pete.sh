@@ -1,107 +1,71 @@
 'use client'
 
-import { useDashboardV3 } from '@/components/dashboard-v3/dashboard-v3-provider'
-import type { DayOfWeek } from '@/lib/types/fitness.types'
 import { cn } from '@/lib/utils'
-import { addDays, startOfWeek, subWeeks } from 'date-fns'
-import { TrendingDown, TrendingUp, Zap } from 'lucide-react'
-import { useMemo } from 'react'
+import type { LoadSummary } from '@petehome/coach-core'
+import { AlertTriangle, TrendingDown, TrendingUp, Zap } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
-const DAY_KEYS: DayOfWeek[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-]
-
-function focusLoad(focus: string): number {
-  switch (focus) {
-    case 'HIIT':
-    case 'Hybrid':
-      return 85
-    case 'Strength':
-    case 'Circuit':
-      return 70
-    case 'Endurance':
-      return 60
-    case 'Core/Posture':
-    case 'Core':
-      return 40
-    case 'Active Recovery':
-      return 20
-    default:
-      return 0
-  }
-}
-
-function computeWeekNumber(date: Date): number {
-  const soy = new Date(date.getFullYear(), 0, 1)
-  const d = Math.floor((date.getTime() - soy.getTime()) / 86400000)
-  return Math.ceil((d + soy.getDay() + 1) / 7)
-}
-
+/**
+ * Training load from measured TSS.
+ *
+ * This card used to synthesise a daily load from the *scheduled* workout type
+ * multiplied by a completion flag, then average it over 7 and 28 days. That
+ * moved when the schedule changed rather than when the training changed, and
+ * could not see a hard session that was not on the plan. It now reads the PMC
+ * computed in coach-core from real heart rate, pace and power data.
+ */
 export function LoadTrendCard() {
-  const { routine } = useDashboardV3()
+  const [summary, setSummary] = useState<LoadSummary | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { series, atl, ctl, tsb, trend } = useMemo(() => {
-    const today = new Date()
-    const start = subWeeks(startOfWeek(today, { weekStartsOn: 1 }), 3)
+  useEffect(() => {
+    let cancelled = false
 
-    const days: number[] = []
-    for (let i = 0; i < 28; i++) {
-      const d = addDays(start, i)
-      if (d > today) break
-      const dayKey = DAY_KEYS[(d.getDay() + 6) % 7]!
-      const weekNum = computeWeekNumber(d)
-      const week = routine?.weeks.find(w => w.weekNumber === weekNum)
-      const dayData = week?.days[dayKey]
-      const focus = routine?.schedule[dayKey]?.focus || 'Rest'
-      const base = focusLoad(focus)
-      const workoutDone = dayData?.workout?.completed || false
-      const completionMult = workoutDone ? 1.0 : 0.2
-      days.push(base * completionMult)
+    async function load() {
+      try {
+        const response = await fetch('/api/coach/load?days=60', { credentials: 'include' })
+        const payload = await response.json()
+        if (!cancelled && payload.success) setSummary(payload.data as LoadSummary)
+      } catch {
+        // Card degrades to an empty state; the dashboard should not break.
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
-    const recent = days.slice(-7)
-    const atlVal =
-      recent.length > 0
-        ? recent.reduce((s, x) => s + x, 0) / recent.length
-        : 0
-    const ctlVal =
-      days.length > 0 ? days.reduce((s, x) => s + x, 0) / days.length : 0
-    const tsbVal = ctlVal - atlVal
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-    const lastWeek = days.slice(-14, -7)
-    const lastAtl =
-      lastWeek.length > 0
-        ? lastWeek.reduce((s, x) => s + x, 0) / lastWeek.length
-        : 0
-    const trendDir: 'up' | 'down' | 'flat' =
-      atlVal > lastAtl + 3 ? 'up' : atlVal < lastAtl - 3 ? 'down' : 'flat'
+  const { series, atl, ctl, tsb, trend, max } = useMemo(() => {
+    const pmc = summary?.pmc ?? []
+    const recent = pmc.slice(-14)
+    const current = summary?.current
+
+    // Compare this week's fatigue against last week's to get a direction.
+    const priorAtl = pmc[pmc.length - 8]?.atl ?? current?.atl ?? 0
+    const currentAtl = current?.atl ?? 0
 
     return {
-      series: days.slice(-14),
-      atl: atlVal,
-      ctl: ctlVal,
-      tsb: tsbVal,
-      trend: trendDir,
+      series: recent.map((point) => point.tss),
+      atl: currentAtl,
+      ctl: current?.ctl ?? 0,
+      tsb: current?.tsb ?? 0,
+      trend: (currentAtl > priorAtl + 3
+        ? 'up'
+        : currentAtl < priorAtl - 3
+          ? 'down'
+          : 'flat') as 'up' | 'down' | 'flat',
+      max: Math.max(...recent.map((point) => point.tss), 1),
     }
-  }, [routine])
+  }, [summary])
 
-  const max = Math.max(...series, 1)
-  const hasData = series.some(v => v > 0)
+  const hasData = series.some((value) => value > 0)
 
   const formLabel =
-    tsb > 10
-      ? 'Fresh'
-      : tsb > -5
-        ? 'Optimal'
-        : tsb > -20
-          ? 'Building'
-          : 'Overreach'
+    tsb > 10 ? 'Fresh' : tsb > -5 ? 'Optimal' : tsb > -20 ? 'Building' : 'Overreach'
 
   const formColor =
     tsb > 10
@@ -112,19 +76,23 @@ export function LoadTrendCard() {
           ? 'text-accent-gold'
           : 'text-accent-rose'
 
-  const TrendIcon =
-    trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Zap
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Zap
+
+  // Above 1.5 is the range associated with sharply elevated injury risk, which
+  // matters more than the load numbers themselves during a return from injury.
+  const acwr = summary?.acwr ?? null
+  const acwrWarning = acwr != null && (acwr > 1.5 || acwr < 0.8)
 
   return (
     <div className="rounded-md border border-border bg-card p-3 shadow-sm ring-1 ring-border/40 ring-inset">
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <TrendIcon className="size-3.5 text-accent-ember" />
           <span className="text-[11px] font-semibold">Training Load</span>
         </div>
         <span
           className={cn(
-            'text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded',
+            'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider',
             formColor,
             'bg-current/10'
           )}
@@ -133,32 +101,33 @@ export function LoadTrendCard() {
         </span>
       </div>
 
-      {!hasData ? (
-        <p className="text-[10px] text-muted-foreground/60 py-4 text-center">
-          Complete workouts to build your load trend
+      {loading ? (
+        <p className="py-4 text-center text-[10px] text-muted-foreground/60">Loading…</p>
+      ) : !hasData ? (
+        <p className="py-4 text-center text-[10px] text-muted-foreground/60">
+          No training load recorded yet
         </p>
       ) : (
         <>
-          {/* Sparkline */}
-          <div className="flex items-end gap-[2px] h-10 mb-2">
-            {series.map((val, i) => {
-              const h = max > 0 ? (val / max) * 100 : 0
-              const isToday = i === series.length - 1
+          <div className="mb-2 flex h-10 items-end gap-[2px]">
+            {series.map((value, index) => {
+              const height = max > 0 ? (value / max) * 100 : 0
+              const isToday = index === series.length - 1
               return (
                 <div
-                  key={i}
+                  key={index}
                   className={cn(
-                    'flex-1 rounded-sm transition-colors min-h-[2px]',
-                    val > 60
+                    'min-h-[2px] flex-1 rounded-sm transition-colors',
+                    value > 80
                       ? 'bg-accent-ember/70'
-                      : val > 30
+                      : value > 40
                         ? 'bg-accent-gold/60'
-                        : val > 0
+                        : value > 0
                           ? 'bg-accent-sage/50'
                           : 'bg-muted/40',
                     isToday && 'ring-1 ring-primary/70'
                   )}
-                  style={{ height: `${Math.max(h, 4)}%` }}
+                  style={{ height: `${Math.max(height, 4)}%` }}
                 />
               )
             })}
@@ -166,36 +135,35 @@ export function LoadTrendCard() {
 
           <div className="grid grid-cols-3 gap-1 text-center">
             <div>
-              <p className="text-[10px] font-bold tabular-nums">
-                {Math.round(atl)}
-              </p>
-              <p className="text-[8px] text-muted-foreground uppercase tracking-wider">
-                Acute
-              </p>
+              <p className="text-[10px] font-bold tabular-nums">{Math.round(atl)}</p>
+              <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Fatigue</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold tabular-nums">
-                {Math.round(ctl)}
-              </p>
-              <p className="text-[8px] text-muted-foreground uppercase tracking-wider">
-                Chronic
-              </p>
+              <p className="text-[10px] font-bold tabular-nums">{Math.round(ctl)}</p>
+              <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Fitness</p>
             </div>
             <div>
-              <p
-                className={cn(
-                  'text-[10px] font-bold tabular-nums',
-                  formColor
-                )}
-              >
+              <p className={cn('text-[10px] font-bold tabular-nums', formColor)}>
                 {tsb > 0 ? '+' : ''}
                 {Math.round(tsb)}
               </p>
-              <p className="text-[8px] text-muted-foreground uppercase tracking-wider">
-                Form
-              </p>
+              <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Form</p>
             </div>
           </div>
+
+          {acwr != null ? (
+            <div
+              className={cn(
+                'mt-2 flex items-center justify-center gap-1 rounded px-1.5 py-1 text-[9px]',
+                acwrWarning ? 'bg-accent-rose/10 text-accent-rose' : 'text-muted-foreground'
+              )}
+            >
+              {acwrWarning ? <AlertTriangle className="size-3" /> : null}
+              <span className="tabular-nums">ACWR {acwr.toFixed(2)}</span>
+              {acwr > 1.5 ? <span>— ramping too fast</span> : null}
+              {acwr < 0.8 ? <span>— detraining</span> : null}
+            </div>
+          ) : null}
         </>
       )}
     </div>

@@ -22,6 +22,7 @@ import type {
     DailyHealthMetrics,
     HeartRateSample,
     HeartRateZone,
+    HrvSample,
     PaceSample,
 } from '@/lib/types/apple-health.types'
 import type { DayOfWeek } from '@/lib/types/fitness.types'
@@ -298,6 +299,11 @@ export class AppleHealthService {
     // Save mile splits if available
     if (workout.runningMetrics?.splits?.length) {
       await this.saveSplits(workoutId, workout.runningMetrics.splits)
+    }
+
+    // Save per-length swim data and roll up SWOLF / pace per 100
+    if (workout.swimmingMetrics?.lengths?.length) {
+      await this.saveSwimLengths(workoutId, workout.swimmingMetrics)
     }
 
     // Save walking samples if available (for Maple walks - walking and 'other' types)
@@ -964,12 +970,22 @@ export class AppleHealthService {
       stand_goal: metrics.standGoal || null,
       resting_heart_rate: metrics.restingHeartRate || null,
       heart_rate_variability: metrics.heartRateVariability || null,
+      hrv_overnight_avg: metrics.hrvOvernightAvg ?? null,
+      hrv_morning: metrics.hrvMorning ?? null,
+      hrv_sample_count: metrics.hrvSampleCount ?? null,
       vo2_max: metrics.vo2Max || null,
+      apple_training_load: metrics.appleTrainingLoad ?? null,
       sleep_duration: metrics.sleepDuration || null,
+      sleep_in_bed: metrics.sleepInBed ?? null,
+      sleep_start: metrics.sleepStart ?? null,
+      sleep_end: metrics.sleepEnd ?? null,
       sleep_awake: metrics.sleepStages?.awake || null,
       sleep_rem: metrics.sleepStages?.rem || null,
       sleep_core: metrics.sleepStages?.core || null,
       sleep_deep: metrics.sleepStages?.deep || null,
+      respiratory_rate: metrics.respiratoryRate ?? null,
+      wrist_temp_delta: metrics.wristTempDelta ?? null,
+      oxygen_saturation: metrics.oxygenSaturation ?? null,
       walking_hr_average: metrics.walkingHeartRateAverage || null,
       walking_double_support_pct: metrics.walkingDoubleSupportPercentage || null,
       walking_asymmetry_pct: metrics.walkingAsymmetryPercentage || null,
@@ -990,7 +1006,119 @@ export class AppleHealthService {
       return false
     }
 
+    if (metrics.hrvSamples?.length) {
+      await this.saveHrvSamples(metrics.date, metrics.hrvSamples)
+    }
+
     return true
+  }
+
+  /**
+   * Persist the raw HRV series so baselines can be recomputed if the readiness
+   * algorithm changes, rather than trusting a stored average.
+   */
+  private async saveHrvSamples(date: string, samples: HrvSample[]): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const rows = samples
+      .filter((sample) => Number.isFinite(sample.sdnnMs) && sample.sdnnMs > 0)
+      .map((sample) => ({
+        timestamp: sample.timestamp,
+        metric_date: date,
+        sdnn_ms: sample.sdnnMs,
+        context: sample.context ?? null,
+        source: sample.source ?? null,
+      }))
+
+    if (rows.length === 0) return
+
+    const { error } = await db
+      .from('apple_health_hrv_samples')
+      .upsert(rows, { onConflict: 'timestamp,sdnn_ms', ignoreDuplicates: true })
+
+    if (error) {
+      console.error('Error saving HRV samples:', error)
+    }
+  }
+
+  /**
+   * Save per-length swim data and roll it up onto the workout.
+   *
+   * SWOLF (length seconds + stroke count) separates a technique gain from a
+   * fitness gain, which matters more than raw pace while the swim is the
+   * biggest available time saving.
+   */
+  private async saveSwimLengths(
+    workoutId: string,
+    swimming: NonNullable<AppleHealthWorkout['swimmingMetrics']>
+  ): Promise<void> {
+    const lengths = swimming.lengths
+    if (!lengths?.length) return
+
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    await db.from('apple_health_swim_lengths').delete().eq('workout_id', workoutId)
+
+    const rows = lengths.map((length) => {
+      const swolf =
+        length.swolf ??
+        (length.strokeCount != null ? length.durationSeconds + length.strokeCount : null)
+
+      return {
+        workout_id: workoutId,
+        length_number: length.lengthNumber,
+        start_date: length.startDate,
+        duration_seconds: length.durationSeconds,
+        stroke_count: length.strokeCount ?? null,
+        stroke_style: length.strokeStyle ?? null,
+        swolf,
+        is_rest: length.isRest ?? false,
+      }
+    })
+
+    const { error } = await db.from('apple_health_swim_lengths').insert(rows)
+    if (error) {
+      console.error('Error saving swim lengths:', error)
+      return
+    }
+
+    // Roll up: only swum lengths count toward pace and SWOLF averages.
+    const swum = rows.filter((row) => !row.is_rest && row.duration_seconds > 0)
+    if (swum.length === 0) return
+
+    const swolfValues = swum
+      .map((row) => row.swolf)
+      .filter((value): value is number => value != null)
+
+    const poolMeters = swimming.poolLengthMeters ?? null
+    const totalSeconds = swum.reduce((sum, row) => sum + row.duration_seconds, 0)
+    const totalMeters = poolMeters ? poolMeters * swum.length : null
+
+    const { error: updateError } = await db
+      .from('apple_health_workouts')
+      .update({
+        swimming_lap_count: swum.length,
+        swimming_avg_swolf: swolfValues.length
+          ? Math.round((swolfValues.reduce((a, b) => a + b, 0) / swolfValues.length) * 100) / 100
+          : null,
+        swimming_avg_pace_per_100:
+          totalMeters && totalMeters > 0
+            ? Math.round((totalSeconds / totalMeters) * 100 * 100) / 100
+            : null,
+      })
+      .eq('id', workoutId)
+
+    if (updateError) {
+      console.error('Error rolling up swim lengths:', updateError)
+    }
   }
 
   /**

@@ -26,7 +26,11 @@
     "clean": "rm -rf .next out dist build .turbo",
     "migrate": "node scripts/run-migrations.js",
     "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts",
-    "export:swim": "tsx scripts/export-swim-tcx.ts"
+    "export:swim": "tsx scripts/export-swim-tcx.ts",
+    "coach:backfill": "tsx scripts/coach-backfill.ts",
+    "coach:eval": "tsx scripts/coach-eval.ts",
+    "coach:ingest": "tsx scripts/coach-ingest-knowledge.ts",
+    "coach:doctor": "tsx scripts/coach-doctor.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.44",

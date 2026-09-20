@@ -57,9 +57,17 @@ final class WorkoutDataManager {
 
     // MARK: - Public API
 
-    /// Load workouts from cache, then auto-fetch from API if cache is empty
+    /// Load workouts from cache, then refresh in the background.
+    ///
+    /// The cache previously never expired and was only refreshed manually,
+    /// which meant the watch could show a routine that the coach had already
+    /// changed. Now the cache is shown immediately (so the watch is usable
+    /// offline and instantly) and a refresh runs behind it. With PeteCoach
+    /// adjusting the plan daily, a stale watch is worse than a slow one.
     func loadWorkouts() async {
         print("📚 WorkoutDataManager: Loading workouts from cache...")
+
+        var servedFromCache = false
 
         if let cached = await cache.load() {
             let mappedDays = WorkoutMapper.mapToDays(cached.definitions)
@@ -67,12 +75,18 @@ final class WorkoutDataManager {
                 self.days = mappedDays
                 self.versionInfo = cached.version
                 self.dataSource = .cache
+                servedFromCache = true
                 print("📚 WorkoutDataManager: Loaded \(mappedDays.count) days from cache (\(versionString))")
-                return
             }
         }
 
-        // No cache — auto-fetch from API
+        if servedFromCache {
+            // Refresh behind the cached view; a failure leaves the cache in
+            // place rather than blanking the screen.
+            Task { await refreshFromAPI() }
+            return
+        }
+
         print("📚 WorkoutDataManager: No cached routine found, fetching from API...")
         await refreshFromAPI()
     }

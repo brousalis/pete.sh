@@ -219,6 +219,21 @@ struct PetehomeSwimmingMetrics: Codable {
     let poolLengthMeters: Double?
     /// "pool", "openWater", or "unknown"
     let swimmingLocation: String?
+    /// Per-length detail, the basis for SWOLF and technique tracking
+    var lengths: [PetehomeSwimLength]? = nil
+}
+
+/// One pool length. SWOLF (seconds + strokes) separates a technique gain from
+/// a fitness gain, which raw pace alone cannot.
+struct PetehomeSwimLength: Codable {
+    let lengthNumber: Int
+    let startDate: String
+    let durationSeconds: Double
+    var strokeCount: Int? = nil
+    /// "freestyle", "backstroke", "breaststroke", "butterfly", "mixed", "unknown"
+    var strokeStyle: String? = nil
+    var swolf: Double? = nil
+    var isRest: Bool = false
 }
 
 // MARK: - Workout Events
@@ -292,12 +307,30 @@ struct PetehomeDailyMetrics: Codable {
     let restingHeartRate: Int?
     let heartRateVariability: Double?
 
+    /// Apple samples SDNN sporadically rather than emitting one nightly value,
+    /// so the mean across the sleep window is the comparable number. The
+    /// morning reading is tracked separately because a deliberate post-wake
+    /// Breathe session is the most repeatable measurement available.
+    var hrvOvernightAvg: Double? = nil
+    var hrvMorning: Double? = nil
+    var hrvSampleCount: Int? = nil
+    var hrvSamples: [PetehomeHRVSample]? = nil
+
     // Cardio Fitness
     let vo2Max: Double?
+    var appleTrainingLoad: Double? = nil
 
     // Sleep (optional)
     let sleepDuration: Int?
     let sleepStages: PetehomeSleepStages?
+    var sleepInBed: Int? = nil
+    var sleepStart: String? = nil
+    var sleepEnd: String? = nil
+
+    // Overnight vitals
+    var respiratoryRate: Double? = nil
+    var wristTempDelta: Double? = nil
+    var oxygenSaturation: Double? = nil
 
     // Walking metrics (optional)
     let walkingHeartRateAverage: Int?
@@ -320,6 +353,17 @@ struct PetehomeSleepStages: Codable {
     let rem: Int?
     let core: Int?
     let deep: Int?
+}
+
+/// A single SDNN reading. Stored as a series so the server can recompute
+/// baselines if the readiness algorithm changes.
+struct PetehomeHRVSample: Codable {
+    let timestamp: String
+    let sdnnMs: Double
+    /// "sleep", "waking" or "unknown" — sleep readings are only comparable
+    /// to other sleep readings.
+    var context: String? = nil
+    var source: String? = nil
 }
 
 /// Wrapper for daily metrics POST request

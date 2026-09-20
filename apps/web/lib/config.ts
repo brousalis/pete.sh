@@ -50,6 +50,16 @@ const envSchema = z.object({
   // USDA FoodData Central
   USDA_FDC_API_KEY: z.string().optional(),
 
+  // PeteCoach
+  COACH_SESSION_SECRET: z.string().min(32).optional(),
+  COACH_ACCESS_CODE: z.string().min(8).optional(),
+  COACH_API_KEY: z.string().min(24).optional(),
+  COACH_WORKER_URL: z.string().url().optional(),
+  COACH_DAILY_BUDGET_USD: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  COACH_MONTHLY_BUDGET_USD: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  VOYAGE_API_KEY: z.string().optional(),
+  NOAA_STATION_ID: z.string().optional(),
+
 })
 
 // Parse and validate environment variables
@@ -142,6 +152,19 @@ export const config = {
   nutrition: {
     usdaApiKey: env.USDA_FDC_API_KEY,
     isConfigured: Boolean(env.USDA_FDC_API_KEY),
+  },
+  coach: {
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    apiKey: env.COACH_API_KEY,
+    workerUrl: env.COACH_WORKER_URL,
+    voyageApiKey: env.VOYAGE_API_KEY,
+    // Lake Michigan nearshore buoy for open-water temperature decisions.
+    noaaStationId: env.NOAA_STATION_ID || '45198',
+    dailyBudgetUsd: env.COACH_DAILY_BUDGET_USD ? parseFloat(env.COACH_DAILY_BUDGET_USD) : 8,
+    monthlyBudgetUsd: env.COACH_MONTHLY_BUDGET_USD ? parseFloat(env.COACH_MONTHLY_BUDGET_USD) : 120,
+    isConfigured: Boolean(env.ANTHROPIC_API_KEY),
+    isAuthConfigured: Boolean(env.COACH_SESSION_SECRET && env.COACH_ACCESS_CODE),
+    isEmbeddingConfigured: Boolean(env.VOYAGE_API_KEY),
   },
 } as const
 

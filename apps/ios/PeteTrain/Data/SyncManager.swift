@@ -353,18 +353,20 @@ final class SyncManager {
 
         log("📦 Sync last \(days) days...")
 
-        // Get already-synced workout IDs to avoid duplicates
+        // Get already-synced workout IDs so unchanged workouts can be skipped.
+        //
+        // This is an optimisation, not a correctness requirement: the server
+        // upserts on healthkit_id, so re-sending a workout is harmless. The
+        // sync used to abort when this call failed, which meant a weak signal
+        // on the watch lost the whole sync. Now it proceeds and re-sends,
+        // which the server deduplicates.
         var alreadySynced: Set<String> = []
         do {
             alreadySynced = try await api.getSyncedWorkoutIDs(limit: 500)
             log("📦 Server has \(alreadySynced.count) workouts")
         } catch {
             log("⚠️ Can't check server: \(error.localizedDescription)")
-            log("❌ Aborting sync — cannot verify what's already synced")
-            isHistoricalSyncInProgress = false
-            syncStatus = .failed
-            lastSyncError = "Cannot reach server to check synced workouts"
-            return HistoricalSyncResult(total: 0, synced: 0, skipped: 0, failed: 0, errors: ["Cannot reach server"])
+            log("↻ Continuing anyway — the server upserts, so duplicates are not possible")
         }
 
         // Fetch all workouts from HealthKit

@@ -10,8 +10,81 @@ petehome is a smart home ecosystem with multiple client applications:
 - **Web App** (`apps/web/`) - Next.js 16 dashboard for controlling Philips Hue lights, Sonos
   speakers, Google Calendar, Chicago Transit (CTA), weather, fitness tracking, coffee automation
 - **Desktop App** (`apps/desktop/`) - Electron wrapper that loads the web app
-- **iOS App** (`apps/ios/`) - watchOS workout tracking app with HealthKit integration
+- **iOS App** (`apps/ios/`) - watchOS + iOS HealthKit sync, WorkoutKit scheduling, APNs
 - **Firefox Extension** (`apps/firefox-extension/`) - New tab page that embeds the web dashboard
+- **PeteCoach** (`packages/coach-core/`, `apps/coach-worker/`, `apps/web/app/(dashboard)/coach/`) -
+  AI triathlon coach targeting a sub-3:00 Chicago Olympic triathlon on 2027-08-22
+
+## PeteCoach
+
+An AI coach built on the existing fitness stack. Read this before touching
+anything under `coach`.
+
+### Non-negotiable ordering
+
+Knee health, then consistency, then the sub-3 goal. The athlete is returning
+from a bilateral medial knee injury (cartilage wear, medial plica, hamstring
+tendon inflammation, Baker's cyst). Code that lets training override a
+guardrail is a bug, regardless of how reasonable the training looks.
+
+### Architecture
+
+```
+packages/coach-core/     Shared, no framework deps. Imported by web AND worker.
+  analytics/             TSS, PMC, ACWR, CSS, VDOT, readiness, race projection
+  guardrails/            Injury Guard rules + evaluation engine
+  plan/                  Zod schemas for plan mutations
+  prompts/               Coach identity (cached prefix) + context assembly
+  tools/                 Tool definitions; host supplies data access
+  memory/                Typed, decaying, supersedable memory model
+  cost/                  CostGovernor: model routing, caps, accounting
+  evals/                 Golden scenarios
+
+apps/web/lib/services/coach/   Data access + runtime, backed by Supabase
+apps/web/app/api/coach/        HTTP surface (chat, plan, watch, MCP, ICS)
+apps/web/app/(dashboard)/coach/  PWA
+apps/coach-worker/       PM2 worker: scheduled jobs, activity listener
+```
+
+### Rules that are easy to break accidentally
+
+- **The LLM never computes training metrics.** TSS, zones, ACWR and readiness
+  are calculated in `coach-core/analytics`, persisted, and handed to the model
+  as finished numbers. If you find yourself asking the model to do arithmetic
+  on samples, the design has gone wrong.
+- **Every plan change goes through `applyProposal`.** It is the only path that
+  runs the Injury Guard. Do not write to `coach_planned_session` directly.
+- **The system prompt is split in two.** The stable prefix (identity,
+  guardrails, tool policy) is cache-marked; volatile athlete context is
+  appended after it. Putting anything time-varying in the prefix invalidates
+  the cache on every turn and is the most expensive mistake available here.
+- **`coach_*` and `apple_health_*` are service_role only.** They hold medical
+  data. Use `getSupabaseMedicalClient()`; never the anon client.
+- **Nothing under `coach_*` is ever auto-deleted.** The retention job
+  deliberately excludes it.
+- **Safety paths are budget-exempt.** Injury review and same-day downgrades
+  bypass cost caps. A budget limit must never silence a knee warning.
+
+### Commands
+
+```bash
+yarn coach:test           # analytics + guardrail unit tests
+yarn coach:type-check
+yarn coach:worker         # run the worker in watch mode
+yarn coach:job briefing   # run any scheduled job now (from apps/coach-worker)
+yarn p:start:coach        # start the worker under PM2
+
+cd apps/web
+yarn coach:eval           # golden scenarios against the live model
+yarn coach:backfill       # import historical training data
+yarn coach:ingest --list  # knowledge base contents
+```
+
+### Required environment
+
+`ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`,
+`COACH_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker).
+Optional: `VOYAGE_API_KEY` (embeddings), `VAPID_*` (web push), `APNS_*` (iOS).
 
 ## Common Commands
 

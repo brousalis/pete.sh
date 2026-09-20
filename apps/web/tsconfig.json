@@ -28,7 +28,9 @@
     // Path Mapping
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@petehome/coach-core": ["../../packages/coach-core/src/index.ts"],
+      "@petehome/coach-core/*": ["../../packages/coach-core/src/*"]
     },
     // Resolution
     "resolveJsonModule": true,

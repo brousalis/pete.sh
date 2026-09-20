@@ -4,5 +4,12 @@
 <dict>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+	<!-- Required for HKObserverQuery to wake the app when new samples land,
+	     so post-workout debriefs arrive within minutes instead of hours. -->
+	<key>com.apple.developer.healthkit.background-delivery</key>
+	<true/>
+	<!-- APNs for coach briefings and same-day audibles -->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

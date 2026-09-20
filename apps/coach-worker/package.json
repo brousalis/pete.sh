@@ -1,0 +1,33 @@
+{
+  "name": "@petehome/coach-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PeteCoach background worker: scheduled agent jobs, analytics recompute, push delivery. Runs under PM2 on the home machine.",
+  "author": "Pete",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "job": "tsx src/cli.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.44",
+    "@petehome/coach-core": "0.1.0",
+    "@supabase/supabase-js": "^2.47.14",
+    "ai": "^6.0.86",
+    "dotenv": "^17.2.3",
+    "pg": "^8.13.0",
+    "pg-boss": "^10.1.5",
+    "web-push": "^3.6.7",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/web-push": "^3.6.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

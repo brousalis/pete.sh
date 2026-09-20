@@ -1,0 +1,37 @@
+{
+  "name": "@petehome/coach-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PeteCoach shared core: deterministic training analytics, injury guardrails, plan schemas, prompts, tools and cost governance. Consumed by apps/web and apps/coach-worker.",
+  "author": "Pete",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./analytics": "./src/analytics/index.ts",
+    "./guardrails": "./src/guardrails/index.ts",
+    "./plan": "./src/plan/index.ts",
+    "./prompts": "./src/prompts/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./memory": "./src/memory/index.ts",
+    "./knowledge": "./src/knowledge/index.ts",
+    "./cost": "./src/cost/index.ts",
+    "./models": "./src/models.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.44",
+    "@supabase/supabase-js": "^2.47.14",
+    "ai": "^6.0.86",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

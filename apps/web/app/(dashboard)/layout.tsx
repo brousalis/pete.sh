@@ -5,6 +5,7 @@ import { useRoundedLayout } from '@/components/settings-provider'
 // Top nav and mobile bottom nav commented out for one-page app UX
 // import { MobileBottomNavigation, TopNavigation } from '@/components/top-navigation'
 import { cn } from '@/lib/utils'
+import { usePathname } from 'next/navigation'
 import type React from 'react'
 
 export default function DashboardLayout({
@@ -13,6 +14,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const isRounded = useRoundedLayout()
+  const pathname = usePathname()
+  const isCoachChat = pathname.startsWith('/coach/chat')
 
   return (
     <AssistantModalProvider>
@@ -38,7 +41,14 @@ export default function DashboardLayout({
           </div> */}
 
           {/* Main Content - scrollable, hide scrollbar for cleaner look */}
-          <main className="scrollbar-hide bg-muted relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 md:px-6 md:py-6">
+          <main
+            className={cn(
+              'scrollbar-hide relative min-h-0 flex-1 overflow-x-hidden',
+              isCoachChat
+                ? 'overflow-hidden bg-background p-0'
+                : 'bg-muted overflow-y-auto p-3 sm:p-5 md:px-6 md:py-6'
+            )}
+          >
             <div className="h-full">{children}</div>
           </main>
 
