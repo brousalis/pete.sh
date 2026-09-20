@@ -35,6 +35,7 @@ struct AppleHealthWorkout: Codable {
     let runningMetrics: PetehomeRunningMetrics?
     let cyclingMetrics: PetehomeCyclingMetrics?
     let walkingMetrics: PetehomeWalkingMetrics?
+    let swimmingMetrics: PetehomeSwimmingMetrics?
     let route: PetehomeWorkoutRoute?
     
     // Workout events (pauses, segments, laps)
@@ -209,6 +210,15 @@ struct PetehomeCyclingCadenceSample: Codable {
 struct PetehomeCyclingPowerSample: Codable {
     let timestamp: String
     let watts: Double
+}
+
+// MARK: - Swimming Metrics
+
+struct PetehomeSwimmingMetrics: Codable {
+    let strokeCount: Int?
+    let poolLengthMeters: Double?
+    /// "pool", "openWater", or "unknown"
+    let swimmingLocation: String?
 }
 
 // MARK: - Workout Events
@@ -1019,6 +1029,8 @@ extension HKWorkoutActivityType {
             return "stairClimbing"
         case .elliptical:
             return "elliptical"
+        case .swimming:
+            return "swimming"
         default:
             return "other"
         }

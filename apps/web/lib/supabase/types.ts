@@ -576,6 +576,10 @@ export interface AppleHealthWorkoutInsert {
   walking_double_support_pct?: number | null
   walking_asymmetry_pct?: number | null
   walking_step_count?: number | null
+  // Swimming metrics
+  swimming_stroke_count?: number | null
+  swimming_pool_length_meters?: number | null
+  swimming_location?: string | null
   // Indoor/outdoor flag
   is_indoor?: boolean | null
   // Effort score

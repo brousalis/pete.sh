@@ -139,6 +139,17 @@ export interface WalkingMetrics {
 }
 
 // ============================================
+// SWIMMING METRICS
+// ============================================
+
+export interface SwimmingMetrics {
+  strokeCount?: number
+  poolLengthMeters?: number
+  /** pool | openWater | unknown */
+  swimmingLocation?: 'pool' | 'openWater' | 'unknown' | string
+}
+
+// ============================================
 // BATHROOM MARKERS (Maple Walk Tracking)
 // ============================================
 
@@ -186,6 +197,7 @@ export type AppleWorkoutType =
   | 'walking'
   | 'hiking'
   | 'cycling'
+  | 'swimming'
   | 'functionalStrengthTraining'
   | 'traditionalStrengthTraining'
   | 'coreTraining'
@@ -195,18 +207,19 @@ export type AppleWorkoutType =
   | 'elliptical'
   | 'other'
 
-// Maps to HKWorkoutActivityType
+// Maps to HKWorkoutActivityType raw values
 export const APPLE_WORKOUT_TYPE_MAP: Record<number, AppleWorkoutType> = {
   37: 'running', // HKWorkoutActivityType.running
   52: 'walking', // HKWorkoutActivityType.walking
   24: 'hiking', // HKWorkoutActivityType.hiking
   13: 'cycling', // HKWorkoutActivityType.cycling
+  46: 'swimming', // HKWorkoutActivityType.swimming
   20: 'functionalStrengthTraining',
   50: 'traditionalStrengthTraining',
-  74: 'coreTraining',
+  59: 'coreTraining', // HKWorkoutActivityType.coreTraining
   63: 'hiit',
   35: 'rowing',
-  46: 'stairClimbing',
+  44: 'stairClimbing', // HKWorkoutActivityType.stairClimbing
   17: 'elliptical',
 }
 
@@ -245,6 +258,9 @@ export interface AppleHealthWorkout {
 
   // Walking-specific metrics (for Maple walks)
   walkingMetrics?: WalkingMetrics
+
+  // Swimming-specific metrics
+  swimmingMetrics?: SwimmingMetrics
 
   // Route data (for outdoor workouts)
   route?: WorkoutRoute

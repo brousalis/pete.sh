@@ -119,7 +119,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Compute enhanced analytics for running/cardio workouts
     let enhancedAnalytics = null
-    const isCardioWorkout = ['running', 'walking', 'cycling', 'rowing', 'elliptical', 'stairClimbing'].includes(result.workout.workout_type)
+    const isCardioWorkout = ['running', 'walking', 'cycling', 'swimming', 'rowing', 'elliptical', 'stairClimbing'].includes(result.workout.workout_type)
 
     if (includeAnalytics && isCardioWorkout) {
       // Transform samples to analytics format

@@ -94,6 +94,7 @@ import {
     Settings,
     Sun,
     Target,
+    Waves,
     Zap
 } from 'lucide-react'
 import Link from 'next/link'
@@ -1767,7 +1768,7 @@ const WORKOUT_TYPE_STYLES: Record<string, { icon: typeof Dumbbell; color: string
   cycling: { icon: Zap, color: 'text-accent-azure', bg: 'bg-accent-azure/15' },
   walking: { icon: Target, color: 'text-teal-500', bg: 'bg-teal-500/15' },
   hiking: { icon: Footprints, color: 'text-accent-gold', bg: 'bg-accent-gold/15' },
-  swimming: { icon: Zap, color: 'text-accent-teal', bg: 'bg-accent-teal/15' },
+  swimming: { icon: Waves, color: 'text-accent-teal', bg: 'bg-accent-teal/15' },
   functionalStrengthTraining: { icon: Dumbbell, color: 'text-accent-violet', bg: 'bg-accent-violet/15' },
   traditionalStrengthTraining: { icon: Dumbbell, color: 'text-accent-violet', bg: 'bg-accent-violet/15' },
   coreTraining: { icon: Target, color: 'text-pink-500', bg: 'bg-pink-500/15' },

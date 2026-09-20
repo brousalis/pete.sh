@@ -141,6 +141,7 @@ export const WORKOUT_TYPE_ACCENT: Record<string, AccentName> = {
   walking: 'azure',
   hiking: 'sage',
   cycling: 'ember',
+  swimming: 'teal',
   functionalStrengthTraining: 'violet',
   traditionalStrengthTraining: 'violet',
   coreTraining: 'rose',

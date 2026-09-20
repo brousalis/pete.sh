@@ -38,8 +38,8 @@ struct WorkoutCard: View {
                         Label("\(Int(calories)) cal", systemImage: "flame.fill")
                     }
 
-                    // Distance
-                    if let distance = workout.statistics(for: .quantityType(forIdentifier: .distanceWalkingRunning)!)?.sumQuantity()?.doubleValue(for: .mile()), distance > 0.1 {
+                    // Distance (walking/running, cycling, or swimming)
+                    if let distance = Self.displayDistanceMiles(for: workout), distance > 0.05 {
                         Label(String(format: "%.1f mi", distance), systemImage: "arrow.forward")
                     }
                 }
@@ -55,6 +55,23 @@ struct WorkoutCard: View {
             Spacer()
         }
         .padding(.vertical, 6)
+    }
+
+    private static func displayDistanceMiles(for workout: HKWorkout) -> Double? {
+        let meterToMile = 1.0 / 1609.344
+        switch workout.workoutActivityType {
+        case .swimming:
+            if let meters = workout.statistics(for: .quantityType(forIdentifier: .distanceSwimming)!)?.sumQuantity()?.doubleValue(for: .meter()), meters > 0 {
+                return meters * meterToMile
+            }
+        case .cycling:
+            if let meters = workout.statistics(for: .quantityType(forIdentifier: .distanceCycling)!)?.sumQuantity()?.doubleValue(for: .meter()), meters > 0 {
+                return meters * meterToMile
+            }
+        default:
+            break
+        }
+        return workout.statistics(for: .quantityType(forIdentifier: .distanceWalkingRunning)!)?.sumQuantity()?.doubleValue(for: .mile())
     }
 
     private var iconColor: Color {

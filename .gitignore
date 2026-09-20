@@ -44,6 +44,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
+# Generated workout exports
+apps/web/exports/
+
 # Vercel
 .vercel
 .vercel-deploy-toast-state.json
@@ -108,6 +111,9 @@ logs
 .vscode-test
 *.env
 .env.production
+
+# Local Mac LAN SSH target for display KVM (see mac-lan.local.example.ps1)
+apps/desktop/display/mac-lan.local.ps1
 
 *.next*
 

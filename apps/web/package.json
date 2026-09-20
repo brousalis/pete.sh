@@ -25,7 +25,8 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next out dist build .turbo",
     "migrate": "node scripts/run-migrations.js",
-    "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts"
+    "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts",
+    "export:swim": "tsx scripts/export-swim-tcx.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.44",

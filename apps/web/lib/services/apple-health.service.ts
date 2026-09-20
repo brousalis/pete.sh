@@ -219,6 +219,10 @@ export class AppleHealthService {
       walking_double_support_pct: workout.walkingMetrics?.doubleSupportPercentage || null,
       walking_asymmetry_pct: workout.walkingMetrics?.asymmetryPercentage || null,
       walking_step_count: toInt(workout.walkingMetrics?.stepCount),
+      // Swimming metrics
+      swimming_stroke_count: toInt(workout.swimmingMetrics?.strokeCount),
+      swimming_pool_length_meters: workout.swimmingMetrics?.poolLengthMeters || null,
+      swimming_location: workout.swimmingMetrics?.swimmingLocation || null,
       // Indoor/outdoor flag
       is_indoor: workout.isIndoor ?? null,
       // Effort score

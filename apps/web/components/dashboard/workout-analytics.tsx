@@ -116,6 +116,7 @@ const WORKOUT_TYPE_LABELS: Record<string, string> = {
   walking: 'Walk',
   hiking: 'Hike',
   cycling: 'Cycle',
+  swimming: 'Swim',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
   coreTraining: 'Core',
@@ -292,7 +293,7 @@ interface WorkoutCardProps {
 
 export function WorkoutCard({ workout, onClick, compact = false }: WorkoutCardProps) {
   const workoutLabel = WORKOUT_TYPE_LABELS[workout.workout_type] || workout.workout_type
-  const isCardio = ['running', 'walking', 'hiking', 'cycling', 'rowing', 'stairClimbing', 'elliptical'].includes(workout.workout_type)
+  const isCardio = ['running', 'walking', 'hiking', 'cycling', 'swimming', 'rowing', 'stairClimbing', 'elliptical'].includes(workout.workout_type)
 
   return (
     <Card 

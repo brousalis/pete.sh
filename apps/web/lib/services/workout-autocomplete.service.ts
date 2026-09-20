@@ -50,6 +50,7 @@ const WORKOUT_TYPE_PATTERNS: Record<AppleWorkoutType, string[]> = {
   running: ['run', 'sprint', 'jog'],
   walking: ['walk', 'hike', 'incline'],
   cycling: ['bike', 'cycling', 'spin'],
+  swimming: ['swim', 'pool', 'lap'],
   rowing: ['row', 'rower', 'erg'],
   hiking: ['hike', 'trail', 'mountain', 'hiking'],
 

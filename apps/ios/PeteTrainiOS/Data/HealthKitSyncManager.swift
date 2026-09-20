@@ -127,6 +127,9 @@ final class HealthKitSyncManager {
             HKQuantityType(.cyclingCadence),
             HKQuantityType(.cyclingPower),
             HKQuantityType(.distanceCycling),
+            // Swimming Metrics
+            HKQuantityType(.distanceSwimming),
+            HKQuantityType(.swimmingStrokeCount),
             // Walking Metrics
             HKQuantityType(.walkingHeartRateAverage),
             HKQuantityType(.walkingDoubleSupportPercentage),
@@ -534,6 +537,9 @@ final class HealthKitSyncManager {
         
         // Query walking metrics (for walking and 'other' workouts - Maple walks use 'other' type)
         async let walkingMetrics = queryWalkingMetrics(for: workout)
+
+        // Query swimming metrics (pool/open-water swims)
+        let swimmingMetricsResult = querySwimmingMetrics(for: workout)
         
         // Query effort score (available for all workout types)
         async let effortScore = queryEffortScore(for: workout)
@@ -554,8 +560,11 @@ final class HealthKitSyncManager {
         let walkingMetricsResult = try await walkingMetrics
         let effortScoreResult = try await effortScore
         
-        // Get workout events (synchronous)
-        let workoutEvents = queryWorkoutEvents(for: workout)
+        // Get workout events (synchronous), enrich swim laps with pool length when known
+        let workoutEvents = enrichSwimLapDistances(
+            events: queryWorkoutEvents(for: workout),
+            poolLengthMeters: swimmingMetricsResult?.poolLengthMeters
+        )
 
         let hrValues = hrSamplesResult.map { $0.bpm }
         let avgHR = hrValues.isEmpty ? 0 : hrValues.reduce(0, +) / hrValues.count
@@ -603,7 +612,7 @@ final class HealthKitSyncManager {
         let activeCalories = workout.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0
         let basalCalories = workout.statistics(for: HKQuantityType(.basalEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0
         let totalCalories = activeCalories + basalCalories
-        let distanceMeters = workout.statistics(for: HKQuantityType(.distanceWalkingRunning))?.sumQuantity()?.doubleValue(for: .meter())
+        let distanceMeters = resolveWorkoutDistance(for: workout)
 
         let deviceInfo = PetehomeDeviceInfo(
             name: "iPhone",
@@ -616,10 +625,13 @@ final class HealthKitSyncManager {
         let isIndoor: Bool?
         if let indoorMetadata = workout.metadata?[HKMetadataKeyIndoorWorkout] as? Bool {
             isIndoor = indoorMetadata
+        } else if workout.workoutActivityType == .swimming,
+                  let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
+            isIndoor = locNum.intValue == HKSwimmingLocationType.pool.rawValue
         } else {
             // Fallback: infer from workout activity type and whether route exists
             switch workout.workoutActivityType {
-            case .running, .walking, .hiking, .cycling, .other:
+            case .running, .walking, .hiking, .cycling, .swimming, .other:
                 isIndoor = routeResult == nil // No route likely means indoor (hiking/other = Maple walks)
             default:
                 isIndoor = true // Strength, HIIT, etc. are indoor
@@ -644,6 +656,7 @@ final class HealthKitSyncManager {
             runningMetrics: runningMetrics,
             cyclingMetrics: cyclingMetricsResult,
             walkingMetrics: walkingMetricsResult,
+            swimmingMetrics: swimmingMetricsResult,
             route: routeResult,
             workoutEvents: workoutEvents.isEmpty ? nil : workoutEvents,
             effortScore: effortScoreResult,
@@ -1243,6 +1256,88 @@ final class HealthKitSyncManager {
         
         return splits
     }
+
+    // MARK: - Distance Resolution
+
+    /// Resolve total distance using the quantity type appropriate for the activity.
+    private func resolveWorkoutDistance(for workout: HKWorkout) -> Double? {
+        let walkingRunning = workout.statistics(for: HKQuantityType(.distanceWalkingRunning))?
+            .sumQuantity()?.doubleValue(for: .meter())
+        let cycling = workout.statistics(for: HKQuantityType(.distanceCycling))?
+            .sumQuantity()?.doubleValue(for: .meter())
+        let swimming = workout.statistics(for: HKQuantityType(.distanceSwimming))?
+            .sumQuantity()?.doubleValue(for: .meter())
+        let totalDistance = workout.totalDistance?.doubleValue(for: .meter())
+
+        func positive(_ value: Double?) -> Double? {
+            guard let value, value > 0 else { return nil }
+            return value
+        }
+
+        switch workout.workoutActivityType {
+        case .swimming:
+            return positive(swimming) ?? positive(totalDistance) ?? positive(walkingRunning)
+        case .cycling:
+            return positive(cycling) ?? positive(totalDistance) ?? positive(walkingRunning)
+        default:
+            return positive(walkingRunning) ?? positive(totalDistance)
+        }
+    }
+
+    // MARK: - Swimming Metrics
+
+    private func querySwimmingMetrics(for workout: HKWorkout) -> PetehomeSwimmingMetrics? {
+        guard workout.workoutActivityType == .swimming else { return nil }
+
+        let strokeCountValue = workout.statistics(for: HKQuantityType(.swimmingStrokeCount))?
+            .sumQuantity()?.doubleValue(for: .count())
+        let strokeCount = strokeCountValue.map { Int($0) }
+
+        var poolLengthMeters: Double? = nil
+        if let lapLength = workout.metadata?[HKMetadataKeyLapLength] as? HKQuantity {
+            poolLengthMeters = lapLength.doubleValue(for: .meter())
+        }
+
+        var swimmingLocation: String? = nil
+        if let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
+            switch HKSwimmingLocationType(rawValue: locNum.intValue) {
+            case .pool:
+                swimmingLocation = "pool"
+            case .openWater:
+                swimmingLocation = "openWater"
+            default:
+                swimmingLocation = "unknown"
+            }
+        }
+
+        return PetehomeSwimmingMetrics(
+            strokeCount: strokeCount,
+            poolLengthMeters: poolLengthMeters,
+            swimmingLocation: swimmingLocation
+        )
+    }
+
+    private func enrichSwimLapDistances(
+        events: [PetehomeWorkoutEvent],
+        poolLengthMeters: Double?
+    ) -> [PetehomeWorkoutEvent] {
+        guard let poolLengthMeters, poolLengthMeters > 0 else { return events }
+
+        return events.map { event in
+            guard event.type == "lap" else { return event }
+            return PetehomeWorkoutEvent(
+                type: event.type,
+                timestamp: event.timestamp,
+                duration: event.duration,
+                metadata: PetehomeEventMetadata(
+                    segmentIndex: event.metadata?.segmentIndex,
+                    lapNumber: event.metadata?.lapNumber,
+                    distance: poolLengthMeters,
+                    splitTime: event.metadata?.splitTime
+                )
+            )
+        }
+    }
     
     // MARK: - Cycling Metrics
     
@@ -1499,7 +1594,7 @@ final class HealthKitSyncManager {
 
     /// Route data can be delayed on iOS - retry for outdoor workouts (Maple walks, runs, etc.)
     private func queryRoute(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
-        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .other]
+        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .swimming, .other]
         let isOutdoor = outdoorTypes.contains(workout.workoutActivityType)
 
         var result = try await queryRouteOnce(for: workout)
