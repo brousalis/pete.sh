@@ -7,7 +7,7 @@
     "apps/coach-worker",
     "packages/coach-core"
   ],
-  "description": "petehome ecosystem - Smart home control center with web, desktop, mobile, and browser extension apps",
+  "description": "PeteCoach — local AI triathlon coach (web PWA + worker + coach-core)",
   "author": "Pete",
   "scripts": {
     "dev": "cd apps/web && yarn dev:https",
@@ -18,15 +18,11 @@
     "install:web": "cd apps/web && yarn install",
 
     "p:start": "pm2 start ecosystem.config.js --only petehome",
-    "p:start:notifications": "pm2 start ecosystem.config.js --only petehome-notifications",
     "p:stop": "pm2 stop petehome",
-    "p:stop:notifications": "pm2 stop petehome-notifications",
     "p:restart": "pm2 restart petehome",
-    "p:restart:notifications": "pm2 restart petehome-notifications",
     "p:logs": "pm2 logs petehome",
     "p:logs:pretty": "node apps/web/scripts/pretty-logs.mjs",
     "p:logs:stats": "node apps/web/scripts/pretty-logs.mjs --stats --last 1000",
-    "p:logs:notifications": "pm2 logs petehome-notifications",
     "p:status": "pm2 status",
 
     "p:start:coach": "pm2 start ecosystem.config.js --only petecoach-worker",
@@ -40,13 +36,6 @@
     "coach:type-check": "cd packages/coach-core && yarn type-check",
     "coach:doctor": "cd apps/web && yarn coach:doctor",
     "coach:eval": "cd apps/web && yarn coach:eval",
-
-    "sync": "cd apps/web && yarn sync",
-    "sync:watch": "cd apps/web && yarn sync:watch",
-    "sync:tj": "cd apps/web && yarn sync:tj",
-
-    "vercel-toast": "cd apps/web && yarn vercel-toast",
-    "vercel-toast:watch": "cd apps/web && yarn vercel-toast:watch",
 
     "lint": "cd apps/web && yarn lint",
     "lint:fix": "cd apps/web && yarn lint:fix",

@@ -1,10 +1,8 @@
 /**
  * PM2 Ecosystem Configuration
- * Manages the petehome application processes
  *
  * Usage:
  *   pm2 start ecosystem.config.js --only petehome
- *   pm2 start ecosystem.config.js --only petehome-notifications
  *   pm2 start ecosystem.config.js --only petecoach-worker
  *   pm2 stop petehome
  *   pm2 restart petehome
@@ -33,7 +31,7 @@ function resolveTsxCli() {
 module.exports = {
   apps: [
     {
-      // Main dev server - HTTPS mode for hybrid mode from production site
+      // Local HTTPS Next server for PeteCoach PWA + APIs (LAN / .local)
       name: 'petehome',
       script: path.join(webAppDir, 'scripts', 'pm2-start-https.js'),
       cwd: webAppDir,
@@ -56,31 +54,8 @@ module.exports = {
       restart_delay: 4000,
     },
     {
-      // Vercel deploy notification watcher – polls Vercel API, shows Windows toasts
-      name: 'petehome-notifications',
-      script: path.join(webAppDir, 'scripts', 'vercel-deploy-toast.js'),
-      args: '--watch',
-      cwd: webAppDir,
-      instances: 1,
-      exec_mode: 'fork',
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '100M',
-      error_file: path.join(__dirname, 'logs', 'pm2-notifications-error.log'),
-      out_file: path.join(__dirname, 'logs', 'pm2-notifications-out.log'),
-      log_file: path.join(__dirname, 'logs', 'pm2-notifications-combined.log'),
-      time: true,
-      min_uptime: '5s',
-      max_restarts: 10,
-      restart_delay: 5000,
-    },
-    {
       // PeteCoach worker – scheduled agent jobs, analytics recompute, push.
-      // Long-running work lives here rather than in Vercel functions so the
-      // Sunday planning loop is not bound by a request timeout.
-      //
-      // Yarn hoists tsx to the monorepo root, so we do not look under
-      // apps/coach-worker/node_modules (that path does not exist).
+      // Runs on the home PC so long jobs are not bound by HTTP timeouts.
       name: 'petecoach-worker',
       script: resolveTsxCli(),
       args: path.join(coachWorkerDir, 'src', 'index.ts'),

@@ -1,26 +1,19 @@
 # Pete Home New Tab (Firefox)
 
-Personal new-tab extension that shows [pete.sh](https://pete.sh) in a full-page iframe so the URL
-bar stays on the extension.
+Legacy new-tab extension that iframes [pete.sh](https://pete.sh).
 
-## Load in Firefox
+**Note:** `apps/web` is PeteCoach-only and runs locally; it is no longer published to pete.sh.
+This extension is obsolete for the current coaching stack unless you change the iframe target
+to a local origin and ensure framing is allowed.
 
-1. Open `about:debugging` in Firefox.
-2. Click **This Firefox** (or **This Nightly**, etc.).
-3. Click **Load Temporary Add-on…**.
-4. Choose the `manifest.json` file in this folder.
+## Load in Firefox (if you still want it)
 
-The extension stays loaded until you restart Firefox. To make it permanent, use **Load Temporary
-Add-on** again after each restart, or
-[package and sign the extension](https://extensionworkshop.com/documentation/publish/submitting-an-add-on/)
-for install from file.
+1. Open `about:debugging`.
+2. **This Firefox** → **Load Temporary Add-on…**.
+3. Choose `manifest.json` in this folder.
 
 ## Files
 
-- `manifest.json` – extension manifest (new-tab override).
-- `newtab.html` – loads pete.sh in a full-page iframe.
-- `newtab.css` – full-viewport iframe styling.
-
-The site (pete.sh) must allow being framed; `next.config.mjs` in the repo sets
-`Content-Security-Policy: frame-ancestors ... moz-extension:` so the extension can embed it.
-Redeploy after that change if the iframe is blank.
+- `manifest.json` – new-tab override
+- `newtab.html` – full-page iframe
+- `newtab.css` – viewport styling

@@ -45,14 +45,17 @@ Cook & Purdam tendon loading, IOC 2023 RED-S.
 
 ## Locked product decisions
 
-- Built **into petehome** (`C:\dev\petehome`), not a new repo. `/fitness` becomes `/coach`. Routine
-  versions and the old climber-physique AI Coach are compatibility leftovers.
-- **Runtime split:** chat and HTTP stay in `apps/web` (Vercel Pro, `maxDuration` 300s). Long and
-  scheduled work runs in `apps/coach-worker` under PM2 on the home PC, queued with pg-boss on
-  Supabase Postgres.
+- Built **into petehome** (`C:\dev\petehome`), not a new repo. `apps/web` is **PeteCoach
+  only** — personal, local, not published. The old smart-home dashboard (assistant, AI Coach,
+  AI Chef, fitness UI, maple, coffee, blog, homework, etc.) is gone. `/` redirects to
+  `/coach`. There are **no** legacy-page redirects. Orphan Supabase tables from the old
+  dashboard remain; no drop migration yet.
+- **Runtime split:** chat and HTTP run in local `apps/web` (Next.js on the home PC). Long and
+  scheduled work runs in `apps/coach-worker` under PM2, queued with pg-boss on Supabase
+  Postgres. Vercel is **not** part of the coaching stack anymore.
 - Shared logic lives in `packages/coach-core` (no Next.js deps). Web and worker must always agree.
-- Vercel AI SDK 6 + `@ai-sdk/anthropic`. Models pinned: Opus 5 / Sonnet 5 / Haiku 4.5. Anthropic
-  prompt caching via `providerOptions`.
+- Vercel AI SDK 6 + `@ai-sdk/anthropic` (SDK name only — hosting is local). Models pinned:
+  Opus 5 / Sonnet 5 / Haiku 4.5. Anthropic prompt caching via `providerOptions`.
 - Autonomy: same-day **downgrades auto-apply**. Everything else waits for approval in `/coach/plan`.
 - Auth: signed cookie (`COACH_SESSION_SECRET` + `COACH_ACCESS_CODE`), not the originally sketched
   WebAuthn. Watch/worker/MCP use `COACH_API_KEY`. Installed PeteTrain still uses `PETEWATCH_API_KEY`
@@ -66,16 +69,19 @@ Cook & Purdam tendon loading, IOC 2023 RED-S.
 Watch Workout + PeteTrain watch
         │ HealthKit
         ▼
-PeteTrainiOS  ──POST /api/apple-health/{sync,workout,daily}──►  apps/web (Vercel or local)
-        │                                                         │
-        │ WorkoutKit / APNs (source exists; not shipped)          │ /api/coach/*  /coach PWA
-        ▼                                                         ▼
-   Apple Watch                                              packages/coach-core
-                                                                  ▲
-Supabase Pro                                                      │
+PeteTrainiOS  ──POST /api/apple-health/{sync,workout,daily}──►  apps/web (local :3000)
+        │         (installed build may still target pete.sh → same Supabase)
+        │ WorkoutKit / APNs (source exists; not shipped)
+        ▼
+   Apple Watch
+                                                              packages/coach-core
+                                                                    ▲
+Supabase                                                            │
   apple_health_*  ──NOTIFY coach_activity──►  apps/coach-worker (PM2 :3021)
   coach_*  (plan, injury, memory, knowledge, agent_run)
   pgboss schema
+
+Local PWA: /coach  +  /api/coach/*
 ```
 
 Deterministic layer (analytics + Injury Guard) computes. The LLM interprets and proposes. The LLM
@@ -147,8 +153,9 @@ coach.
 
 1. Watch records in Apple's Workout app (Outdoor Run, Indoor/Outdoor Bike with Coospo, Pool Swim 25
    yd, Functional Strength, worn overnight).
-2. Installed PeteTrainiOS POSTs to **production**
-   `https://www.pete.sh/api/apple-health/{sync,workout,daily}` with `PETEWATCH_API_KEY`.
+2. PeteTrainiOS POSTs `/api/apple-health/{sync,workout,daily}` with `PETEWATCH_API_KEY`. The
+   **installed** phone still defaults to `https://www.pete.sh` (old deploy → same Supabase). Local
+   `apps/web` still owns those routes for LAN / future retargeting. Do not rotate the key.
 3. Rows land in `apple_health_workouts` / samples / `apple_health_daily_metrics`.
 4. Migration 038 `NOTIFY coach_activity` on insert. The worker LISTENs, waits ~2 minutes for late
    samples, then queues a singleton debrief.
@@ -447,16 +454,19 @@ more.” Until CSS/VDOT/FTP exist, splits use the budget as a placeholder.
 | `/coach/tests`     | CSS, quad symmetry, indoor bike Z2 (week 3 of Block 0)             |
 | `/coach/login`     | Access code                                                        |
 
-Old `/fitness/coach` redirects toward `/coach/chat`.
+`/fitness/*`, `/assistant`, blog, homework, and the old home APIs are **deleted**, not redirected.
 
 **HTTP** (cookie or `Authorization: Bearer COACH_API_KEY`)
 
 `/api/coach/{chat,today,plan,checkin,conversations,injury,gear,nutrition,readiness,load,projection,spend,benchmarks,onboard,import,push/subscribe,calendar,mcp,watch/today,watch/workouts,auth}`
 
+Also kept: `/api/apple-health/*` (PeteTrain ingest), `/api/health` (liveness).
+
 - ICS: `/api/coach/calendar?key=<COACH_API_KEY>`
-- MCP: `POST /api/coach/mcp` Streamable HTTP, bearer, **read-only tools**
-- Watch: `GET /api/coach/watch/today` exists; **installed watch still fetches**
-  `/api/fitness/workout-definitions?routineId=climber-physique`
+- MCP: `POST /api/coach/mcp` Streamable HTTP, bearer, **read-only tools** (works against local origin)
+- Watch: `GET /api/coach/watch/today` exists on the server. **Installed watch source still references**
+  `/api/fitness/workout-definitions?routineId=climber-physique`, which no longer exists in
+  `apps/web` — do not rebuild expecting that path.
 
 ---
 
@@ -491,13 +501,15 @@ not assumed.
 
 ## Knowledge
 
-Licensed books/papers/MRI-PT notes → `apps/web/data/knowledge` → `yarn coach:ingest` →
-`coach_document` + chunked `coach_chunk`. Mark clinical notes `--type medical --medical`.
+Corpus lives in `apps/web/data/knowledge` (notes, papers, guidelines, MRI/PT medical). Ingest with
+`yarn coach:ingest` → `coach_document` + chunked `coach_chunk`. Mark clinical notes
+`--type medical --medical`.
 
 Embeddings: Voyage `voyage-3` when `VOYAGE_API_KEY` is set. Hybrid search + citations. Live PubMed
-as a tool. Environment: existing NWS service + Open-Meteo + NOAA station `45198`.
+as a tool. Environment: Open-Meteo + NWS + NOAA station `45198` via coach environment service.
 
-The old `coaching-knowledge.md` fasted-training/recomp guidance is retired as a default.
+Old dashboard `coaching-knowledge.md` (fasted training / recomp) is gone and is not a coaching
+default.
 
 ---
 
@@ -520,10 +532,10 @@ a dry run cannot rewrite the real plan.
 
 **Not live / do not assume**
 
-- `pete.sh/coach` — PeteCoach is largely uncommitted; production 404s
-- Worker — must be started (`yarn p:start:coach`); PM2 was empty at last check
+- Public hosting — `apps/web` is local-only; do not expect `pete.sh/coach`
+- Worker — must be started (`yarn p:start:coach`) and the PC must stay awake for cron
 - Voyage, VAPID web push, APNs — optional; jobs still write the briefing to the journal
-- Knowledge corpus directory may be empty
+- Knowledge must be **ingested** into Supabase (`yarn coach:ingest`); files on disk alone are not searched
 - PeteTrain rebuild / WorkoutKit on the watch / watch fetching coach sessions
 - CSS / VDOT / FTP until week-3 tests
 

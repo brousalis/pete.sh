@@ -1,37 +1,28 @@
 # Scripts
 
-## `setlist:spotify` — create Spotify playlist from latest setlist.fm setlist
+Coach tooling for the local PeteCoach app. Home-sync / Spotify / Trader Joe’s /
+dashboard scripts were removed with the teardown.
 
-Creates a Spotify playlist in your account using the **newest setlist.fm setlist** found for an artist name.
+## Coach
 
-### Prereqs
-
-- **Env vars** (in `apps/web/.env.local` or `apps/web/.env`)
-  - `SETLISTFM_API_KEY`
-  - `NEXT_SPOTIFY_CLIENT_ID`
-  - `NEXT_SPOTIFY_CLIENT_SECRET`
-
-- **Spotify auth (one-time)**
-  - Start the web app (`yarn dev:http` from repo root)
-  - Connect Spotify in the UI (this repo stores tokens in `apps/web/.tokens.json`)
-
-### Run
-
-From repo root:
+From `apps/web`:
 
 ```bash
-yarn --cwd apps/web setlist:spotify "Bilmuri"
+yarn coach:doctor
+yarn coach:backfill plans
+yarn coach:backfill apple --file <export.xml>
+yarn coach:backfill files --dir <tcx-dir>
+yarn coach:ingest --list
+yarn coach:ingest --dir ./data/knowledge
+yarn coach:eval
+yarn export:swim
 ```
 
-Optional:
+From repo root (worker):
 
 ```bash
-yarn --cwd apps/web setlist:spotify "Bilmuri" --public
-yarn --cwd apps/web setlist:spotify "Bilmuri" --name "Bilmuri — last setlist"
+yarn p:start:coach
+yarn coach:job briefing
 ```
 
-### Notes
-
-- Track matching uses Spotify search with `track:"..." artist:"..."`. If setlist.fm marks a song as a **cover**, the script searches using the cover artist name.
-- If some tracks can’t be matched, the script will still create the playlist and print a “Missing tracks” list at the end.
-
+See `PETECOACH.md` and `PETECOACH-NEXT-STEPS.md` at the monorepo root.

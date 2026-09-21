@@ -5,27 +5,31 @@ repository.
 
 ## Project Overview
 
-petehome is a smart home ecosystem with multiple client applications:
+**petehome `apps/web` is PeteCoach only** — a personal local PWA. The old smart-home dashboard
+(Hue, Spotify, CTA, coffee, maple, cooking AI chef, unified assistant, climber-physique AI Coach,
+fitness routine editor, blog, homework) has been removed. There is no Vercel publish path for this
+app anymore.
 
-- **Web App** (`apps/web/`) - Next.js 16 dashboard for controlling Philips Hue lights, Sonos
-  speakers, Google Calendar, Chicago Transit (CTA), weather, fitness tracking, coffee automation
-- **Desktop App** (`apps/desktop/`) - Electron wrapper that loads the web app
-- **iOS App** (`apps/ios/`) - watchOS + iOS HealthKit sync, WorkoutKit scheduling, APNs
-- **Firefox Extension** (`apps/firefox-extension/`) - New tab page that embeds the web dashboard
-- **PeteCoach** (`packages/coach-core/`, `apps/coach-worker/`, `apps/web/app/(dashboard)/coach/`) -
-  AI triathlon coach targeting a sub-3:00 Chicago Olympic triathlon on 2027-08-22
+- **Web App** (`apps/web/`) — PeteCoach PWA at `/coach` plus `/api/coach/*` and `/api/apple-health/*`
+- **Coach worker** (`apps/coach-worker/`) — PM2 scheduled jobs + activity LISTEN
+- **Shared core** (`packages/coach-core/`) — analytics, guardrails, prompts, tools
+- **iOS** (`apps/ios/`) — PeteTrain HealthKit sync (installed build still points at pete.sh for ingest)
+- **Desktop / other apps** — legacy monorepo leftovers; not part of the coach product surface
+
+There is **no** unified assistant and **no** `/api/fitness/*`. Training chat is only
+`/coach/chat` → `/api/coach/chat`.
 
 ## PeteCoach
 
-An AI coach built on the existing fitness stack. Read this before touching
-anything under `coach`.
+Read [`PETECOACH.md`](./PETECOACH.md) before changing coaching behaviour. Ops leftovers:
+[`PETECOACH-NEXT-STEPS.md`](./PETECOACH-NEXT-STEPS.md).
 
 ### Non-negotiable ordering
 
-Knee health, then consistency, then the sub-3 goal. The athlete is returning
-from a bilateral medial knee injury (cartilage wear, medial plica, hamstring
-tendon inflammation, Baker's cyst). Code that lets training override a
-guardrail is a bug, regardless of how reasonable the training looks.
+Knee health, then consistency, then the sub-3 goal. The athlete is returning from a bilateral
+medial knee injury (cartilage wear, medial plica, hamstring tendon inflammation, Baker's cyst).
+Code that lets training override a guardrail is a bug, regardless of how reasonable the training
+looks.
 
 ### Architecture
 
@@ -42,28 +46,24 @@ packages/coach-core/     Shared, no framework deps. Imported by web AND worker.
 
 apps/web/lib/services/coach/   Data access + runtime, backed by Supabase
 apps/web/app/api/coach/        HTTP surface (chat, plan, watch, MCP, ICS)
-apps/web/app/(dashboard)/coach/  PWA
+apps/web/app/api/apple-health/ PeteTrain ingest
+apps/web/app/(dashboard)/coach/  PWA (route-group name only — not a home dashboard)
 apps/coach-worker/       PM2 worker: scheduled jobs, activity listener
 ```
 
 ### Rules that are easy to break accidentally
 
-- **The LLM never computes training metrics.** TSS, zones, ACWR and readiness
-  are calculated in `coach-core/analytics`, persisted, and handed to the model
-  as finished numbers. If you find yourself asking the model to do arithmetic
-  on samples, the design has gone wrong.
-- **Every plan change goes through `applyProposal`.** It is the only path that
-  runs the Injury Guard. Do not write to `coach_planned_session` directly.
-- **The system prompt is split in two.** The stable prefix (identity,
-  guardrails, tool policy) is cache-marked; volatile athlete context is
-  appended after it. Putting anything time-varying in the prefix invalidates
-  the cache on every turn and is the most expensive mistake available here.
-- **`coach_*` and `apple_health_*` are service_role only.** They hold medical
-  data. Use `getSupabaseMedicalClient()`; never the anon client.
-- **Nothing under `coach_*` is ever auto-deleted.** The retention job
-  deliberately excludes it.
-- **Safety paths are budget-exempt.** Injury review and same-day downgrades
-  bypass cost caps. A budget limit must never silence a knee warning.
+- **The LLM never computes training metrics.** TSS, zones, ACWR and readiness are calculated in
+  `coach-core/analytics`, persisted, and handed to the model as finished numbers.
+- **Every plan change goes through `applyProposal`.** It is the only path that runs the Injury
+  Guard. Do not write to `coach_planned_session` directly.
+- **The system prompt is split in two.** The stable prefix (identity, guardrails, tool policy) is
+  cache-marked; volatile athlete context is appended after it. Putting anything time-varying in the
+  prefix invalidates the cache on every turn.
+- **`coach_*` and `apple_health_*` are service_role only.** Use `getSupabaseMedicalClient()`; never
+  the anon client.
+- **Nothing under `coach_*` is ever auto-deleted.** The retention job deliberately excludes it.
+- **Safety paths are budget-exempt.** Injury review and same-day downgrades bypass cost caps.
 
 ### Commands
 
@@ -78,38 +78,38 @@ cd apps/web
 yarn coach:eval           # golden scenarios against the live model
 yarn coach:backfill       # import historical training data
 yarn coach:ingest --list  # knowledge base contents
+yarn type-check
 ```
 
 ### Required environment
 
-`ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`,
-`COACH_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker).
-Optional: `VOYAGE_API_KEY` (embeddings), `VAPID_*` (web push), `APNS_*` (iOS).
+`ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`, `COACH_API_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker). Optional: `VOYAGE_API_KEY` (embeddings),
+`VAPID_*` (web push), `APNS_*` (iOS). Do not rotate `PETEWATCH_API_KEY` without a coordinated iOS
+ship.
 
 ## Common Commands
 
 ```bash
 # Development (from root)
-yarn dev                    # Start web dev server (0.0.0.0:3000)
-yarn build                  # Build web app for production
-yarn desktop                # Start desktop (Electron) app
-
-# PM2 Management (from root)
-yarn p:start                # Start main server via PM2
-yarn p:start:notifications  # Start Vercel deploy notifications via PM2
-yarn p:restart              # Restart main PM2 process
-yarn p:logs                 # View PM2 logs
-yarn p:status               # View PM2 process status
+yarn dev                    # Start web on 0.0.0.0:3000
+yarn build                  # Build web app
+yarn p:start                # Start local HTTPS Next via PM2 (apps/web)
+yarn p:start:coach          # Start petecoach-worker via PM2
+yarn p:logs:coach
+yarn p:status
 
 # Code Quality
-yarn lint                   # Run ESLint
-yarn lint:fix               # Fix linting issues
-yarn format                 # Format with Prettier
-yarn type-check             # Run TypeScript type checking
+yarn lint
+yarn lint:fix
+yarn format
+yarn type-check
 
 # Cleanup
-yarn clean                  # Remove build artifacts and cache
+yarn clean
 ```
+
+`yarn p:start` runs local HTTPS Next for `apps/web`. `yarn p:start:coach` runs the worker.
 
 ## Architecture
 
@@ -118,61 +118,54 @@ yarn clean                  # Remove build artifacts and cache
 ```
 petehome/
 ├── apps/
-│   ├── web/                    # Next.js web app (main dashboard)
-│   │   ├── app/                # Next.js App Router pages and API routes
-│   │   ├── components/         # React components (ui/, dashboard/, etc.)
-│   │   ├── lib/                # Services, types, utilities
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── data/               # Static data files
-│   │   ├── public/             # Static assets
-│   │   ├── styles/             # Global styles
-│   │   ├── supabase/           # Database migrations
-│   │   └── scripts/            # Build and sync scripts
-│   ├── electron/               # Desktop app wrapper
-│   ├── ios/                    # watchOS app (Swift/SwiftUI)
-│   └── firefox-extension/      # Browser extension
-├── package.json                # Root workspace config
-├── ecosystem.config.js         # PM2 configuration
-└── CLAUDE.md                   # This file
+│   ├── web/                    # Next.js PeteCoach PWA + apple-health APIs
+│   │   ├── app/(dashboard)/coach/  Coach UI
+│   │   ├── app/api/coach/          Coach HTTP
+│   │   ├── app/api/apple-health/   PeteTrain ingest
+│   │   ├── app/api/health/         Liveness
+│   │   ├── components/coach/       Coach UI
+│   │   ├── components/ui/          Shared primitives still used by coach
+│   │   ├── lib/services/coach/     Coach data + runtime
+│   │   ├── data/knowledge/         Corpus for ingest
+│   │   └── supabase/               Migrations (coach_* + orphaned legacy tables)
+│   ├── coach-worker/           PM2 scheduled coach jobs
+│   ├── ios/                    PeteTrain HealthKit
+│   └── …
+├── packages/coach-core/        Shared analytics, guardrails, prompts, tools
+├── PETECOACH.md
+├── PETECOACH-NEXT-STEPS.md
+└── CLAUDE.md
 ```
 
 ### Web App Structure (`apps/web/`)
 
-- `app/` - Next.js App Router with pages and 39+ API routes
-  - `app/api/` - API routes organized by service (hue, sonos, calendar, cta, weather, fitness, etc.)
-  - `app/(dashboard)/` - Dashboard route group with main pages
-- `components/` - React components
-  - `components/ui/` - shadcn/ui components (buttons, dialogs, cards, etc.)
-  - `components/dashboard/` - Dashboard-specific widgets and cards
-- `lib/` - Utilities and services
-  - `lib/services/` - External service integrations
-  - `lib/types/` - TypeScript type definitions
-  - `lib/config.ts` - Environment configuration with Zod validation
-- `hooks/` - Custom React hooks
+- `app/` — App Router. Pages are `/` → `/coach`, coach routes, and `/coach/login`.
+- `app/api/` — **only** `coach`, `apple-health`, and `health`.
+- `components/coach/` — PWA UI; `components/ui/` — button/card/sheet/etc.
+- `lib/services/` — `coach/*`, `apple-health.service`, `calendar.service`, `token-storage`
+- `lib/config.ts` — Zod-validated env (Google Calendar for `get_calendar`, weather, coach keys)
+- `proxy.ts` — CORS + no-store for coach / apple-health / health (local + LAN origins)
 
 ### Key Patterns
 
-- React Server Components by default; use `"use client"` only when needed
-- Services in `lib/services/` handle external API communication
-- API routes in `app/api/` proxy requests to services
-- Environment variables validated via Zod in `lib/config.ts`
-- Path alias: `@/*` maps to `apps/web/` root
+- React Server Components by default; `"use client"` only when needed
+- Coach DB access via `getSupabaseMedicalClient()` / service role
+- Plan writes only through `applyProposal` + Injury Guard
+- Path alias: `@/*` → `apps/web/` root
 
-### External Integrations
+### Integrations that still matter
 
-- **Hue**: Philips Hue bridge for lighting control
-- **Sonos**: Speaker control with Spotify integration
-- **Calendar**: Google Calendar OAuth integration
-- **CTA**: Chicago Transit Authority bus/train data
-- **Weather**: Weather API for conditions and forecasts
-- **Fitness**: Local workout and routine tracking
-- **Coffee**: Coffee machine automation
-- **Desktop**: Windows desktop control (display, volume)
+- **Apple Health / PeteTrain** — ingest into `apple_health_*`
+- **Google Calendar** — coach `get_calendar` tool (optional OAuth tokens in `.tokens.json`)
+- **Weather / lake** — Open-Meteo, NWS, NOAA for environment tools
+- **Anthropic** — chat + worker jobs via AI SDK
+- **Voyage** — optional embeddings for knowledge/memory
 
-## Deployment
+## Runtime
 
-- **Vercel**: Set root directory to `apps/web` in project settings
-- **PM2**: Run `yarn p:start` from the monorepo root
+- **Local Next** for `/coach` and APIs (`yarn dev` / PM2 `petehome` HTTPS)
+- **PM2 `petecoach-worker`** for cron + NOTIFY debriefs
+- Supabase Postgres for data + pg-boss
 
 ## Code Style
 
@@ -192,10 +185,10 @@ petehome/
 
 ### Naming Conventions
 
-- Components: PascalCase (`LightControls`)
+- Components: PascalCase (`SessionCard`)
 - Functions: camelCase (`handleClick`)
 - Constants: UPPER_SNAKE_CASE (`API_BASE_URL`)
-- Files: kebab-case (`light-controls.tsx`)
+- Files: kebab-case (`session-card.tsx`)
 
 ### Import Order
 
@@ -204,10 +197,3 @@ petehome/
 3. Internal imports (components, hooks, utils)
 4. Type imports (use `import type` when possible)
 5. Relative imports last
-
-## Smart Home Specific
-
-- Device states should be reactive and update in real-time
-- Use optimistic updates for better UX
-- Handle offline scenarios gracefully
-- Use WebSockets or Server-Sent Events for real-time updates

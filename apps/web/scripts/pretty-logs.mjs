@@ -8,7 +8,7 @@
  *   node scripts/pretty-logs.mjs              # Live tail of logs
  *   node scripts/pretty-logs.mjs --stats      # Show stats summary
  *   node scripts/pretty-logs.mjs --last 100   # Show last 100 lines
- *   node scripts/pretty-logs.mjs --filter spotify  # Filter by service
+ *   node scripts/pretty-logs.mjs --filter coach  # Filter by service
  */
 
 import { spawn } from 'child_process'
@@ -49,26 +49,10 @@ const c = {
 // Service Configuration
 // ============================================================================
 const services = {
-  spotify: { icon: '🎵', color: c.green, name: 'Spotify' },
-  hue: { icon: '💡', color: c.yellow, name: 'Hue' },
-  sonos: { icon: '🔊', color: c.blue, name: 'Sonos' },
-  cta: { icon: '🚇', color: c.cyan, name: 'CTA' },
-  calendar: { icon: '📅', color: c.magenta, name: 'Calendar' },
-  fitness: { icon: '💪', color: c.brightGreen, name: 'Fitness' },
-  'apple-health': { icon: '❤️', color: c.red, name: 'Health' },
-  coffee: { icon: '☕', color: c.yellow, name: 'Coffee' },
-  cooking: { icon: '🍳', color: c.brightYellow, name: 'Cooking' },
-  maple: { icon: '🐕', color: c.brightMagenta, name: 'Maple' },
+  coach: { icon: '🏃', color: c.brightGreen, name: 'Coach' },
+  'apple-health': { icon: '❤️', color: c.red, name: 'Apple Health' },
   health: { icon: '💓', color: c.green, name: 'Health' },
-  sync: { icon: '🔄', color: c.cyan, name: 'Sync' },
-  settings: { icon: '⚙️', color: c.brightBlack, name: 'Settings' },
-  admin: { icon: '🔧', color: c.red, name: 'Admin' },
-  mode: { icon: '🎭', color: c.magenta, name: 'Mode' },
-  desktop: { icon: '🖥️', color: c.blue, name: 'Desktop' },
-  blog: { icon: '📝', color: c.brightCyan, name: 'Blog' },
-  maps: { icon: '🗺️', color: c.green, name: 'Maps' },
-  config: { icon: '📋', color: c.brightBlack, name: 'Config' },
-  weather: { icon: '🌤️', color: c.brightBlue, name: 'Weather' },
+  calendar: { icon: '📅', color: c.magenta, name: 'Calendar' },
 }
 
 const methodColors = {

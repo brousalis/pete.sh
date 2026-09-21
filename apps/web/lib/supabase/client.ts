@@ -4,14 +4,8 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from './types'
 
-/**
- * Typed Supabase client alias.
- * Note: We use `any` as the Database generic for createClient() because
- * supabase-js v2.91+ conditional type resolution fails with complex Database
- * types (36+ tables). Table/row typing is handled at the service layer.
- */
+/** Untyped client — row shapes live in service/Apple Health types. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any>
 
@@ -161,6 +155,3 @@ export function getSupabaseClientForOperation(operation: 'read' | 'write'): AnyS
 export function getSupabaseMedicalClient(): AnySupabaseClient | null {
   return getSupabaseServiceClient()
 }
-
-// Export types for convenience
-export type { Database }

@@ -41,26 +41,10 @@ const c = useColors ? {
 // Service icons
 // ============================================================================
 const services = {
-  spotify:       { icon: '🎵', color: c.green },
-  hue:           { icon: '💡', color: c.yellow },
-  sonos:         { icon: '🔊', color: c.blue },
-  cta:           { icon: '🚇', color: c.cyan },
-  calendar:      { icon: '📅', color: c.magenta },
-  fitness:       { icon: '💪', color: c.green },
+  coach:         { icon: '🏃', color: c.green },
   'apple-health':{ icon: '❤️', color: c.red },
-  coffee:        { icon: '☕', color: c.orange },
-  cooking:       { icon: '🍳', color: c.orange },
-  maple:         { icon: '🐕', color: c.pink },
   health:        { icon: '💓', color: c.green },
-  sync:          { icon: '🔄', color: c.cyan },
-  settings:      { icon: '⚙️', color: c.gray },
-  admin:         { icon: '🔧', color: c.red },
-  mode:          { icon: '🎭', color: c.magenta },
-  desktop:       { icon: '🖥️', color: c.blue },
-  blog:          { icon: '📝', color: c.cyan },
-  maps:          { icon: '🗺️', color: c.green },
-  config:        { icon: '📋', color: c.gray },
-  weather:       { icon: '🌤️', color: c.blue },
+  calendar:      { icon: '📅', color: c.magenta },
 }
 
 const methodColors = {

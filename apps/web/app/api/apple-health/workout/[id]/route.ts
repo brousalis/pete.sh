@@ -4,7 +4,6 @@
  */
 
 import { appleHealthService } from '@/lib/services/apple-health.service'
-import { computeEnhancedAnalytics } from '@/lib/utils/workout-analytics'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -117,86 +116,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.log('No HR zones config found')
     }
 
-    // Compute enhanced analytics for running/cardio workouts
-    let enhancedAnalytics = null
-    const isCardioWorkout = ['running', 'walking', 'cycling', 'swimming', 'rowing', 'elliptical', 'stairClimbing'].includes(result.workout.workout_type)
-
-    if (includeAnalytics && isCardioWorkout) {
-      // Transform samples to analytics format
-      const hrSamplesForAnalytics = result.hrSamples.map(s => ({
-        timestamp: s.timestamp,
-        bpm: s.bpm
-      }))
-
-      const cadenceSamplesForAnalytics = result.cadenceSamples.map(s => ({
-        timestamp: s.timestamp,
-        steps_per_minute: s.steps_per_minute
-      }))
-
-      const paceSamplesForAnalytics = result.paceSamples.map(s => ({
-        timestamp: s.timestamp,
-        minutes_per_mile: s.minutes_per_mile
-      }))
-
-      // Transform cycling samples for analytics
-      const cyclingSpeedSamplesForAnalytics = result.cyclingSpeedSamples.map(s => ({
-        timestamp: s.timestamp,
-        speed_mph: s.speed_mph
-      }))
-
-      const cyclingPowerSamplesForAnalytics = result.cyclingPowerSamples.map(s => ({
-        timestamp: s.timestamp,
-        watts: s.watts
-      }))
-
-      // Use HR zones config if available, otherwise defaults
-      const restingHr = hrZonesConfig?.resting_hr || 55
-      const maxHr = hrZonesConfig?.max_hr || 185
-
-      enhancedAnalytics = computeEnhancedAnalytics(
-        {
-          start_date: result.workout.start_date,
-          end_date: result.workout.end_date,
-          duration: result.workout.duration,
-          distance_miles: result.workout.distance_miles,
-          hr_average: result.workout.hr_average,
-          hr_min: result.workout.hr_min,
-          hr_max: result.workout.hr_max,
-          hr_zones: result.workout.hr_zones,
-          cadence_average: result.workout.cadence_average,
-          pace_average: result.workout.pace_average,
-          pace_best: result.workout.pace_best
-        },
-        hrSamplesForAnalytics,
-        cadenceSamplesForAnalytics,
-        paceSamplesForAnalytics,
-        {
-          restingHr,
-          maxHr,
-          cyclingSpeedSamples: cyclingSpeedSamplesForAnalytics,
-          cyclingPowerSamples: cyclingPowerSamplesForAnalytics
-        }
-      )
-
-      // Inject elevation data from route into splits (if route and splits exist)
-      if (enhancedAnalytics && enhancedAnalytics.splits.length > 0 && result.route?.samples?.length) {
-        const routeSamples = result.route.samples as Array<{ altitude?: number; latitude: number; longitude: number }>
-        const altSamples = routeSamples.filter(s => s.altitude != null)
-        if (altSamples.length > 0) {
-          const numSplits = enhancedAnalytics.splits.length
-          const samplesPerSplit = Math.floor(altSamples.length / numSplits)
-          for (let i = 0; i < numSplits; i++) {
-            const split = enhancedAnalytics.splits[i]
-            if (!split) continue
-            const startIdx = i * samplesPerSplit
-            const endIdx = i === numSplits - 1 ? altSamples.length - 1 : (i + 1) * samplesPerSplit
-            const startAlt = altSamples[startIdx]?.altitude ?? 0
-            const endAlt = altSamples[endIdx]?.altitude ?? 0
-            split.elevationChange = endAlt - startAlt
-          }
-        }
-      }
-    }
+    // Legacy fitness-dashboard analytics removed; coach computes load elsewhere.
+    const enhancedAnalytics = null
+    void includeAnalytics
+    void hrZonesConfig
 
     // Derive GPS-based pace time-series from route speed data (far more granular than HealthKit pace)
     let gpsPaceData: Array<{ elapsedSeconds: number; pace: number; speed: number }> | null = null

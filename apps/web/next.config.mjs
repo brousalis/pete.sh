@@ -5,83 +5,26 @@ const nextConfig = {
   turbopack: {
     root: path.resolve(import.meta.dirname, '../..'),
   },
-  // coach-core ships TypeScript source (no build step) so the worker and the
-  // web app always run identical analytics and guardrail code.
+  // coach-core ships TypeScript source so web and worker share analytics/guardrails.
   transpilePackages: ['@petehome/coach-core'],
-  // Disable default Next.js request logging (we use custom logging in server.mjs)
   logging: {
     fetches: {
       fullUrl: false,
     },
   },
-  // Allow being framed by the Firefox new-tab extension (keeps URL bar on extension)
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://pete.sh moz-extension:;",
-          },
-        ],
-      },
-    ]
-  },
-  // Enable TypeScript type checking during builds
   typescript: {
-    // Set to true only if you want to ignore type errors during build
-    // For production, keep this false to catch type errors
     ignoreBuildErrors: false,
   },
-  // Image optimization
   images: {
-    remotePatterns: [
-      // Spotify album art and images
-      {
-        protocol: 'https',
-        hostname: 'i.scdn.co',
-        pathname: '/image/**',
-      },
-      // Spotify user profile images
-      {
-        protocol: 'https',
-        hostname: 'mosaic.scdn.co',
-        pathname: '/**',
-      },
-      // Spotify playlist images (can be hosted on various CDNs)
-      {
-        protocol: 'https',
-        hostname: 'image-cdn-*.spotifycdn.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'wrapped-images.spotifycdn.com',
-        pathname: '/**',
-      },
-    ],
+    remotePatterns: [],
   },
-  // React strict mode for better development experience
   reactStrictMode: true,
-  // SWC minification is default in Next.js 16 (no need to specify)
-  // Note: Puppeteer is automatically externalized in Next.js 16
-  // Experimental features
-  experimental: {
-    // Add any experimental features you want to enable
-  },
+  experimental: {},
   allowedDevOrigins: [
-    'pete.sh',
-    'www.pete.sh',
     'boufos.local',
     '192.168.1.*',
+    'localhost',
   ],
-
-  async redirects() {
-    return [
-      { source: '/sw', destination: '/stopwatch', permanent: false },
-      { source: '/sw/', destination: '/stopwatch', permanent: false },
-    ]
-  },
 }
 
 export default nextConfig

@@ -4,7 +4,6 @@
  * Used by the PeteWatch app to sync workout data
  */
 
-import { workoutAutocompleteService } from '@/lib/services/workout-autocomplete.service'
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
     AppleHealthCadenceSampleInsert,
@@ -18,7 +17,6 @@ import type {
     AppleHealthWorkout,
     AppleHealthWorkoutPayload,
     AppleWorkoutType,
-    BathroomMarker,
     CadenceSample,
     DailyHealthMetrics,
     HeartRateSample,
@@ -27,7 +25,6 @@ import type {
     PaceSample,
 } from '@/lib/types/apple-health.types'
 import { APPLE_WORKOUT_TYPE_MAP } from '@/lib/types/apple-health.types'
-import type { DayOfWeek } from '@/lib/types/fitness.types'
 
 // ============================================
 // DATABASE TYPES (matching Supabase schema)
@@ -177,10 +174,9 @@ export class AppleHealthService {
       ? workout.heartRate.zones
       : this.calculateHrZonesFromSamples(workout.heartRateSamples, 185) // Default max HR
 
-    // Get week number and year for linking
+    // Get week number for optional legacy linking columns
     const startDate = new Date(workout.startDate)
     const weekNumber = this.getWeekNumber(startDate)
-    const year = startDate.getFullYear()
 
     // Helper to safely round values for INTEGER columns
     const toInt = (val: number | undefined | null): number | null =>
@@ -242,7 +238,7 @@ export class AppleHealthService {
       linked_workout_id: linkedWorkoutId || null,
       linked_day: linkedDay || null,
       linked_week: weekNumber,
-      linked_year: year,
+      linked_year: startDate.getFullYear(),
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -314,55 +310,13 @@ export class AppleHealthService {
       await this.saveSwimLengths(workoutId, workout.swimmingMetrics)
     }
 
-    // Save walking samples if available (for Maple walks - walking and 'other' types)
+    // Persist walking samples when present (HealthKit data; no Maple side effects).
     if (workout.walkingMetrics?.speedSamples?.length) {
       await this.saveWalkingSpeedSamples(workoutId, workout.walkingMetrics.speedSamples)
     }
     if (workout.walkingMetrics?.stepLengthSamples?.length) {
       await this.saveWalkingStepLengthSamples(workoutId, workout.walkingMetrics.stepLengthSamples)
     }
-
-    // Save bathroom markers if available (Maple walk tracking)
-    if (workout.bathroomMarkers?.length) {
-      await this.saveBathroomMarkers(workoutId, workout.bathroomMarkers)
-    }
-
-    // Auto-create Maple Walk for hiking workouts from PeteTrain (watch or iOS)
-    if (
-      workout.workoutType === 'hiking' &&
-      (workout.source === 'PeteTrain' || workout.source === 'PeteTrain-iOS')
-    ) {
-      await this.autoCreateMapleWalk(workoutId, workout)
-    }
-
-    // Trigger workout autocomplete if linked to a day
-    if (linkedDay) {
-      try {
-        const autocompleteResult = await workoutAutocompleteService.triggerAutocomplete({
-          healthkitWorkoutId: workoutId,
-          workoutType: workout.workoutType,
-          linkedDay: linkedDay as DayOfWeek,
-          weekNumber,
-          year,
-          duration: workout.duration,
-        })
-
-        if (autocompleteResult.success && autocompleteResult.exercisesCompleted.length > 0) {
-          console.log(
-            `[AppleHealth] Auto-completed ${autocompleteResult.exercisesCompleted.length} exercises ` +
-            `in sections: ${autocompleteResult.sectionsCompleted.join(', ')}`
-          )
-        }
-      } catch (error) {
-        // Log but don't fail the workout save if autocomplete fails
-        console.error('[AppleHealth] Autocomplete failed (non-fatal):', error)
-      }
-    }
-
-    // Fire-and-forget AI Coach post-workout analysis
-    this.triggerAiCoachAnalysis(workoutId, linkedDay, weekNumber, year).catch(
-      (error) => console.error('[AppleHealth] AI Coach trigger failed (non-fatal):', error)
-    )
 
     return { id: workoutId, success: true }
   }
@@ -754,66 +708,6 @@ export class AppleHealthService {
     }))
 
     await db.from('apple_health_splits').insert(records)
-  }
-
-  /**
-   * Save bathroom markers for a Maple walk workout (idempotent via client_id)
-   */
-  private async saveBathroomMarkers(workoutId: string, markers: BathroomMarker[]): Promise<void> {
-    if (!markers?.length) return
-
-    const supabase = getSupabaseClientForOperation('write')
-    if (!supabase) return
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
-
-    const records = markers.map(m => ({
-      workout_id: workoutId,
-      marker_type: m.type,
-      latitude: m.latitude,
-      longitude: m.longitude,
-      timestamp: m.timestamp,
-      client_id: m.id,
-    }))
-
-    const { error } = await db
-      .from('maple_bathroom_markers')
-      .upsert(records, { onConflict: 'client_id', ignoreDuplicates: true })
-
-    if (error) {
-      console.error('[AppleHealth] Error saving bathroom markers:', error)
-    } else {
-      console.log(`[AppleHealth] Saved ${markers.length} bathroom markers for workout ${workoutId}`)
-    }
-  }
-
-  /**
-   * Auto-create a Maple Walk entry when a hiking workout with bathroom markers syncs from PeteTrain
-   */
-  private async autoCreateMapleWalk(workoutId: string, workout: AppleHealthWorkout): Promise<void> {
-    const supabase = getSupabaseClientForOperation('write')
-    if (!supabase) return
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
-
-    const walkDate = new Date(workout.startDate).toISOString().split('T')[0]
-
-    const { error } = await db
-      .from('maple_walks')
-      .upsert({
-        healthkit_workout_id: workoutId,
-        date: walkDate,
-        duration: Math.round(workout.duration),
-        distance_miles: workout.distanceMiles || null,
-      }, { onConflict: 'healthkit_workout_id', ignoreDuplicates: true })
-
-    if (error) {
-      console.error('[AppleHealth] Error auto-creating maple walk:', error)
-    } else {
-      console.log(`[AppleHealth] Auto-created Maple Walk for workout ${workoutId}`)
-    }
   }
 
   /**
@@ -1453,45 +1347,6 @@ export class AppleHealthService {
     return new Date(d.setDate(diff))
   }
 
-  /**
-   * Trigger AI Coach post-workout analysis (fire-and-forget)
-   * Only triggers if ANTHROPIC_API_KEY is configured
-   */
-  private async triggerAiCoachAnalysis(
-    workoutId: string,
-    linkedDay?: string,
-    weekNumber?: number,
-    year?: number
-  ): Promise<void> {
-    // Only trigger if AI coach is configured
-    if (!process.env.ANTHROPIC_API_KEY) return
-
-    try {
-      const { runPostWorkoutAnalysis, saveInsight } = await import(
-        '@/lib/services/ai-coach.service'
-      )
-      const { config } = await import('@/lib/config')
-
-      const workoutContext = `Workout ID: ${workoutId}, Day: ${linkedDay || 'unknown'}, Week: ${weekNumber || '?'}/${year || '?'}`
-
-      const { analysis, inputTokens, outputTokens } =
-        await runPostWorkoutAnalysis(workoutContext)
-
-      await saveInsight(
-        'climber-physique',
-        'post_workout',
-        analysis,
-        config.aiCoach.defaultModel,
-        inputTokens,
-        outputTokens,
-        { workoutId, day: linkedDay, week: weekNumber, year }
-      )
-
-      console.log('[AppleHealth] AI Coach post-workout analysis saved')
-    } catch (error) {
-      console.error('[AppleHealth] AI Coach analysis failed:', error)
-    }
-  }
 }
 
 // Export singleton instance
