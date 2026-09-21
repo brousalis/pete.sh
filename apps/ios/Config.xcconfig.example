@@ -2,11 +2,10 @@
 // Xcode substitutes these into Info.plist; KeychainHelper migrates them
 // into the Keychain on first launch.
 //
-// PETEHOME_API_KEY      → POST /api/apple-health/*  (PETEWATCH_API_KEY)
-// PETEHOME_COACH_API_KEY → GET  /api/coach/watch/*  (COACH_API_KEY)
-// They are different secrets. Do not reuse one for both.
+// One machine key. Same value as apps/web/.env PETEWATCH_API_KEY and/or
+// COACH_API_KEY (server accepts either as an alias).
+//
+// `$()` breaks the `//` so https URLs survive xcconfig parsing.
 
-PETEHOME_API_KEY = replace-with-PETEWATCH_API_KEY
-PETEHOME_COACH_API_KEY = replace-with-COACH_API_KEY
-// `$()` breaks the `//` comment so https URLs survive xcconfig parsing.
-PETEHOME_SERVER_URL = https:/$()/www.pete.sh
+PETEHOME_API_KEY = replace-with-machine-api-key
+PETEHOME_SERVER_URL = https:/$()/boufos.local:3000

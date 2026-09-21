@@ -16,7 +16,13 @@ Open with:
 open apps/ios/petehome.xcodeproj
 ```
 
-Copy `Config.xcconfig.example` → `Config.xcconfig` before building. Secrets map to
-`PETEWATCH_API_KEY` (ingest) and `COACH_API_KEY` (watch plan endpoints) — different keys.
+Copy `Config.xcconfig.example` → `Config.xcconfig` before building. One machine
+key (`PETEHOME_API_KEY`) covers ingest and coach bearers — same value as
+`PETEWATCH_API_KEY` / `COACH_API_KEY` in `apps/web/.env` (server treats them as
+aliases). Set `PETEHOME_SERVER_URL` to your local HTTPS origin
+(`https://boufos.local:3000`), not pete.sh.
+
+If Keychain already has an old URL/key from a prior install, clear it or call
+`KeychainHelper.setServerURL` / `setAPIKey` — Config only seeds empty Keychain.
 
 Display name on device: **petehome**.

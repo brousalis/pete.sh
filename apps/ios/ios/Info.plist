@@ -22,8 +22,6 @@
 	</array>
 	<key>PETEHOME_API_KEY</key>
 	<string>$(PETEHOME_API_KEY)</string>
-	<key>PETEHOME_COACH_API_KEY</key>
-	<string>$(PETEHOME_COACH_API_KEY)</string>
 	<key>PETEHOME_SERVER_URL</key>
 	<string>$(PETEHOME_SERVER_URL)</string>
 	<key>NSHealthShareUsageDescription</key>

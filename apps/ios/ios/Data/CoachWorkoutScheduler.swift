@@ -112,7 +112,7 @@ final class CoachWorkoutScheduler {
         guard let url = components?.url else { throw SchedulerError.badURL }
 
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
@@ -134,7 +134,7 @@ final class CoachWorkoutScheduler {
 
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
-        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONEncoder().encode(["results": results])
 

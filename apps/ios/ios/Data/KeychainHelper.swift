@@ -1,22 +1,18 @@
 import Foundation
 import Security
 
-/// Secure storage for the Petehome API credentials.
+/// Secure storage for the petehome API credentials.
 ///
-/// The key used to be a string literal in this file, which meant it shipped in
-/// a public GitHub repo and in every build's binary. It now lives in the
-/// Keychain. A build-time seed can be supplied via the `PETEHOME_API_KEY`
-/// Info.plist entry (populated from `Config.xcconfig`, which is gitignored) so
-/// a fresh install can bootstrap itself without manual entry; the seed is
-/// migrated into the Keychain on first read and never read again.
+/// One machine key covers Apple Health ingest and `/api/coach/*` bearers.
+/// A build-time seed comes from `PETEHOME_API_KEY` in Info.plist (`Config.xcconfig`);
+/// it is migrated into the Keychain on first read.
 enum KeychainHelper {
 
     private static let service = "sh.pete.petehome"
     private static let apiKeyAccount = "api-key"
-    private static let coachAPIKeyAccount = "coach-api-key"
     private static let serverURLAccount = "server-url"
 
-    private static let defaultServerURL = "https://www.pete.sh"
+    private static let defaultServerURL = "https://boufos.local:3000"
 
     // MARK: - API key
 
@@ -36,25 +32,6 @@ enum KeychainHelper {
     }
 
     static var hasAPIKey: Bool { !apiKey.isEmpty }
-
-    /// Dedicated coach bearer (`COACH_API_KEY`). Falls back to the ingest key
-    /// so a rebuild that only seeds `PETEHOME_API_KEY` still reaches open
-    /// coach routes; ingest itself always uses `apiKey`.
-    static var coachAPIKey: String {
-        if let stored = read(account: coachAPIKeyAccount), !stored.isEmpty {
-            return stored
-        }
-        if let seed = infoPlistValue(for: "PETEHOME_COACH_API_KEY"), !seed.isEmpty {
-            setCoachAPIKey(seed)
-            return seed
-        }
-        return apiKey
-    }
-
-    @discardableResult
-    static func setCoachAPIKey(_ key: String) -> Bool {
-        write(account: coachAPIKeyAccount, value: key)
-    }
 
     @discardableResult
     static func setAPIKey(_ key: String) -> Bool {

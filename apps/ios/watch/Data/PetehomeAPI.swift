@@ -240,7 +240,7 @@ final class PetehomeAPI {
         let url = baseURL.appendingPathComponent("api/coach/watch/today")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("petehome/1.0", forHTTPHeaderField: "User-Agent")
 
         if debugLoggingEnabled {

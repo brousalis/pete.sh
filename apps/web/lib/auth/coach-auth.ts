@@ -1,41 +1,29 @@
 /**
- * petehome auth helpers
+ * Coach auth helpers
  *
- * Browser access to /coach and /api/coach is open, matching the rest of the
- * petehome dashboard. Machine clients (watch, worker, MCP, ICS) may still send
- * `Authorization: Bearer COACH_API_KEY` where an endpoint checks it explicitly
- * (calendar query key, MCP). Session cookies and access codes are retired.
+ * Browser access to /coach and /api/coach is open. Machine clients (watch,
+ * worker, MCP, ICS) send `Authorization: Bearer <machine-key>`.
+ * PETEWATCH_API_KEY and COACH_API_KEY are aliases — one key is enough.
  */
+
+import {
+  extractBearerToken,
+  tokenMatchesMachineKey,
+} from '@/lib/api/machine-auth'
 
 export const COACH_SESSION_COOKIE = 'petehome_session'
 
 /** Kept for clearing leftover cookies from older builds. */
 export const COACH_SESSION_TTL_SECONDS = 90 * 24 * 60 * 60
 
-/** Constant-time string comparison to avoid leaking secrets by timing. */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-  return mismatch === 0
-}
-
 /**
- * Bearer-token access for non-browser clients (petehome, MCP, worker
- * callbacks). Not used to gate the PWA.
+ * Bearer-token access for non-browser clients (PeteTrain, MCP, worker).
+ * Not used to gate the PWA.
  */
 export function verifyCoachBearer(authorization: string | null): boolean {
-  const expected = process.env.COACH_API_KEY
-  if (!expected || expected.length < 24) return false
-  if (!authorization) return false
-
-  const token = authorization.startsWith('Bearer ')
-    ? authorization.slice(7).trim()
-    : authorization.trim()
-
-  return timingSafeEqual(token, expected)
+  const token = extractBearerToken(authorization)
+  if (!token) return false
+  return tokenMatchesMachineKey(token)
 }
 
 export interface CoachAuthResult {

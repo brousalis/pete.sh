@@ -82,10 +82,10 @@ yarn type-check
 
 ### Required environment
 
-`ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`, `COACH_API_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker). Optional: `VOYAGE_API_KEY` (embeddings),
-`VAPID_*` (web push), `APNS_*` (iOS). Do not rotate `PETEWATCH_API_KEY` without a coordinated iOS
-ship.
+`ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`,
+`COACH_API_KEY` and/or `PETEWATCH_API_KEY` (aliases — one machine key is enough),
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker). Optional: `VOYAGE_API_KEY`,
+`VAPID_*`, `APNS_*`.
 
 ## Common Commands
 

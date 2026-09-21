@@ -26,8 +26,12 @@ const env = Object.fromEntries(
     })
 )
 
-const ingest = env.PETEWATCH_API_KEY ?? ''
-const coach = env.COACH_API_KEY ?? ''
+// Prefer PETEWATCH (phone already uses it); fall back to COACH. Server accepts either.
+const key = env.PETEWATCH_API_KEY || env.COACH_API_KEY || ''
+const server =
+  env.PETEHOME_SERVER_URL ||
+  env.COACH_CLI_UI_URL?.replace(/\/coach\/?$/, '') ||
+  'https://boufos.local:3000'
 
 function xcLine(name, value) {
   if (value.includes('//') || value.includes('=')) {
@@ -36,15 +40,20 @@ function xcLine(name, value) {
   return `${name} = ${value}`
 }
 
+/** xcconfig treats `//` as a comment — break https:// via `$()`. */
+function xcHttpsUrl(url) {
+  return url.replace(/^https:\/\//, 'https:/$()/')
+}
+
 const body = [
   '// Generated from apps/web/.env — gitignored. Do not commit.',
-  xcLine('PETEHOME_API_KEY', ingest),
-  xcLine('PETEHOME_COACH_API_KEY', coach),
-  'PETEHOME_SERVER_URL = https:/$()/www.pete.sh',
+  '// One machine key for ingest + coach bearers.',
+  xcLine('PETEHOME_API_KEY', key),
+  `PETEHOME_SERVER_URL = ${xcHttpsUrl(server)}`,
   '',
 ].join('\n')
 
 writeFileSync(outPath, body)
 console.log(
-  `wrote Config.xcconfig ingest=${ingest ? `${ingest.length}chars` : 'MISSING'} coach=${coach ? `${coach.length}chars` : 'MISSING'}`
+  `wrote Config.xcconfig key=${key ? `${key.length}chars` : 'MISSING'} url=${server}`
 )

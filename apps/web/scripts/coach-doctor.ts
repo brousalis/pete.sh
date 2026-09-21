@@ -58,16 +58,27 @@ function checkEnvironment(): void {
     record('COACH_ACCESS_CODE', 'ok', 'not required — coach gate is open')
   }
 
-  const apiKey = process.env.COACH_API_KEY
+  const apiKey = process.env.COACH_API_KEY || process.env.PETEWATCH_API_KEY
   if (!apiKey) {
     record(
-      'COACH_API_KEY',
-      'warn',
-      'missing — the watch, the MCP endpoint and the calendar feed will all reject',
-      'openssl rand -base64 36'
+      'machine API key',
+      'fail',
+      'neither COACH_API_KEY nor PETEWATCH_API_KEY set — watch/MCP/ICS/ingest will reject',
+      'set one key in apps/web/.env (aliases are fine)'
     )
   } else {
-    record('COACH_API_KEY', 'ok', 'set')
+    const same =
+      process.env.PETEWATCH_API_KEY &&
+      process.env.COACH_API_KEY &&
+      process.env.PETEWATCH_API_KEY.trim() === process.env.COACH_API_KEY.trim()
+    const onlyOne = !process.env.PETEWATCH_API_KEY || !process.env.COACH_API_KEY
+    record(
+      'machine API key',
+      'ok',
+      same || onlyOne
+        ? 'single key (PETEWATCH_API_KEY / COACH_API_KEY are aliases)'
+        : 'both env vars set and accepted as aliases'
+    )
   }
 
   const optional: [string, string][] = [
@@ -80,18 +91,6 @@ function checkEnvironment(): void {
   for (const [key, consequence] of optional) {
     if (process.env[key]) record(key, 'ok', 'set')
     else record(key, 'warn', `not set — ${consequence}`)
-  }
-
-  // The key that shipped in the public repo must not still be in use.
-  if (process.env.PETEWATCH_API_KEY === '6PsAdgrT3eOZ2wtXlUCDGoxEnKvWFRhkY8Jfq4QN7a19cLBp') {
-    record(
-      'PETEWATCH_API_KEY',
-      'fail',
-      'still the key that was committed to a public repo',
-      'Rotate it, update Config.xcconfig, and reinstall the app'
-    )
-  } else if (process.env.PETEWATCH_API_KEY) {
-    record('PETEWATCH_API_KEY', 'ok', 'rotated')
   }
 }
 

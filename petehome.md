@@ -57,8 +57,9 @@ Cook & Purdam tendon loading, IOC 2023 RED-S.
   Sonnet 5 / Haiku 4.5. Anthropic prompt caching via `providerOptions`.
 - Autonomy: same-day **downgrades auto-apply**. Everything else waits for approval in `/coach/plan`.
 - Auth: signed cookie (`COACH_SESSION_SECRET` + `COACH_ACCESS_CODE`), not the originally sketched
-  WebAuthn. Watch/worker/MCP use `COACH_API_KEY`. Installed petehome still uses `PETEWATCH_API_KEY`
-  for ingest — **do not rotate that key**.
+  WebAuthn. Machine clients (watch, worker, MCP, ICS, PeteTrain) use one shared
+  bearer: `PETEWATCH_API_KEY` and `COACH_API_KEY` are aliases — set either (or both
+  to the same value). No need to rotate the long-lived personal key.
 
 ---
 
@@ -152,16 +153,16 @@ coach.
 
 1. Watch records in Apple's Workout app (Outdoor Run, Indoor/Outdoor Bike with Coospo, Pool Swim 25
    yd, Functional Strength, worn overnight).
-2. petehome iOS POSTs `/api/apple-health/{sync,workout,daily}` with `PETEWATCH_API_KEY`. The
-   **installed** phone still defaults to `https://www.pete.sh` (old deploy → same Supabase). Local
-   `apps/web` still owns those routes for LAN / future retargeting. Do not rotate the key.
+2. petehome iOS POSTs `/api/apple-health/{sync,workout,daily}` with the shared machine
+   key (`PETEHOME_API_KEY` / `PETEWATCH_API_KEY`). Prefer local
+   `https://boufos.local:3000` via `Config.xcconfig` so ingest and coach hit the same host.
 3. Rows land in `apple_health_workouts` / samples / `apple_health_daily_metrics`.
 4. Migration 038 `NOTIFY coach_activity` on insert. The worker LISTENs, waits ~2 minutes for late
    samples, then queues a singleton debrief.
 5. Nightly job recomputes TSS / PMC / readiness / gear mileage.
 
-A rebuild of current iOS source is **not** required for daily coaching and can break ingest
-(Keychain / dual-key issues). See next-steps.
+A rebuild is optional for daily coaching. Single-key auth means a rebuild no longer 401s
+coach vs ingest. Clear Keychain (or reset server URL) if an old `pete.sh` URL is stuck.
 
 Fallback: FIT/GPX/TCX via `/api/coach/import`. Backfill: `yarn coach:backfill apple|files|plans`.
 
@@ -455,13 +456,13 @@ more.” Until CSS/VDOT/FTP exist, splits use the budget as a placeholder.
 
 `/fitness/*`, `/assistant`, blog, homework, and the old home APIs are **deleted**, not redirected.
 
-**HTTP** (cookie or `Authorization: Bearer COACH_API_KEY`)
+**HTTP** (cookie or `Authorization: Bearer <machine-key>`)
 
 `/api/coach/{chat,today,plan,checkin,conversations,injury,gear,nutrition,readiness,load,projection,spend,benchmarks,onboard,import,push/subscribe,calendar,mcp,watch/today,watch/workouts,auth}`
 
 Also kept: `/api/apple-health/*` (petehome ingest), `/api/health` (liveness).
 
-- ICS: `/api/coach/calendar?key=<COACH_API_KEY>`
+- ICS: `/api/coach/calendar?key=<machine-key>`
 - MCP: `POST /api/coach/mcp` Streamable HTTP, bearer, **read-only tools** (works against local
   origin)
 - Watch: `GET /api/coach/watch/today` exists on the server. **Installed watch source still
@@ -472,15 +473,13 @@ Also kept: `/api/apple-health/*` (petehome ingest), `/api/health` (liveness).
 
 ## Auth and security
 
-- Pages + `/api/coach/*`: HMAC cookie from `/api/coach/auth` + access code. Login at `/coach/login`.
-- Ingest: existing `PETEWATCH_API_KEY` on `/api/apple-health/*`. Different from `COACH_API_KEY`.
+- Pages + `/api/coach/*`: open in browser; machine clients use bearer.
+- Machine key: `PETEWATCH_API_KEY` and `COACH_API_KEY` are **aliases** — either works for
+  apple-health ingest, watch, MCP, and ICS. One value is enough.
 - `coach_*` and tightened `apple_health_*` RLS: anon denied.
 - Medical docs intended for a private Storage bucket.
-- `PETEWATCH` is still the committed public key in the installed apps. Rotating it without a
-  coordinated iOS ship bricks ingest.
 
 ---
-
 ## Periodization skeleton (plan default)
 
 Block 0 was generated at onboard (return-to-run + rehab). The 48-week sketch:

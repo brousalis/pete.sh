@@ -11,6 +11,7 @@
 
 import { NextRequest } from 'next/server'
 
+import { tokenMatchesMachineKey } from '@/lib/api/machine-auth'
 import { getSessionsInRange } from '@/lib/services/coach/coach-data.service'
 import { SPORT_LABELS } from '@/lib/types/coach-ui.types'
 import type { SessionTargets } from '@petehome/coach-core'
@@ -32,9 +33,8 @@ export async function GET(request: NextRequest) {
   // The proxy gate accepts a bearer header; calendar clients cannot send one,
   // so a key query parameter is accepted here specifically.
   const key = request.nextUrl.searchParams.get('key')
-  const expected = process.env.COACH_API_KEY
 
-  if (!expected || key !== expected) {
+  if (!key || !tokenMatchesMachineKey(key)) {
     return new Response('Unauthorized', { status: 401 })
   }
 
