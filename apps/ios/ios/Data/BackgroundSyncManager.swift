@@ -92,15 +92,10 @@ final class BackgroundSyncManager {
         }
 
         // Perform the sync
-        do {
-            let syncedCount = await syncManager.syncDailyMetrics(days: 1)
-            let success = syncedCount > 0
-            task.setTaskCompleted(success: success)
-            print("[BackgroundSync] Completed sync: \(syncedCount) day(s) synced, success: \(success)")
-        } catch {
-            print("[BackgroundSync] Sync failed: \(error.localizedDescription)")
-            task.setTaskCompleted(success: false)
-        }
+        let syncedCount = await syncManager.syncDailyMetrics(days: 1)
+        let success = syncedCount > 0
+        task.setTaskCompleted(success: success)
+        print("[BackgroundSync] Completed sync: \(syncedCount) day(s) synced, success: \(success)")
     }
 
     // MARK: - Manual Trigger for Testing

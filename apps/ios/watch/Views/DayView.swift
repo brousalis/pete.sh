@@ -426,11 +426,12 @@ struct CoachTodayCard: View {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: icon(for: session.sport))
                         .font(.system(size: 11))
-                        .foregroundStyle(session.blocked ? .secondary : .orange)
+                        .foregroundStyle(Color.orange)
+                        .opacity(session.blocked ? 0.3 : 1.0)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(session.title)
                             .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(session.blocked ? .secondary : .white)
+                            .foregroundStyle(session.blocked ? Color.gray : Color.white)
                             .lineLimit(2)
                         if let target = session.target {
                             Text(target)

@@ -75,8 +75,9 @@ final class HealthKitObserver {
     private func registerObserver(for type: HKSampleType) {
         let query = HKObserverQuery(sampleType: type, predicate: nil) { [weak self] _, completionHandler, error in
             if let error {
+                let ref = self
                 Task { @MainActor in
-                    self?.log("Observer error for \(type.identifier): \(error.localizedDescription)")
+                    ref?.log("Observer error for \(type.identifier): \(error.localizedDescription)")
                 }
                 // Still call the handler; not doing so causes HealthKit to
                 // stop delivering updates for this type.
@@ -84,8 +85,9 @@ final class HealthKitObserver {
                 return
             }
 
+            let ref = self
             Task { @MainActor in
-                self?.scheduleSync(reason: type.identifier)
+                ref?.scheduleSync(reason: type.identifier)
                 // HealthKit requires the completion handler on the same
                 // delivery to acknowledge receipt, otherwise it retries with
                 // backoff and eventually disables the observer.
@@ -103,11 +105,12 @@ final class HealthKitObserver {
         let frequency: HKUpdateFrequency = type == HKObjectType.workoutType() ? .immediate : .hourly
 
         healthStore.enableBackgroundDelivery(for: type, frequency: frequency) { [weak self] success, error in
+            let ref = self
             Task { @MainActor in
                 if let error {
-                    self?.log("Background delivery failed for \(type.identifier): \(error.localizedDescription)")
+                    ref?.log("Background delivery failed for \(type.identifier): \(error.localizedDescription)")
                 } else if !success {
-                    self?.log("Background delivery declined for \(type.identifier)")
+                    ref?.log("Background delivery declined for \(type.identifier)")
                 }
             }
         }

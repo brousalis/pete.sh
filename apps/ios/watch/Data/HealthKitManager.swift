@@ -1304,10 +1304,10 @@ final class HealthKitManager {
 
         var swimmingLocation: String? = nil
         if let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
-            switch HKSwimmingLocationType(rawValue: locNum.intValue) {
-            case .pool:
+            switch locNum.intValue {
+            case 1:
                 swimmingLocation = "pool"
-            case .openWater:
+            case 2:
                 swimmingLocation = "openWater"
             default:
                 swimmingLocation = "unknown"
@@ -1613,7 +1613,7 @@ final class HealthKitManager {
         }
 
         if let route = result {
-            print("🐾 queryRoute: found route with \(route.samples.count) samples, elevGain=\(route.totalElevationGain ?? 0)m")
+            print("🐾 queryRoute: found route with \(route.samples.count) samples, elevGain=\(route.totalElevationGain)m")
         } else {
             print("🐾 queryRoute: no route found after retries")
         }
@@ -1949,10 +1949,8 @@ final class HealthKitManager {
             isIndoor = indoorMetadata
         } else if workout.workoutActivityType == .swimming,
                   let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
-            isIndoor = locNum.intValue == HKSwimmingLocationType.pool.rawValue
+            isIndoor = locNum.intValue == 1
         } else {
-            // Fallback: infer from workout activity type and whether route exists
-            switch workout.workoutActivityType {
             if HealthKitPetehome.isOutdoorCandidate(workout) {
                 isIndoor = routeResult == nil
             } else {

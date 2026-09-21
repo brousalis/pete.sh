@@ -1,6 +1,6 @@
 import Foundation
 import HealthKit
-import WorkoutKit
+@preconcurrency import WorkoutKit
 
 /// Schedules petehome sessions into the Apple Watch Workout app.
 ///
@@ -59,14 +59,9 @@ final class CoachWorkoutScheduler {
                     continue
                 }
 
-                do {
-                    let workoutPlan = WorkoutPlan(.custom(custom))
-                    try await WorkoutScheduler.shared.schedule(workoutPlan, at: date)
-                    results.append(ScheduleResult(sessionId: workout.sessionId, state: "scheduled"))
-                } catch {
-                    log("Failed to schedule \(workout.displayName): \(error.localizedDescription)")
-                    results.append(ScheduleResult(sessionId: workout.sessionId, state: "failed"))
-                }
+                let workoutPlan = WorkoutPlan(.custom(custom))
+                await WorkoutScheduler.shared.schedule(workoutPlan, at: date)
+                results.append(ScheduleResult(sessionId: workout.sessionId, state: "scheduled"))
             }
 
             await reportResults(results)
@@ -86,11 +81,15 @@ final class CoachWorkoutScheduler {
     // MARK: - Authorization
 
     private func requestAuthorization() async -> Bool {
-        let state = await WorkoutScheduler.shared.authorizationState
-        if state == .authorized { return true }
+        let alreadyAuthorized = await Task.detached {
+            await WorkoutScheduler.shared.authorizationState == .authorized
+        }.value
+        if alreadyAuthorized { return true }
 
-        let requested = await WorkoutScheduler.shared.requestAuthorization()
-        return requested == .authorized
+        let isNowAuthorized = await Task.detached {
+            await WorkoutScheduler.shared.requestAuthorization() == .authorized
+        }.value
+        return isNowAuthorized
     }
 
     private func clearExisting() async throws {
@@ -248,24 +247,19 @@ final class CoachWorkoutScheduler {
                 return HeartRateZoneAlert(zone: zone)
             }
             if let min = alert.min, let max = alert.max {
-                return HeartRateRangeAlert(
-                    target: Int(min)...Int(max)
-                )
+                return HeartRateRangeAlert.heartRate(min...max)
             }
             return nil
 
         case "cadence":
             if let min = alert.min, let max = alert.max {
-                return CadenceRangeAlert(target: Int(min)...Int(max))
+                return CadenceRangeAlert.cadence(min...max)
             }
             return nil
 
         case "power":
             if let min = alert.min, let max = alert.max {
-                return PowerRangeAlert(
-                    target: Measurement(value: min, unit: UnitPower.watts)
-                        ...Measurement(value: max, unit: UnitPower.watts)
-                )
+                return PowerRangeAlert.power(min...max, unit: .watts, metric: .current)
             }
             return nil
 

@@ -593,7 +593,7 @@ enum HealthKitPetehome {
                 activityType: type.petehomeType,
                 activityTypeRaw: Int(type.rawValue),
                 startDate: activity.startDate.iso8601String,
-                endDate: activity.endDate.iso8601String,
+                endDate: activity.endDate?.iso8601String ?? "",
                 duration: Int(activity.duration),
                 distance: distance,
                 activeCalories: calories,

@@ -641,7 +641,7 @@ final class HealthKitSyncManager {
             isIndoor = indoorMetadata
         } else if workout.workoutActivityType == .swimming,
                   let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
-            isIndoor = locNum.intValue == HKSwimmingLocationType.pool.rawValue
+            isIndoor = locNum.intValue == 1
         } else {
             // Fallback: infer from workout activity type and whether route exists
             if HealthKitPetehome.isOutdoorCandidate(workout) {
@@ -1321,10 +1321,10 @@ final class HealthKitSyncManager {
 
         var swimmingLocation: String? = nil
         if let locNum = workout.metadata?[HKMetadataKeySwimmingLocationType] as? NSNumber {
-            switch HKSwimmingLocationType(rawValue: locNum.intValue) {
-            case .pool:
+            switch locNum.intValue {
+            case 1:
                 swimmingLocation = "pool"
-            case .openWater:
+            case 2:
                 swimmingLocation = "openWater"
             default:
                 swimmingLocation = "unknown"
