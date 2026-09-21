@@ -21,14 +21,8 @@ COACH_CONVERSATION_FILE = STATE_DIR / "coach-cli-conversation.json"
 # PM2 process names
 PM2_PROCESSES: dict[str, str] = {
     "main": "petehome",
-    "notifications": "petehome-notifications",
     "coach": "petehome-worker",
 }
-
-# Vercel configuration
-VERCEL_TOKEN = os.getenv("VERCEL_TOKEN", "")
-VERCEL_PROJECT_ID = os.getenv("VERCEL_PROJECT_ID", "")
-VERCEL_TEAM_ID = os.getenv("VERCEL_TEAM_ID", "")
 
 # Dev server settings
 DEV_SERVER_PORT = int(os.getenv("PORT", "3000"))

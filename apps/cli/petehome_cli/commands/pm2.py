@@ -76,7 +76,7 @@ async def cmd_status(_args: list[str], output: RichLog) -> None:
     output.write(table)
 
 
-_SERVICE_OPTIONS = "main, notifications, coach, all"
+_SERVICE_OPTIONS = "main, coach, all"
 
 
 async def cmd_start(args: list[str], output: RichLog) -> None:

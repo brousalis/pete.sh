@@ -71,13 +71,13 @@ Xcode creates template files we don't need. Delete these from the new petehomeWi
 3. Click **+ Capability**
 4. Add **App Groups**
 5. Click the **+** under App Groups
-6. Add: `group.com.petetrain.app`
+6. Add: `group.com.petehome.app`
 
 **Verify petehome (main app) has it too:**
 
 1. Select **petehome** target
 2. **Signing & Capabilities** → **App Groups**
-3. Ensure `group.com.petetrain.app` is listed and checked
+3. Ensure `group.com.petehome.app` is listed and checked
 
 ### Step 5: Embed Widget in Watch App
 
@@ -153,7 +153,7 @@ petehome/Data/
 
 3. **Widget Timeline** refreshes every 15 minutes as backup
 
-Data flows through **App Groups** (`group.com.petetrain.app`) using UserDefaults.
+Data flows through **App Groups** (`group.com.petehome.app`) using UserDefaults.
 
 ---
 
@@ -174,7 +174,7 @@ Data flows through **App Groups** (`group.com.petetrain.app`) using UserDefaults
 - Check Console.app for "WidgetDataSync" logs
 - Verify UserDefaults is being written:
   ```swift
-  UserDefaults(suiteName: "group.com.petetrain.app")?.dictionaryRepresentation()
+  UserDefaults(suiteName: "group.com.petehome.app")?.dictionaryRepresentation()
   ```
 
 ### Build errors about @main

@@ -136,7 +136,7 @@ async function sendWebPush(
 async function sendApns(deviceToken: string, notification: CoachNotification): Promise<boolean> {
   const keyId = process.env.APNS_KEY_ID
   const teamId = process.env.APNS_TEAM_ID
-  const bundleId = process.env.APNS_BUNDLE_ID ?? 'com.petetrain.ios.PeteTrainiOS'
+  const bundleId = process.env.APNS_BUNDLE_ID ?? 'com.petehome.ios'
   const privateKey = process.env.APNS_PRIVATE_KEY
 
   if (!keyId || !teamId || !privateKey) return false

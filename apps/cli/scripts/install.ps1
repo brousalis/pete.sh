@@ -69,7 +69,6 @@ if ($Dev) {
     Write-Host ""
 }
 
-Write-Host "Environment variables (optional):" -ForegroundColor Cyan
-Write-Host "  VERCEL_TOKEN      # For Vercel deployment integration" -ForegroundColor White
-Write-Host "  VERCEL_PROJECT_ID # Vercel project ID" -ForegroundColor White
-Write-Host "  VERCEL_TEAM_ID    # Vercel team ID (if using teams)" -ForegroundColor White
+Write-Host "Environment (optional, usually from apps/web/.env):" -ForegroundColor Cyan
+Write-Host "  COACH_API_KEY     # For CLI coach today/ask against local /api/coach" -ForegroundColor White
+Write-Host "  COACH_CLI_BASE_URL / COACH_CLI_UI_URL  # Override local origins" -ForegroundColor White

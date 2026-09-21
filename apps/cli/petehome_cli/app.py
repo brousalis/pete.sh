@@ -25,7 +25,7 @@ from textual.widgets import (
 )
 from textual_autocomplete import AutoComplete, DropdownItem
 
-from petehome_cli.commands import coach, deploy, dev, git, migrate, pm2
+from petehome_cli.commands import coach, dev, git, migrate, pm2
 
 
 class DropUp(AutoComplete):
@@ -56,7 +56,6 @@ def _build_registry() -> None:
     pm2.register(REGISTRY)
     git.register(REGISTRY)
     dev.register(REGISTRY)
-    deploy.register(REGISTRY)
     migrate.register(REGISTRY)
     coach.register(REGISTRY)
 
@@ -69,20 +68,16 @@ _COMMAND_DEFS: list[tuple[str, str]] = [
     # PM2
     ("status", "Show PM2 process status"),
     ("start main", "Start main server"),
-    ("start notifications", "Start notifications"),
     ("start coach", "Start petehome worker"),
     ("start all", "Start all services (incl. coach)"),
     ("stop main", "Stop main server"),
-    ("stop notifications", "Stop notifications"),
     ("stop coach", "Stop petehome worker"),
     ("stop all", "Stop all services"),
     ("restart main", "Restart main server"),
-    ("restart notifications", "Restart notifications"),
     ("restart coach", "Restart petehome worker"),
     ("restart all", "Restart all services"),
     ("logs", "Stream all PM2 logs"),
     ("logs main", "Stream main logs"),
-    ("logs notifications", "Stream notification logs"),
     ("logs coach", "Stream petehome worker logs"),
     # petehome
     ("coach", "petehome help"),
@@ -139,12 +134,6 @@ _COMMAND_DEFS: list[tuple[str, str]] = [
     ("tsc", "TypeScript type check"),
     ("clean", "Clean build artifacts"),
     ("sync", "Sync data"),
-    # Deploy
-    ("deploy", "Deploy to production"),
-    ("deploy status", "Latest deployment"),
-    ("deploy history", "Deployment history"),
-    ("deploy open", "Open in browser"),
-    ("d", "Deploy to production"),
     # Migrate
     ("migrate", "Run pending migrations"),
     ("migrate status", "Migration status"),
@@ -242,7 +231,7 @@ class HelpScreen(Screen):
                     "Services (PM2)",
                     [
                         ("status / s", "Show PM2 status"),
-                        ("start <name>", "Start (main/notifications/coach/all)"),
+                        ("start <name>", "Start (main/coach/all)"),
                         ("stop <name>", "Stop service"),
                         ("restart <name>", "Restart service"),
                         ("logs [name]", "Stream logs"),
@@ -286,16 +275,6 @@ class HelpScreen(Screen):
                         ("sync", "Sync data"),
                     ],
                     border_style="yellow",
-                ),
-                _section(
-                    "Deploy",
-                    [
-                        ("deploy / d", "Deploy to production"),
-                        ("d status", "Latest deployment"),
-                        ("d history", "Deployment history"),
-                        ("d open", "Open in browser"),
-                    ],
-                    border_style="cyan",
                 ),
                 _section(
                     "Supabase",

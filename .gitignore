@@ -47,10 +47,6 @@ lerna-debug.log*
 # Generated workout exports
 apps/web/exports/
 
-# Vercel
-.vercel
-.vercel-deploy-toast-state.json
-
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

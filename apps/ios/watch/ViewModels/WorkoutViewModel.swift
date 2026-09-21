@@ -250,7 +250,7 @@ final class WorkoutViewModel {
     // MARK: - Widget Sync
     
     /// App Group identifier for widget communication
-    private static let appGroupIdentifier = "group.com.petetrain.app"
+    private static let appGroupIdentifier = "group.com.petehome.app"
     private static let widgetStorageKey = "currentWorkoutData"
     
     /// Sync current workout state to watch face complication

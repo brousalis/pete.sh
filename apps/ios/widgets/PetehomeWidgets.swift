@@ -77,7 +77,7 @@ struct WorkoutEntry: TimelineEntry {
 // MARK: - Watch Complication Widget
 
 struct PetehomeComplication: Widget {
-    let kind: String = "PeteTrainComplication"
+    let kind: String = "petehomeComplication"
     
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WorkoutTimelineProvider()) { entry in

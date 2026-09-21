@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct PetehomeWidgetControl: ControlWidget {
-    static let kind: String = "com.petehome.app.petehome"
+    static let kind: String = "com.petehome.watch.control"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

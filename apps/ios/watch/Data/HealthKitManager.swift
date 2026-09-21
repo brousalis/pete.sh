@@ -2094,8 +2094,8 @@ final class HealthKitManager {
         let metadata: [String: Any] = [
             HKMetadataKeyWorkoutBrandName: brandName,
             HKMetadataKeyIndoorWorkout: configuration.locationType == .indoor,
-            "PeteTrainDayId": day.id,
-            "PeteTrainDayName": day.name
+            "petehomeDayId": day.id,
+            "petehomeDayName": day.name
         ]
 
         try await workoutBuilder.beginCollection(at: startDate)

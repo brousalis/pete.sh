@@ -11,8 +11,14 @@ widgets. The project has three targets:
 - **iOS** (iPhone) — companion app (`ios/`) with HealthKit sync into the local petehome server
 - **WidgetsExtension** — watch face complications (`widgets/`)
 
-Display name on device: **petehome**. Bundle IDs stay on the historical `com.petetrain.*` prefixes
-so HealthKit access, App Groups, and installed builds keep working — do not rotate them casually.
+| Target | Bundle ID |
+|--------|-----------|
+| Watch | `com.petehome.watch` |
+| iOS | `com.petehome.ios` |
+| Widgets | `com.petehome.watch.widgets` |
+| App Group | `group.com.petehome.app` |
+
+Display name on device: **petehome**.
 
 ## Build & Run
 
@@ -23,7 +29,8 @@ open petehome.xcodeproj
 # Build and run on watchOS simulator: ⌘R
 # Clean build folder: ⇧⌘K (required after adding new Swift files)
 # Delete simulator data if SwiftData schema changes:
-xcrun simctl uninstall booted com.petetrain.app
+xcrun simctl uninstall booted com.petehome.watch
+xcrun simctl uninstall booted com.petehome.ios
 ```
 
 No external dependencies (CocoaPods, SPM). Pure SwiftUI + SwiftData + HealthKit.
@@ -49,7 +56,7 @@ No external dependencies (CocoaPods, SPM). Pure SwiftUI + SwiftData + HealthKit.
 
 | File | Purpose |
 |------|---------|
-| `watch/Data/` workout definitions + HealthKit | Watch session recording |
+| `watch/Data/` | Watch session recording + HealthKit |
 | `watch/ViewModels/WorkoutViewModel.swift` | Main state management |
 | `ios/Data/HealthKitSyncManager.swift` | Phone → `/api/apple-health/*` ingest |
 | `ios/Data/PetehomeAPI.swift` | Shared HTTP client |
@@ -98,12 +105,12 @@ ForEach(1...7, id: \.self) { num in }
 
 Don't present sheets from parent when a child sheet is already open (causes unexpected dismissal).
 
-### Branding — keep stable identifiers
+### Branding identifiers
 
 - Display / UA / workout `source`: `petehome` / `petehome-ios`
-- HealthKit metadata keys `PeteTrainDayId` / `PeteTrainDayName`: leave alone (historical samples)
-- Widget `kind` string `PeteTrainComplication`: leave alone (installed complications)
-- Bundle IDs / App Group `group.com.petetrain.app`: leave alone
+- HealthKit metadata: `petehomeDayId` / `petehomeDayName` (legacy `PeteTrainDay*` may still exist on old samples)
+- Widget kind: `petehomeComplication`
+- Bundle IDs / App Group: see table above
 
 ## Design Guidelines
 

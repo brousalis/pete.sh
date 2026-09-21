@@ -10,7 +10,6 @@ petehome_cli.egg-info/entry_points.txt
 petehome_cli.egg-info/requires.txt
 petehome_cli.egg-info/top_level.txt
 petehome_cli/commands/__init__.py
-petehome_cli/commands/deploy.py
 petehome_cli/commands/dev.py
 petehome_cli/commands/git.py
 petehome_cli/commands/migrate.py
@@ -23,7 +22,6 @@ petehome_cli/services/ports.py
 petehome_cli/services/process.py
 petehome_cli/services/settings.py
 petehome_cli/services/supabase.py
-petehome_cli/services/vercel.py
 v2/armhr_cli/__init__.py
 v2/armhr_cli/__main__.py
 v2/armhr_cli/app.py

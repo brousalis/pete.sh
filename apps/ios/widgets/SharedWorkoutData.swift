@@ -50,7 +50,7 @@ struct SharedWorkoutData: Codable {
 
 extension SharedWorkoutData {
     /// App Group identifier - must match entitlements
-    static let appGroupIdentifier = "group.com.petetrain.app"
+    static let appGroupIdentifier = "group.com.petehome.app"
     
     /// Key for storing workout data
     private static let storageKey = "currentWorkoutData"
