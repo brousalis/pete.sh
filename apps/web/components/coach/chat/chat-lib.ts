@@ -5,13 +5,14 @@ import type { CoachConversationListItem } from '@/lib/types/coach-ui.types'
 export const ACTIVE_CONVERSATION_KEY = 'petehome.activeConversationId'
 
 export const STARTERS = [
-  { label: 'The race', text: 'How is the sub-3 goal tracking against the knee?' },
+  { label: 'Today', text: 'Walk me through today — anything I should change before I start?' },
   { label: 'The knee', text: 'My knee felt tight after yesterday. Should I change this week?' },
+  { label: 'The race', text: 'How is the sub-3 goal tracking against the knee?' },
   { label: 'The water', text: 'Why is my swim pace stuck, and what is the next lever?' },
-  { label: 'Tomorrow', text: 'What should I do about the wind tomorrow?' },
 ] as const
 
-const TOOL_LABELS: Record<string, string> = {
+/** Tool id (underscored) → human label for chips / status copy. */
+export const TOOL_LABELS: Record<string, string> = {
   get_athlete_profile: 'profile',
   get_injury_status: 'injury record',
   query_activities: 'training log',
@@ -78,20 +79,26 @@ export function extractText(message: UIMessage | { parts?: { type: string; text?
 }
 
 export function toolLabels(message: UIMessage): string[] {
+  return toolRefs(message).map((ref) => ref.label)
+}
+
+export function toolRefs(message: UIMessage): { name: string; label: string }[] {
   const seen = new Set<string>()
-  const labels: string[] = []
+  const refs: { name: string; label: string }[] = []
 
   for (const part of message.parts ?? []) {
     const type = part.type
     if (typeof type !== 'string' || !type.startsWith('tool-')) continue
     const name = type.replace(/^tool-/, '').replace(/-/g, '_')
-    const label = TOOL_LABELS[name] ?? name.replace(/_/g, ' ')
-    if (seen.has(label)) continue
-    seen.add(label)
-    labels.push(label)
+    if (seen.has(name)) continue
+    seen.add(name)
+    refs.push({
+      name,
+      label: TOOL_LABELS[name] ?? name.replace(/_/g, ' '),
+    })
   }
 
-  return labels
+  return refs
 }
 
 export function formatRelativeTime(iso: string | null | undefined): string {

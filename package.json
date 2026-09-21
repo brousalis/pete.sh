@@ -10,8 +10,8 @@
   "description": "petehome — local AI triathlon coach (web PWA + worker + coach-core)",
   "author": "Pete",
   "scripts": {
-    "dev": "cd apps/web && yarn dev:https",
-    "dev:http": "cd apps/web && yarn dev",
+    "dev": "cd apps/web && yarn dev",
+    "dev:https": "cd apps/web && yarn dev:https",
     "build": "cd apps/web && yarn build",
     "start": "cd apps/web && yarn start",
     "start:network": "cd apps/web && yarn start:network",

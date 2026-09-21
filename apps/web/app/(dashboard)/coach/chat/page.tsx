@@ -1,18 +1,16 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { Suspense } from 'react'
-
-import { ChatShell, ChatShellFallback } from '@/components/coach/chat/chat-shell'
-
-/**
- * Coaching notebook. Threads persist, resume, and read as sessions rather
- * than a disposable chatbot. The conversation id is owned by the client so
- * leaving the page no longer starts a new thread on the next send.
- */
-export default function CoachChatPage() {
-  return (
-    <Suspense fallback={<ChatShellFallback />}>
-      <ChatShell />
-    </Suspense>
-  )
+export default async function CoachChatRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = await searchParams
+  const next = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') next.set(key, value)
+    else if (Array.isArray(value) && value[0]) next.set(key, value[0])
+  }
+  const query = next.toString()
+  redirect(query ? `/coach?${query}` : '/coach')
 }

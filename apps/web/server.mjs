@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs'
-import { createServer } from 'https'
+import { createServer as createHttpServer } from 'http'
+import { createServer as createHttpsServer } from 'https'
 import next from 'next'
 import { networkInterfaces, hostname as osHostname } from 'os'
 import { dirname, join } from 'path'
@@ -10,6 +11,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000', 10)
+
+// Plain HTTP by default. localhost is a secure context in every browser, so
+// service workers, push, and the PWA install prompt all still work; pass
+// --https only when a LAN device needs a real TLS origin.
+const useHttps = process.argv.includes('--https') || process.env.PETEHOME_HTTPS === '1'
+const scheme = useHttps ? 'https' : 'http'
 
 // ============================================================================
 // ANSI Colors - disabled when NO_COLOR is set or not a TTY
@@ -204,30 +211,29 @@ const certDir = join(__dirname, 'certs')
 const keyPath = join(certDir, 'localhost-key.pem')
 const certPath = join(certDir, 'localhost.pem')
 
-if (!existsSync(keyPath) || !existsSync(certPath)) {
+if (useHttps && (!existsSync(keyPath) || !existsSync(certPath))) {
   originalStderrWrite('SSL certificates not found!\n')
   originalStderrWrite('\n')
   originalStderrWrite('Generate them with mkcert:\n')
   originalStderrWrite('  cd apps/web/certs\n')
   originalStderrWrite(`  mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ${machineHostname}.local ${machineHostname}\n`)
   originalStderrWrite('\n')
+  originalStderrWrite('Or drop the --https flag to serve plain HTTP.\n')
   process.exit(1)
-}
-
-const httpsOptions = {
-  key: readFileSync(keyPath),
-  cert: readFileSync(certPath),
 }
 
 // ============================================================================
 // Server setup
 // ============================================================================
-const httpsServer = createServer(httpsOptions)
-const app = next({ dev, hostname, port, httpServer: httpsServer })
+const server = useHttps
+  ? createHttpsServer({ key: readFileSync(keyPath), cert: readFileSync(certPath) })
+  : createHttpServer()
+
+const app = next({ dev, hostname, port, httpServer: server })
 const handle = app.getRequestHandler()
 
 app.prepare().then(() => {
-  httpsServer.on('request', async (req, res) => {
+  server.on('request', async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true)
       await handle(req, res, parsedUrl)
@@ -239,18 +245,18 @@ app.prepare().then(() => {
     }
   })
 
-  httpsServer.listen(port, hostname, () => {
+  server.listen(port, hostname, () => {
     // Startup banner (use original write to avoid formatting)
     const lanIp = getLanIp()
     const w = (s) => originalStdoutWrite(s + '\n')
     w('')
     w(`${c.cyan}━━━ ${c.bold}🏠 petehome${c.reset}${c.cyan} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
-    w(`${c.green}▸${c.reset} Server:  ${c.cyan}https://localhost:${port}${c.reset}`)
-    w(`${c.green}▸${c.reset} Network: ${c.cyan}https://${machineHostname}.local:${port}${c.reset}`)
+    w(`${c.green}▸${c.reset} Server:  ${c.cyan}${scheme}://localhost:${port}${c.reset}`)
+    w(`${c.green}▸${c.reset} Network: ${c.cyan}${scheme}://${machineHostname}.local:${port}${c.reset}`)
     if (lanIp) {
-      w(`${c.green}▸${c.reset} LAN IP:  ${c.dim}https://${lanIp}:${port}${c.reset}`)
+      w(`${c.green}▸${c.reset} LAN IP:  ${c.dim}${scheme}://${lanIp}:${port}${c.reset}`)
     }
-    w(`${c.green}▸${c.reset} Mode:    ${c.magenta}${dev ? 'development' : 'production'}${c.reset}`)
+    w(`${c.green}▸${c.reset} Mode:    ${c.magenta}${dev ? 'development' : 'production'}${c.reset} ${c.dim}· ${useHttps ? 'TLS on' : 'TLS off'}${c.reset}`)
     w(`${c.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
     w('')
   })

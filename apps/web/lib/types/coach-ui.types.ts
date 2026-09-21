@@ -115,6 +115,71 @@ export interface PlanWeekView {
   sessions: TodaySession[]
 }
 
+/** 48-week periodization skeleton (petehome.md). Later blocks are not all seeded yet. */
+export const YEAR_PLAN_PHASES = [
+  {
+    weekFrom: 1,
+    weekTo: 8,
+    label: 'Return + rehab',
+    intent: 'Swim 3×, high-cadence bike, walk/run 2×, strength 2×, PT daily, CSS + quad tests',
+  },
+  {
+    weekFrom: 9,
+    weekTo: 20,
+    label: 'Base 1',
+    intent: 'Swim to ~3500 yd, indoor bike 3×, run 3× Z2 to 15–18 mi/wk, deload every 4th',
+  },
+  {
+    weekFrom: 21,
+    weekTo: 30,
+    label: 'Base 2 / early build',
+    intent: 'Tempo, threshold, race-pace swim, first bricks, spring 10K C',
+  },
+  {
+    weekFrom: 31,
+    weekTo: 40,
+    label: 'Build',
+    intent: 'Outdoor Lakefront, open water from ~June, weekly bricks, sprint B',
+  },
+  {
+    weekFrom: 41,
+    weekTo: 46,
+    label: 'Peak',
+    intent: 'Course + fuel + heat, July B',
+  },
+  {
+    weekFrom: 47,
+    weekTo: 48,
+    label: 'Taper',
+    intent: 'Race week',
+  },
+] as const
+
+export interface YearPlanPhaseView {
+  weekFrom: number
+  weekTo: number
+  label: string
+  intent: string
+  current: boolean
+}
+
+export interface YearPlanView {
+  name: string
+  goalRaceName: string | null
+  goalRaceDate: string
+  goalTimeSeconds: number | null
+  startDate: string
+  daysToRace: number
+  currentWeek: number | null
+  currentBlock: {
+    name: string
+    phase: string
+    number: number
+    goals: string[]
+  } | null
+  phases: YearPlanPhaseView[]
+}
+
 export interface SpendSummaryView {
   day: { spent: number; cap: number; pct: number }
   month: { spent: number; cap: number; pct: number }
@@ -155,6 +220,73 @@ export interface CoachConversationRecord {
   summary: string | null
   message_count: number | null
   deep_mode: boolean
+}
+
+export interface GearServiceView {
+  id: string
+  serviceType: string
+  performedOn: string | null
+  dueOn: string | null
+  intervalMiles: number | null
+  notes: string | null
+}
+
+export interface GearItemView {
+  id: string
+  name: string
+  category: string
+  sport: string | null
+  brand: string | null
+  model: string | null
+  purchasedOn: string | null
+  retiredOn: string | null
+  costUsd: number | null
+  notes: string | null
+  totalMeters: number
+  totalMiles: number
+  lifeLimitMeters: number | null
+  lifeLimitMiles: number | null
+  lifeRemainingPct: number | null
+  sessionCount: number
+  status: 'ok' | 'approaching_limit' | 'past_limit' | 'service_due'
+  serviceDue: { type: string; dueOn: string | null; note: string }[]
+  services: GearServiceView[]
+}
+
+export interface GearOverlapView {
+  sport: string
+  itemA: { id: string; name: string }
+  itemB: { id: string; name: string }
+  overlapFrom: string
+  overlapTo: string
+}
+
+export interface GearRecommendationView {
+  id: string
+  title: string
+  category: string
+  rationale: string
+  estimatedCostUsd: number | null
+  estimatedSecondsSaved: number | null
+  costPerSecond: number | null
+  status: string
+}
+
+export interface GearInventoryView {
+  items: GearItemView[]
+  recommendations: GearRecommendationView[]
+  alerts: { name: string; message: string; severity: 'info' | 'warn' }[]
+  overlaps: GearOverlapView[]
+}
+
+export const GEAR_CATEGORY_LABELS: Record<string, string> = {
+  shoes: 'Shoes',
+  bike: 'Bike',
+  component: 'Component',
+  wetsuit: 'Wetsuit',
+  sensor: 'Sensor',
+  apparel: 'Apparel',
+  other: 'Other',
 }
 
 export const SPORT_LABELS: Record<string, string> = {

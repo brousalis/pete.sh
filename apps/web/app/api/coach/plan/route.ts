@@ -10,8 +10,13 @@
 import { NextRequest } from 'next/server'
 
 import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
-import { getSessionsInRange } from '@/lib/services/coach/coach-data.service'
+import {
+  getCurrentBlock,
+  getMacrocycle,
+  getSessionsInRange,
+} from '@/lib/services/coach/coach-data.service'
 import { applyProposal, buildGuardrailContext } from '@/lib/services/coach/plan.service'
+import { YEAR_PLAN_PHASES } from '@/lib/types/coach-ui.types'
 import { applyChanges, evaluateGuardrails, isoWeekStart, planProposalSchema } from '@petehome/coach-core'
 
 export const runtime = 'nodejs'
@@ -26,7 +31,11 @@ export async function GET(request: NextRequest) {
     const from = params.get('from') ?? isoWeekStart(today)
     const to = params.get('to') ?? addDays(from, 27)
 
-    const sessions = await getSessionsInRange(from, to)
+    const [sessions, macrocycle, block] = await Promise.all([
+      getSessionsInRange(from, to),
+      getMacrocycle(),
+      getCurrentBlock(),
+    ])
 
     const weeks = new Map<string, typeof sessions>()
     for (const session of sessions) {
@@ -46,6 +55,7 @@ export async function GET(request: NextRequest) {
           plannedTss: weekSessions.reduce((sum, session) => sum + (session.plannedLoad ?? 0), 0),
           sessions: weekSessions,
         })),
+      yearPlan: macrocycle ? buildYearPlan(macrocycle, block, today) : null,
     })
   } catch (error) {
     return handleApiError(error)
@@ -93,6 +103,47 @@ export async function POST(request: NextRequest) {
     return successResponse(result, result.applied ? 200 : 409)
   } catch (error) {
     return handleApiError(error)
+  }
+}
+
+function buildYearPlan(
+  macrocycle: NonNullable<Awaited<ReturnType<typeof getMacrocycle>>>,
+  block: Awaited<ReturnType<typeof getCurrentBlock>>,
+  today: string
+) {
+  const raceMs = new Date(`${macrocycle.goalRaceDate}T12:00:00Z`).getTime()
+  const todayMs = new Date(`${today}T12:00:00Z`).getTime()
+  const daysToRace = Math.max(0, Math.round((raceMs - todayMs) / 86_400_000))
+
+  const startMs = new Date(`${macrocycle.startDate}T12:00:00Z`).getTime()
+  const weekIndex = Math.floor((todayMs - startMs) / (7 * 86_400_000)) + 1
+  // Before the start date, treat as week 1 so the opening phase is highlighted.
+  const currentWeek = weekIndex < 1 ? 1 : weekIndex > 48 ? 48 : weekIndex
+
+  return {
+    name: macrocycle.name,
+    goalRaceName: macrocycle.goalRaceName,
+    goalRaceDate: macrocycle.goalRaceDate,
+    goalTimeSeconds: macrocycle.goalTimeSeconds,
+    startDate: macrocycle.startDate,
+    daysToRace,
+    currentWeek,
+    currentBlock: block
+      ? {
+          name: block.name,
+          phase: block.phase,
+          number: block.blockNumber,
+          goals: block.goals,
+        }
+      : null,
+    phases: YEAR_PLAN_PHASES.map((phase) => ({
+      weekFrom: phase.weekFrom,
+      weekTo: phase.weekTo,
+      label: phase.label,
+      intent: phase.intent,
+      current:
+        currentWeek != null && currentWeek >= phase.weekFrom && currentWeek <= phase.weekTo,
+    })),
   }
 }
 

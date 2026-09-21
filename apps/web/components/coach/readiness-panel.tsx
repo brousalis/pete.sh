@@ -1,17 +1,17 @@
 'use client'
 
-import { AlertTriangle, ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 
-import { Card, CardContent } from '@/components/ui/card'
+import { Chip, Disclosure, Panel } from '@/components/coach/ui/panel'
+import { toneClasses, type Tone } from '@/components/coach/ui/tone'
 import type { ReadinessView } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
-const LEVEL_STYLES: Record<string, { ring: string; text: string; label: string }> = {
-  fresh: { ring: 'stroke-accent-sage', text: 'text-accent-sage', label: 'Fresh' },
-  moderate: { ring: 'stroke-accent-azure', text: 'text-accent-azure', label: 'Moderate' },
-  fatigued: { ring: 'stroke-accent-gold', text: 'text-accent-gold', label: 'Fatigued' },
-  compromised: { ring: 'stroke-accent-rose', text: 'text-accent-rose', label: 'Compromised' },
+const LEVEL_TONE: Record<string, { tone: Tone; label: string }> = {
+  fresh: { tone: 'good', label: 'Fresh' },
+  moderate: { tone: 'info', label: 'Moderate' },
+  fatigued: { tone: 'caution', label: 'Fatigued' },
+  compromised: { tone: 'alert', label: 'Compromised' },
 }
 
 /** Flags that should read as a warning rather than a neutral note. */
@@ -37,111 +37,121 @@ const FLAG_LABELS: Record<string, string> = {
   mechanical_red_flag: 'Mechanical signs — contact your PT',
 }
 
-export function ReadinessPanel({ readiness }: { readiness: ReadinessView | null }) {
-  const [expanded, setExpanded] = useState(false)
-
+export function ReadinessPanel({
+  readiness,
+  compact = false,
+}: {
+  readiness: ReadinessView | null
+  compact?: boolean
+}) {
   if (!readiness) {
     return (
-      <Card>
-        <CardContent className="py-6 text-center text-sm text-muted-foreground">
-          Not enough data to compute readiness yet. It needs a few days of overnight heart rate and
-          sleep.
-        </CardContent>
-      </Card>
+      <Panel>
+        <p className="py-3 text-center t-label text-ink-3">
+          Not enough data to compute readiness yet.
+        </p>
+      </Panel>
     )
   }
 
-  const style = LEVEL_STYLES[readiness.level] ?? LEVEL_STYLES.moderate!
-  const circumference = 2 * Math.PI * 34
+  const level = LEVEL_TONE[readiness.level] ?? LEVEL_TONE.moderate!
+  const tone = toneClasses(level.tone)
+  const size = compact ? 72 : 92
+  const stroke = compact ? 6 : 7
+  const radius = size / 2 - stroke
+  const circumference = 2 * Math.PI * radius
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start gap-4">
-          <div className="relative size-20 shrink-0">
-            <svg viewBox="0 0 80 80" className="size-20 -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                fill="none"
-                strokeWidth="7"
-                className="stroke-muted"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                fill="none"
-                strokeWidth="7"
-                strokeLinecap="round"
-                className={style.ring}
-                strokeDasharray={circumference}
-                strokeDashoffset={circumference * (1 - readiness.score / 100)}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold tabular-nums">{readiness.score}</span>
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-                ready
-              </span>
-            </div>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className={cn('text-sm font-semibold', style.text)}>{style.label}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{readiness.guidance.summary}</p>
-
-            {readiness.flags.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {readiness.flags.map((flag) => {
-                  const serious = SERIOUS_FLAGS.has(flag)
-                  return (
-                    <span
-                      key={flag}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]',
-                        serious
-                          ? 'bg-accent-rose/10 text-accent-rose'
-                          : 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {serious ? <AlertTriangle className="size-3" /> : null}
-                      {FLAG_LABELS[flag] ?? flag.replace(/_/g, ' ')}
-                    </span>
-                  )
-                })}
-              </div>
-            ) : null}
+    <Panel className={cn(compact && 'px-3.5 py-3')}>
+      <div className={cn('flex items-center', compact ? 'gap-3.5' : 'gap-5')}>
+        <div className="relative shrink-0" style={{ width: size, height: size }}>
+          <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 size-full">
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              strokeWidth={stroke}
+              className="stroke-surface-3"
+            />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              className={cn(tone.stroke, 'transition-[stroke-dashoffset] duration-700')}
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - readiness.score / 100)}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className={cn('t-num text-ink-1', compact ? 't-num-md' : 't-num-lg')}>
+              {readiness.score}
+            </span>
+            <span className="t-micro mt-0.5 text-ink-3">ready</span>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="mt-3 flex w-full items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          {expanded ? 'Hide' : 'Why this score'}
-          <ChevronDown className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
-        </button>
+        <div className="min-w-0 flex-1">
+          <p className={cn('t-subtitle', tone.text)}>{level.label}</p>
+          <p className="mt-1 t-body text-ink-2">{readiness.guidance.summary}</p>
 
-        {expanded ? (
-          <div className="mt-3 space-y-2 border-t border-border pt-3">
-            {readiness.components.map((component) => (
-              <div key={component.key} className="flex items-baseline gap-2 text-xs">
-                <span className="w-32 shrink-0 text-muted-foreground">{component.label}</span>
-                <span className="w-8 shrink-0 text-right font-medium tabular-nums">
+          {readiness.flags.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {readiness.flags.map((flag) => {
+                const serious = SERIOUS_FLAGS.has(flag)
+                return (
+                  <Chip
+                    key={flag}
+                    tone={serious ? 'alert' : 'neutral'}
+                    icon={serious ? <AlertTriangle className="size-3" /> : undefined}
+                  >
+                    {FLAG_LABELS[flag] ?? flag.replace(/_/g, ' ')}
+                  </Chip>
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <Disclosure
+        label="Why this score"
+        openLabel="Hide breakdown"
+        className="mt-3 border-t border-line pt-1"
+      >
+        <div className="space-y-2.5">
+          {readiness.components.map((component) => (
+            <div key={component.key}>
+              <div className="flex items-baseline gap-3">
+                <span className="t-label w-28 shrink-0 text-ink-2">{component.label}</span>
+                <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-3">
+                  <div
+                    className={cn('h-full rounded-full', toneClasses(scoreTone(component.score)).dot)}
+                    style={{ width: `${component.score}%` }}
+                  />
+                </div>
+                <span className="t-num t-num-sm w-7 shrink-0 text-right text-ink-1">
                   {component.score}
                 </span>
-                <span className="w-10 shrink-0 text-right text-[10px] text-muted-foreground">
+                <span className="t-label w-8 shrink-0 text-right text-ink-3">
                   {Math.round(component.weight * 100)}%
                 </span>
-                <span className="min-w-0 flex-1 text-muted-foreground">{component.detail}</span>
               </div>
-            ))}
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+              <p className="mt-1 t-label pl-31 text-ink-3">{component.detail}</p>
+            </div>
+          ))}
+        </div>
+      </Disclosure>
+    </Panel>
   )
+}
+
+function scoreTone(score: number): Tone {
+  if (score >= 75) return 'good'
+  if (score >= 50) return 'info'
+  if (score >= 35) return 'caution'
+  return 'alert'
 }

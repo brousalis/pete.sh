@@ -38,7 +38,7 @@ COACH_API_BASE = os.getenv(
 COACH_HEALTHZ_URL = f"http://localhost:{COACH_WORKER_PORT}/healthz"
 COACH_UI_URL = os.getenv(
     "COACH_CLI_UI_URL",
-    f"https://localhost:{DEV_SERVER_PORT}/coach",
+    f"http://localhost:{DEV_SERVER_PORT}/coach",
 )
 
 # Monitored ports for process cleanup

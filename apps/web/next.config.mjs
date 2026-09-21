@@ -22,8 +22,10 @@ const nextConfig = {
   experimental: {},
   allowedDevOrigins: [
     'boufos.local',
+    '192.168.1.4',
     '192.168.1.*',
     'localhost',
+    '127.0.0.1',
   ],
 }
 

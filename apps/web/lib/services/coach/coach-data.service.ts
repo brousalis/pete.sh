@@ -542,9 +542,12 @@ export async function getCurrentBlock(): Promise<{
 export async function getMacrocycle(): Promise<{
   id: string
   name: string
+  goalRaceName: string | null
   goalRaceDate: string
   goalTimeSeconds: number | null
+  startDate: string
   splitBudget: Record<string, number>
+  notes: string | null
 } | null> {
   const { data, error } = await db()
     .from('coach_macrocycle')
@@ -558,9 +561,12 @@ export async function getMacrocycle(): Promise<{
   return {
     id: data.id,
     name: data.name,
+    goalRaceName: data.goal_race_name ?? null,
     goalRaceDate: data.goal_race_date,
     goalTimeSeconds: toNumber(data.goal_time_seconds),
+    startDate: data.start_date,
     splitBudget: data.split_budget ?? {},
+    notes: data.notes ?? null,
   }
 }
 

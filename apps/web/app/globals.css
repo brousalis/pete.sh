@@ -3,44 +3,85 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================================
+   PETEHOME DESIGN TOKENS
+
+   Three layers, in order:
+     1. Primitives  — raw surface / ink / hue ramps.
+     2. Semantics   — sport + status meaning. Colour is never decorative.
+     3. Compat      — shadcn variable names aliased onto the layers above so
+                      every existing primitive inherits the system for free.
+   ============================================================================ */
+
 :root {
-  --background: oklch(0.98 0.003 90);
-  --foreground: oklch(0.16 0.004 285);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.004 285);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.004 285);
+  /* 1. Surfaces — a real elevation ramp, not one flat card colour. */
+  --surface-0: oklch(0.985 0.002 265);
+  --surface-1: oklch(1 0 0);
+  --surface-2: oklch(0.965 0.004 265);
+  --surface-3: oklch(0.935 0.005 265);
+  --line: oklch(0.905 0.004 265);
+  --line-strong: oklch(0.84 0.006 265);
+
+  /* Ink — three steps only. More than three and hierarchy stops reading. */
+  --ink-1: oklch(0.18 0.006 265);
+  --ink-2: oklch(0.46 0.012 265);
+  --ink-3: oklch(0.60 0.012 265);
+
+  /* 2. Sport hues — fixed per discipline, used everywhere that sport appears. */
+  --sport-swim: oklch(0.58 0.14 240);
+  --sport-bike: oklch(0.62 0.13 75);
+  --sport-run: oklch(0.60 0.17 40);
+  --sport-strength: oklch(0.55 0.16 300);
+  --sport-rest: oklch(0.60 0.012 265);
+
+  /* Status — three states. Knee safety always reads as alert. */
+  --tone-good: oklch(0.55 0.14 160);
+  --tone-caution: oklch(0.62 0.14 75);
+  --tone-alert: oklch(0.55 0.19 20);
+  --tone-info: oklch(0.56 0.13 240);
+
+  --radius: 0.625rem;
+  --r-panel: 0.875rem;
+  --r-control: 0.5rem;
+  --r-chip: 0.375rem;
+
+  /* 3. shadcn compatibility layer */
+  --background: var(--surface-0);
+  --foreground: var(--ink-1);
+  --card: var(--surface-1);
+  --card-foreground: var(--ink-1);
+  --popover: var(--surface-1);
+  --popover-foreground: var(--ink-1);
   --primary: oklch(0.205 0.004 285);
   --primary-foreground: oklch(0.98 0.003 90);
-  --secondary: oklch(0.96 0.006 90);
-  --secondary-foreground: oklch(0.205 0.004 285);
-  --muted: oklch(0.96 0.006 90);
-  --muted-foreground: oklch(0.42 0.012 285);
-  --accent: oklch(0.96 0.006 90);
-  --accent-foreground: oklch(0.205 0.004 285);
-  --destructive: oklch(0.577 0.245 27.325);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--ink-1);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-2);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--ink-1);
+  --destructive: var(--tone-alert);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.88 0.006 90);
-  --input: oklch(0.92 0.006 90);
-  --ring: oklch(0.65 0.015 285);
-  --radius: 0.625rem;
+  --border: var(--line);
+  --input: var(--surface-2);
+  --ring: var(--brand);
 
-  /* 8-color accent palette */
-  --accent-ember: oklch(0.74 0.16 55);
-  --accent-azure: oklch(0.70 0.13 240);
-  --accent-violet: oklch(0.64 0.20 295);
-  --accent-rose: oklch(0.68 0.19 15);
-  --accent-sage: oklch(0.72 0.16 160);
-  --accent-gold: oklch(0.82 0.14 84);
-  --accent-teal: oklch(0.72 0.11 192);
+  /* Legacy accent aliases — kept so older call sites keep compiling. */
+  --accent-ember: var(--sport-run);
+  --accent-azure: var(--sport-swim);
+  --accent-violet: var(--sport-strength);
+  --accent-rose: var(--tone-alert);
+  --accent-sage: var(--tone-good);
+  --accent-gold: var(--tone-caution);
+  --accent-teal: oklch(0.60 0.11 192);
   --accent-slate: oklch(0.56 0.02 270);
 
   /* Semantic status tokens */
-  --success: var(--accent-sage);
+  --success: var(--tone-good);
   --success-foreground: oklch(0.98 0 0);
-  --warning: var(--accent-gold);
+  --warning: var(--tone-caution);
   --warning-foreground: oklch(0.25 0 0);
-  --info: var(--accent-azure);
+  --info: var(--sport-swim);
   --info-foreground: oklch(0.98 0 0);
 
   /* Chart colors (1-11 for Google Calendar color IDs) */
@@ -57,52 +98,58 @@
   --chart-11: oklch(0.78 0.12 160);
 
   /* Sidebar */
-  --sidebar: oklch(0.98 0.003 90);
-  --sidebar-foreground: oklch(0.16 0.004 285);
+  --sidebar: var(--surface-0);
+  --sidebar-foreground: var(--ink-1);
   --sidebar-primary: oklch(0.205 0.004 285);
   --sidebar-primary-foreground: oklch(0.98 0.003 90);
-  --sidebar-accent: oklch(0.955 0.005 90);
-  --sidebar-accent-foreground: oklch(0.205 0.004 285);
-  --sidebar-border: oklch(0.91 0.004 90);
-  --sidebar-ring: oklch(0.72 0.01 285);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--ink-1);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand);
 
   /* Brand (default = yellow) */
   --brand: oklch(0.84 0.17 92);
+  --brand-ink: oklch(0.20 0.02 92);
   --brand-2: color-mix(in oklab, var(--brand) 85%, white 15%);
 }
 
 .dark {
-  --background: oklch(0.14 0.004 285);
-  --foreground: oklch(0.97 0.003 90);
-  --card: oklch(0.19 0.004 285);
-  --card-foreground: oklch(0.97 0.003 90);
-  --popover: oklch(0.19 0.004 285);
-  --popover-foreground: oklch(0.97 0.003 90);
-  --primary: oklch(0.97 0.003 90);
-  --primary-foreground: oklch(0.205 0.004 285);
-  --secondary: oklch(0.25 0.006 285);
-  --secondary-foreground: oklch(0.97 0.003 90);
-  --muted: oklch(0.25 0.006 285);
-  --muted-foreground: oklch(0.65 0.01 285);
-  --accent: oklch(0.25 0.006 285);
-  --accent-foreground: oklch(0.97 0.003 90);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.27 0.005 285);
-  --input: oklch(0.22 0.005 285);
-  --ring: oklch(0.40 0.01 285);
+  /* Surfaces climb in even steps so elevation is legible without shadows.
+     The old ramp put card 0.05L above background, which read as nothing. */
+  --surface-0: oklch(0.145 0.006 265);
+  --surface-1: oklch(0.192 0.007 265);
+  --surface-2: oklch(0.238 0.008 265);
+  --surface-3: oklch(0.288 0.009 265);
+  --line: oklch(0.272 0.008 265);
+  --line-strong: oklch(0.355 0.010 265);
 
-  --success-foreground: oklch(0.98 0 0);
-  --warning-foreground: oklch(0.20 0 0);
+  --ink-1: oklch(0.965 0.004 265);
+  --ink-2: oklch(0.735 0.014 265);
+  --ink-3: oklch(0.575 0.014 265);
 
-  --sidebar: oklch(0.19 0.004 285);
-  --sidebar-foreground: oklch(0.97 0.003 90);
-  --sidebar-primary: oklch(0.65 0.20 295);
-  --sidebar-primary-foreground: oklch(0.97 0.003 90);
-  --sidebar-accent: oklch(0.25 0.006 285);
-  --sidebar-accent-foreground: oklch(0.97 0.003 90);
-  --sidebar-border: oklch(0.25 0.006 285);
-  --sidebar-ring: oklch(0.40 0.01 285);
+  /* Hues lift in lightness for dark ground so they hold their chroma. */
+  --sport-swim: oklch(0.72 0.13 240);
+  --sport-bike: oklch(0.80 0.13 78);
+  --sport-run: oklch(0.74 0.16 45);
+  --sport-strength: oklch(0.72 0.15 300);
+  --sport-rest: oklch(0.575 0.014 265);
+
+  --tone-good: oklch(0.76 0.14 162);
+  --tone-caution: oklch(0.82 0.14 82);
+  --tone-alert: oklch(0.70 0.17 20);
+  --tone-info: oklch(0.72 0.13 240);
+
+  --primary: var(--ink-1);
+  --primary-foreground: var(--surface-0);
+  --destructive: var(--tone-alert);
+  --destructive-foreground: oklch(0.98 0 0);
+  --input: var(--surface-2);
+
+  --success-foreground: oklch(0.15 0 0);
+  --warning-foreground: oklch(0.15 0 0);
+
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-ink);
   --brand-2: color-mix(in oklab, var(--brand) 80%, black 20%);
 }
 
@@ -167,6 +214,26 @@
   --color-accent-gold: var(--accent-gold);
   --color-accent-teal: var(--accent-teal);
   --color-accent-slate: var(--accent-slate);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-sport-swim: var(--sport-swim);
+  --color-sport-bike: var(--sport-bike);
+  --color-sport-run: var(--sport-run);
+  --color-sport-strength: var(--sport-strength);
+  --color-sport-rest: var(--sport-rest);
+  --color-tone-good: var(--tone-good);
+  --color-tone-caution: var(--tone-caution);
+  --color-tone-alert: var(--tone-alert);
+  --color-tone-info: var(--tone-info);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -177,6 +244,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-chip: var(--r-chip);
+  --radius-control: var(--r-control);
+  --radius-panel: var(--r-panel);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -195,6 +265,80 @@
   body {
     @apply bg-background text-foreground;
     height: 100%;
+  }
+}
+
+/* ============================================================================
+   TYPE SCALE
+
+   Six steps for prose/UI, three for numerics. Every coach surface uses one of
+   these classes; arbitrary `text-[11px]` values do not belong in the app.
+   Numerics are monospaced because this is an instrument — digits must sit in
+   the same column frame from day to day so trends are readable at a glance.
+   ============================================================================ */
+
+@layer components {
+  .t-display {
+    font-size: 1.75rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.021em;
+  }
+  .t-title {
+    font-size: 1.1875rem;
+    line-height: 1.625rem;
+    font-weight: 600;
+    letter-spacing: -0.014em;
+  }
+  .t-subtitle {
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.006em;
+  }
+  .t-body {
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.003em;
+  }
+  .t-label {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    letter-spacing: 0;
+  }
+  .t-micro {
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .t-num {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'zero' 1;
+    letter-spacing: -0.02em;
+  }
+  .t-num-xl {
+    font-size: 2.5rem;
+    line-height: 2.5rem;
+    font-weight: 500;
+  }
+  .t-num-lg {
+    font-size: 1.625rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+  }
+  .t-num-md {
+    font-size: 1.125rem;
+    line-height: 1.375rem;
+    font-weight: 500;
+  }
+  .t-num-sm {
+    font-size: 0.875rem;
+    line-height: 1.125rem;
+    font-weight: 500;
   }
 }
 
@@ -231,6 +375,35 @@
   }
   .surface-muted {
     background-color: var(--muted);
+  }
+
+  /* A tinted wash of any token colour, for status panels and sport chips.
+     Mixing against the surface keeps the result opaque, so overlapping
+     translucent layers never compound into mud. */
+  .wash-good {
+    background-color: color-mix(in oklab, var(--tone-good) 13%, var(--surface-1));
+  }
+  .wash-caution {
+    background-color: color-mix(in oklab, var(--tone-caution) 13%, var(--surface-1));
+  }
+  .wash-alert {
+    background-color: color-mix(in oklab, var(--tone-alert) 14%, var(--surface-1));
+  }
+  .wash-brand {
+    background-color: color-mix(in oklab, var(--brand) 13%, var(--surface-1));
+  }
+  .wash-info {
+    background-color: color-mix(in oklab, var(--tone-info) 13%, var(--surface-1));
+  }
+
+  .hairline-top {
+    box-shadow: inset 0 1px 0 var(--line);
+  }
+
+  /* Fades the tail of a scroll region so cut-off content reads as continuing
+     rather than as the end of the page. */
+  .fade-scroll-y {
+    mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent 100%);
   }
 
   .themed-range {
@@ -576,13 +749,6 @@
   .hover-lift:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px color-mix(in oklch, var(--foreground) 10%, transparent);
-  }
-
-  .press-effect {
-    transition: transform 0.1s ease-out;
-  }
-  .press-effect:active {
-    transform: scale(0.97);
   }
 
   .transition-smooth {

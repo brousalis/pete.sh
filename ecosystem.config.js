@@ -31,7 +31,8 @@ function resolveTsxCli() {
 module.exports = {
   apps: [
     {
-      // Local HTTPS Next server for petehome PWA + APIs (LAN / .local)
+      // Local Next server for petehome PWA + APIs (LAN / .local).
+      // Plain HTTP; set PETEHOME_HTTPS=1 in env below to run TLS instead.
       name: 'petehome',
       script: path.join(webAppDir, 'scripts', 'pm2-start-https.js'),
       cwd: webAppDir,

@@ -12,7 +12,7 @@ enum KeychainHelper {
     private static let apiKeyAccount = "api-key"
     private static let serverURLAccount = "server-url"
 
-    private static let defaultServerURL = "https://boufos.local:3000"
+    private static let defaultServerURL = "https://192.168.1.4:3000"
 
     // MARK: - API key
 

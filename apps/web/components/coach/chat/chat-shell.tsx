@@ -1,11 +1,12 @@
 'use client'
 
-import { Menu, Plus } from 'lucide-react'
+import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ChatHistory } from '@/components/coach/chat/chat-history'
 import { ChatThread } from '@/components/coach/chat/chat-thread'
+import type { DeskPanel } from '@/components/coach/desk/desk-types'
 import {
   Sheet,
   SheetContent,
@@ -16,8 +17,8 @@ import {
 import type {
   CoachConversationListItem,
   CoachConversationRecord,
-  TodayResponse,
 } from '@/lib/types/coach-ui.types'
+import { cn } from '@/lib/utils'
 
 import {
   asUiMessages,
@@ -26,7 +27,11 @@ import {
   writeActiveConversationId,
 } from './chat-lib'
 
-export function ChatShell() {
+export function ChatShell({
+  onOpenPanel,
+}: {
+  onOpenPanel?: (panel: DeskPanel) => void
+} = {}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlId = searchParams.get('c')
@@ -37,9 +42,33 @@ export function ChatShell() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [deepMode, setDeepMode] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [today, setToday] = useState<TodayResponse | null>(null)
+  const [desktopHistoryOpen, setDesktopHistoryOpen] = useState(false)
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false)
   const [bootstrapped, setBootstrapped] = useState(false)
+  const historyRef = useRef<HTMLDivElement>(null)
+
+  function closeHistory() {
+    setDesktopHistoryOpen(false)
+    setMobileHistoryOpen(false)
+  }
+
+  function toggleHistory() {
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
+      setDesktopHistoryOpen((open) => !open)
+    } else {
+      setMobileHistoryOpen((open) => !open)
+    }
+  }
+
+  const replaceDeskUrl = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const next = new URLSearchParams(searchParams.toString())
+      mutate(next)
+      const query = next.toString()
+      router.replace(query ? `/coach?${query}` : '/coach', { scroll: false })
+    },
+    [router, searchParams]
+  )
 
   const loadThreads = useCallback(async () => {
     try {
@@ -58,11 +87,12 @@ export function ChatShell() {
   const openThread = useCallback(
     async (id: string, known?: CoachConversationListItem[]) => {
       writeActiveConversationId(id)
+      closeHistory()
 
-      const next = new URLSearchParams(searchParams.toString())
-      if (next.get('c') !== id) {
-        next.set('c', id)
-        router.replace(`/coach/chat?${next.toString()}`, { scroll: false })
+      if (searchParams.get('c') !== id) {
+        replaceDeskUrl((params) => {
+          params.set('c', id)
+        })
       }
 
       try {
@@ -109,12 +139,12 @@ export function ChatShell() {
         setLoading(false)
       }
     },
-    [router, searchParams, threads]
+    [replaceDeskUrl, searchParams, threads]
   )
 
   const startNew = useCallback(() => {
     const id = newConversationId()
-    setHistoryOpen(false)
+    closeHistory()
     setConversation({
       id,
       title: null,
@@ -126,9 +156,11 @@ export function ChatShell() {
     setDeepMode(false)
     setConversationId(id)
     writeActiveConversationId(id)
-    router.replace(`/coach/chat?c=${id}`, { scroll: false })
+    replaceDeskUrl((params) => {
+      params.set('c', id)
+    })
     setLoading(false)
-  }, [router])
+  }, [replaceDeskUrl])
 
   useEffect(() => {
     if (bootstrapped) return
@@ -153,18 +185,26 @@ export function ChatShell() {
     return () => {
       cancelled = true
     }
-    // Bootstrap once on mount. URL changes after that are driven by the shell.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    void fetch('/api/coach/today', { credentials: 'include' })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (payload.success) setToday(payload.data as TodayResponse)
-      })
-      .catch(() => undefined)
-  }, [])
+    if (!desktopHistoryOpen) return
+    function onPointerDown(event: MouseEvent) {
+      if (!historyRef.current?.contains(event.target as Node)) {
+        setDesktopHistoryOpen(false)
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setDesktopHistoryOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [desktopHistoryOpen])
 
   async function deleteThread(id: string) {
     const next = threads.filter((thread) => thread.id !== id)
@@ -185,9 +225,10 @@ export function ChatShell() {
     [threads, conversationId]
   )
 
-  const heading = conversation?.title?.trim()
-    || activeThread?.title?.trim()
-    || (messages.length > 0 ? 'This session' : 'New session')
+  const heading =
+    conversation?.title?.trim() ||
+    activeThread?.title?.trim() ||
+    (messages.length > 0 ? 'This session' : 'Coach')
 
   function handleFirstSend(text: string) {
     if (!conversationId) return
@@ -205,110 +246,89 @@ export function ChatShell() {
     )
   }
 
+  const historyProps = {
+    compact: true as const,
+    threads,
+    activeId: conversationId,
+    onSelect: (id: string) => {
+      void openThread(id)
+    },
+    onNew: startNew,
+    onDelete: (id: string) => void deleteThread(id),
+  }
+
   return (
-    <div className="flex h-full min-h-0 bg-background">
-      <aside className="hidden w-[17.5rem] shrink-0 border-r border-border/80 bg-muted/40 md:flex md:flex-col">
-        <ChatHistory
-          threads={threads}
-          activeId={conversationId}
-          onSelect={(id) => {
-            void openThread(id)
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <header className="relative flex h-11 shrink-0 items-center gap-1 border-b border-line px-3">
+        <div ref={historyRef} className="relative min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={toggleHistory}
+            className="inline-flex max-w-full items-center gap-1 rounded-control px-2 py-1 text-left transition-colors hover:bg-surface-2"
+            aria-expanded={desktopHistoryOpen || mobileHistoryOpen}
+            aria-haspopup="listbox"
+            aria-label="Sessions"
+          >
+            <span className="t-label truncate font-semibold">{heading}</span>
+            <ChevronDown
+              className={cn(
+                'size-3.5 shrink-0 text-ink-3 transition-transform',
+                (desktopHistoryOpen || mobileHistoryOpen) && 'rotate-180'
+              )}
+            />
+          </button>
+
+          {desktopHistoryOpen ? (
+            <div className="absolute top-full left-0 z-40 mt-1 w-[18rem] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md">
+              <div className="max-h-[min(28rem,70vh)]">
+                <ChatHistory {...historyProps} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={startNew}
+          className="inline-flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
+          aria-label="New session"
+          title="New session"
+        >
+          <Plus className="size-3.5" />
+        </button>
+      </header>
+
+      {loading || !conversationId ? (
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          Opening the last session…
+        </div>
+      ) : (
+        <ChatThread
+          key={conversationId}
+          conversationId={conversationId}
+          initialMessages={messages}
+          deepMode={deepMode}
+          summary={conversation?.summary ?? null}
+          onDeepModeChange={setDeepMode}
+          onSettled={() => {
+            void loadThreads()
           }}
-          onNew={startNew}
-          onDelete={(id) => void deleteThread(id)}
+          onFirstSend={handleFirstSend}
+          onOpenPanel={onOpenPanel}
         />
-      </aside>
+      )}
 
-      <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-border/80 px-3 py-2.5 sm:px-5">
-          <button
-            type="button"
-            onClick={() => setHistoryOpen(true)}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
-            aria-label="Open sessions"
-          >
-            <Menu className="size-4" />
-          </button>
-
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-semibold">{heading}</h1>
-            <p className="truncate text-[11px] text-muted-foreground">{contextLine(today)}</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={startNew}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
-          >
-            <Plus className="size-3.5" />
-            New
-          </button>
-        </header>
-
-        {loading || !conversationId ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-            Opening the last session…
-          </div>
-        ) : (
-          <ChatThread
-            key={conversationId}
-            conversationId={conversationId}
-            initialMessages={messages}
-            deepMode={deepMode}
-            summary={conversation?.summary ?? null}
-            onDeepModeChange={setDeepMode}
-            onSettled={() => {
-              void loadThreads()
-            }}
-            onFirstSend={handleFirstSend}
-          />
-        )}
-      </section>
-
-      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-        <SheetContent side="left" className="w-[20rem] max-w-[85vw] p-4">
+      <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
+        <SheetContent side="left" className="w-[18rem] max-w-[85vw] p-3">
           <SheetHeader className="sr-only">
             <SheetTitle>Sessions</SheetTitle>
             <SheetDescription>Reopen a previous conversation with the coach.</SheetDescription>
           </SheetHeader>
-          <ChatHistory
-            compact
-            threads={threads}
-            activeId={conversationId}
-            onSelect={(id) => {
-              setHistoryOpen(false)
-              void openThread(id)
-            }}
-            onNew={startNew}
-            onDelete={(id) => void deleteThread(id)}
-          />
+          <ChatHistory {...historyProps} />
         </SheetContent>
       </Sheet>
     </div>
   )
-}
-
-function contextLine(today: TodayResponse | null): string {
-  if (!today) return 'The coach already has the plan, metrics, and injury record.'
-
-  const parts: string[] = []
-  if (today.readiness) {
-    parts.push(`Readiness ${Math.round(today.readiness.score)}`)
-  }
-  if (today.block) {
-    parts.push(`Block ${today.block.number}`)
-  }
-  const nextSession = today.sessions.find((session) => session.status === 'planned')
-  if (nextSession) {
-    parts.push(nextSession.title)
-  }
-  if (today.injuries[0]) {
-    parts.push(today.injuries[0].name)
-  }
-
-  return parts.length > 0
-    ? parts.join(' · ')
-    : 'The coach already has the plan, metrics, and injury record.'
 }
 
 export function ChatShellFallback() {

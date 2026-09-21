@@ -5,8 +5,9 @@
   "description": "petehome — AI triathlon coach PWA",
   "author": "Pete",
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3000",
-    "dev:https": "node server.mjs",
+    "dev": "node server.mjs",
+    "dev:https": "node server.mjs --https",
+    "dev:next": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start",
     "start:network": "next start -H 0.0.0.0",

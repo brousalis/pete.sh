@@ -1,12 +1,8 @@
-'use client'
-
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { motion, type HTMLMotionProps } from 'framer-motion'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { transitions } from '@/lib/animations'
 
 const buttonVariants = cva(
   "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -40,54 +36,22 @@ const buttonVariants = cva(
 )
 
 interface ButtonProps
-  extends Omit<HTMLMotionProps<'button'>, 'children'>,
+  extends React.ComponentProps<'button'>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
-  children?: React.ReactNode
-  /** Disable hover/tap animations */
-  disableAnimation?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      disableAnimation = false,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    // For asChild, use Slot without motion
-    if (asChild) {
-      return (
-        <Slot
-          data-slot="button"
-          className={cn(buttonVariants({ variant, size, className }))}
-          ref={ref as React.Ref<HTMLElement>}
-          {...(props as React.HTMLAttributes<HTMLElement>)}
-        >
-          {children}
-        </Slot>
-      )
-    }
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button'
 
-    // Standard button with motion
     return (
-      <motion.button
-        ref={ref}
+      <Comp
         data-slot="button"
         className={cn(buttonVariants({ variant, size, className }))}
-        whileHover={disableAnimation ? undefined : { scale: 1.02 }}
-        whileTap={disableAnimation ? undefined : { scale: 0.97 }}
-        transition={transitions.spring}
+        ref={ref as React.Ref<HTMLButtonElement>}
         {...props}
-      >
-        {children}
-      </motion.button>
+      />
     )
   }
 )

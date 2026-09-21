@@ -93,7 +93,7 @@ yarn type-check
 # Development (from root)
 yarn dev                    # Start web on 0.0.0.0:3000
 yarn build                  # Build web app
-yarn p:start                # Start local HTTPS Next via PM2 (apps/web)
+yarn p:start                # Start local Next via PM2 (apps/web)
 yarn p:start:coach          # Start petehome-worker via PM2
 yarn p:logs:coach
 yarn p:status
@@ -108,7 +108,10 @@ yarn type-check
 yarn clean
 ```
 
-`yarn p:start` runs local HTTPS Next for `apps/web`. `yarn p:start:coach` runs the worker.
+`yarn p:start` runs local Next for `apps/web`. `yarn p:start:coach` runs the worker.
+
+Dev serves plain HTTP on `http://localhost:3000`. TLS is opt-in — `yarn dev:https`, or
+`PETEHOME_HTTPS=1` for the PM2 app — and needs mkcert certs in `apps/web/certs/`.
 
 ## Architecture
 
@@ -161,7 +164,7 @@ petehome/
 
 ## Runtime
 
-- **Local Next** for `/coach` and APIs (`yarn dev` / PM2 `petehome` HTTPS)
+- **Local Next** for `/coach` and APIs (`yarn dev` / PM2 `petehome`), plain HTTP by default
 - **PM2 `petehome-worker`** for cron + NOTIFY debriefs
 - Supabase Postgres for data + pg-boss
 

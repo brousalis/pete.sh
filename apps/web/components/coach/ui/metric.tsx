@@ -1,0 +1,114 @@
+'use client'
+
+import { toneClasses, type Tone } from '@/components/coach/ui/tone'
+import { cn } from '@/lib/utils'
+
+type MetricSize = 'sm' | 'md' | 'lg' | 'xl'
+
+const SIZE_CLASS: Record<MetricSize, string> = {
+  sm: 't-num-sm',
+  md: 't-num-md',
+  lg: 't-num-lg',
+  xl: 't-num-xl',
+}
+
+/**
+ * A number and what it means. petehome is a measurement instrument, so the
+ * value outweighs its label — the previous UI rendered both at roughly the
+ * same size, which flattened every readout into undifferentiated text.
+ */
+export function Metric({
+  label,
+  value,
+  unit,
+  size = 'md',
+  tone = 'neutral',
+  decimals = 0,
+  signed = false,
+  align = 'start',
+  hint,
+  className,
+}: {
+  label: string
+  value: number | string | null | undefined
+  unit?: string
+  size?: MetricSize
+  tone?: Tone
+  decimals?: number
+  signed?: boolean
+  align?: 'start' | 'center'
+  hint?: string
+  className?: string
+}) {
+  const display =
+    value == null
+      ? '—'
+      : typeof value === 'string'
+        ? value
+        : `${signed && value > 0 ? '+' : ''}${value.toFixed(decimals)}`
+
+  return (
+    <div className={cn('min-w-0', align === 'center' && 'text-center', className)}>
+      <p
+        className={cn(
+          't-num truncate',
+          SIZE_CLASS[size],
+          tone === 'neutral' ? 'text-ink-1' : toneClasses(tone).text
+        )}
+      >
+        {display}
+        {unit && value != null ? (
+          <span className="ml-0.5 text-[0.6em] font-normal text-ink-3">{unit}</span>
+        ) : null}
+      </p>
+      <p className="mt-1 t-micro text-ink-3">{label}</p>
+      {hint ? <p className="mt-0.5 t-label text-ink-3">{hint}</p> : null}
+    </div>
+  )
+}
+
+/**
+ * Evenly divided metric strip. Hairline dividers give the row structure that
+ * a bare grid was missing.
+ */
+export function MetricRow({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'grid grid-flow-col auto-cols-fr divide-x divide-line [&>*]:px-3 [&>*:first-child]:pl-0 [&>*:last-child]:pr-0',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Label / value / commentary row used by safety readouts. */
+export function StatLine({
+  label,
+  value,
+  tone = 'neutral',
+  note,
+}: {
+  label: string
+  value: string
+  tone?: Tone
+  note?: string
+}) {
+  const t = toneClasses(tone)
+  return (
+    <div className="flex items-center gap-3 py-1.5">
+      <span className={cn('size-1.5 shrink-0 rounded-full', t.dot)} aria-hidden />
+      <span className="t-label w-20 shrink-0 text-ink-2">{label}</span>
+      <span className={cn('t-num t-num-sm w-12 shrink-0', t.text)}>{value}</span>
+      {note ? <span className="t-label min-w-0 flex-1 truncate text-ink-3">{note}</span> : null}
+    </div>
+  )
+}

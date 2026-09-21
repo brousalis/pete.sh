@@ -518,8 +518,6 @@ export function createFadeUp(
  * Standard button hover animation props
  */
 export const buttonMotionProps = {
-  whileHover: { scale: 1.02 },
-  whileTap: { scale: 0.97 },
   transition: transitions.spring,
 } as const
 
@@ -527,8 +525,6 @@ export const buttonMotionProps = {
  * Subtle button hover (for smaller buttons)
  */
 export const subtleButtonMotionProps = {
-  whileHover: { scale: 1.01 },
-  whileTap: { scale: 0.99 },
   transition: transitions.spring,
 } as const
 
@@ -536,8 +532,6 @@ export const subtleButtonMotionProps = {
  * Icon hover animation props
  */
 export const iconMotionProps = {
-  whileHover: { scale: 1.1 },
-  whileTap: { scale: 0.9 },
   transition: transitions.spring,
 } as const
 
@@ -545,8 +539,7 @@ export const iconMotionProps = {
  * Card hover animation props
  */
 export const cardMotionProps = {
-  whileHover: { y: -2, scale: 1.01 },
-  whileTap: { scale: 0.99 },
+  whileHover: { y: -2 },
   transition: transitions.springGentle,
 } as const
 

@@ -5,7 +5,9 @@
 // One machine key. Same value as apps/web/.env PETEWATCH_API_KEY and/or
 // COACH_API_KEY (server accepts either as an alias).
 //
+// Prefer your LAN IP over hostname.local — Windows multi-home + IPv6
+// link-local often makes *.local time out in browsers/phones.
 // `$()` breaks the `//` so https URLs survive xcconfig parsing.
 
 PETEHOME_API_KEY = replace-with-machine-api-key
-PETEHOME_SERVER_URL = https:/$()/boufos.local:3000
+PETEHOME_SERVER_URL = https:/$()/192.168.1.4:3000

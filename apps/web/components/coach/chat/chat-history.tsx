@@ -21,72 +21,70 @@ export function ChatHistory({
   onSelect: (id: string) => void
   onNew: () => void
   onDelete: (id: string) => void
+  /** @deprecated denser layout is always used; kept for call-site compat */
   compact?: boolean
+  onCollapse?: () => void
 }) {
   const groups = groupThreads(threads)
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div
-        className={cn(
-          'flex shrink-0 items-center justify-between border-b border-border/80',
-          compact ? 'px-1 py-2.5' : 'px-3 py-2.5'
-        )}
-      >
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5 py-1.5">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Sessions
         </p>
         <button
           type="button"
           onClick={onNew}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Start a new session"
+          className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <Plus className="size-4" />
+          <Plus className="size-3" />
+          New
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-4" aria-label="Past sessions">
+      <nav
+        className={cn('min-h-0 flex-1 overflow-y-auto px-1 pb-2', compact && 'max-h-[min(28rem,70vh)]')}
+        aria-label="Past sessions"
+      >
         {threads.length === 0 ? (
-          <p className="px-2.5 pt-6 text-sm leading-relaxed text-muted-foreground">
-            Nothing here yet. The first question you ask becomes a session you can reopen.
+          <p className="px-2 pt-4 text-xs leading-relaxed text-muted-foreground">
+            Nothing yet. Your first question becomes a session.
           </p>
         ) : (
           groups.map((group) => (
-            <div key={group.label} className="mb-4">
-              <p className="px-2.5 pb-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+            <div key={group.label} className="mb-2.5 pt-1.5">
+              <p className="px-2 pb-1 text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
                 {group.label}
               </p>
-              <ul className="space-y-0.5">
+              <ul className="space-y-px">
                 {group.items.map((thread) => {
                   const active = thread.id === activeId
                   return (
                     <li key={thread.id}>
                       <div
                         className={cn(
-                          'group flex items-stretch rounded-lg transition-colors',
-                          active ? 'bg-foreground/[0.06]' : 'hover:bg-muted/80'
+                          'group flex items-stretch rounded-md transition-colors',
+                          active ? 'bg-foreground/[0.07]' : 'hover:bg-muted/70'
                         )}
                       >
                         <button
                           type="button"
                           onClick={() => onSelect(thread.id)}
-                          className="min-w-0 flex-1 px-2.5 py-2 text-left"
+                          className="min-w-0 flex-1 px-2 py-1.5 text-left"
                         >
                           <p
                             className={cn(
-                              'truncate text-sm',
+                              'truncate text-[13px] leading-snug',
                               active ? 'font-medium text-foreground' : 'text-foreground/90'
                             )}
                           >
                             {threadTitle(thread)}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          <p className="mt-0.5 text-[10px] text-muted-foreground">
                             {formatRelativeTime(thread.last_message_at ?? thread.created_at)}
-                            {thread.message_count
-                              ? ` · ${thread.message_count} ${thread.message_count === 1 ? 'note' : 'notes'}`
-                              : ''}
+                            {thread.message_count ? ` · ${thread.message_count}` : ''}
                           </p>
                         </button>
                         {pendingDelete === thread.id ? (
@@ -96,7 +94,7 @@ export function ChatHistory({
                               setPendingDelete(null)
                               onDelete(thread.id)
                             }}
-                            className="me-1 self-center rounded-md px-2 py-1 text-[11px] text-accent-rose hover:bg-background"
+                            className="me-1 self-center rounded px-1.5 py-0.5 text-[10px] text-accent-rose hover:bg-background"
                           >
                             Delete
                           </button>
@@ -104,10 +102,10 @@ export function ChatHistory({
                           <button
                             type="button"
                             onClick={() => setPendingDelete(thread.id)}
-                            className="me-1 inline-flex size-8 shrink-0 items-center justify-center self-center rounded-md text-muted-foreground opacity-80 transition-opacity hover:bg-background hover:text-accent-rose md:opacity-0 md:group-hover:opacity-100"
+                            className="me-0.5 inline-flex size-6 shrink-0 items-center justify-center self-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-accent-rose group-hover:opacity-100"
                             aria-label={`Delete ${threadTitle(thread)}`}
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-3" />
                           </button>
                         )}
                       </div>

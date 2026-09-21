@@ -21,10 +21,10 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${GeistSans.variable} ${GeistMono.variable} antialiased bg-white!`}
+      className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       data-brand="yellow"
     >
-      <body className="font-sans bg-white!">
+      <body className="bg-background font-sans">
         <Providers>
           <Suspense fallback={null}>{children}</Suspense>
         </Providers>
