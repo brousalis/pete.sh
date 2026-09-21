@@ -2,7 +2,7 @@
   "name": "@petehome/coach-core",
   "version": "0.1.0",
   "private": true,
-  "description": "PeteCoach shared core: deterministic training analytics, injury guardrails, plan schemas, prompts, tools and cost governance. Consumed by apps/web and apps/coach-worker.",
+  "description": "petehome shared core: deterministic training analytics, injury guardrails, plan schemas, prompts, tools and cost governance. Consumed by apps/web and apps/coach-worker.",
   "author": "Pete",
   "type": "module",
   "main": "./src/index.ts",

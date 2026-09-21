@@ -2,7 +2,7 @@
 
 Legacy new-tab extension that iframes [pete.sh](https://pete.sh).
 
-**Note:** `apps/web` is PeteCoach-only and runs locally; it is no longer published to pete.sh.
+**Note:** `apps/web` is petehome-only and runs locally; it is no longer published to pete.sh.
 This extension is obsolete for the current coaching stack unless you change the iframe target
 to a local origin and ensure framing is allowed.
 

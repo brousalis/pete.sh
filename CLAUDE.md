@@ -5,31 +5,30 @@ repository.
 
 ## Project Overview
 
-**petehome `apps/web` is PeteCoach only** — a personal local PWA. The old smart-home dashboard
+**petehome `apps/web` is the local PWA** — coaching UI + APIs only. The old smart-home dashboard
 (Hue, Spotify, CTA, coffee, maple, cooking AI chef, unified assistant, climber-physique AI Coach,
 fitness routine editor, blog, homework) has been removed. There is no Vercel publish path for this
 app anymore.
 
-- **Web App** (`apps/web/`) — PeteCoach PWA at `/coach` plus `/api/coach/*` and `/api/apple-health/*`
-- **Coach worker** (`apps/coach-worker/`) — PM2 scheduled jobs + activity LISTEN
+- **Web App** (`apps/web/`) — petehome PWA at `/coach` plus `/api/coach/*` and `/api/apple-health/*`
+- **Coach worker** (`apps/coach-worker/`) — PM2 scheduled jobs + activity LISTEN (`petehome-worker`)
 - **Shared core** (`packages/coach-core/`) — analytics, guardrails, prompts, tools
-- **iOS** (`apps/ios/`) — PeteTrain HealthKit sync (installed build still points at pete.sh for ingest)
+- **iOS** (`apps/ios/`) — petehome watch + phone HealthKit sync (installed build may still point at
+  pete.sh)
 - **Desktop / other apps** — legacy monorepo leftovers; not part of the coach product surface
 
-There is **no** unified assistant and **no** `/api/fitness/*`. Training chat is only
-`/coach/chat` → `/api/coach/chat`.
+There is **no** unified assistant and **no** `/api/fitness/*`. Training chat is only `/coach/chat` →
+`/api/coach/chat`.
 
-## PeteCoach
+## petehome
 
-Read [`PETECOACH.md`](./PETECOACH.md) before changing coaching behaviour. Ops leftovers:
-[`PETECOACH-NEXT-STEPS.md`](./PETECOACH-NEXT-STEPS.md).
+Read [`petehome.md`](./petehome.md) before changing coaching behaviour.
 
 ### Non-negotiable ordering
 
-Knee health, then consistency, then the sub-3 goal. The athlete is returning from a bilateral
-medial knee injury (cartilage wear, medial plica, hamstring tendon inflammation, Baker's cyst).
-Code that lets training override a guardrail is a bug, regardless of how reasonable the training
-looks.
+Knee health, then consistency, then the sub-3 goal. The athlete is returning from a bilateral medial
+knee injury (cartilage wear, medial plica, hamstring tendon inflammation, Baker's cyst). Code that
+lets training override a guardrail is a bug, regardless of how reasonable the training looks.
 
 ### Architecture
 
@@ -46,7 +45,7 @@ packages/coach-core/     Shared, no framework deps. Imported by web AND worker.
 
 apps/web/lib/services/coach/   Data access + runtime, backed by Supabase
 apps/web/app/api/coach/        HTTP surface (chat, plan, watch, MCP, ICS)
-apps/web/app/api/apple-health/ PeteTrain ingest
+apps/web/app/api/apple-health/ petehome ingest
 apps/web/app/(dashboard)/coach/  PWA (route-group name only — not a home dashboard)
 apps/coach-worker/       PM2 worker: scheduled jobs, activity listener
 ```
@@ -95,7 +94,7 @@ ship.
 yarn dev                    # Start web on 0.0.0.0:3000
 yarn build                  # Build web app
 yarn p:start                # Start local HTTPS Next via PM2 (apps/web)
-yarn p:start:coach          # Start petecoach-worker via PM2
+yarn p:start:coach          # Start petehome-worker via PM2
 yarn p:logs:coach
 yarn p:status
 
@@ -118,10 +117,10 @@ yarn clean
 ```
 petehome/
 ├── apps/
-│   ├── web/                    # Next.js PeteCoach PWA + apple-health APIs
+│   ├── web/                    # Next.js petehome PWA + apple-health APIs
 │   │   ├── app/(dashboard)/coach/  Coach UI
 │   │   ├── app/api/coach/          Coach HTTP
-│   │   ├── app/api/apple-health/   PeteTrain ingest
+│   │   ├── app/api/apple-health/   petehome ingest
 │   │   ├── app/api/health/         Liveness
 │   │   ├── components/coach/       Coach UI
 │   │   ├── components/ui/          Shared primitives still used by coach
@@ -129,11 +128,10 @@ petehome/
 │   │   ├── data/knowledge/         Corpus for ingest
 │   │   └── supabase/               Migrations (coach_* + orphaned legacy tables)
 │   ├── coach-worker/           PM2 scheduled coach jobs
-│   ├── ios/                    PeteTrain HealthKit
+│   ├── ios/                    petehome HealthKit
 │   └── …
 ├── packages/coach-core/        Shared analytics, guardrails, prompts, tools
-├── PETECOACH.md
-├── PETECOACH-NEXT-STEPS.md
+├── petehome.md
 └── CLAUDE.md
 ```
 
@@ -155,7 +153,7 @@ petehome/
 
 ### Integrations that still matter
 
-- **Apple Health / PeteTrain** — ingest into `apple_health_*`
+- **Apple Health / petehome** — ingest into `apple_health_*`
 - **Google Calendar** — coach `get_calendar` tool (optional OAuth tokens in `.tokens.json`)
 - **Weather / lake** — Open-Meteo, NWS, NOAA for environment tools
 - **Anthropic** — chat + worker jobs via AI SDK
@@ -164,7 +162,7 @@ petehome/
 ## Runtime
 
 - **Local Next** for `/coach` and APIs (`yarn dev` / PM2 `petehome` HTTPS)
-- **PM2 `petecoach-worker`** for cron + NOTIFY debriefs
+- **PM2 `petehome-worker`** for cron + NOTIFY debriefs
 - Supabase Postgres for data + pg-boss
 
 ## Code Style

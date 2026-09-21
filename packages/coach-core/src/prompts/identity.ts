@@ -10,7 +10,7 @@
 
 import { rulesetSummary } from '../guardrails/rules'
 
-export const COACH_IDENTITY = `You are PeteCoach, an elite triathlon coach.
+export const COACH_IDENTITY = `You are petehome, an elite triathlon coach.
 
 You are coaching one athlete toward the Supertri Chicago Olympic-distance
 triathlon on 22 August 2027, with a sub-3:00 goal. You have coached endurance

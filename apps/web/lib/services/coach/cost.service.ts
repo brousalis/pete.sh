@@ -149,7 +149,7 @@ class SupabaseCostAdapter implements CostGovernorAdapter {
 
     try {
       const { sendCoachNotification } = await import('./notify.service')
-      await sendCoachNotification({ title: 'PeteCoach budget', body: message, tag: 'budget' })
+      await sendCoachNotification({ title: 'petehome budget', body: message, tag: 'budget' })
     } catch {
       // Notification delivery is best-effort.
     }

@@ -154,17 +154,19 @@ export class AppleHealthService {
     const markerCount = workout.bathroomMarkers?.length ?? 0
     console.log(`[AppleHealth] Saving workout ${workout.id.slice(0, 8)} type=${workout.workoutType} source=${workout.source} route=${routeSamples}pts markers=${markerCount}`)
 
-    // Check if this workout already exists with a watch source — don't let iOS overwrite it
-    if (workout.source === 'PeteTrain-iOS') {
+    // Don't let phone ingest overwrite a workout the watch already synced.
+    // Accept legacy PeteTrain* sources alongside petehome*.
+    const phoneSources = new Set(['petehome-ios', 'PeteTrain-iOS'])
+    const watchSources = new Set(['petehome', 'PeteTrain'])
+    if (phoneSources.has(workout.source)) {
       const { data: existing } = await (supabase as any)
         .from('apple_health_workouts')
         .select('id, source')
         .eq('healthkit_id', workout.id)
         .single()
 
-      if (existing?.source === 'PeteTrain') {
-        // Watch already synced this workout — preserve watch source
-        workout.source = 'PeteTrain'
+      if (existing?.source && watchSources.has(existing.source)) {
+        workout.source = existing.source
         console.log(`[AppleHealth] Preserving watch source for workout ${workout.id}`)
       }
     }

@@ -1,6 +1,6 @@
 /**
  * POST /api/coach/auth   — no-op (access codes retired)
- * DELETE /api/coach/auth — clear any leftover petecoach_session cookie
+ * DELETE /api/coach/auth — clear any leftover petehome_session cookie
  * GET /api/coach/auth    — always reports authenticated
  */
 
@@ -13,15 +13,17 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 function clearSessionCookie(response: NextResponse): void {
-  response.cookies.set({
-    name: COACH_SESSION_COOKIE,
-    value: '',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  })
+  for (const name of [COACH_SESSION_COOKIE, 'petecoach_session']) {
+    response.cookies.set({
+      name,
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    })
+  }
 }
 
 export async function GET() {

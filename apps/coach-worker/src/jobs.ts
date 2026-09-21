@@ -102,7 +102,7 @@ export async function runMorningBriefing(): Promise<JobResult> {
   })
 
   await sendCoachNotification({
-    title: redFlag ? 'PeteCoach — hold training' : 'Morning briefing',
+    title: redFlag ? 'petehome — hold training' : 'Morning briefing',
     body: firstLine(result.text, 180),
     tag: 'briefing',
     url: '/coach',

@@ -7,7 +7,7 @@
     "apps/coach-worker",
     "packages/coach-core"
   ],
-  "description": "PeteCoach — local AI triathlon coach (web PWA + worker + coach-core)",
+  "description": "petehome — local AI triathlon coach (web PWA + worker + coach-core)",
   "author": "Pete",
   "scripts": {
     "dev": "cd apps/web && yarn dev:https",
@@ -25,10 +25,10 @@
     "p:logs:stats": "node apps/web/scripts/pretty-logs.mjs --stats --last 1000",
     "p:status": "pm2 status",
 
-    "p:start:coach": "pm2 start ecosystem.config.js --only petecoach-worker",
-    "p:stop:coach": "pm2 stop petecoach-worker",
-    "p:restart:coach": "pm2 restart petecoach-worker",
-    "p:logs:coach": "pm2 logs petecoach-worker",
+    "p:start:coach": "pm2 start ecosystem.config.js --only petehome-worker",
+    "p:stop:coach": "pm2 stop petehome-worker",
+    "p:restart:coach": "pm2 restart petehome-worker",
+    "p:logs:coach": "pm2 logs petehome-worker",
 
     "coach:worker": "cd apps/coach-worker && yarn dev",
     "coach:job": "cd apps/coach-worker && yarn job",

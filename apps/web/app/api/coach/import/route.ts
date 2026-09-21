@@ -4,7 +4,7 @@
  * The Apple Watch is the primary recorder; this exists for the cases it is
  * not: a dead battery mid-ride, a session recorded elsewhere, or a file from
  * the historical Garmin export. Parsed files are normalised into the same
- * workout shape PeteTrain posts, so everything downstream is identical.
+ * workout shape petehome posts, so everything downstream is identical.
  */
 
 import { NextRequest } from 'next/server'

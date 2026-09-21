@@ -49,7 +49,7 @@ export function CoachNav() {
       {/* Desktop */}
       <header className="sticky top-0 z-30 hidden border-b border-border bg-background/95 backdrop-blur md:block">
         <nav className="mx-auto flex max-w-6xl items-center gap-1 px-4 py-2">
-          <span className="mr-4 text-sm font-semibold">PeteCoach</span>
+          <span className="mr-4 text-sm font-semibold">petehome</span>
           {ITEMS.map((item) => (
             <Link
               key={item.href}

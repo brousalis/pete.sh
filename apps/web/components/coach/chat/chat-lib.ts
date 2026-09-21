@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai'
 
 import type { CoachConversationListItem } from '@/lib/types/coach-ui.types'
 
-export const ACTIVE_CONVERSATION_KEY = 'petecoach.activeConversationId'
+export const ACTIVE_CONVERSATION_KEY = 'petehome.activeConversationId'
 
 export const STARTERS = [
   { label: 'The race', text: 'How is the sub-3 goal tracking against the knee?' },

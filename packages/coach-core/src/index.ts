@@ -1,5 +1,5 @@
 /**
- * PeteCoach core.
+ * petehome core.
  *
  * Deterministic training science, injury guardrails, plan schemas, prompt
  * assembly, tools and cost governance — shared by apps/web (chat, API) and

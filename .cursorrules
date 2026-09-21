@@ -1,8 +1,9 @@
 # petehome
 
 ## Project Context
-This is a Next.js 16 TypeScript React application for a smart home control center called "petehome". The project uses:
-- Next.js 15 with App Router
+This is a Next.js TypeScript monorepo for **petehome** — a personal local training
+coach (PWA + worker + HealthKit iOS/watch). The web app uses:
+- Next.js App Router
 - React 19
 - TypeScript 5
 - Tailwind CSS 4

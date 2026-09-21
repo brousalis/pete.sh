@@ -135,7 +135,7 @@ async function getNwsAlerts(): Promise<string[]> {
   try {
     const url = `https://api.weather.gov/alerts/active?point=${CHICAGO_LAT},${CHICAGO_LON}`
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'PeteCoach (pete.sh)' },
+      headers: { 'User-Agent': 'petehome (pete.sh)' },
       revalidateSeconds: 900,
     })
 

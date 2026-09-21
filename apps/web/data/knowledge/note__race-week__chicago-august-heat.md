@@ -1,6 +1,6 @@
 # Race week — Chicago August heat and taper
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
 - **Source:** Original synthesis for Supertri Chicago Olympic (Sunday 22 Aug 2027, ~06:00 start)

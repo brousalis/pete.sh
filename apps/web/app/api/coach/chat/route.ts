@@ -1,5 +1,5 @@
 /**
- * POST /api/coach/chat — streaming conversation with PeteCoach
+ * POST /api/coach/chat — streaming conversation with petehome
  *
  * Replaces /api/fitness/ai-coach/chat. Differences that matter:
  *   - The system prompt is split into a cached prefix and a trimmed volatile
@@ -37,7 +37,7 @@ export const maxDuration = 300
 export async function POST(request: NextRequest) {
   try {
     if (!config.coach.isConfigured) {
-      return jsonError('PeteCoach is not configured. Set ANTHROPIC_API_KEY.', 503)
+      return jsonError('petehome is not configured. Set ANTHROPIC_API_KEY.', 503)
     }
 
     const body = (await request.json()) as {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       onError: (error: unknown) => {
         if (error instanceof Error) return error.message
         if (typeof error === 'string') return error
-        return 'PeteCoach hit an unexpected error.'
+        return 'petehome hit an unexpected error.'
       },
 
       messageMetadata: ({ part }) => {

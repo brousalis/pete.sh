@@ -1,9 +1,9 @@
 # Periodized fueling for Olympic triathlon (maintenance default)
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis aligned to PeteCoach identity + IOC 2023 REDs consensus (see guideline__ioc__2023__reds-consensus.md)
+- **Source:** Original synthesis aligned to petehome identity + IOC 2023 REDs consensus (see guideline__ioc__2023__reds-consensus.md)
 - **DOI / URL:** Athlete weight band 170–175 lb; goal body fat already low (~10–11%)
 
 ---

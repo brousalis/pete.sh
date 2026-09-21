@@ -9,7 +9,7 @@ Run this on Sunday, or whenever the plan needs revisiting.
 
 ## Gather
 
-Use the PeteCoach MCP tools in this order. Do not skip to conclusions from
+Use the petehome MCP tools in this order. Do not skip to conclusions from
 memory; the numbers move week to week.
 
 1. `get_readiness` — today's state and its component breakdown.

@@ -1,5 +1,5 @@
 /**
- * PeteCoach service worker.
+ * petehome service worker.
  *
  * Scoped to push notifications only. It deliberately does not cache anything:
  * this section shows readiness, symptoms and plan changes, and a stale cached
@@ -22,11 +22,11 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json()
   } catch {
-    payload = { title: 'PeteCoach', body: event.data.text() }
+    payload = { title: 'petehome', body: event.data.text() }
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'PeteCoach', {
+    self.registration.showNotification(payload.title || 'petehome', {
       body: payload.body || '',
       // Tag collapses repeats: a second briefing replaces the first rather
       // than stacking.

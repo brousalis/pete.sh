@@ -22,7 +22,7 @@ COACH_CONVERSATION_FILE = STATE_DIR / "coach-cli-conversation.json"
 PM2_PROCESSES: dict[str, str] = {
     "main": "petehome",
     "notifications": "petehome-notifications",
-    "coach": "petecoach-worker",
+    "coach": "petehome-worker",
 }
 
 # Vercel configuration
@@ -34,7 +34,7 @@ VERCEL_TEAM_ID = os.getenv("VERCEL_TEAM_ID", "")
 DEV_SERVER_PORT = int(os.getenv("PORT", "3000"))
 DEV_SERVER_HOST = os.getenv("HOSTNAME", "0.0.0.0")
 
-# PeteCoach
+# petehome
 COACH_WORKER_PORT = int(os.getenv("COACH_WORKER_PORT", "3021"))
 COACH_API_KEY = os.getenv("COACH_API_KEY", "")
 COACH_API_BASE = os.getenv(

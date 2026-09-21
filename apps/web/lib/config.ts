@@ -1,5 +1,5 @@
 /**
- * Configuration for PeteCoach / petehome web.
+ * Configuration for petehome / petehome web.
  */
 
 import { z } from 'zod'

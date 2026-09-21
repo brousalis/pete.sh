@@ -1,5 +1,5 @@
 /**
- * GET /api/coach/watch/today — compact payload for the PeteTrain watch app
+ * GET /api/coach/watch/today — compact payload for the petehome watch app
  *
  * Replaces the watch's `workout-definitions?routineId=climber-physique` call.
  * Deliberately small: the watch is often on cellular with a weak signal, and

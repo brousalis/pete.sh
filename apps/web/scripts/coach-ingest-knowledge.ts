@@ -262,7 +262,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`
-PeteCoach knowledge ingestion
+petehome knowledge ingestion
 
   --file <path>     Ingest one document
   --dir <path>      Ingest every .md/.txt in a directory

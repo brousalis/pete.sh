@@ -1,5 +1,5 @@
 /**
- * PeteCoach auth helpers
+ * petehome auth helpers
  *
  * Browser access to /coach and /api/coach is open, matching the rest of the
  * petehome dashboard. Machine clients (watch, worker, MCP, ICS) may still send
@@ -7,7 +7,7 @@
  * (calendar query key, MCP). Session cookies and access codes are retired.
  */
 
-export const COACH_SESSION_COOKIE = 'petecoach_session'
+export const COACH_SESSION_COOKIE = 'petehome_session'
 
 /** Kept for clearing leftover cookies from older builds. */
 export const COACH_SESSION_TTL_SECONDS = 90 * 24 * 60 * 60
@@ -23,7 +23,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 /**
- * Bearer-token access for non-browser clients (PeteTrain, MCP, worker
+ * Bearer-token access for non-browser clients (petehome, MCP, worker
  * callbacks). Not used to gate the PWA.
  */
 export function verifyCoachBearer(authorization: string | null): boolean {

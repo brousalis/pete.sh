@@ -1,1 +1,0 @@
-armhr_cli

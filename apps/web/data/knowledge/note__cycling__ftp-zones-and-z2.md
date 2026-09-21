@@ -1,16 +1,16 @@
 # Cycling FTP zones and Z2 for Olympic triathlon
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis for PeteCoach. Cite Training and Racing with a Power Meter (Allen & Coggan) or Friel bike chapters for full commercial texts — this file is not a verbatim extract.
-- **DOI / URL:** PeteCoach thresholds `ftpWatts`; race bike budget ~1:15–1:19 for 40 km
+- **Source:** Original synthesis for petehome. Cite Training and Racing with a Power Meter (Allen & Coggan) or Friel bike chapters for full commercial texts — this file is not a verbatim extract.
+- **DOI / URL:** petehome thresholds `ftpWatts`; race bike budget ~1:15–1:19 for 40 km
 
 ---
 
 ## FTP as the bike threshold
 
-Functional Threshold Power (FTP) is the highest power sustainable for about an hour. PeteCoach uses FTP (when set) for zone targets and race projection. Without FTP, load falls back to heart rate.
+Functional Threshold Power (FTP) is the highest power sustainable for about an hour. petehome uses FTP (when set) for zone targets and race projection. Without FTP, load falls back to heart rate.
 
 ## Establishing FTP (knee-aware)
 

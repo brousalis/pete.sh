@@ -1,6 +1,6 @@
 # Open-water swim notes — Monroe Harbor, Chicago Olympic
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
 - **Source:** Original synthesis for Supertri Chicago Olympic (22 Aug 2027)

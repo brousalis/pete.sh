@@ -1,5 +1,5 @@
 /**
- * Shared domain types for PeteCoach.
+ * Shared domain types for petehome.
  *
  * These mirror the coach_* schema and the coach_activity_v / coach_daily_metric_v
  * views. Analytics, guardrails, prompts and tools all speak these types so the

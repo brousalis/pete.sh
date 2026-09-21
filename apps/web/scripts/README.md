@@ -1,6 +1,6 @@
 # Scripts
 
-Coach tooling for the local PeteCoach app. Home-sync / Spotify / Trader Joe’s /
+Coach tooling for the local petehome app. Home-sync / Spotify / Trader Joe’s /
 dashboard scripts were removed with the teardown.
 
 ## Coach
@@ -25,4 +25,4 @@ yarn p:start:coach
 yarn coach:job briefing
 ```
 
-See `PETECOACH.md` and `PETECOACH-NEXT-STEPS.md` at the monorepo root.
+See `PETEHOME-COACH.md` and `PETEHOME-NEXT-STEPS.md` at the monorepo root.

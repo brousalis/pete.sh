@@ -275,7 +275,7 @@ async function checkWorker(): Promise<void> {
         'coach worker',
         'warn',
         `running but no job since ${health.lastJobAt}`,
-        'Check pm2 logs petecoach-worker'
+        'Check pm2 logs petehome-worker'
       )
     } else {
       record(
@@ -371,7 +371,7 @@ async function checkAnalytics(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  console.log('\nPeteCoach setup check\n' + '='.repeat(60))
+  console.log('\npetehome setup check\n' + '='.repeat(60))
 
   checkEnvironment()
   await checkDatabase()

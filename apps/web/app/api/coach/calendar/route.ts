@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//pete.sh//PeteCoach//EN',
+    'PRODID:-//pete.sh//petehome//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:PeteCoach Training',
+    'X-WR-CALNAME:petehome Training',
     'X-WR-TIMEZONE:America/Chicago',
     // Clients refresh a subscription roughly this often.
     'X-PUBLISHED-TTL:PT2H',
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
   return new Response(lines.join('\r\n'), {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'inline; filename="petecoach.ics"',
+      'Content-Disposition': 'inline; filename="petehome.ics"',
       'Cache-Control': 'no-store',
     },
   })

@@ -1,4 +1,4 @@
-// Copy to Config.xcconfig (gitignored) before building PeteTrain.
+// Copy to Config.xcconfig (gitignored) before building the petehome iOS apps.
 // Xcode substitutes these into Info.plist; KeychainHelper migrates them
 // into the Keychain on first launch.
 //

@@ -69,7 +69,7 @@ export function formatEvalReport(report: EvalReport): string {
   const lines: string[] = []
 
   lines.push('')
-  lines.push('PeteCoach evaluation')
+  lines.push('petehome evaluation')
   lines.push('='.repeat(60))
 
   for (const result of report.results) {

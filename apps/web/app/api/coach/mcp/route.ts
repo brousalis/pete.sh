@@ -59,7 +59,7 @@ const TOOL_SCHEMAS: Record<
 > = {
   get_athlete_profile: {
     description:
-      'Physiology, thresholds, weight band and goal race for the athlete PeteCoach trains.',
+      'Physiology, thresholds, weight band and goal race for the athlete petehome trains.',
     inputSchema: { type: 'object', properties: {} },
   },
   get_injury_status: {
@@ -205,11 +205,11 @@ export async function POST(request: NextRequest) {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: {
-            name: 'petecoach',
+            name: 'petehome',
             version: '1.0.0',
             // Stated in the handshake so the client surfaces it to the user.
             instructions:
-              'Read-only access to PeteCoach training data: activities, health metrics, training load, the plan, injury record and knowledge base. Plan changes and symptom logging are intentionally unavailable here — those run through the coach where the Injury Guard validates them.',
+              'Read-only access to petehome training data: activities, health metrics, training load, the plan, injury record and knowledge base. Plan changes and symptom logging are intentionally unavailable here — those run through the coach where the Injury Guard validates them.',
           },
         })
 
@@ -319,7 +319,7 @@ async function callTool(
 /** Advertise the endpoint to clients that probe with GET. */
 export async function GET() {
   return Response.json({
-    name: 'petecoach',
+    name: 'petehome',
     version: '1.0.0',
     protocolVersion: PROTOCOL_VERSION,
     transport: 'streamable-http',

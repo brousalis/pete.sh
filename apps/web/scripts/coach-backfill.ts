@@ -1,7 +1,7 @@
 /**
- * PeteCoach historical backfill.
+ * petehome historical backfill.
  *
- * Restores the training history that predates PeteCoach, from three sources:
+ * Restores the training history that predates petehome, from three sources:
  *
  *   plans   — fitness_routine_versions rows become coach_plan_history, so the
  *             coach can reason about what was actually prescribed last year
@@ -384,7 +384,7 @@ async function main(): Promise<void> {
 
   if (args.command === 'help') {
     console.log(`
-PeteCoach backfill
+petehome backfill
 
   plans                      Import fitness_routine_versions into coach_plan_history
   apple --file <export.xml>  Import workouts from an Apple Health export

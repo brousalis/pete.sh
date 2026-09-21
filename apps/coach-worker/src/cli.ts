@@ -20,7 +20,7 @@ loadEnv({ path: fileURLToPath(new URL('../../web/.env.local', import.meta.url)) 
 loadEnv({ path: fileURLToPath(new URL('../../web/.env', import.meta.url)) })
 
 const USAGE = `
-PeteCoach job runner
+petehome job runner
 
   briefing                     Morning briefing (includes auto-downgrade)
   debrief --activity <uuid>    Post-session debrief

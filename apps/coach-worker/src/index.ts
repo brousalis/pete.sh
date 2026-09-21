@@ -1,5 +1,5 @@
 /**
- * PeteCoach worker.
+ * petehome worker.
  *
  * Runs under PM2 on the home machine alongside the existing petehome sync
  * worker. Three responsibilities:

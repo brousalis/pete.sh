@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import type React from 'react'
 
 /**
- * Thin shell for PeteCoach routes. Old dashboard chrome (assistant modal,
+ * Thin shell for petehome routes. Old dashboard chrome (assistant modal,
  * top nav, SyncManager-driven home features) has been removed.
  */
 export default function DashboardLayout({

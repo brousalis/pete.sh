@@ -1,10 +1,10 @@
 # Critical Swim Speed (CSS) protocol and pacing for Olympic triathlon
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis for PeteCoach (not a Maglischo verbatim extract)
-- **DOI / URL:** Used by PeteCoach analytics `computeCss` (400/200 pair)
+- **Source:** Original synthesis for petehome (not a Maglischo verbatim extract)
+- **DOI / URL:** Used by petehome analytics `computeCss` (400/200 pair)
 
 ---
 
@@ -12,7 +12,7 @@
 
 Critical Swim Speed is the slope between two maximal continuous efforts (classically 400 and 200 of the same unit). It estimates the highest speed that can be held without progressive fatigue accumulation — a practical swim-threshold proxy.
 
-PeteCoach stores CSS as speed (distance/time) and derives pace per 100 from it. Easy and race paces are expressed as multiples of CSS pace.
+petehome stores CSS as speed (distance/time) and derives pace per 100 from it. Easy and race paces are expressed as multiples of CSS pace.
 
 ## How to test (pool)
 

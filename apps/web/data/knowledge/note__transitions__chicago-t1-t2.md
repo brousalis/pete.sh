@@ -1,9 +1,9 @@
 # Chicago Olympic transitions — T1 / T2 rehearsal
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis from PeteCoach race brief (PETECOACH.md)
+- **Source:** Original synthesis from petehome race brief (PETEHOME-COACH.md)
 - **DOI / URL:** Supertri Chicago Olympic, 22 Aug 2027
 
 ---

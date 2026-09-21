@@ -2,8 +2,8 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 /**
- * CORS + no-store for PeteCoach and Apple Health APIs.
- * Local hybrid origins (.local / LAN) are allowed so the PWA and PeteTrain
+ * CORS + no-store for petehome and Apple Health APIs.
+ * Local hybrid origins (.local / LAN) are allowed so the PWA and petehome
  * can talk to a home-machine Next server.
  */
 

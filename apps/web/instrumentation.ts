@@ -8,5 +8,5 @@ export async function register() {
 
   const port = process.env.PORT || 3000
   const env = process.env.NODE_ENV || 'development'
-  console.log(`[PeteCoach] listening on :${port} (${env})`)
+  console.log(`[petehome] listening on :${port} (${env})`)
 }

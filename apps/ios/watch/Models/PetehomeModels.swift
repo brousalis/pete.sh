@@ -1,0 +1,699 @@
+import Foundation
+import HealthKit
+
+// MARK: - Workout Payload
+
+/// Complete workout payload for POST /api/apple-health/workout
+struct WorkoutPayload: Encodable {
+    var workout: AppleHealthWorkout
+    let linkedWorkoutId: String?
+    let linkedDay: String?
+}
+
+/// Apple Health workout data matching Petehome API spec
+struct AppleHealthWorkout: Codable {
+    let id: String
+    let workoutType: String
+    let workoutTypeRaw: Int?
+    let startDate: String
+    let endDate: String
+    let duration: Int
+
+    let activeCalories: Double
+    let totalCalories: Double
+
+    let distance: Double?
+    let distanceMiles: Double?
+    let elevationGain: Double?
+
+    // Indoor/outdoor distinction
+    let isIndoor: Bool?
+
+    let heartRate: HeartRateSummary
+    let heartRateSamples: [PetehomeHeartRateSample]
+
+    let runningMetrics: PetehomeRunningMetrics?
+    let cyclingMetrics: PetehomeCyclingMetrics?
+    let walkingMetrics: PetehomeWalkingMetrics?
+    let swimmingMetrics: PetehomeSwimmingMetrics?
+    let route: PetehomeWorkoutRoute?
+
+    // Workout events (pauses, segments, laps)
+    let workoutEvents: [PetehomeWorkoutEvent]?
+
+    // Effort score (Apple's workout intensity metric)
+    let effortScore: Double?
+
+    var activities: [PetehomeWorkoutActivity]? = nil
+
+    // Bathroom markers (Maple walk tracking)
+    var bathroomMarkers: [PetehomeBathroomMarker]? = nil
+
+    let source: String
+    let sourceVersion: String?
+    let device: PetehomeDeviceInfo?
+    let weather: PetehomeWeatherInfo?
+}
+
+// MARK: - Heart Rate
+
+struct HeartRateSummary: Codable {
+    let average: Int
+    let min: Int
+    let max: Int
+    let resting: Int?
+    let zones: [PetehomeHeartRateZone]
+    var zoneSource: String? = nil
+}
+
+struct PetehomeWorkoutActivity: Codable {
+    let id: String
+    let activityType: String
+    let activityTypeRaw: Int
+    let startDate: String
+    let endDate: String
+    let duration: Int
+    let distance: Double?
+    let activeCalories: Double?
+    let averageHeartRate: Int?
+    let zones: [PetehomeHeartRateZone]?
+}
+
+struct PetehomeHeartRateZone: Codable {
+    let name: String
+    let minBpm: Int
+    let maxBpm: Int
+    let duration: Int
+    let percentage: Int
+}
+
+struct PetehomeHeartRateSample: Codable {
+    let timestamp: String
+    let bpm: Int
+    let motionContext: String?
+}
+
+// MARK: - Running Metrics
+
+struct PetehomeRunningMetrics: Codable {
+    let cadence: PetehomeCadenceData
+    let pace: PetehomePaceData
+    let strideLength: PetehomeStrideLengthData?
+    let runningPower: PetehomeRunningPowerData?
+    let groundContactTime: PetehomeGroundContactTimeData?
+    let verticalOscillation: PetehomeVerticalOscillationData?
+    let splits: [PetehomeSplit]?
+}
+
+struct PetehomeCadenceData: Codable {
+    let average: Int
+    let samples: [PetehomeCadenceSample]
+}
+
+struct PetehomeCadenceSample: Codable {
+    let timestamp: String
+    let stepsPerMinute: Int
+}
+
+struct PetehomePaceData: Codable {
+    let average: Double
+    let best: Double
+    let samples: [PetehomePaceSample]
+}
+
+struct PetehomePaceSample: Codable {
+    let timestamp: String
+    let minutesPerMile: Double
+    let speedMph: Double?
+}
+
+struct PetehomeStrideLengthData: Codable {
+    let average: Double
+    let samples: [PetehomeStrideLengthSample]?
+}
+
+struct PetehomeStrideLengthSample: Codable {
+    let timestamp: String
+    let meters: Double
+}
+
+struct PetehomeRunningPowerData: Codable {
+    let average: Double
+    let samples: [PetehomeRunningPowerSample]?
+}
+
+struct PetehomeRunningPowerSample: Codable {
+    let timestamp: String
+    let watts: Double
+}
+
+struct PetehomeGroundContactTimeData: Codable {
+    let average: Double // milliseconds
+    let samples: [PetehomeGroundContactTimeSample]?
+}
+
+struct PetehomeGroundContactTimeSample: Codable {
+    let timestamp: String
+    let milliseconds: Double
+}
+
+struct PetehomeVerticalOscillationData: Codable {
+    let average: Double // centimeters
+    let samples: [PetehomeVerticalOscillationSample]?
+}
+
+struct PetehomeVerticalOscillationSample: Codable {
+    let timestamp: String
+    let centimeters: Double
+}
+
+/// Mile or kilometer split data
+struct PetehomeSplit: Codable {
+    let splitNumber: Int
+    let splitType: String // "mile" or "kilometer"
+    let distanceMeters: Double
+    let timeSeconds: Double
+    let avgPace: Double // min/mile or min/km
+    let avgHeartRate: Int?
+    let avgCadence: Int?
+    let elevationChange: Double? // meters
+}
+
+// MARK: - Walking Metrics (for Maple walks and outdoor walks)
+
+struct PetehomeWalkingMetrics: Codable {
+    let avgSpeed: Double? // m/s - average walking speed
+    let avgStepLength: Double? // meters - average step length
+    let doubleSupportPercentage: Double? // % time both feet on ground (gait stability)
+    let asymmetryPercentage: Double? // % left/right imbalance
+    let stepCount: Int? // total steps during workout
+
+    // Samples for detailed analysis (optional)
+    let speedSamples: [PetehomeWalkingSpeedSample]?
+    let stepLengthSamples: [PetehomeWalkingStepLengthSample]?
+}
+
+struct PetehomeWalkingSpeedSample: Codable {
+    let timestamp: String
+    let metersPerSecond: Double
+}
+
+struct PetehomeWalkingStepLengthSample: Codable {
+    let timestamp: String
+    let meters: Double
+}
+
+// MARK: - Cycling Metrics
+
+struct PetehomeCyclingMetrics: Codable {
+    let avgSpeed: Double? // mph
+    let maxSpeed: Double? // mph
+    let avgCadence: Int? // rpm
+    let avgPower: Double? // watts
+    let maxPower: Double? // watts
+    let speedSamples: [PetehomeCyclingSpeedSample]?
+    let cadenceSamples: [PetehomeCyclingCadenceSample]?
+    let powerSamples: [PetehomeCyclingPowerSample]?
+}
+
+struct PetehomeCyclingSpeedSample: Codable {
+    let timestamp: String
+    let speedMph: Double
+}
+
+struct PetehomeCyclingCadenceSample: Codable {
+    let timestamp: String
+    let rpm: Int
+}
+
+struct PetehomeCyclingPowerSample: Codable {
+    let timestamp: String
+    let watts: Double
+}
+
+// MARK: - Swimming Metrics
+
+struct PetehomeSwimmingMetrics: Codable {
+    let strokeCount: Int?
+    let poolLengthMeters: Double?
+    /// "pool", "openWater", or "unknown"
+    let swimmingLocation: String?
+}
+
+// MARK: - Bathroom Markers (Maple Walk Tracking)
+
+enum BathroomMarkerType: String, Codable {
+    case pee
+    case poop
+
+    var emoji: String {
+        switch self {
+        case .pee: return "💧"
+        case .poop: return "💩"
+        }
+    }
+}
+
+/// Local model used by MapleWalkManager during a walk session
+struct BathroomMarker: Codable, Identifiable {
+    let id: UUID
+    let type: BathroomMarkerType
+    let latitude: Double
+    let longitude: Double
+    let timestamp: Date
+
+    init(type: BathroomMarkerType, latitude: Double, longitude: Double) {
+        self.id = UUID()
+        self.type = type
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = Date()
+    }
+
+    func toPetehomeMarker() -> PetehomeBathroomMarker {
+        PetehomeBathroomMarker(
+            id: id.uuidString,
+            type: type.rawValue,
+            latitude: latitude,
+            longitude: longitude,
+            timestamp: timestamp.iso8601String
+        )
+    }
+}
+
+/// API payload model sent to Petehome server
+struct PetehomeBathroomMarker: Codable {
+    let id: String
+    let type: String
+    let latitude: Double
+    let longitude: Double
+    let timestamp: String
+}
+
+// MARK: - Workout Events
+
+/// Represents pause, resume, segment, and lap events during a workout
+struct PetehomeWorkoutEvent: Codable {
+    let type: String // "pause", "resume", "segment", "lap", "marker"
+    let timestamp: String
+    let duration: Double? // For segments, duration in seconds
+    let metadata: PetehomeEventMetadata?
+}
+
+struct PetehomeEventMetadata: Codable {
+    let segmentIndex: Int?
+    let lapNumber: Int?
+    let distance: Double? // meters at this point
+    let splitTime: Double? // seconds for this segment/lap
+}
+
+// MARK: - Route / GPS
+
+struct PetehomeWorkoutRoute: Codable {
+    let totalDistance: Double
+    let totalElevationGain: Double
+    let totalElevationLoss: Double
+    let samples: [PetehomeLocationSample]
+}
+
+struct PetehomeLocationSample: Codable {
+    let timestamp: String
+    let latitude: Double
+    let longitude: Double
+    let altitude: Double
+    let speed: Double
+    let course: Double
+    let horizontalAccuracy: Double
+    let verticalAccuracy: Double
+}
+
+// MARK: - Device & Weather
+
+struct PetehomeDeviceInfo: Codable {
+    let name: String
+    let model: String?
+    let hardwareVersion: String?
+    let softwareVersion: String?
+}
+
+struct PetehomeWeatherInfo: Codable {
+    let temperature: Double?
+    let humidity: Double?
+}
+
+// MARK: - Daily Health Metrics
+
+/// Daily health metrics for POST /api/apple-health/daily
+struct PetehomeDailyMetrics: Codable {
+    let date: String
+
+    // Activity
+    let steps: Int
+    let activeCalories: Double
+    let totalCalories: Double
+    let exerciseMinutes: Int
+    let standHours: Int
+    let moveGoal: Int?
+    let exerciseGoal: Int?
+    let standGoal: Int?
+
+    // Heart
+    let restingHeartRate: Int?
+    let heartRateVariability: Double?
+
+    // Cardio Fitness
+    let vo2Max: Double?
+
+    // Sleep (optional)
+    let sleepDuration: Int?
+    let sleepStages: PetehomeSleepStages?
+
+    // Walking metrics (optional)
+    let walkingHeartRateAverage: Int?
+    let walkingDoubleSupportPercentage: Double?
+    let walkingAsymmetryPercentage: Double?
+    let walkingSpeed: Double?
+    let walkingStepLength: Double?
+
+    let source: String
+    let recordedAt: String
+}
+
+struct PetehomeSleepStages: Codable {
+    let awake: Int?
+    let rem: Int?
+    let core: Int?
+    let deep: Int?
+}
+
+/// Wrapper for daily metrics POST request
+struct DailyMetricsPayload: Encodable {
+    let metrics: PetehomeDailyMetrics
+}
+
+// MARK: - Batch Sync
+
+/// Batch sync request for POST /api/apple-health/sync
+struct BatchSyncPayload: Encodable {
+    let workouts: [AppleHealthWorkout]
+    let dailyMetrics: [PetehomeDailyMetrics]
+    let lastSyncTimestamp: String?
+}
+
+/// Batch sync response
+struct BatchSyncResult: Decodable {
+    let success: Bool
+    let data: BatchSyncData?
+    let syncTimestamp: String?
+
+    struct BatchSyncData: Decodable {
+        let workoutsSaved: Int
+        let workoutsFailed: Int
+        let dailyMetricsSaved: Int
+        let dailyMetricsFailed: Int
+        let errors: [String]?
+    }
+}
+
+// MARK: - API Responses
+
+struct APIResponse<T: Decodable>: Decodable {
+    let success: Bool
+    let data: T?
+    let error: String?
+    let message: String?
+}
+
+struct WorkoutSyncResponse: Decodable {
+    let id: String
+    let success: Bool
+}
+
+struct WorkoutsListResponse: Decodable {
+    let success: Bool
+    let data: [SyncedWorkoutSummary]
+}
+
+struct SyncedWorkoutSummary: Decodable {
+    let id: String
+    let healthkit_id: String
+    let workout_type: String
+    let start_date: String
+    let duration: Int
+    let active_calories: Double?
+    let hr_average: Int?
+    let distance_miles: Double?
+    let cadence_average: Int?
+    let pace_average: Double?
+}
+
+// MARK: - Errors
+
+enum PetehomeAPIError: Error, LocalizedError {
+    case invalidResponse
+    case unauthorized(String) // Include raw response
+    case rateLimited
+    case httpError(Int, String) // Include status code and raw response
+    case serverError(String)
+    case syncFailed
+    case encodingFailed
+    case networkUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            return "Invalid response from server"
+        case .unauthorized(let raw):
+            return "Unauthorized: \(raw)"
+        case .rateLimited:
+            return "Too many requests, please wait"
+        case .httpError(let code, let raw):
+            return "HTTP \(code): \(raw)"
+        case .serverError(let message):
+            return "Server error: \(message)"
+        case .syncFailed:
+            return "Sync failed"
+        case .encodingFailed:
+            return "Failed to encode request data"
+        case .networkUnavailable:
+            return "Network unavailable"
+        }
+    }
+}
+
+// MARK: - Sync Status
+
+enum SyncStatus: String, Codable {
+    case idle
+    case syncing
+    case success
+    case failed
+    case queued
+}
+
+/// Represents a workout queued for sync retry
+struct QueuedWorkout: Codable, Identifiable {
+    let id: String // HealthKit UUID
+    let dayNumber: Int?
+    let queuedAt: Date
+    var retryCount: Int
+    var lastError: String?
+
+    init(healthKitId: String, dayNumber: Int?, queuedAt: Date = Date()) {
+        self.id = healthKitId
+        self.dayNumber = dayNumber
+        self.queuedAt = queuedAt
+        self.retryCount = 0
+    }
+}
+
+/// Result of a historical sync operation
+struct HistoricalSyncResult {
+    let total: Int
+    let synced: Int
+    let skipped: Int
+    let failed: Int
+    let errors: [String]
+
+    var summary: String {
+        if total == 0 && skipped == 0 {
+            return "No workouts found"
+        } else if total == 0 && skipped > 0 {
+            return "All \(skipped) workouts already synced"
+        } else if failed == 0 {
+            return "\(synced) synced, \(skipped) skipped"
+        } else {
+            return "\(synced) synced, \(failed) failed, \(skipped) skipped"
+        }
+    }
+}
+
+// MARK: - Workout Type Mapping
+
+extension WorkoutActivityType {
+    /// Map to Petehome API workout type string
+    var petehomeType: String {
+        switch self {
+        case .functionalStrength:
+            return "functionalStrengthTraining"
+        case .hiit:
+            return "hiit"
+        case .indoorRun, .outdoorRun:
+            return "running"
+        case .inclineWalk:
+            return "walking"
+        }
+    }
+}
+
+enum HealthKitPetehome {
+    static var rmssdType: HKQuantityType? {
+        HKQuantityType.quantityType(
+            forIdentifier: HKQuantityTypeIdentifier(rawValue: "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD")
+        )
+    }
+
+    static func includes(_ workout: HKWorkout, _ type: HKWorkoutActivityType) -> Bool {
+        if workout.workoutActivityType == type { return true }
+        return workout.workoutActivities.contains {
+            $0.workoutConfiguration.activityType == type
+        }
+    }
+
+    static func isOutdoorCandidate(_ workout: HKWorkout) -> Bool {
+        let outdoor: Set<HKWorkoutActivityType> = [
+            .hiking, .walking, .running, .cycling, .swimming, .other, .swimBikeRun
+        ]
+        if outdoor.contains(workout.workoutActivityType) { return true }
+        return workout.workoutActivities.contains {
+            outdoor.contains($0.workoutConfiguration.activityType)
+        }
+    }
+
+    static func activities(from workout: HKWorkout) -> [PetehomeWorkoutActivity] {
+        workout.workoutActivities.map { activity in
+            let type = activity.workoutConfiguration.activityType
+            let distanceType: HKQuantityType? = {
+                switch type {
+                case .cycling: return HKQuantityType(.distanceCycling)
+                case .swimming: return HKQuantityType(.distanceSwimming)
+                default: return HKQuantityType(.distanceWalkingRunning)
+                }
+            }()
+            let distance = distanceType.flatMap {
+                activity.statistics(for: $0)?.sumQuantity()?.doubleValue(for: .meter())
+            }
+            let calories = activity.statistics(for: HKQuantityType(.activeEnergyBurned))?
+                .sumQuantity()?.doubleValue(for: .kilocalorie())
+            let avgHR = activity.statistics(for: HKQuantityType(.heartRate))?
+                .averageQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+
+            return PetehomeWorkoutActivity(
+                id: activity.uuid.uuidString,
+                activityType: type.petehomeType,
+                activityTypeRaw: Int(type.rawValue),
+                startDate: activity.startDate.iso8601String,
+                endDate: activity.endDate.iso8601String,
+                duration: Int(activity.duration),
+                distance: distance,
+                activeCalories: calories,
+                averageHeartRate: avgHR.map { Int($0) },
+                zones: nativeHeartRateZones(from: activity)
+            )
+        }
+    }
+
+    static func nativeHeartRateZones(from workout: HKWorkout) -> [PetehomeHeartRateZone]? {
+        if #available(watchOS 27.0, iOS 27.0, *) {
+            return mapZoneGroup(workout.zoneGroupsByType?[HKQuantityType(.heartRate)])
+        }
+        return nil
+    }
+
+    static func nativeHeartRateZones(from activity: HKWorkoutActivity) -> [PetehomeHeartRateZone]? {
+        if #available(watchOS 27.0, iOS 27.0, *) {
+            return mapZoneGroup(activity.zoneGroupsByType?[HKQuantityType(.heartRate)])
+        }
+        return nil
+    }
+
+    @available(watchOS 27.0, iOS 27.0, *)
+    private static func mapZoneGroup(_ group: HKWorkoutZoneGroup?) -> [PetehomeHeartRateZone]? {
+        guard let group else { return nil }
+        let unit = HKUnit.count().unitDivided(by: .minute())
+        let total = group.zoneDurations.reduce(0.0) { $0 + $1.duration }
+        guard total > 0 else { return nil }
+        return group.zoneDurations.map { item in
+            let minValue = item.zone.minimum?.doubleValue(for: unit) ?? 0
+            let maxValue = item.zone.maximum?.doubleValue(for: unit) ?? minValue
+            return PetehomeHeartRateZone(
+                name: "z\(item.zone.index + 1)",
+                minBpm: Int(minValue.rounded()),
+                maxBpm: Int(maxValue.rounded()),
+                duration: Int(item.duration),
+                percentage: Int((item.duration / total) * 100)
+            )
+        }
+    }
+}
+
+extension HKWorkoutActivityType {
+    /// Map HKWorkoutActivityType to Petehome API string
+    var petehomeType: String {
+        switch self {
+        case .running:
+            return "running"
+        case .walking:
+            return "walking"
+        case .hiking:
+            return "hiking"
+        case .cycling:
+            return "cycling"
+        case .functionalStrengthTraining:
+            return "functionalStrengthTraining"
+        case .traditionalStrengthTraining:
+            return "traditionalStrengthTraining"
+        case .coreTraining:
+            return "coreTraining"
+        case .highIntensityIntervalTraining:
+            return "hiit"
+        case .rowing:
+            return "rowing"
+        case .stairClimbing:
+            return "stairClimbing"
+        case .elliptical:
+            return "elliptical"
+        case .swimming:
+            return "swimming"
+        case .swimBikeRun:
+            return "swimBikeRun"
+        case .transition:
+            return "transition"
+        default:
+            return "other"
+        }
+    }
+}
+
+// MARK: - ISO8601 Date Formatting
+
+extension Date {
+    /// Format date as ISO8601 string for Petehome API
+    var iso8601String: String {
+        ISO8601DateFormatter().string(from: self)
+    }
+
+    /// Format date as yyyy-MM-dd for daily metrics
+    var dateOnlyString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: self)
+    }
+}
+
+extension String {
+    /// Parse ISO8601 string to Date
+    var iso8601Date: Date? {
+        ISO8601DateFormatter().date(from: self)
+    }
+}

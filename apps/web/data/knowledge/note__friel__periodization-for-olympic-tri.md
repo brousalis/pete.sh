@@ -1,9 +1,9 @@
 # Periodization for Olympic triathlon (Friel-aligned synthesis)
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis for PeteCoach. Cite Joe Friel, The Triathlete's Training Bible (buy/own for full text) — this file is not a verbatim extract.
+- **Source:** Original synthesis for petehome. Cite Joe Friel, The Triathlete's Training Bible (buy/own for full text) — this file is not a verbatim extract.
 - **DOI / URL:** Race: Supertri Chicago Olympic, 22 Aug 2027
 
 ---

@@ -1,4 +1,4 @@
-"""PeteCoach commands: orchestrate, monitor, and interact with the coach."""
+"""petehome commands: orchestrate, monitor, and interact with the coach."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from petehome_cli.services.pm2 import PM2Service
 COACH_NAME = PM2_PROCESSES["coach"]
 
 _USAGE = """\
-[dim]coach / pc — PeteCoach
-  start|stop|restart     PM2 petecoach-worker
+[dim]coach / pc — petehome
+  start|stop|restart     PM2 petehome-worker
   status|health|logs     Monitor worker + API
   doctor                 yarn coach:doctor
   job <name> [...]       Run a scheduled job now
@@ -344,7 +344,7 @@ async def _cmd_ask(args: list[str], output: RichLog) -> None:
     mode = "deep" if deep else "normal"
     cid = None if new_conversation else coach_svc.load_conversation_id()
     thread = "new thread" if new_conversation or not cid else f"thread {cid[:8]}…"
-    output.write(f"[dim]Asking PeteCoach ({mode}, {thread})…[/]")
+    output.write(f"[dim]Asking petehome ({mode}, {thread})…[/]")
     output.write("")
 
     got_text = False

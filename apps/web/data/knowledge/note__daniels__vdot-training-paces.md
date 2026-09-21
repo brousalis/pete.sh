@@ -1,16 +1,16 @@
 # VDOT training paces (Daniels-aligned synthesis)
 
-- **Authors:** PeteCoach coaching note
+- **Authors:** petehome coaching note
 - **Year:** 2026
 - **Type:** note
-- **Source:** Original synthesis aligned to PeteCoach analytics (Daniels & Gilbert VDOT equations in coach-core). Cite Jack Daniels, Daniels' Running Formula — this file is not a verbatim book extract.
-- **DOI / URL:** PeteCoach `computeVdot` / race projection
+- **Source:** Original synthesis aligned to petehome analytics (Daniels & Gilbert VDOT equations in coach-core). Cite Jack Daniels, Daniels' Running Formula — this file is not a verbatim book extract.
+- **DOI / URL:** petehome `computeVdot` / race projection
 
 ---
 
-## What VDOT is for PeteCoach
+## What VDOT is for petehome
 
-VDOT is a single fitness index derived from a recent race or time-trial performance. PeteCoach uses it to set training paces and to project the run leg of the Olympic race. The model does **not** invent a VDOT; it requires a measured performance.
+VDOT is a single fitness index derived from a recent race or time-trial performance. petehome uses it to set training paces and to project the run leg of the Olympic race. The model does **not** invent a VDOT; it requires a measured performance.
 
 ## Establishing VDOT
 
@@ -24,7 +24,7 @@ Enter the result through `/coach/tests` or the benchmarks path so analytics — 
 
 ## How paces are used
 
-Once VDOT exists, PeteCoach can expose Easy / Marathon / Threshold / Interval / Repetition style bands for planning. Coaching rules:
+Once VDOT exists, petehome can expose Easy / Marathon / Threshold / Interval / Repetition style bands for planning. Coaching rules:
 
 - Easy means easy. If conversational pace is impossible, the run is too hard or the athlete is under-recovered.
 - Quality sessions are rare while returning from injury; protect the hard days by keeping everything else truly easy.

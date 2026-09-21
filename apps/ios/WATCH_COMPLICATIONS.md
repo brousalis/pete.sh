@@ -1,4 +1,4 @@
-# Pete Train Watch Complications Setup Guide
+# petehome Watch Complications Setup Guide
 
 ## 📱 What You're Getting
 
@@ -25,73 +25,73 @@ Four watch face complication styles:
 
 ### Step 1: Add Widget Extension Target
 
-1. Open `PeteTrain.xcodeproj` in Xcode
+1. Open `petehome.xcodeproj` in Xcode
 2. **File → New → Target...**
 3. In the template chooser:
    - Platform: **watchOS**
    - Search for **Widget Extension**
    - Select it and click **Next**
 4. Configure the target:
-   - Product Name: `PeteTrainWidgets`
+   - Product Name: `petehomeWidgets`
    - Team: Your team
-   - Bundle Identifier: `com.petetrain.app.widgets`
+   - Bundle Identifier: `com.petehome.app.widgets`
    - ☑️ Include Configuration App Intent: **Unchecked** (we don't need it)
 5. Click **Finish**
 6. When asked "Activate scheme?", click **Cancel** (we'll build from main scheme)
 
 ### Step 2: Delete Auto-Generated Files
 
-Xcode creates template files we don't need. Delete these from the new PeteTrainWidgets folder:
+Xcode creates template files we don't need. Delete these from the new petehomeWidgets folder:
 
-- `PeteTrainWidgets.swift` (we have our own)
-- `PeteTrainWidgetsBundle.swift` (if created)
+- `petehomeWidgets.swift` (we have our own)
+- `petehomeWidgetsBundle.swift` (if created)
 - `AppIntent.swift` (if created)
 
 ### Step 3: Add Our Widget Files
 
-1. In Xcode's Project Navigator, right-click on **PeteTrainWidgets** folder
-2. **Add Files to "PeteTrain"...**
-3. Navigate to the `PeteTrainWidgets` folder in Finder
+1. In Xcode's Project Navigator, right-click on **petehomeWidgets** folder
+2. **Add Files to "petehome"...**
+3. Navigate to the `petehomeWidgets` folder in Finder
 4. Select all these files:
-   - `PeteTrainWidgets.swift`
+   - `petehomeWidgets.swift`
    - `ComplicationViews.swift`
    - `SharedWorkoutData.swift`
    - `Info.plist`
-   - `PeteTrainWidgets.entitlements`
+   - `petehomeWidgets.entitlements`
    - `Assets.xcassets` folder
-5. ✅ Make sure **PeteTrainWidgets** target is checked
+5. ✅ Make sure **petehomeWidgets** target is checked
 6. Click **Add**
 
 ### Step 4: Configure App Groups
 
-**For PeteTrainWidgets target:**
+**For petehomeWidgets target:**
 
-1. Select **PeteTrainWidgets** target in Project Navigator
+1. Select **petehomeWidgets** target in Project Navigator
 2. Go to **Signing & Capabilities** tab
 3. Click **+ Capability**
 4. Add **App Groups**
 5. Click the **+** under App Groups
 6. Add: `group.com.petetrain.app`
 
-**Verify PeteTrain (main app) has it too:**
+**Verify petehome (main app) has it too:**
 
-1. Select **PeteTrain** target
+1. Select **petehome** target
 2. **Signing & Capabilities** → **App Groups**
 3. Ensure `group.com.petetrain.app` is listed and checked
 
 ### Step 5: Embed Widget in Watch App
 
-1. Select **PeteTrain** target (the main watch app)
+1. Select **petehome** target (the main watch app)
 2. Go to **General** tab
 3. Scroll to **Frameworks, Libraries, and Embedded Content**
-4. If **PeteTrainWidgets.appex** isn't listed:
+4. If **petehomeWidgets.appex** isn't listed:
    - Click **+**
-   - Select **PeteTrainWidgets.appex**
+   - Select **petehomeWidgets.appex**
    - Set Embed to **Embed Without Signing**
 
 ### Step 6: Build & Test
 
-1. Select **PeteTrain** scheme (main app)
+1. Select **petehome** scheme (main app)
 2. Build (⌘B) to verify no errors
 3. Run on Apple Watch or Simulator
 
@@ -106,33 +106,33 @@ Xcode creates template files we don't need. Delete these from the new PeteTrainW
 3. Force touch (long press) on watch face
 4. Tap **Customize**
 5. Swipe to complication slots
-6. Find "Pete Train" in the list
+6. Find "petehome" in the list
 
 ### On Real Watch
 
 1. On iPhone, open **Watch** app
 2. Tap your watch face
 3. Tap **Edit**
-4. Add Pete Train to a complication slot
+4. Add petehome to a complication slot
 
 ---
 
 ## 📁 File Structure
 
 ```
-PeteTrainWidgets/
-├── PeteTrainWidgets.swift       # Widget configuration & timeline provider
+petehomeWidgets/
+├── petehomeWidgets.swift       # Widget configuration & timeline provider
 ├── ComplicationViews.swift      # All 4 complication style views
 ├── SharedWorkoutData.swift      # Data model for app→widget sync
 ├── Info.plist                   # Widget extension config
-├── PeteTrainWidgets.entitlements # App Groups entitlement
+├── petehomeWidgets.entitlements # App Groups entitlement
 └── Assets.xcassets/             # Widget colors
 ```
 
 **Main App Files Added:**
 
 ```
-PeteTrain/Data/
+petehome/Data/
 └── WidgetDataSync.swift         # Syncs workout data to widget
 ```
 
@@ -167,7 +167,7 @@ Data flows through **App Groups** (`group.com.petetrain.app`) using UserDefaults
 
 ### "Cannot find type 'WidgetDataSync'"
 
-- Make sure `WidgetDataSync.swift` is only in PeteTrain target, not the widget
+- Make sure `WidgetDataSync.swift` is only in petehome target, not the widget
 
 ### Widget doesn't update
 
@@ -179,7 +179,7 @@ Data flows through **App Groups** (`group.com.petetrain.app`) using UserDefaults
 
 ### Build errors about @main
 
-- Only `PeteTrainWidgets.swift` should have `@main`
+- Only `petehomeWidgets.swift` should have `@main`
 - Delete any auto-generated bundle files from Xcode template
 
 ---

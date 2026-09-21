@@ -5,7 +5,7 @@
  * somewhere else: the Coospo head unit when the watch dies mid-ride, a pool
  * session logged on a borrowed device, or the historical Garmin export. This
  * accepts GPX and TCX (both XML, parsed without a dependency) and normalises
- * them into the same AppleHealthWorkout shape the PeteTrain apps post, so
+ * them into the same AppleHealthWorkout shape the petehome apps post, so
  * there is exactly one ingestion path downstream.
  *
  * FIT is binary; `parseFit` is intentionally unimplemented and reports a clear

@@ -300,11 +300,11 @@ export class CostGovernor {
 
     if (dayPct >= 100 || monthPct >= 100) {
       await this.adapter.notify(
-        `PeteCoach budget reached: $${status.daySpent.toFixed(2)} today, $${status.monthSpent.toFixed(2)} this month. Running in templated mode until it resets.`
+        `petehome budget reached: $${status.daySpent.toFixed(2)} today, $${status.monthSpent.toFixed(2)} this month. Running in templated mode until it resets.`
       )
     } else if (dayPct >= 80 || monthPct >= 80) {
       await this.adapter.notify(
-        `PeteCoach at ${Math.round(Math.max(dayPct, monthPct))}% of budget ($${status.daySpent.toFixed(2)} today, $${status.monthSpent.toFixed(2)} this month). Downgrading models.`
+        `petehome at ${Math.round(Math.max(dayPct, monthPct))}% of budget ($${status.daySpent.toFixed(2)} today, $${status.monthSpent.toFixed(2)} this month). Downgrading models.`
       )
     }
   }

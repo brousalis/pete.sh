@@ -3,7 +3,7 @@
  *
  * Usage:
  *   pm2 start ecosystem.config.js --only petehome
- *   pm2 start ecosystem.config.js --only petecoach-worker
+ *   pm2 start ecosystem.config.js --only petehome-worker
  *   pm2 stop petehome
  *   pm2 restart petehome
  *   pm2 logs petehome
@@ -31,7 +31,7 @@ function resolveTsxCli() {
 module.exports = {
   apps: [
     {
-      // Local HTTPS Next server for PeteCoach PWA + APIs (LAN / .local)
+      // Local HTTPS Next server for petehome PWA + APIs (LAN / .local)
       name: 'petehome',
       script: path.join(webAppDir, 'scripts', 'pm2-start-https.js'),
       cwd: webAppDir,
@@ -54,9 +54,9 @@ module.exports = {
       restart_delay: 4000,
     },
     {
-      // PeteCoach worker – scheduled agent jobs, analytics recompute, push.
+      // petehome worker – scheduled agent jobs, analytics recompute, push.
       // Runs on the home PC so long jobs are not bound by HTTP timeouts.
-      name: 'petecoach-worker',
+      name: 'petehome-worker',
       script: resolveTsxCli(),
       args: path.join(coachWorkerDir, 'src', 'index.ts'),
       cwd: coachWorkerDir,

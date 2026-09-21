@@ -1,4 +1,4 @@
-"""PeteCoach service: PM2 worker helpers, yarn jobs, and HTTP API client."""
+"""petehome service: PM2 worker helpers, yarn jobs, and HTTP API client."""
 
 from __future__ import annotations
 
@@ -488,7 +488,7 @@ def format_projection(data: dict[str, Any] | None) -> list[str]:
 
 
 async def pm2_coach_process():
-    """Return PM2 ProcessInfo for petecoach-worker, or None."""
+    """Return PM2 ProcessInfo for petehome-worker, or None."""
     return await PM2Service.get_process(COACH_PM2_NAME)
 
 

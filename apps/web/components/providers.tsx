@@ -7,7 +7,7 @@ interface ProvidersProps {
   children: ReactNode
 }
 
-/** Client-side providers for PeteCoach. */
+/** Client-side providers for petehome. */
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider
