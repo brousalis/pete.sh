@@ -17,6 +17,7 @@ import type {
 import type {
     AppleHealthWorkout,
     AppleHealthWorkoutPayload,
+    AppleWorkoutType,
     BathroomMarker,
     CadenceSample,
     DailyHealthMetrics,
@@ -25,6 +26,7 @@ import type {
     HrvSample,
     PaceSample,
 } from '@/lib/types/apple-health.types'
+import { APPLE_WORKOUT_TYPE_MAP } from '@/lib/types/apple-health.types'
 import type { DayOfWeek } from '@/lib/types/fitness.types'
 
 // ============================================
@@ -149,6 +151,7 @@ export class AppleHealthService {
     }
 
     const { workout, linkedWorkoutId, linkedDay } = payload
+    workout.workoutType = this.normalizeWorkoutType(workout)
 
     const routeSamples = workout.route?.samples?.length ?? 0
     const markerCount = workout.bathroomMarkers?.length ?? 0
@@ -200,6 +203,7 @@ export class AppleHealthService {
       hr_min: toInt(workout.heartRate.min),
       hr_max: toInt(workout.heartRate.max),
       hr_zones: hrZones,
+      hr_zone_source: workout.heartRate.zoneSource ?? null,
       // Running metrics
       cadence_average: toInt(workout.runningMetrics?.cadence.average),
       pace_average: workout.runningMetrics?.pace.average || null,
@@ -256,6 +260,10 @@ export class AppleHealthService {
     const workoutId = (workoutData as { id: string })?.id
     if (!workoutId) {
       throw new Error('Failed to get workout ID after insert')
+    }
+
+    if (workout.activities?.length) {
+      await this.saveWorkoutActivities(workoutId, workout.activities)
     }
 
     // Save HR samples (batch insert)
@@ -357,6 +365,47 @@ export class AppleHealthService {
     )
 
     return { id: workoutId, success: true }
+  }
+
+  private normalizeWorkoutType(workout: AppleHealthWorkout): AppleWorkoutType {
+    const raw = workout.workoutTypeRaw
+    if (raw === 82 || workout.workoutType === 'swimBikeRun') return 'swimBikeRun'
+    if (raw === 83 || workout.workoutType === 'transition') return 'transition'
+    if (workout.workoutType === 'other' && raw != null && APPLE_WORKOUT_TYPE_MAP[raw]) {
+      return APPLE_WORKOUT_TYPE_MAP[raw]
+    }
+    return workout.workoutType
+  }
+
+  private async saveWorkoutActivities(
+    workoutId: string,
+    activities: NonNullable<AppleHealthWorkout['activities']>
+  ): Promise<void> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+    await db.from('apple_health_workout_activities').delete().eq('workout_id', workoutId)
+
+    const rows = activities.map((activity) => ({
+      workout_id: workoutId,
+      healthkit_id: activity.id,
+      activity_type: activity.activityType,
+      activity_type_raw: activity.activityTypeRaw ?? null,
+      start_date: activity.startDate,
+      end_date: activity.endDate,
+      duration: Math.round(activity.duration),
+      distance_meters: activity.distance ?? null,
+      active_calories: activity.activeCalories ?? null,
+      hr_average: activity.averageHeartRate ?? null,
+      hr_zones: activity.zones ?? null,
+    }))
+
+    const { error } = await db.from('apple_health_workout_activities').insert(rows)
+    if (error) {
+      console.error('Error saving workout activities:', error)
+    }
   }
 
   /**
@@ -973,6 +1022,10 @@ export class AppleHealthService {
       hrv_overnight_avg: metrics.hrvOvernightAvg ?? null,
       hrv_morning: metrics.hrvMorning ?? null,
       hrv_sample_count: metrics.hrvSampleCount ?? null,
+      hrv_rmssd: metrics.hrvRmssd ?? null,
+      hrv_rmssd_overnight_avg: metrics.hrvRmssdOvernightAvg ?? null,
+      hrv_rmssd_morning: metrics.hrvRmssdMorning ?? null,
+      hrv_rmssd_sample_count: metrics.hrvRmssdSampleCount ?? null,
       vo2_max: metrics.vo2Max || null,
       apple_training_load: metrics.appleTrainingLoad ?? null,
       sleep_duration: metrics.sleepDuration || null,
@@ -1009,6 +1062,9 @@ export class AppleHealthService {
     if (metrics.hrvSamples?.length) {
       await this.saveHrvSamples(metrics.date, metrics.hrvSamples)
     }
+    if (metrics.hrvRmssdSamples?.length) {
+      await this.saveHrvSamples(metrics.date, metrics.hrvRmssdSamples)
+    }
 
     return true
   }
@@ -1025,20 +1081,29 @@ export class AppleHealthService {
     const db = supabase as any
 
     const rows = samples
-      .filter((sample) => Number.isFinite(sample.sdnnMs) && sample.sdnnMs > 0)
-      .map((sample) => ({
-        timestamp: sample.timestamp,
-        metric_date: date,
-        sdnn_ms: sample.sdnnMs,
-        context: sample.context ?? null,
-        source: sample.source ?? null,
-      }))
+      .map((sample) => {
+        const metric = sample.metric ?? (sample.rmssdMs != null && sample.sdnnMs == null ? 'rmssd' : 'sdnn')
+        const sdnn = sample.sdnnMs
+        const rmssd = sample.rmssdMs
+        const value = metric === 'rmssd' ? rmssd : sdnn
+        if (value == null || !Number.isFinite(value) || value <= 0) return null
+        return {
+          timestamp: sample.timestamp,
+          metric_date: date,
+          metric,
+          sdnn_ms: sdnn ?? null,
+          rmssd_ms: rmssd ?? null,
+          context: sample.context ?? null,
+          source: sample.source ?? null,
+        }
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null)
 
     if (rows.length === 0) return
 
     const { error } = await db
       .from('apple_health_hrv_samples')
-      .upsert(rows, { onConflict: 'timestamp,sdnn_ms', ignoreDuplicates: true })
+      .upsert(rows, { onConflict: 'timestamp,metric', ignoreDuplicates: true })
 
     if (error) {
       console.error('Error saving HRV samples:', error)

@@ -32,6 +32,9 @@ final class HealthKitObserver {
     private var observedTypes: [HKSampleType] {
         var types: [HKSampleType] = [HKObjectType.workoutType()]
         types.append(HKQuantityType(.heartRateVariabilitySDNN))
+        if let rmssd = HealthKitPeteCoach.rmssdType {
+            types.append(rmssd)
+        }
         types.append(HKQuantityType(.restingHeartRate))
         types.append(HKQuantityType(.bodyMass))
         types.append(HKQuantityType(.vo2Max))

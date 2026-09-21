@@ -44,8 +44,10 @@ struct AppleHealthWorkout: Codable {
     // Effort score (Apple's workout intensity metric)
     let effortScore: Double?
 
+    var activities: [PetehomeWorkoutActivity]? = nil
+
     // Bathroom markers (Maple walk tracking)
-    var bathroomMarkers: [PetehomeBathroomMarker]?
+    var bathroomMarkers: [PetehomeBathroomMarker]? = nil
 
     let source: String
     let sourceVersion: String?
@@ -61,6 +63,20 @@ struct HeartRateSummary: Codable {
     let max: Int
     let resting: Int?
     let zones: [PetehomeHeartRateZone]
+    var zoneSource: String? = nil
+}
+
+struct PetehomeWorkoutActivity: Codable {
+    let id: String
+    let activityType: String
+    let activityTypeRaw: Int
+    let startDate: String
+    let endDate: String
+    let duration: Int
+    let distance: Double?
+    let activeCalories: Double?
+    let averageHeartRate: Int?
+    let zones: [PetehomeHeartRateZone]?
 }
 
 struct PetehomeHeartRateZone: Codable {
@@ -530,6 +546,97 @@ extension WorkoutActivityType {
     }
 }
 
+enum HealthKitPeteCoach {
+    static var rmssdType: HKQuantityType? {
+        HKQuantityType.quantityType(
+            forIdentifier: HKQuantityTypeIdentifier(rawValue: "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD")
+        )
+    }
+
+    static func includes(_ workout: HKWorkout, _ type: HKWorkoutActivityType) -> Bool {
+        if workout.workoutActivityType == type { return true }
+        return workout.workoutActivities.contains {
+            $0.workoutConfiguration.activityType == type
+        }
+    }
+
+    static func isOutdoorCandidate(_ workout: HKWorkout) -> Bool {
+        let outdoor: Set<HKWorkoutActivityType> = [
+            .hiking, .walking, .running, .cycling, .swimming, .other, .swimBikeRun
+        ]
+        if outdoor.contains(workout.workoutActivityType) { return true }
+        return workout.workoutActivities.contains {
+            outdoor.contains($0.workoutConfiguration.activityType)
+        }
+    }
+
+    static func activities(from workout: HKWorkout) -> [PetehomeWorkoutActivity] {
+        workout.workoutActivities.map { activity in
+            let type = activity.workoutConfiguration.activityType
+            let distanceType: HKQuantityType? = {
+                switch type {
+                case .cycling: return HKQuantityType(.distanceCycling)
+                case .swimming: return HKQuantityType(.distanceSwimming)
+                default: return HKQuantityType(.distanceWalkingRunning)
+                }
+            }()
+            let distance = distanceType.flatMap {
+                activity.statistics(for: $0)?.sumQuantity()?.doubleValue(for: .meter())
+            }
+            let calories = activity.statistics(for: HKQuantityType(.activeEnergyBurned))?
+                .sumQuantity()?.doubleValue(for: .kilocalorie())
+            let avgHR = activity.statistics(for: HKQuantityType(.heartRate))?
+                .averageQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+
+            return PetehomeWorkoutActivity(
+                id: activity.uuid.uuidString,
+                activityType: type.petehomeType,
+                activityTypeRaw: Int(type.rawValue),
+                startDate: activity.startDate.iso8601String,
+                endDate: activity.endDate.iso8601String,
+                duration: Int(activity.duration),
+                distance: distance,
+                activeCalories: calories,
+                averageHeartRate: avgHR.map { Int($0) },
+                zones: nativeHeartRateZones(from: activity)
+            )
+        }
+    }
+
+    static func nativeHeartRateZones(from workout: HKWorkout) -> [PetehomeHeartRateZone]? {
+        if #available(watchOS 27.0, iOS 27.0, *) {
+            return mapZoneGroup(workout.zoneGroupsByType?[HKQuantityType(.heartRate)])
+        }
+        return nil
+    }
+
+    static func nativeHeartRateZones(from activity: HKWorkoutActivity) -> [PetehomeHeartRateZone]? {
+        if #available(watchOS 27.0, iOS 27.0, *) {
+            return mapZoneGroup(activity.zoneGroupsByType?[HKQuantityType(.heartRate)])
+        }
+        return nil
+    }
+
+    @available(watchOS 27.0, iOS 27.0, *)
+    private static func mapZoneGroup(_ group: HKWorkoutZoneGroup?) -> [PetehomeHeartRateZone]? {
+        guard let group else { return nil }
+        let unit = HKUnit.count().unitDivided(by: .minute())
+        let total = group.zoneDurations.reduce(0.0) { $0 + $1.duration }
+        guard total > 0 else { return nil }
+        return group.zoneDurations.map { item in
+            let minValue = item.zone.minimum?.doubleValue(for: unit) ?? 0
+            let maxValue = item.zone.maximum?.doubleValue(for: unit) ?? minValue
+            return PetehomeHeartRateZone(
+                name: "z\(item.zone.index + 1)",
+                minBpm: Int(minValue.rounded()),
+                maxBpm: Int(maxValue.rounded()),
+                duration: Int(item.duration),
+                percentage: Int((item.duration / total) * 100)
+            )
+        }
+    }
+}
+
 extension HKWorkoutActivityType {
     /// Map HKWorkoutActivityType to Petehome API string
     var petehomeType: String {
@@ -558,6 +665,10 @@ extension HKWorkoutActivityType {
             return "elliptical"
         case .swimming:
             return "swimming"
+        case .swimBikeRun:
+            return "swimBikeRun"
+        case .transition:
+            return "transition"
         default:
             return "other"
         }

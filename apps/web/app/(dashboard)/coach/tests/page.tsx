@@ -83,6 +83,8 @@ export default function CoachTestsPage() {
       </div>
 
       <CssForm onSaved={() => void load()} />
+      <RunTtForm onSaved={() => void load()} />
+      <FtpForm onSaved={() => void load()} />
       <QuadForm onSaved={() => void load()} />
       <BikeForm onSaved={() => void load()} />
 
@@ -169,6 +171,107 @@ function CssForm({ onSaved }: { onSaved: () => void }) {
             <Input value={time200} onChange={(event) => setTime200(event.target.value)} placeholder="3:50" />
           </Field>
         </div>
+        <SaveRow saving={saving} message={message} onClick={() => void submit()} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function RunTtForm({ onSaved }: { onSaved: () => void }) {
+  const [distance, setDistance] = useState('5000')
+  const [time, setTime] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function submit() {
+    const distanceMeters = Number(distance)
+    const timeSeconds = parseClock(time)
+    if (!Number.isFinite(distanceMeters) || distanceMeters <= 0 || timeSeconds == null) {
+      setMessage('Enter distance in metres and time as mm:ss.')
+      return
+    }
+    setSaving(true)
+    setMessage(null)
+    try {
+      const payload = await postBenchmark({
+        testType: 'run_tt',
+        run: { distanceMeters, timeSeconds },
+      })
+      setMessage(payload.summary ?? 'Saved')
+      setTime('')
+      onSaved()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Run time trial → VDOT</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          A recent all-out 5K or 10K. Skip if the knee is irritable — a stale estimate is worse than
+          waiting for week 3. Soft surface preferred.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Distance (m)">
+            <Input value={distance} onChange={(event) => setDistance(event.target.value)} placeholder="5000" />
+          </Field>
+          <Field label="Time">
+            <Input value={time} onChange={(event) => setTime(event.target.value)} placeholder="24:30" />
+          </Field>
+        </div>
+        <SaveRow saving={saving} message={message} onClick={() => void submit()} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function FtpForm({ onSaved }: { onSaved: () => void }) {
+  const [watts, setWatts] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function submit() {
+    const averageWatts20Min = Number(watts)
+    if (!Number.isFinite(averageWatts20Min) || averageWatts20Min <= 0) {
+      setMessage('Enter the average watts from a continuous 20-minute effort.')
+      return
+    }
+    setSaving(true)
+    setMessage(null)
+    try {
+      const payload = await postBenchmark({
+        testType: 'ftp_20min',
+        ftp: { averageWatts20Min },
+      })
+      setMessage(payload.summary ?? 'Saved')
+      setWatts('')
+      onSaved()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">FTP (20-minute test)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Indoor or outdoor continuous 20-minute all-out average watts. FTP is stored as 95% of that
+          average. Knee-safe — no run afterward required.
+        </p>
+        <Field label="20-min avg watts">
+          <Input value={watts} onChange={(event) => setWatts(event.target.value)} placeholder="280" />
+        </Field>
         <SaveRow saving={saving} message={message} onClick={() => void submit()} />
       </CardContent>
     </Card>
@@ -369,6 +472,7 @@ function labelFor(type: string): string {
   if (type === 'quad_symmetry' || type === 'step_down') return 'Quad symmetry'
   if (type === 'bike_z2') return 'Bike Z2'
   if (type === 'run_tt') return 'Run time trial'
+  if (type === 'ftp_20min') return 'FTP 20-min'
   return type
 }
 
@@ -384,5 +488,6 @@ function summarize(test: TestRow): string {
     return `${result.avgHr} bpm @ ${result.cadence ?? '—'} rpm`
   }
   if (typeof result.vdot === 'number') return `VDOT ${result.vdot}`
+  if (typeof result.ftpWatts === 'number') return `${result.ftpWatts} W FTP`
   return test.notes ?? ''
 }

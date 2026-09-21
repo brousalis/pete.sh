@@ -218,6 +218,7 @@ struct WorkoutPage: View {
     let onResetAll: () -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @State private var workoutDataManager = WorkoutDataManager.shared
 
     private var day: Day {
         viewModel.currentDay
@@ -249,6 +250,12 @@ struct WorkoutPage: View {
             dayHeaderSection
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
+
+            if let coachToday = workoutDataManager.coachToday {
+                CoachTodayCard(payload: coachToday)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
+            }
 
             // Exercise sections
             ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
@@ -393,6 +400,80 @@ struct WorkoutPage: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Coach today
+
+struct CoachTodayCard: View {
+    let payload: CoachTodayPayload
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Coach")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.cyan)
+                Spacer()
+                if let readiness = payload.readiness {
+                    Text("\(readiness.score)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(readiness.blocked ? .red : .green)
+                }
+            }
+
+            ForEach(payload.sessions) { session in
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: icon(for: session.sport))
+                        .font(.system(size: 11))
+                        .foregroundStyle(session.blocked ? .secondary : .orange)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(session.title)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(session.blocked ? .secondary : .white)
+                            .lineLimit(2)
+                        if let target = session.target {
+                            Text(target)
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
+                        if session.blocked, let reason = session.blockedReason {
+                            Text(reason)
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.red.opacity(0.85))
+                                .lineLimit(2)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    if session.completed {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+
+            if payload.sessions.isEmpty {
+                Text("Rest / no sessions")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func icon(for sport: String) -> String {
+        switch sport {
+        case "run": return "figure.run"
+        case "bike": return "figure.outdoor.cycle"
+        case "swim": return "figure.pool.swim"
+        case "brick": return "figure.pool.swim"
+        case "strength": return "dumbbell.fill"
+        case "walk": return "figure.walk"
+        case "hiit": return "bolt.heart.fill"
+        case "pt": return "figure.flexibility"
+        default: return "figure.mixed.cardio"
+        }
     }
 }
 

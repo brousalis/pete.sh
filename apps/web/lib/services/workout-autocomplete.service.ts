@@ -59,6 +59,8 @@ const WORKOUT_TYPE_PATTERNS: Record<AppleWorkoutType, string[]> = {
   hiit: ['hiit', 'circuit', 'interval'],
   stairClimbing: ['stair', 'climb', 'step'],
   elliptical: ['elliptical'],
+  swimBikeRun: ['run', 'bike', 'swim', 'brick'],
+  transition: [],
   other: [],
 }
 

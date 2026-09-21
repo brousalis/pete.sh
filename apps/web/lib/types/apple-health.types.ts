@@ -27,6 +27,21 @@ export interface HeartRateSummary {
   max: number
   resting?: number // Resting HR for the day
   zones: HeartRateZone[]
+  /** healthkit = iOS 27 zone groups; estimated = 220-age bins */
+  zoneSource?: 'healthkit' | 'estimated' | string
+}
+
+export interface WorkoutActivityLeg {
+  id: string
+  activityType: string
+  activityTypeRaw?: number
+  startDate: string
+  endDate: string
+  duration: number
+  distance?: number
+  activeCalories?: number
+  averageHeartRate?: number
+  zones?: HeartRateZone[]
 }
 
 // ============================================
@@ -220,6 +235,8 @@ export type AppleWorkoutType =
   | 'rowing'
   | 'stairClimbing'
   | 'elliptical'
+  | 'swimBikeRun'
+  | 'transition'
   | 'other'
 
 // Maps to HKWorkoutActivityType raw values
@@ -236,6 +253,8 @@ export const APPLE_WORKOUT_TYPE_MAP: Record<number, AppleWorkoutType> = {
   35: 'rowing',
   44: 'stairClimbing', // HKWorkoutActivityType.stairClimbing
   17: 'elliptical',
+  82: 'swimBikeRun',
+  83: 'transition',
 }
 
 export interface AppleHealthWorkout {
@@ -288,6 +307,8 @@ export interface AppleHealthWorkout {
 
   // Effort score (Apple's workout intensity metric, 0-10 scale)
   effortScore?: number
+
+  activities?: WorkoutActivityLeg[]
 
   // Metadata
   source: string // "PeteWatch" or device name
@@ -359,6 +380,11 @@ export interface DailyHealthMetrics {
   hrvMorning?: number
   hrvSampleCount?: number
   hrvSamples?: HrvSample[]
+  hrvRmssd?: number
+  hrvRmssdOvernightAvg?: number
+  hrvRmssdMorning?: number
+  hrvRmssdSampleCount?: number
+  hrvRmssdSamples?: HrvSample[]
 
   // Cardio fitness
   vo2Max?: number
@@ -417,7 +443,9 @@ export interface AppleHealthWorkoutPayload {
  */
 export interface HrvSample {
   timestamp: string
-  sdnnMs: number
+  sdnnMs?: number
+  rmssdMs?: number
+  metric?: 'sdnn' | 'rmssd' | string
   /** 'sleep' readings are comparable to each other; waking ones are not */
   context?: 'sleep' | 'waking' | 'unknown' | string
   source?: string

@@ -56,9 +56,14 @@ export function computeReadiness(inputs: ReadinessInputs): Readiness {
   const flags: string[] = []
 
   // --- HRV against personal baseline -------------------------------------
-  const hrvBaseline = rollingMean(history.map((m) => m.hrvSdnn), 7)
-  const hrvSd = rollingSd(history.map((m) => m.hrvSdnn), 7)
-  const hrvToday = today?.hrvSdnn ?? null
+  const rmssdReady =
+    history.filter((metric) => metric.hrvRmssd != null).length >= MIN_BASELINE_SAMPLES &&
+    today?.hrvRmssd != null
+  const hrvValue = (metric: DailyMetric) => (rmssdReady ? metric.hrvRmssd : metric.hrvSdnn) ?? null
+
+  const hrvBaseline = rollingMean(history.map(hrvValue), 7)
+  const hrvSd = rollingSd(history.map(hrvValue), 7)
+  const hrvToday = today ? hrvValue(today) : null
 
   let hrvZ: number | null = null
   let hrvScore = 50
@@ -76,7 +81,7 @@ export function computeReadiness(inputs: ReadinessInputs): Readiness {
     else if (deltaPct >= -20) hrvScore = 38
     else hrvScore = 15
 
-    hrvDetail = `${Math.round(hrvToday)} ms vs ${Math.round(hrvBaseline)} ms baseline (${formatSigned(deltaPct)}%)`
+    hrvDetail = `${Math.round(hrvToday)} ms ${rmssdReady ? 'RMSSD' : 'SDNN'} vs ${Math.round(hrvBaseline)} ms baseline (${formatSigned(deltaPct)}%)`
 
     if (deltaPct <= -20) flags.push('hrv_suppressed')
   } else if (hrvToday != null) {

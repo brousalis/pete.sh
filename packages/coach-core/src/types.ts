@@ -127,8 +127,10 @@ export interface DailyMetric {
   steps: number | null
   exerciseMinutes: number | null
   restingHeartRate: number | null
-  /** Apple reports SDNN, not RMSSD. Baselines matter more than absolutes. */
+  /** Overnight SDNN. Used until a Series 12 RMSSD baseline exists. */
   hrvSdnn: number | null
+  /** Recovery HRV (RMSSD). Preferred for readiness once 4+ days exist. */
+  hrvRmssd?: number | null
   vo2Max: number | null
   sleepSeconds: number | null
   sleepDeep: number | null

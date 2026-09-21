@@ -26,7 +26,7 @@ const ACTIVITY_TYPES: Record<string, string> = {
   bike: 'cycling',
   run: 'running',
   strength: 'functionalStrengthTraining',
-  brick: 'cycling',
+  brick: 'swimBikeRun',
   walk: 'walking',
   hiit: 'highIntensityIntervalTraining',
   cross: 'other',

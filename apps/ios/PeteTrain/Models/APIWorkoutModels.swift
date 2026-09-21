@@ -91,3 +91,50 @@ struct APIExerciseAlternative: Codable {
     let form: String?
     let youtubeVideoId: String?
 }
+
+// MARK: - Coach today (GET /api/coach/watch/today)
+
+struct CoachTodayResponse: Codable {
+    let success: Bool
+    let data: CoachTodayPayload?
+    let error: String?
+}
+
+struct CoachTodayPayload: Codable {
+    let date: String
+    let readiness: CoachTodayReadiness?
+    let sessions: [CoachTodaySession]
+    let ptBlocks: [CoachTodayPTBlock]
+}
+
+struct CoachTodayReadiness: Codable {
+    let score: Int
+    let level: String
+    let blocked: Bool
+}
+
+struct CoachTodaySession: Codable, Identifiable {
+    let id: String
+    let sport: String
+    let type: String?
+    let title: String
+    let durationMinutes: Int?
+    let distanceMeters: Double?
+    let target: String?
+    let completed: Bool
+    let blocked: Bool
+    let blockedReason: String?
+}
+
+struct CoachTodayPTBlock: Codable, Identifiable {
+    let id: String
+    let name: String
+    let timeOfDay: String?
+    let completed: Bool
+    let exercises: [CoachTodayPTExercise]
+}
+
+struct CoachTodayPTExercise: Codable {
+    let name: String
+    let prescription: String
+}

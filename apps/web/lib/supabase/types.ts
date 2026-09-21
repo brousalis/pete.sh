@@ -556,6 +556,7 @@ export interface AppleHealthWorkoutInsert {
   hr_min?: number | null
   hr_max?: number | null
   hr_zones?: unknown[] | null
+  hr_zone_source?: string | null
   // Running metrics
   cadence_average?: number | null
   pace_average?: number | null
@@ -708,6 +709,10 @@ export interface AppleHealthDailyMetricsInsert {
   hrv_overnight_avg?: number | null
   hrv_morning?: number | null
   hrv_sample_count?: number | null
+  hrv_rmssd?: number | null
+  hrv_rmssd_overnight_avg?: number | null
+  hrv_rmssd_morning?: number | null
+  hrv_rmssd_sample_count?: number | null
   vo2_max?: number | null
   apple_training_load?: number | null
   sleep_duration?: number | null

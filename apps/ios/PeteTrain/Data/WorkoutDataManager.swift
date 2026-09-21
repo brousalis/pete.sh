@@ -28,6 +28,9 @@ final class WorkoutDataManager {
     /// Source of current data
     private(set) var dataSource: DataSource = .fallback
 
+    /// Today's coach sessions. Independent of the gym-routine cache.
+    private(set) var coachToday: CoachTodayPayload?
+
     enum DataSource: String {
         case api = "API"
         case cache = "Cache"
@@ -134,6 +137,18 @@ final class WorkoutDataManager {
         }
 
         isLoading = false
+
+        await refreshCoachToday()
+    }
+
+    func refreshCoachToday() async {
+        do {
+            let payload = try await api.fetchCoachToday()
+            self.coachToday = payload
+            print("📚 WorkoutDataManager: Coach today \(payload.sessions.count) sessions, readiness \(payload.readiness?.score ?? -1)")
+        } catch {
+            print("⚠️ WorkoutDataManager: Coach today failed — \(error.localizedDescription)")
+        }
     }
 
     /// Get a specific day by number (1-7)

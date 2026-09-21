@@ -102,6 +102,8 @@ final class TodayViewModel {
             return "figure.elliptical"
         case .swimming:
             return "figure.pool.swim"
+        case .swimBikeRun:
+            return "figure.pool.swim"
         case .yoga:
             return "figure.yoga"
         default:
@@ -135,6 +137,8 @@ final class TodayViewModel {
             return "Elliptical"
         case .swimming:
             return "Swimming"
+        case .swimBikeRun:
+            return "Triathlon"
         case .yoga:
             return "Yoga"
         default:

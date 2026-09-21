@@ -44,6 +44,9 @@ struct AppleHealthWorkout: Codable {
     // Effort score (Apple's workout intensity metric)
     let effortScore: Double?
 
+    /// Swim / bike / run / transition legs when Apple wrote a Multisport workout.
+    var activities: [PetehomeWorkoutActivity]? = nil
+
     let source: String
     let sourceVersion: String?
     let device: PetehomeDeviceInfo?
@@ -58,6 +61,22 @@ struct HeartRateSummary: Codable {
     let max: Int
     let resting: Int?
     let zones: [PetehomeHeartRateZone]
+    /// "healthkit" when zones came from iOS 27 zone groups; "estimated" for 220-age bins.
+    var zoneSource: String? = nil
+}
+
+/// One Multisport (or interval) activity inside an HKWorkout.
+struct PetehomeWorkoutActivity: Codable {
+    let id: String
+    let activityType: String
+    let activityTypeRaw: Int
+    let startDate: String
+    let endDate: String
+    let duration: Int
+    let distance: Double?
+    let activeCalories: Double?
+    let averageHeartRate: Int?
+    let zones: [PetehomeHeartRateZone]?
 }
 
 struct PetehomeHeartRateZone: Codable {
@@ -195,6 +214,8 @@ struct PetehomeCyclingMetrics: Codable {
     let speedSamples: [PetehomeCyclingSpeedSample]?
     let cadenceSamples: [PetehomeCyclingCadenceSample]?
     let powerSamples: [PetehomeCyclingPowerSample]?
+    /// iOS 27 cycling power time-in-zone. Same shape as heart-rate zones.
+    var powerZones: [PetehomeHeartRateZone]? = nil
 }
 
 struct PetehomeCyclingSpeedSample: Codable {
@@ -316,6 +337,13 @@ struct PetehomeDailyMetrics: Codable {
     var hrvSampleCount: Int? = nil
     var hrvSamples: [PetehomeHRVSample]? = nil
 
+    /// Series 12 Recovery HRV (RMSSD). Do not mix with SDNN in the same baseline.
+    var hrvRmssd: Double? = nil
+    var hrvRmssdOvernightAvg: Double? = nil
+    var hrvRmssdMorning: Double? = nil
+    var hrvRmssdSampleCount: Int? = nil
+    var hrvRmssdSamples: [PetehomeHRVSample]? = nil
+
     // Cardio Fitness
     let vo2Max: Double?
     var appleTrainingLoad: Double? = nil
@@ -359,7 +387,10 @@ struct PetehomeSleepStages: Codable {
 /// baselines if the readiness algorithm changes.
 struct PetehomeHRVSample: Codable {
     let timestamp: String
-    let sdnnMs: Double
+    var sdnnMs: Double? = nil
+    var rmssdMs: Double? = nil
+    /// "sdnn" or "rmssd"
+    var metric: String? = nil
     /// "sleep", "waking" or "unknown" — sleep readings are only comparable
     /// to other sleep readings.
     var context: String? = nil
@@ -1075,6 +1106,10 @@ extension HKWorkoutActivityType {
             return "elliptical"
         case .swimming:
             return "swimming"
+        case .swimBikeRun:
+            return "swimBikeRun"
+        case .transition:
+            return "transition"
         default:
             return "other"
         }

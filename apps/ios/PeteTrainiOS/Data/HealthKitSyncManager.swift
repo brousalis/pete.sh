@@ -98,7 +98,7 @@ final class HealthKitSyncManager {
             return false
         }
 
-        let typesToRead: Set<HKObjectType> = [
+        var typesToRead: Set<HKObjectType> = [
             // Activity
             HKQuantityType(.stepCount),
             HKQuantityType(.distanceWalkingRunning),
@@ -151,6 +151,9 @@ final class HealthKitSyncManager {
             // User characteristics (for age-based max HR calculation)
             HKCharacteristicType(.dateOfBirth)
         ]
+        if let rmssd = HealthKitPeteCoach.rmssdType {
+            typesToRead.insert(rmssd)
+        }
 
         do {
             try await healthStore.requestAuthorization(toShare: [], read: typesToRead)
@@ -531,7 +534,7 @@ final class HealthKitSyncManager {
         async let route = queryRoute(for: workout)
         
         // Query advanced running metrics (only available for running workouts)
-        let isRunning = workout.workoutActivityType == .running
+        let isRunning = HealthKitPeteCoach.includes(workout, .running)
         async let strideLength = isRunning ? queryStrideLength(for: workout) : nil
         async let runningPower = isRunning ? queryRunningPower(for: workout) : nil
         async let groundContactTime = isRunning ? queryGroundContactTime(for: workout) : nil
@@ -561,7 +564,11 @@ final class HealthKitSyncManager {
         let verticalOscillationResult = try await verticalOscillation
         
         // Await cycling, walking, and effort
-        let cyclingMetricsResult = try await cyclingMetrics
+        var cyclingMetricsResult = try await cyclingMetrics
+        if var cycling = cyclingMetricsResult {
+            cycling.powerZones = HealthKitPeteCoach.nativeCyclingPowerZones(from: workout)
+            cyclingMetricsResult = cycling
+        }
         let walkingMetricsResult = try await walkingMetrics
         let effortScoreResult = try await effortScore
         
@@ -576,14 +583,16 @@ final class HealthKitSyncManager {
         let minHR = hrValues.min() ?? 0
         let maxHR = hrValues.max() ?? 0
 
-        let hrZones = calculateHeartRateZones(samples: hrSamplesResult, workoutDuration: workout.duration)
+        let nativeZones = HealthKitPeteCoach.nativeHeartRateZones(from: workout)
+        let hrZones = nativeZones ?? calculateHeartRateZones(samples: hrSamplesResult, workoutDuration: workout.duration)
 
         let heartRateSummary = HeartRateSummary(
             average: avgHR,
             min: minHR,
             max: maxHR,
             resting: Int(restingHeartRate) > 0 ? Int(restingHeartRate) : nil,
-            zones: hrZones
+            zones: hrZones,
+            zoneSource: nativeZones == nil ? "estimated" : "healthkit"
         )
 
         var runningMetrics: PetehomeRunningMetrics? = nil
@@ -635,11 +644,10 @@ final class HealthKitSyncManager {
             isIndoor = locNum.intValue == HKSwimmingLocationType.pool.rawValue
         } else {
             // Fallback: infer from workout activity type and whether route exists
-            switch workout.workoutActivityType {
-            case .running, .walking, .hiking, .cycling, .swimming, .other:
-                isIndoor = routeResult == nil // No route likely means indoor (hiking/other = Maple walks)
-            default:
-                isIndoor = true // Strength, HIIT, etc. are indoor
+            if HealthKitPeteCoach.isOutdoorCandidate(workout) {
+                isIndoor = routeResult == nil
+            } else {
+                isIndoor = true
             }
         }
 
@@ -665,6 +673,10 @@ final class HealthKitSyncManager {
             route: routeResult,
             workoutEvents: workoutEvents.isEmpty ? nil : workoutEvents,
             effortScore: effortScoreResult,
+            activities: {
+                let legs = HealthKitPeteCoach.activities(from: workout)
+                return legs.count > 1 ? legs : nil
+            }(),
             source: "PeteTrain-iOS",
             sourceVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             device: deviceInfo,
@@ -1284,6 +1296,10 @@ final class HealthKitSyncManager {
             return positive(swimming) ?? positive(totalDistance) ?? positive(walkingRunning)
         case .cycling:
             return positive(cycling) ?? positive(totalDistance) ?? positive(walkingRunning)
+        case .swimBikeRun:
+            let parts = [swimming, cycling, walkingRunning].compactMap(positive)
+            if !parts.isEmpty { return parts.reduce(0, +) }
+            return positive(totalDistance)
         default:
             return positive(walkingRunning) ?? positive(totalDistance)
         }
@@ -1292,7 +1308,7 @@ final class HealthKitSyncManager {
     // MARK: - Swimming Metrics
 
     private func querySwimmingMetrics(for workout: HKWorkout) async -> PetehomeSwimmingMetrics? {
-        guard workout.workoutActivityType == .swimming else { return nil }
+        guard HealthKitPeteCoach.includes(workout, .swimming) else { return nil }
 
         let strokeCountValue = workout.statistics(for: HKQuantityType(.swimmingStrokeCount))?
             .sumQuantity()?.doubleValue(for: .count())
@@ -1438,7 +1454,7 @@ final class HealthKitSyncManager {
     /// Query cycling metrics for a cycling workout
     private func queryCyclingMetrics(for workout: HKWorkout) async throws -> PetehomeCyclingMetrics? {
         // Only query cycling metrics for cycling workouts
-        guard workout.workoutActivityType == .cycling else { return nil }
+        guard HealthKitPeteCoach.includes(workout, .cycling) else { return nil }
         
         async let speedSamples = queryCyclingSpeed(for: workout)
         async let cadenceSamples = queryCyclingCadence(for: workout)
@@ -1688,8 +1704,7 @@ final class HealthKitSyncManager {
 
     /// Route data can be delayed on iOS - retry for outdoor workouts (Maple walks, runs, etc.)
     private func queryRoute(for workout: HKWorkout) async throws -> PetehomeWorkoutRoute? {
-        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .swimming, .other]
-        let isOutdoor = outdoorTypes.contains(workout.workoutActivityType)
+        let isOutdoor = HealthKitPeteCoach.isOutdoorCandidate(workout)
 
         var result = try await queryRouteOnce(for: workout)
         if result == nil && isOutdoor {
@@ -2142,6 +2157,16 @@ final class HealthKitSyncManager {
         let hrvWindowEnd = sleep?.end ?? endOfDay
 
         async let hrvSeries = queryHRVSeries(
+            type: HKQuantityType(.heartRateVariabilitySDNN),
+            metric: "sdnn",
+            windowStart: hrvWindowStart,
+            windowEnd: hrvWindowEnd,
+            dayStart: startOfDay,
+            dayEnd: endOfDay
+        )
+        async let rmssdSeries = queryHRVSeries(
+            type: HealthKitPeteCoach.rmssdType,
+            metric: "rmssd",
             windowStart: hrvWindowStart,
             windowEnd: hrvWindowEnd,
             dayStart: startOfDay,
@@ -2163,6 +2188,7 @@ final class HealthKitSyncManager {
         let activitySummary = await queryActivitySummary(for: date)
 
         let hrvResult = await hrvSeries
+        let rmssdResult = await rmssdSeries
 
         return await PetehomeDailyMetrics(
             date: date.dateOnlyString,
@@ -2180,6 +2206,11 @@ final class HealthKitSyncManager {
             hrvMorning: hrvResult.morningReading,
             hrvSampleCount: hrvResult.samples.isEmpty ? nil : hrvResult.samples.count,
             hrvSamples: hrvResult.samples.isEmpty ? nil : hrvResult.samples,
+            hrvRmssd: rmssdResult.latest,
+            hrvRmssdOvernightAvg: rmssdResult.overnightAverage,
+            hrvRmssdMorning: rmssdResult.morningReading,
+            hrvRmssdSampleCount: rmssdResult.samples.isEmpty ? nil : rmssdResult.samples.count,
+            hrvRmssdSamples: rmssdResult.samples.isEmpty ? nil : rmssdResult.samples,
             vo2Max: vo2Max,
             sleepDuration: sleep?.asleepSeconds,
             sleepStages: sleep?.stages,
@@ -2315,16 +2346,23 @@ final class HealthKitSyncManager {
         let samples: [PetehomeHRVSample]
         let overnightAverage: Double?
         let morningReading: Double?
+        var latest: Double? = nil
     }
 
-    /// Collect every SDNN reading for the day, tag the ones inside the sleep
-    /// window, and derive the two numbers readiness uses.
+    /// Collect every SDNN or RMSSD reading for the day, tag the ones inside
+    /// the sleep window, and derive the two numbers readiness uses.
     private func queryHRVSeries(
+        type: HKQuantityType?,
+        metric: String,
         windowStart: Date,
         windowEnd: Date,
         dayStart: Date,
         dayEnd: Date
     ) async -> HRVSeriesResult {
+        guard let type else {
+            return HRVSeriesResult(samples: [], overnightAverage: nil, morningReading: nil)
+        }
+
         let queryStart = min(windowStart, dayStart)
         let predicate = HKQuery.predicateForSamples(
             withStart: queryStart,
@@ -2334,7 +2372,7 @@ final class HealthKitSyncManager {
 
         let samples: [HKQuantitySample] = await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
-                sampleType: HKQuantityType(.heartRateVariabilitySDNN),
+                sampleType: type,
                 predicate: predicate,
                 limit: HKObjectQueryNoLimit,
                 sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
@@ -2360,14 +2398,15 @@ final class HealthKitSyncManager {
             if isOvernight {
                 overnightValues.append(value)
             } else if morning == nil, sample.startDate >= windowEnd, sample.startDate <= dayEnd {
-                // First reading after wake
                 morning = value
             }
 
             payload.append(
                 PetehomeHRVSample(
                     timestamp: sample.startDate.iso8601String,
-                    sdnnMs: value,
+                    sdnnMs: metric == "sdnn" ? value : nil,
+                    rmssdMs: metric == "rmssd" ? value : nil,
+                    metric: metric,
                     context: isOvernight ? "sleep" : "waking",
                     source: sample.sourceRevision.source.name
                 )
@@ -2378,7 +2417,12 @@ final class HealthKitSyncManager {
             ? nil
             : overnightValues.reduce(0, +) / Double(overnightValues.count)
 
-        return HRVSeriesResult(samples: payload, overnightAverage: average, morningReading: morning)
+        return HRVSeriesResult(
+            samples: payload,
+            overnightAverage: average,
+            morningReading: morning,
+            latest: samples.last.map { $0.quantity.doubleValue(for: unit) }
+        )
     }
 
     /// Mean of a quantity type over a window (as opposed to the most recent

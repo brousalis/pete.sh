@@ -13,6 +13,7 @@ enum KeychainHelper {
 
     private static let service = "sh.pete.petehome"
     private static let apiKeyAccount = "api-key"
+    private static let coachAPIKeyAccount = "coach-api-key"
     private static let serverURLAccount = "server-url"
 
     private static let defaultServerURL = "https://www.pete.sh"
@@ -35,6 +36,25 @@ enum KeychainHelper {
     }
 
     static var hasAPIKey: Bool { !apiKey.isEmpty }
+
+    /// Dedicated coach bearer (`COACH_API_KEY`). Falls back to the ingest key
+    /// so a rebuild that only seeds `PETEHOME_API_KEY` still reaches open
+    /// coach routes; ingest itself always uses `apiKey`.
+    static var coachAPIKey: String {
+        if let stored = read(account: coachAPIKeyAccount), !stored.isEmpty {
+            return stored
+        }
+        if let seed = infoPlistValue(for: "PETEHOME_COACH_API_KEY"), !seed.isEmpty {
+            setCoachAPIKey(seed)
+            return seed
+        }
+        return apiKey
+    }
+
+    @discardableResult
+    static func setCoachAPIKey(_ key: String) -> Bool {
+        write(account: coachAPIKeyAccount, value: key)
+    }
 
     @discardableResult
     static func setAPIKey(_ key: String) -> Bool {

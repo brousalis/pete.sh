@@ -52,7 +52,7 @@ final class CoachPushManager: NSObject {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: String] = [

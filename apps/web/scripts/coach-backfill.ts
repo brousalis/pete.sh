@@ -222,6 +222,8 @@ const APPLE_TYPE_MAP: Record<string, string> = {
   HKWorkoutActivityTypeRowing: 'rowing',
   HKWorkoutActivityTypeElliptical: 'elliptical',
   HKWorkoutActivityTypeStairClimbing: 'stairClimbing',
+  HKWorkoutActivityTypeSwimBikeRun: 'swimBikeRun',
+  HKWorkoutActivityTypeTransition: 'transition',
 }
 
 function xmlAttr(line: string, name: string): string | undefined {

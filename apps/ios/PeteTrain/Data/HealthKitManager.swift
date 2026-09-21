@@ -108,7 +108,7 @@ final class HealthKitManager {
     func requestAuthorization() async -> Bool {
         guard isHealthKitAvailable else { return false }
 
-        let typesToRead: Set<HKObjectType> = [
+        var typesToRead: Set<HKObjectType> = [
             // Activity
             HKQuantityType(.stepCount),
             HKQuantityType(.distanceWalkingRunning),
@@ -154,6 +154,9 @@ final class HealthKitManager {
             // User characteristics (for age-based max HR calculation)
             HKCharacteristicType(.dateOfBirth)
         ]
+        if let rmssd = HealthKitPeteCoach.rmssdType {
+            typesToRead.insert(rmssd)
+        }
 
         let typesToWrite: Set<HKSampleType> = [
             HKQuantityType(.activeEnergyBurned),
@@ -1276,6 +1279,10 @@ final class HealthKitManager {
             return positive(swimming) ?? positive(totalDistance) ?? positive(walkingRunning)
         case .cycling:
             return positive(cycling) ?? positive(totalDistance) ?? positive(walkingRunning)
+        case .swimBikeRun:
+            let parts = [swimming, cycling, walkingRunning].compactMap(positive)
+            if !parts.isEmpty { return parts.reduce(0, +) }
+            return positive(totalDistance)
         default:
             return positive(walkingRunning) ?? positive(totalDistance)
         }
@@ -1284,7 +1291,7 @@ final class HealthKitManager {
     // MARK: - Swimming Metrics
 
     private func querySwimmingMetrics(for workout: HKWorkout) -> PetehomeSwimmingMetrics? {
-        guard workout.workoutActivityType == .swimming else { return nil }
+        guard HealthKitPeteCoach.includes(workout, .swimming) else { return nil }
 
         let strokeCountValue = workout.statistics(for: HKQuantityType(.swimmingStrokeCount))?
             .sumQuantity()?.doubleValue(for: .count())
@@ -1343,7 +1350,7 @@ final class HealthKitManager {
         guard isHealthKitAvailable else { return nil }
         
         // Only query cycling metrics for cycling workouts
-        guard workout.workoutActivityType == .cycling else { return nil }
+        guard HealthKitPeteCoach.includes(workout, .cycling) else { return nil }
         
         async let speedSamples = queryCyclingSpeed(for: workout)
         async let cadenceSamples = queryCyclingCadence(for: workout)
@@ -1595,9 +1602,7 @@ final class HealthKitManager {
             return nil
         }
 
-        // Route data can be delayed on watchOS - retry for outdoor workouts (Maple walks, runs, etc.)
-        let outdoorTypes: Set<HKWorkoutActivityType> = [.hiking, .walking, .running, .cycling, .swimming, .other]
-        let isOutdoor = outdoorTypes.contains(workout.workoutActivityType)
+        let isOutdoor = HealthKitPeteCoach.isOutdoorCandidate(workout)
 
         print("🐾 queryRoute: querying for \(workout.uuid.uuidString.prefix(8)) (outdoor=\(isOutdoor))...")
         var result = try await queryRouteOnce(for: workout)
@@ -1842,7 +1847,7 @@ final class HealthKitManager {
         async let route = queryRoute(for: workout)
         
         // Query advanced running metrics (only available for running workouts)
-        let isRunning = workout.workoutActivityType == .running
+        let isRunning = HealthKitPeteCoach.includes(workout, .running)
         async let strideLength = isRunning ? queryStrideLength(for: workout) : nil
         async let runningPower = isRunning ? queryRunningPower(for: workout) : nil
         async let groundContactTime = isRunning ? queryGroundContactTime(for: workout) : nil
@@ -1887,14 +1892,16 @@ final class HealthKitManager {
         let minHR = hrValues.min() ?? 0
         let maxHR = hrValues.max() ?? 0
 
-        let hrZones = calculateHeartRateZones(samples: hrSamplesResult, workoutDuration: workout.duration)
+        let nativeZones = HealthKitPeteCoach.nativeHeartRateZones(from: workout)
+        let hrZones = nativeZones ?? calculateHeartRateZones(samples: hrSamplesResult, workoutDuration: workout.duration)
 
         let heartRateSummary = HeartRateSummary(
             average: avgHR,
             min: minHR,
             max: maxHR,
             resting: Int(restingHeartRate) > 0 ? Int(restingHeartRate) : nil,
-            zones: hrZones
+            zones: hrZones,
+            zoneSource: nativeZones == nil ? "estimated" : "healthkit"
         )
 
         var runningMetrics: PetehomeRunningMetrics? = nil
@@ -1946,10 +1953,10 @@ final class HealthKitManager {
         } else {
             // Fallback: infer from workout activity type and whether route exists
             switch workout.workoutActivityType {
-            case .running, .walking, .hiking, .cycling, .swimming, .other:
-                isIndoor = routeResult == nil // No route likely means indoor (hiking/other = Maple walks)
-            default:
-                isIndoor = true // Strength, HIIT, etc. are indoor
+            if HealthKitPeteCoach.isOutdoorCandidate(workout) {
+                isIndoor = routeResult == nil
+            } else {
+                isIndoor = true
             }
         }
 
@@ -1975,6 +1982,10 @@ final class HealthKitManager {
             route: routeResult,
             workoutEvents: workoutEvents.isEmpty ? nil : workoutEvents,
             effortScore: effortScoreResult,
+            activities: {
+                let legs = HealthKitPeteCoach.activities(from: workout)
+                return legs.count > 1 ? legs : nil
+            }(),
             source: "PeteTrain",
             sourceVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             device: deviceInfo,

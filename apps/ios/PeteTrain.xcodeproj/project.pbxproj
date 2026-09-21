@@ -141,6 +141,7 @@
 		BBB00063 /* MapleWalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkSummaryView.swift; sourceTree = "<group>"; };
 		BBB00064 /* HRBroadcastManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HRBroadcastManager.swift; sourceTree = "<group>"; };
 		BBB00065 /* HRBroadcastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HRBroadcastView.swift; sourceTree = "<group>"; };
+		BBB00070 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		CBB3A45E2F0C2DCE00D10471 /* PeteTrainWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PeteTrainWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -237,6 +238,7 @@
 		EEE00001 = {
 			isa = PBXGroup;
 			children = (
+				BBB00070 /* Config.xcconfig */,
 				CBB3A4772F0C2EA400D10471 /* PeteTrainWidgetsExtension.entitlements */,
 				EEE00002 /* PeteTrain */,
 				CBB3A3C82F0C2CCB00D10471 /* petetrain */,
@@ -722,6 +724,7 @@
 		};
 		LLL00001 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BBB00070 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -786,6 +789,7 @@
 		};
 		LLL00002 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BBB00070 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -864,7 +868,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Debug;
 		};
@@ -891,7 +895,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Release;
 		};

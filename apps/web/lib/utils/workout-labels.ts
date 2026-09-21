@@ -9,6 +9,8 @@ const DEFAULT_LABELS: Record<string, string> = {
   walking: 'Walk',
   hiking: 'Hike', // Overridden to "Maple Walk" below
   swimming: 'Swim',
+  swimBikeRun: 'Triathlon',
+  transition: 'Transition',
   functionalStrengthTraining: 'Strength',
   traditionalStrengthTraining: 'Weights',
   coreTraining: 'Core',

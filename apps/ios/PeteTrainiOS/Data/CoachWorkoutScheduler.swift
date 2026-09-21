@@ -112,7 +112,7 @@ final class CoachWorkoutScheduler {
         guard let url = components?.url else { throw SchedulerError.badURL }
 
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("PeteTrain-iOS/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
@@ -134,7 +134,7 @@ final class CoachWorkoutScheduler {
 
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
-        request.setValue("Bearer \(KeychainHelper.apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONEncoder().encode(["results": results])
 
@@ -280,6 +280,7 @@ final class CoachWorkoutScheduler {
         case "cycling": return .cycling
         case "swimming": return .swimming
         case "walking": return .walking
+        case "swimBikeRun", "brick": return .swimBikeRun
         case "functionalStrengthTraining": return .functionalStrengthTraining
         case "traditionalStrengthTraining": return .traditionalStrengthTraining
         case "highIntensityIntervalTraining": return .highIntensityIntervalTraining

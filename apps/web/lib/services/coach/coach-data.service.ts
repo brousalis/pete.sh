@@ -260,6 +260,7 @@ export async function getDailyMetrics(from: string, to: string): Promise<DailyMe
     exerciseMinutes: toNumber(row.exercise_minutes),
     restingHeartRate: toNumber(row.resting_heart_rate),
     hrvSdnn: toNumber(row.hrv_sdnn),
+    hrvRmssd: toNumber(row.hrv_rmssd),
     vo2Max: toNumber(row.vo2_max),
     sleepSeconds: toNumber(row.sleep_seconds),
     sleepDeep: toNumber(row.sleep_deep),

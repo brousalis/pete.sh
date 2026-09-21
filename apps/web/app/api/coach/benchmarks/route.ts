@@ -50,6 +50,14 @@ const benchmarkSchema = z.object({
       timeSeconds: z.number().positive(),
     })
     .optional(),
+  ftp: z
+    .object({
+      /** Mean power from a continuous 20-minute all-out effort (watts). */
+      averageWatts20Min: z.number().positive(),
+      /** Optional override; defaults to 0.95 × 20-min average. */
+      ftpWatts: z.number().positive().optional(),
+    })
+    .optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -133,6 +141,18 @@ export async function POST(request: NextRequest) {
       summary = vdot
         ? `Run TT VDOT ${vdot}`
         : `Run TT ${input.run.distanceMeters} m in ${input.run.timeSeconds}s`
+    } else if (input.testType === 'ftp_20min') {
+      if (!input.ftp) return errorResponse('20-minute average watts are required', 400)
+      const ftpWatts =
+        input.ftp.ftpWatts ?? Math.round(input.ftp.averageWatts20Min * 0.95)
+      result = {
+        averageWatts20Min: input.ftp.averageWatts20Min,
+        ftpWatts,
+        factor: input.ftp.ftpWatts ? null : 0.95,
+      }
+      passed = ftpWatts > 0
+      sport = 'bike'
+      summary = `FTP ${ftpWatts} W (from ${input.ftp.averageWatts20Min} W × 20 min)`
     } else {
       return errorResponse(`Unsupported test type ${input.testType}`, 400)
     }

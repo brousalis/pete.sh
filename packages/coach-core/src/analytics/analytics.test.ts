@@ -324,6 +324,32 @@ describe('readiness', () => {
     assert.equal(readiness.level, 'fresh')
   })
 
+  it('uses RMSSD instead of SDNN once a Series 12 baseline exists', () => {
+    const withRmssd = baselineMetrics.map((metric) => ({
+      ...metric,
+      hrvSdnn: 40,
+      hrvRmssd: 70,
+    }))
+    const todayMetric: DailyMetric = {
+      ...withRmssd[0]!,
+      metricDate: today,
+      hrvSdnn: 20,
+      hrvRmssd: 72,
+    }
+    const readiness = computeReadiness({
+      date: today,
+      metrics: [...withRmssd, todayMetric],
+      tsb: -5,
+      acwr: 1.0,
+    })
+
+    assert.ok(
+      readiness.components.find((component) => component.key === 'hrv')?.detail.includes('RMSSD'),
+      'expected RMSSD in the HRV detail once a baseline exists'
+    )
+    assert.equal(readiness.level, 'fresh')
+  })
+
   it('drops when HRV is suppressed and resting heart rate is elevated', () => {
     const suppressed: DailyMetric = {
       ...baselineMetrics[0]!,

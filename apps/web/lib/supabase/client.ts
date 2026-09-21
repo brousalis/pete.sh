@@ -15,10 +15,24 @@ import type { Database } from './types'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any>
 
-// Environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+/**
+ * Read env at call time, not module load.
+ *
+ * CLI scripts (coach-backfill, doctor, …) call dotenv after their import graph
+ * has already evaluated this module. Capturing process.env into consts at the
+ * top would permanently miss those keys.
+ */
+function getSupabaseUrl(): string | undefined {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL
+}
+
+function getSupabaseAnonKey(): string | undefined {
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+}
+
+function getSupabaseServiceKey(): string | undefined {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY
+}
 
 /**
  * Check if a string is a valid HTTP/HTTPS URL
@@ -37,6 +51,8 @@ function isValidUrl(urlString: string | undefined): boolean {
  * Check if Supabase is properly configured with valid credentials
  */
 export function isSupabaseConfigured(): boolean {
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
   // Check that URL exists and is a valid HTTP/HTTPS URL
   if (!isValidUrl(supabaseUrl)) return false
   // Check that anon key exists and isn't a placeholder
@@ -48,6 +64,7 @@ export function isSupabaseConfigured(): boolean {
  * Check if service role key is available and valid (for writes)
  */
 export function hasServiceRoleKey(): boolean {
+  const supabaseServiceKey = getSupabaseServiceKey()
   if (!supabaseServiceKey) return false
   // Check it's not a placeholder
   if (supabaseServiceKey.includes('your-') || supabaseServiceKey.length < 20) return false
@@ -70,7 +87,7 @@ export function getSupabaseClient(): AnySupabaseClient | null {
 
   if (!anonClient) {
     try {
-      anonClient = createClient(supabaseUrl!, supabaseAnonKey!, {
+      anonClient = createClient(getSupabaseUrl()!, getSupabaseAnonKey()!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -101,7 +118,7 @@ export function getSupabaseServiceClient(): AnySupabaseClient | null {
 
   if (!serviceClient) {
     try {
-      serviceClient = createClient(supabaseUrl!, supabaseServiceKey!, {
+      serviceClient = createClient(getSupabaseUrl()!, getSupabaseServiceKey()!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,

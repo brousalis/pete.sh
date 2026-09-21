@@ -235,6 +235,33 @@ final class PetehomeAPI {
         )
     }
 
+    /// Today's PeteCoach sessions and readiness for the watch face.
+    func fetchCoachToday() async throws -> CoachTodayPayload {
+        let url = baseURL.appendingPathComponent("api/coach/watch/today")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(KeychainHelper.coachAPIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("PeteTrain/1.0", forHTTPHeaderField: "User-Agent")
+
+        if debugLoggingEnabled {
+            logRequest(request, body: nil)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled {
+            logResponse(response, data: data)
+        }
+
+        try handleResponse(response, data: data)
+
+        let apiResponse = try decoder.decode(CoachTodayResponse.self, from: data)
+        guard apiResponse.success, let payload = apiResponse.data else {
+            throw PetehomeAPIError.httpError(0, apiResponse.error ?? "No coach today payload")
+        }
+        return payload
+    }
+
     /// Test the API connection and credentials
     func testConnection() async throws -> Bool {
         print("🔌 Testing connection to \(baseURL.absoluteString)...")
