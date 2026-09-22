@@ -23,7 +23,6 @@ export function RailFuel() {
   const [date, setDate] = useState(chicagoToday)
   const [nutrition, setNutrition] = useState<NutritionDayView | null>(null)
   const [entries, setEntries] = useState<FuelEntryView[]>([])
-  const [recent, setRecent] = useState<FuelEntryView[]>([])
   const [loading, setLoading] = useState(true)
   const [estimating, setEstimating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -46,9 +45,9 @@ export function RailFuel() {
         fetch(`/api/coach/nutrition?date=${target}`, { credentials: 'include' }).then((r) =>
           r.json()
         ),
-        fetch(`/api/coach/fuel/entries?date=${target}`, { credentials: 'include' }).then((r) =>
-          r.json()
-        ),
+        fetch(`/api/coach/fuel/entries?date=${target}&recent=0`, {
+          credentials: 'include',
+        }).then((r) => r.json()),
       ])
 
       if (nutritionRes.success) setNutrition(nutritionRes.data as NutritionDayView)
@@ -56,7 +55,6 @@ export function RailFuel() {
 
       if (entriesRes.success) {
         setEntries((entriesRes.data.entries ?? []) as FuelEntryView[])
-        setRecent((entriesRes.data.recent ?? []) as FuelEntryView[])
       }
     } catch {
       setError('Failed to load fuel data')
@@ -127,24 +125,6 @@ export function RailFuel() {
       assumptions: '',
       confidence: null,
       source: 'manual',
-    })
-    setSheetOpen(true)
-  }
-
-  function openReuse(entry: FuelEntryView) {
-    setSheetMode('create')
-    setEditingId(null)
-    setDraft({
-      kind: entry.kind,
-      descriptionRaw: entry.descriptionRaw,
-      items: entry.items,
-      kcal: entry.kcal,
-      proteinG: entry.proteinG,
-      carbsG: entry.carbsG,
-      fatG: entry.fatG,
-      assumptions: entry.assumptions ?? '',
-      confidence: entry.confidence,
-      source: 'reuse',
     })
     setSheetOpen(true)
   }
@@ -302,8 +282,8 @@ export function RailFuel() {
   const status = nutrition ? fuelStatusLine(nutrition) : null
 
   return (
-    <div className="relative min-h-full">
-      <div className="space-y-4 px-5 pt-6 pb-44 md:px-8 md:pt-8 md:pb-36">
+    <div className="min-h-full">
+      <div className="space-y-4 px-5 pt-6 pb-8 md:px-8 md:pt-8 md:pb-10">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -351,6 +331,13 @@ export function RailFuel() {
           </div>
         </header>
 
+        <FuelComposer
+          estimating={estimating}
+          resetToken={composerReset}
+          onEstimate={(description) => void estimate(description)}
+          onManual={(description) => openManual(description)}
+        />
+
         {error ? (
           <Chip tone="caution">{error}</Chip>
         ) : null}
@@ -387,15 +374,6 @@ export function RailFuel() {
           />
         </Section>
       </div>
-
-      <FuelComposer
-        recent={recent}
-        estimating={estimating}
-        resetToken={composerReset}
-        onEstimate={(description) => void estimate(description)}
-        onManual={(description) => openManual(description)}
-        onReuse={openReuse}
-      />
 
       <FuelConfirmSheet
         open={sheetOpen}

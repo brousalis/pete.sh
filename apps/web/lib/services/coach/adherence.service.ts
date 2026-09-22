@@ -6,6 +6,8 @@
  * invent tool calls for RPE history.
  */
 
+import type { PlannedSession } from '@petehome/coach-core'
+
 import { coachDb, getSessionsInRange } from '@/lib/services/coach/coach-data.service'
 
 function chicagoToday(): string {
@@ -56,11 +58,17 @@ const SPORT_ALIASES: Record<string, string[]> = {
     'traditional_strength_training',
     'core_training',
   ],
-  brick: ['bike', 'run', 'cycling', 'running'],
+  brick: ['bike', 'run', 'cycling', 'running', 'swim_bike_run'],
+  hiit: ['hiit', 'high_intensity_interval_training'],
+  walk: ['walk', 'walking', 'hiking'],
 }
 
+/** HealthKit types arrive as camelCase; planned sports are snake_case. */
 function normalizeSport(value: string): string {
-  return value.toLowerCase().replace(/[\s-]+/g, '_')
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
 }
 
 function sportsMatch(plannedSport: string, workoutType: string): boolean {
@@ -272,6 +280,118 @@ export async function linkWorkoutToPlannedSession(input: {
   }
 
   return { sessionId: match.id, linked: true }
+}
+
+/**
+ * Reverse of ingest linking: given a planned session, find a same-day unlinked
+ * workout of the matching sport. Covers Mark-done-after-sync and self-heal on
+ * Today/Plan loads when completed_activity_id was never set.
+ */
+export async function linkPlannedSessionToMatchingWorkout(input: {
+  sessionId: string
+  sport: string
+  sessionDate: string
+  completedActivityId?: string | null
+}): Promise<{ workoutId: string | null; linked: boolean }> {
+  if (input.completedActivityId) {
+    return { workoutId: input.completedActivityId, linked: false }
+  }
+
+  const { queryActivities } = await import('@/lib/services/coach/coach-data.service')
+  const db = coachDb()
+
+  const [activities, claimedResult] = await Promise.all([
+    queryActivities({ from: input.sessionDate, to: input.sessionDate, limit: 50 }),
+    db
+      .from('coach_planned_session')
+      .select('completed_activity_id')
+      .eq('session_date', input.sessionDate)
+      .not('completed_activity_id', 'is', null),
+  ])
+
+  const claimedIds = new Set(
+    ((claimedResult.data ?? []) as { completed_activity_id: string | null }[])
+      .map((row) => row.completed_activity_id)
+      .filter((id): id is string => Boolean(id))
+  )
+
+  const match = activities.find((activity) => {
+    if (claimedIds.has(activity.id) || activity.plannedSessionId) return false
+    return (
+      sportsMatch(input.sport, activity.rawType) || sportsMatch(input.sport, activity.sport)
+    )
+  })
+
+  if (!match) return { workoutId: null, linked: false }
+
+  const { error: updateError } = await db
+    .from('coach_planned_session')
+    .update({
+      completed_activity_id: match.id,
+      status: 'completed',
+    })
+    .eq('id', input.sessionId)
+    .is('completed_activity_id', null)
+
+  if (updateError) {
+    console.error('[adherence] Failed to reverse-link workout:', updateError.message)
+    return { workoutId: null, linked: false }
+  }
+
+  return { workoutId: match.id, linked: true }
+}
+
+/**
+ * For sessions missing completed_activity_id, try to attach a same-day matching
+ * workout. Returns updated PlannedSession objects (mutates link fields only).
+ */
+export async function reconcileSessionActivityLinks(
+  sessions: PlannedSession[]
+): Promise<PlannedSession[]> {
+  const needsLink = sessions.filter(
+    (session) =>
+      !session.completedActivityId &&
+      (session.status === 'planned' ||
+        session.status === 'modified' ||
+        session.status === 'completed')
+  )
+  if (needsLink.length === 0) return sessions
+
+  const updates = new Map<string, string>()
+
+  // Process by date so claimed ids stay consistent within the batch.
+  const byDate = new Map<string, typeof needsLink>()
+  for (const session of needsLink) {
+    const list = byDate.get(session.sessionDate) ?? []
+    list.push(session)
+    byDate.set(session.sessionDate, list)
+  }
+
+  for (const [, daySessions] of byDate) {
+    for (const session of daySessions) {
+      const result = await linkPlannedSessionToMatchingWorkout({
+        sessionId: session.id,
+        sport: session.sport,
+        sessionDate: session.sessionDate,
+        completedActivityId: updates.get(session.id) ?? session.completedActivityId,
+      })
+      if (result.linked && result.workoutId) {
+        updates.set(session.id, result.workoutId)
+      }
+    }
+  }
+
+  if (updates.size === 0) return sessions
+
+  return sessions.map((session) => {
+    const workoutId = updates.get(session.id)
+    if (!workoutId) return session
+    return {
+      ...session,
+      completedActivityId: workoutId,
+      status: session.status === 'skipped' ? session.status : 'completed',
+    }
+  })
 }
 
 /** Format adherence for prompts / weekly plan job. */

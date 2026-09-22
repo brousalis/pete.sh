@@ -1,11 +1,10 @@
-export const DESK_PANELS = ['today', 'plan', 'load', 'activity', 'more', 'coach', 'fuel'] as const
+export const DESK_PANELS = ['today', 'plan', 'activity', 'more', 'coach', 'fuel'] as const
 
 export type DeskPanel = (typeof DESK_PANELS)[number]
 
 export const PANEL_LABELS: Record<DeskPanel, string> = {
   today: 'Today',
   plan: 'Plan',
-  load: 'Load',
   activity: 'Activity',
   more: 'More',
   coach: 'Coach',
@@ -18,7 +17,6 @@ export const PANEL_ORDER: DeskPanel[] = [
   'plan',
   'fuel',
   'activity',
-  'load',
   'coach',
   'more',
 ]
@@ -30,9 +28,9 @@ export const TOOL_PANEL: Record<string, DeskPanel> = {
   get_injury_status: 'more',
   log_symptom: 'more',
   get_pt_protocol: 'more',
-  get_training_load: 'load',
+  get_training_load: 'plan',
   get_readiness: 'today',
-  project_race: 'load',
+  project_race: 'plan',
   query_activities: 'activity',
   get_activity_detail: 'activity',
   get_gear: 'more',
@@ -47,6 +45,8 @@ export function parseDeskPanel(value: string | null | undefined): DeskPanel {
   // Knee moved under More — keep old deep links working.
   if (value === 'knee') return 'more'
   if (value === 'fuelling' || value === 'nutrition') return 'fuel'
+  // Load folded into Plan — keep old deep links working.
+  if (value === 'load') return 'plan'
   if (value && (DESK_PANELS as readonly string[]).includes(value)) {
     return value as DeskPanel
   }

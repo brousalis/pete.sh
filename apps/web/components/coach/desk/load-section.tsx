@@ -1,7 +1,6 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
   Area,
@@ -48,7 +47,8 @@ const SERIES = [
   { key: 'form', label: 'Form (TSB)', colour: 'var(--ink-3)' },
 ]
 
-export function RailLoad() {
+/** Load + race projection block — rendered above the Plan calendar. */
+export function LoadSection() {
   const [load, setLoad] = useState<LoadSummary | null>(null)
   const [projection, setProjection] = useState<ProjectionView | null>(null)
   const [loading, setLoading] = useState(true)
@@ -70,7 +70,7 @@ export function RailLoad() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-20">
+      <div className="flex justify-center py-12">
         <Loader2 className="size-4 animate-spin text-ink-3" />
       </div>
     )
@@ -88,17 +88,7 @@ export function RailLoad() {
   const monotony = load?.monotony == null ? 'neutral' : load.monotony > 2 ? 'caution' : 'good'
 
   return (
-    <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="t-display">Load</h1>
-        <Link
-          href="/coach/tests"
-          className="t-label font-medium text-ink-3 underline-offset-4 transition-colors hover:text-ink-1 hover:underline"
-        >
-          Baseline tests
-        </Link>
-      </header>
-
+    <div className="space-y-6">
       {load ? (
         <Panel className="px-5 py-5">
           <MetricRow>

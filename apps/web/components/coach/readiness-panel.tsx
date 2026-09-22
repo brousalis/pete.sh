@@ -126,25 +126,25 @@ export function ReadinessPanel({
         openLabel="Hide breakdown"
         className="mt-3 border-t border-line pt-1"
       >
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {readiness.components.map((component) => (
-            <div key={component.key}>
-              <div className="flex items-baseline gap-3">
-                <span className="t-label w-28 shrink-0 text-ink-2">{component.label}</span>
-                <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-3">
-                  <div
-                    className={cn('h-full rounded-full', toneClasses(scoreTone(component.score)).dot)}
-                    style={{ width: `${component.score}%` }}
-                  />
+            <div key={component.key} className="space-y-0.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="t-label truncate text-ink-2">{component.label}</span>
+                <div className="flex shrink-0 items-baseline gap-2">
+                  <span className="t-num t-num-sm text-ink-1">{component.score}</span>
+                  <span className="t-label w-8 text-right text-ink-3">
+                    {Math.round(component.weight * 100)}%
+                  </span>
                 </div>
-                <span className="t-num t-num-sm w-7 shrink-0 text-right text-ink-1">
-                  {component.score}
-                </span>
-                <span className="t-label w-8 shrink-0 text-right text-ink-3">
-                  {Math.round(component.weight * 100)}%
-                </span>
               </div>
-              <p className="mt-1 t-label pl-31 text-ink-3">{component.detail}</p>
+              <div className="h-1 overflow-hidden rounded-full bg-surface-3">
+                <div
+                  className={cn('h-full rounded-full', toneClasses(scoreTone(component.score)).dot)}
+                  style={{ width: `${component.score}%` }}
+                />
+              </div>
+              <p className="t-label leading-snug text-ink-3">{component.detail}</p>
             </div>
           ))}
         </div>

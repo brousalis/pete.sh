@@ -46,11 +46,15 @@ function formatDuration(seconds: number): string {
   return `${minutes}m ${secs}s`
 }
 
-export function HrZonesChart({ zones, className }: HrZonesChartProps) {
+export function HrZonesChart({
+  zones,
+  className,
+  height = 140,
+}: HrZonesChartProps & { height?: number }) {
   // Filter out zones with 0 duration and sort by intensity
   const zoneOrder = ['rest', 'warmup', 'fatBurn', 'cardio', 'peak']
   const filteredZones = zones
-    .filter(z => z.duration > 0)
+    .filter((z) => z.duration > 0 || z.percentage > 0)
     .sort((a, b) => zoneOrder.indexOf(a.name) - zoneOrder.indexOf(b.name))
 
   if (filteredZones.length === 0) {
@@ -61,13 +65,16 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
     )
   }
 
-  const chartData = filteredZones.map(zone => ({
+  const chartData = filteredZones.map((zone) => ({
     zone: ZONE_LABELS[zone.name] || zone.name,
     zoneName: zone.name,
-    duration: zone.duration,
+    duration: zone.duration > 0 ? zone.duration : zone.percentage,
     percentage: zone.percentage,
-    bpmRange: `${zone.minBpm}-${zone.maxBpm} BPM`,
-    formattedDuration: formatDuration(zone.duration),
+    bpmRange:
+      zone.minBpm > 0 || zone.maxBpm > 0
+        ? `${zone.minBpm}–${zone.maxBpm} BPM`
+        : null,
+    formattedDuration: zone.duration > 0 ? formatDuration(zone.duration) : `${zone.percentage}%`,
   }))
 
   const chartConfig: ChartConfig = {
@@ -78,11 +85,15 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
 
   return (
     <div className={className}>
-      <ChartContainer config={chartConfig} className="h-[120px] w-full">
+      <ChartContainer
+        config={chartConfig}
+        className="aspect-auto w-full"
+        style={{ height }}
+      >
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ left: 0, right: 0, top: 0, bottom: 0 }}
+          margin={{ left: 0, right: 8, top: 0, bottom: 0 }}
         >
           <XAxis type="number" hide />
           <YAxis
@@ -90,31 +101,33 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
             dataKey="zone"
             tickLine={false}
             axisLine={false}
-            width={70}
+            width={72}
             tick={{ fontSize: 11 }}
           />
           <ChartTooltip
             cursor={false}
             content={
               <ChartTooltipContent
-                formatter={(value, name, item) => (
+                formatter={(_value, _name, item) => (
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">{item.payload.zone}</span>
                     <span className="text-muted-foreground text-xs">
-                      {item.payload.formattedDuration} ({item.payload.percentage}%)
+                      {item.payload.formattedDuration}
+                      {typeof item.payload.percentage === 'number'
+                        ? ` (${item.payload.percentage}%)`
+                        : ''}
                     </span>
-                    <span className="text-muted-foreground text-xs">
-                      {item.payload.bpmRange}
-                    </span>
+                    {item.payload.bpmRange ? (
+                      <span className="text-muted-foreground text-xs">
+                        {item.payload.bpmRange}
+                      </span>
+                    ) : null}
                   </div>
                 )}
               />
             }
           />
-          <Bar
-            dataKey="duration"
-            radius={[0, 4, 4, 0]}
-          >
+          <Bar dataKey="duration" radius={[0, 4, 4, 0]}>
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
@@ -125,16 +138,15 @@ export function HrZonesChart({ zones, className }: HrZonesChartProps) {
         </BarChart>
       </ChartContainer>
 
-      {/* Legend */}
-      <div className="mt-2 flex flex-wrap gap-3">
-        {filteredZones.map(zone => (
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+        {filteredZones.map((zone) => (
           <div key={zone.name} className="flex items-center gap-1.5">
             <div
-              className="size-2.5 rounded-full"
+              className="size-2 rounded-full"
               style={{ backgroundColor: ZONE_COLORS[zone.name] || HEX.slate }}
             />
             <span className="text-muted-foreground text-xs">
-              {ZONE_LABELS[zone.name] || zone.name}: {zone.percentage}%
+              {ZONE_LABELS[zone.name] || zone.name} {Math.round(zone.percentage)}%
             </span>
           </div>
         ))}

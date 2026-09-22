@@ -56,17 +56,23 @@ export function SessionCard({
   const done = session.status === 'completed'
   const skipped = session.status === 'skipped'
   const linked = done && session.activity != null
-  const blocked = session.guardrail != null && !session.guardrail.passed && !done
+  const blocked =
+    session.guardrail != null && !session.guardrail.passed && !done
 
   const blockingViolations =
     session.guardrail?.violations.filter(
-      (violation) => violation.severity === 'block' || violation.severity === 'red_flag'
+      violation =>
+        violation.severity === 'block' || violation.severity === 'red_flag'
     ) ?? []
 
   const plannedFacts = [
-    session.durationMinutes ? { value: String(session.durationMinutes), unit: 'min' } : null,
+    session.durationMinutes
+      ? { value: String(session.durationMinutes), unit: 'min' }
+      : null,
     formatDistance(session.distanceMeters, session.sport),
-    session.plannedLoad ? { value: String(session.plannedLoad), unit: 'TSS' } : null,
+    session.plannedLoad
+      ? { value: String(session.plannedLoad), unit: 'TSS' }
+      : null,
     ...formatTargets(session),
   ].filter((fact): fact is { value: string; unit: string } => fact != null)
 
@@ -84,36 +90,25 @@ export function SessionCard({
   return (
     <Panel
       className={cn(
-        'relative overflow-hidden',
+        'relative overflow-hidden border border-line/45',
         compact ? 'px-3.5 py-3' : 'px-4 py-4',
-        blocked && 'border border-tone-alert/40',
-        // Linked completions are review surfaces — keep full weight.
+        blocked && 'border-tone-alert/40',
+        // Dim unlinked/skipped only — linked reviews stay fully readable.
         ((done && !linked) || skipped) && 'opacity-70'
       )}
     >
-      {/* Sport is identified by a spine rather than a badge, so the eye can
-          sort a stack of sessions by discipline without reading them. */}
-      <span
-        className={cn(
-          'absolute inset-y-0 left-0 w-[3px]',
-          sport.bar,
-          ((done && !linked) || skipped) && 'opacity-40'
-        )}
-        aria-hidden
-      />
-
-      <div className="flex items-start gap-3 pl-1.5">
+      <div className="flex items-start gap-3">
         <div
           className={cn(
-            'grid shrink-0 place-items-center rounded-control',
+            'rounded-control grid shrink-0 place-items-center',
             compact ? 'size-8' : 'size-9',
             done ? 'bg-tone-good/15' : skipped ? 'bg-surface-2' : sport.soft
           )}
         >
           {done ? (
-            <Check className="size-4 text-tone-good" />
+            <Check className="text-tone-good size-4" />
           ) : skipped ? (
-            <Ban className="size-4 text-ink-3" />
+            <Ban className="text-ink-3 size-4" />
           ) : (
             <Icon className={cn('size-4', sport.text)} />
           )}
@@ -124,8 +119,7 @@ export function SessionCard({
             <h3
               className={cn(
                 compact ? 't-subtitle' : 't-title',
-                // Strikethrough only when there is nothing to review.
-                ((done && !linked) || skipped) && 'line-through'
+                (done || skipped) && 'text-ink-2 line-through decoration-ink-3/70'
               )}
             >
               {session.title}
@@ -144,7 +138,7 @@ export function SessionCard({
                 session={session}
                 activity={session.activity}
                 onOpenActivity={openActivity}
-                showSparkline={showActivitySparkline && !compact}
+                showCharts={showActivitySparkline && !compact}
               />
             </div>
           ) : (
@@ -152,40 +146,53 @@ export function SessionCard({
               {plannedFacts.length > 0 ? (
                 <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   {plannedFacts.map((fact, index) => (
-                    <span key={index} className="inline-flex items-baseline gap-1">
-                      <span className="t-num t-num-sm text-ink-1">{fact.value}</span>
+                    <span
+                      key={index}
+                      className="inline-flex items-baseline gap-1"
+                    >
+                      <span className="t-num t-num-sm text-ink-1">
+                        {fact.value}
+                      </span>
                       <span className="t-micro text-ink-3">{fact.unit}</span>
                     </span>
                   ))}
                 </div>
               ) : null}
               {done && !linked ? (
-                <p className="mt-1 t-micro text-ink-3">Done · no workout linked</p>
+                <p className="t-micro text-ink-3 mt-1">
+                  Done · no workout linked
+                </p>
               ) : null}
             </>
           )}
-
-          {session.description && !compact && !linked ? (
-            <p className="mt-2.5 t-body text-ink-2">{session.description}</p>
-          ) : null}
-
-          {session.rationale && !compact && !linked ? (
-            <p className="mt-2.5 border-l-2 border-line-strong pl-2.5 t-label leading-relaxed text-ink-3">
-              {session.rationale}
-            </p>
-          ) : null}
         </div>
       </div>
 
+      {/* Prescription copy sits below the review data so the eye hits
+          actuals + HR first, then coach intent. */}
+      {session.description && !compact ? (
+        <p className="t-body text-ink-2 mt-3 pl-0 sm:pl-12">{session.description}</p>
+      ) : null}
+
+      {session.rationale && !compact ? (
+        <p className="border-line-strong t-label text-ink-3 mt-2 border-l-2 pl-2.5 leading-relaxed sm:ml-12">
+          {session.rationale}
+        </p>
+      ) : null}
+
       {blockingViolations.length > 0 ? (
-        <div className="mt-3 space-y-1.5 rounded-control wash-alert px-3 py-2.5">
+        <div className="rounded-control wash-alert mt-3 space-y-1.5 px-3 py-2.5">
           {blockingViolations.map((violation, index) => (
             <div key={index} className="flex gap-2">
-              <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-tone-alert" />
+              <AlertTriangle className="text-tone-alert mt-0.5 size-3.5 shrink-0" />
               <div className="min-w-0">
-                <p className="t-label font-medium text-tone-alert">{violation.message}</p>
+                <p className="t-label text-tone-alert font-medium">
+                  {violation.message}
+                </p>
                 {violation.remedy ? (
-                  <p className="mt-0.5 t-label text-ink-2">{violation.remedy}</p>
+                  <p className="t-label text-ink-2 mt-0.5">
+                    {violation.remedy}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -193,12 +200,12 @@ export function SessionCard({
         </div>
       ) : null}
 
-      {hasSteps(session) && !linked ? (
+      {hasSteps(session) ? (
         <Disclosure
           label="Structure"
           openLabel="Hide structure"
-          defaultOpen={defaultShowSteps}
-          className="mt-2 pl-1.5"
+          defaultOpen={defaultShowSteps && !linked}
+          className="mt-2 sm:ml-12"
         >
           <StructuredSteps steps={session.steps} />
         </Disclosure>
@@ -206,11 +213,11 @@ export function SessionCard({
 
       {(session.status === 'planned' || session.status === 'modified') &&
       (onComplete || onSkip || onMove) ? (
-        <div className="mt-3.5 flex gap-2 pl-1.5">
+        <div className="mt-3.5 flex gap-2">
           {onComplete ? (
             <Button
               size="sm"
-              className="flex-1 bg-brand text-brand-ink hover:bg-brand/90"
+              className="bg-brand text-brand-ink hover:bg-brand/90 flex-1"
               disabled={blocked || busy}
               onClick={() => onComplete(session.id)}
             >
@@ -258,7 +265,9 @@ interface Step {
 
 function hasSteps(session: TodaySession): boolean {
   const steps = session.steps as { blocks?: unknown[]; warmup?: unknown }
-  return Boolean(steps?.warmup || (Array.isArray(steps?.blocks) && steps.blocks.length > 0))
+  return Boolean(
+    steps?.warmup || (Array.isArray(steps?.blocks) && steps.blocks.length > 0)
+  )
 }
 
 function StructuredSteps({ steps }: { steps: Record<string, unknown> }) {
@@ -269,13 +278,18 @@ function StructuredSteps({ steps }: { steps: Record<string, unknown> }) {
   }
 
   return (
-    <div className="space-y-0.5 rounded-control bg-surface-2 px-3 py-2.5">
+    <div className="rounded-control bg-surface-2 space-y-0.5 px-3 py-2.5">
       {workout.warmup ? <StepLine step={workout.warmup} /> : null}
 
       {workout.blocks?.map((block, index) => (
-        <div key={index} className={cn(block.repeat > 1 && 'border-l-2 border-line-strong pl-2.5')}>
+        <div
+          key={index}
+          className={cn(
+            block.repeat > 1 && 'border-line-strong border-l-2 pl-2.5'
+          )}
+        >
           {block.repeat > 1 ? (
-            <p className="t-num t-num-sm py-0.5 text-ink-2">{block.repeat}×</p>
+            <p className="t-num t-num-sm text-ink-2 py-0.5">{block.repeat}×</p>
           ) : null}
           {block.steps.map((step, stepIndex) => (
             <StepLine key={stepIndex} step={step} />
@@ -310,13 +324,20 @@ function StepLine({ step }: { step: Step }) {
   return (
     <div className="flex items-baseline gap-2.5 py-0.5">
       <span
-        className={cn('t-micro w-16 shrink-0', step.kind === 'work' ? 'text-ink-1' : 'text-ink-3')}
+        className={cn(
+          't-micro w-16 shrink-0',
+          step.kind === 'work' ? 'text-ink-1' : 'text-ink-3'
+        )}
       >
         {step.label ?? step.kind}
       </span>
       {goal ? <span className="t-num t-num-sm text-ink-1">{goal}</span> : null}
-      {alert ? <span className="t-num t-num-sm text-ink-2">@{alert}</span> : null}
-      {step.note ? <span className="t-label min-w-0 text-ink-3">— {step.note}</span> : null}
+      {alert ? (
+        <span className="t-num t-num-sm text-ink-2">@{alert}</span>
+      ) : null}
+      {step.note ? (
+        <span className="t-label text-ink-3 min-w-0">— {step.note}</span>
+      ) : null}
     </div>
   )
 }
@@ -325,7 +346,9 @@ function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`
   const minutes = Math.floor(seconds / 60)
   const remainder = seconds % 60
-  return remainder ? `${minutes}:${String(remainder).padStart(2, '0')}` : `${minutes} min`
+  return remainder
+    ? `${minutes}:${String(remainder).padStart(2, '0')}`
+    : `${minutes} min`
 }
 
 function formatDistance(
@@ -334,20 +357,27 @@ function formatDistance(
 ): { value: string; unit: string } | null {
   if (!meters) return null
   // The pool is 25 yd, so swim distances read in yards.
-  if (sport === 'swim') return { value: String(Math.round(meters * 1.09361)), unit: 'yd' }
+  if (sport === 'swim')
+    return { value: String(Math.round(meters * 1.09361)), unit: 'yd' }
   return { value: (meters / 1609.344).toFixed(2), unit: 'mi' }
 }
 
-function formatTargets(session: TodaySession): { value: string; unit: string }[] {
+function formatTargets(
+  session: TodaySession
+): { value: string; unit: string }[] {
   const targets = session.targets
   if (!targets) return []
 
   const parts: { value: string; unit: string }[] = []
   if (targets.hrZone) parts.push({ value: `Z${targets.hrZone}`, unit: 'zone' })
   if (targets.hrRange) {
-    parts.push({ value: `${targets.hrRange[0]}–${targets.hrRange[1]}`, unit: 'bpm' })
+    parts.push({
+      value: `${targets.hrRange[0]}–${targets.hrRange[1]}`,
+      unit: 'bpm',
+    })
   }
-  if (targets.cadenceRange) parts.push({ value: `${targets.cadenceRange[0]}+`, unit: 'rpm' })
+  if (targets.cadenceRange)
+    parts.push({ value: `${targets.cadenceRange[0]}+`, unit: 'rpm' })
   if (targets.rpe) parts.push({ value: String(targets.rpe), unit: 'RPE' })
 
   return parts

@@ -593,17 +593,10 @@ export function useTodayData() {
         throw new Error(payload.error ?? 'Unable to update session')
       }
 
-      setData((current) => {
-        if (!current) return current
-        return {
-          ...current,
-          sessions: current.sessions.map((session) =>
-            session.id === sessionId ? { ...session, status } : session
-          ),
-        }
-      })
+      // Reload so linked workout glances appear after Mark done attaches an activity.
+      await load()
     },
-    []
+    [load]
   )
 
   useEffect(() => {

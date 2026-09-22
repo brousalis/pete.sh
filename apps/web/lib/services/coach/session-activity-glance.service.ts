@@ -5,6 +5,7 @@
 import type { PlannedSession } from '@petehome/coach-core'
 
 import { appleHealthService } from '@/lib/services/apple-health.service'
+import { reconcileSessionActivityLinks } from '@/lib/services/coach/adherence.service'
 import { getActivitiesByIds } from '@/lib/services/coach/coach-data.service'
 import type { SessionActivityGlance, TodaySession } from '@/lib/types/coach-ui.types'
 
@@ -89,13 +90,17 @@ export function mapPlannedSessionToToday(
 export async function enrichSessionsWithActivity(
   sessions: PlannedSession[]
 ): Promise<TodaySession[]> {
-  const ids = sessions
+  // Self-heal: Mark-done after sync (or ingest before the session existed)
+  // leaves completed_activity_id null even when Activity has the workout.
+  const linked = await reconcileSessionActivityLinks(sessions)
+
+  const ids = linked
     .map((session) => session.completedActivityId)
     .filter((id): id is string => Boolean(id))
 
   const glances = await loadActivityGlancesByIds(ids)
 
-  return sessions.map((session) => {
+  return linked.map((session) => {
     const activity =
       session.completedActivityId != null
         ? glances.get(session.completedActivityId) ?? null

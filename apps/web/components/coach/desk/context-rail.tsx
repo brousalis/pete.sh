@@ -6,7 +6,6 @@ import {
   MessageSquare,
   MoreHorizontal,
   Sun,
-  TrendingUp,
   Utensils,
   type LucideIcon,
 } from 'lucide-react'
@@ -14,7 +13,6 @@ import {
 import { ChatShell } from '@/components/coach/chat/chat-shell'
 import { RailActivity } from '@/components/coach/desk/rail-activity'
 import { RailFuel } from '@/components/coach/desk/rail-fuel'
-import { RailLoad } from '@/components/coach/desk/rail-load'
 import { RailMore } from '@/components/coach/desk/rail-more'
 import { RailPlan } from '@/components/coach/desk/rail-plan'
 import { RailToday } from '@/components/coach/desk/rail-today'
@@ -31,7 +29,6 @@ const PANEL_ICONS: Record<DeskPanel, LucideIcon> = {
   today: Sun,
   plan: CalendarRange,
   fuel: Utensils,
-  load: TrendingUp,
   activity: Footprints,
   coach: MessageSquare,
   more: MoreHorizontal,
@@ -65,7 +62,7 @@ export function ContextRail({
     <section className={cn('flex min-h-0 min-w-0 flex-col bg-surface-0', className)}>
       <header className="shrink-0 border-b border-line">
         <div className="mx-auto flex h-14 w-full max-w-[72rem] items-center gap-4 px-5 md:px-8">
-          <Wordmark />
+          <Wordmark onGoToday={() => onPanelChange('today')} />
 
           <nav
             className="hidden flex-1 items-center justify-center gap-1 md:flex"
@@ -107,7 +104,7 @@ export function ContextRail({
       <div
         className={cn(
           'relative min-h-0 flex-1',
-          panel === 'coach' || panel === 'fuel' ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'
+          panel === 'coach' ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'
         )}
       >
         {panel === 'coach' ? (
@@ -116,9 +113,8 @@ export function ContextRail({
           <div
             key={panel}
             className={cn(
-              'animate-fade-in mx-auto min-h-full w-full',
-              panel === 'fuel' ? 'h-full overflow-y-auto overscroll-contain pb-0' : 'pb-20 md:pb-0',
-              panel === 'today' || panel === 'plan' || panel === 'load' || panel === 'activity'
+              'animate-fade-in mx-auto min-h-full w-full pb-20 md:pb-0',
+              panel === 'today' || panel === 'plan' || panel === 'activity'
                 ? 'max-w-[72rem]'
                 : 'max-w-[46rem]'
             )}
@@ -134,7 +130,6 @@ export function ContextRail({
             ) : null}
             {panel === 'plan' ? <RailPlan /> : null}
             {panel === 'fuel' ? <RailFuel /> : null}
-            {panel === 'load' ? <RailLoad /> : null}
             {panel === 'activity' ? <RailActivity /> : null}
             {panel === 'more' ? <RailMore /> : null}
           </div>
@@ -145,7 +140,7 @@ export function ContextRail({
         className="shrink-0 border-t border-line bg-surface-0 pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Sections"
       >
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-6">
           {PANEL_ORDER.map((id) => {
             const Icon = PANEL_ICONS[id]
             const active = panel === id
@@ -174,14 +169,39 @@ export function ContextRail({
   )
 }
 
-function Wordmark() {
+function Wordmark({ onGoToday }: { onGoToday: () => void }) {
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      <span className="grid size-6 place-items-center rounded-[7px] bg-brand">
-        <span className="t-num text-[11px] font-semibold text-brand-ink">3</span>
+    <button
+      type="button"
+      onClick={onGoToday}
+      className="group -ml-1.5 flex shrink-0 items-center gap-2 rounded-control px-1.5 py-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand/40"
+      aria-label="Today"
+      title="Today"
+    >
+      <span className="grid size-6 place-items-center rounded-[7px] bg-brand text-brand-ink">
+        <PetehomeMark className="size-3.5" />
       </span>
-      <span className="t-subtitle hidden sm:inline">petehome</span>
-    </div>
+      <span className="t-subtitle hidden pr-0.5 sm:inline">
+        pete<span className="text-ink-2 transition-colors group-hover:text-ink-1">home</span>
+      </span>
+    </button>
+  )
+}
+
+/** Compact chronograph: instrument + hand at 3 for the sub-3 goal. */
+function PetehomeMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" opacity="0.22" />
+      <path
+        d="M12 3a9 9 0 0 1 9 9"
+        stroke="currentColor"
+        strokeWidth="1.85"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="12" r="1.35" fill="currentColor" />
+      <path d="M12 12h7.25" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" />
+    </svg>
   )
 }
 

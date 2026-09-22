@@ -10,6 +10,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 import { errorResponse, handleApiError, successResponse } from '@/lib/api/utils'
+import { linkPlannedSessionToMatchingWorkout } from '@/lib/services/coach/adherence.service'
 import { setSessionAthleteStatus } from '@/lib/services/coach/coach-data.service'
 
 export const runtime = 'nodejs'
@@ -37,12 +38,32 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     try {
-      const session = await setSessionAthleteStatus(id, parsed.data.status)
+      let session = await setSessionAthleteStatus(id, parsed.data.status)
+
+      // Mark done after HealthKit sync never re-runs ingest linking — attach
+      // a same-day matching workout when one is sitting unlinked in Activity.
+      if (parsed.data.status === 'completed' && !session.completedActivityId) {
+        const link = await linkPlannedSessionToMatchingWorkout({
+          sessionId: session.id,
+          sport: session.sport,
+          sessionDate: session.sessionDate,
+          completedActivityId: session.completedActivityId,
+        })
+        if (link.linked && link.workoutId) {
+          session = {
+            ...session,
+            completedActivityId: link.workoutId,
+            status: 'completed',
+          }
+        }
+      }
+
       return successResponse({
         id: session.id,
         status: session.status,
         title: session.title,
         sessionDate: session.sessionDate,
+        completedActivityId: session.completedActivityId,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to update session.'

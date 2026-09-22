@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function CoachAnalyticsRedirect() {
-  redirect('/coach?panel=load')
+  redirect('/coach?panel=plan')
 }

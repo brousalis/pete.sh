@@ -1,8 +1,10 @@
 'use client'
 
 import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
+import { LoadSection } from '@/components/coach/desk/load-section'
 import { SessionCard } from '@/components/coach/session-card'
 import { Chip, EmptyNote, Panel, Section } from '@/components/coach/ui/panel'
 import { sportClasses } from '@/components/coach/ui/tone'
@@ -120,7 +122,16 @@ export function RailPlan() {
   }
 
   const visibleWeeks = showMore ? weeks : weeks.slice(0, 1)
-  const peakTss = Math.max(1, ...weeks.flatMap((w) => w.sessions.map((s) => s.plannedLoad ?? 0)))
+  const peakTss = Math.max(
+    1,
+    ...weeks.flatMap((w) =>
+      w.sessions.map((s) => {
+        const actual = s.activity?.tss
+        if (actual != null && actual > 0) return Math.max(s.plannedLoad ?? 0, actual)
+        return s.plannedLoad ?? 0
+      })
+    )
+  )
 
   const selectedSessions = selectedDate
     ? weeks
@@ -141,36 +152,44 @@ export function RailPlan() {
 
   return (
     <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="t-display">Plan</h1>
-        <div className="flex items-center gap-0.5 rounded-control bg-surface-1 p-0.5">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8 text-ink-2"
-            aria-label="Previous four weeks"
-            onClick={() => setOffset((v) => v - 4)}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/coach/tests"
+            className="t-label font-medium text-ink-3 underline-offset-4 transition-colors hover:text-ink-1 hover:underline"
           >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 px-3 t-label font-medium text-ink-2"
-            onClick={() => setOffset(0)}
-            disabled={offset === 0}
-          >
-            Today
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8 text-ink-2"
-            aria-label="Next four weeks"
-            onClick={() => setOffset((v) => v + 4)}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
+            Baseline tests
+          </Link>
+          <div className="flex items-center gap-0.5 rounded-control bg-surface-1 p-0.5">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 text-ink-2"
+              aria-label="Previous four weeks"
+              onClick={() => setOffset((v) => v - 4)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-3 t-label font-medium text-ink-2"
+              onClick={() => setOffset(0)}
+              disabled={offset === 0}
+            >
+              Today
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 text-ink-2"
+              aria-label="Next four weeks"
+              onClick={() => setOffset((v) => v + 4)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -205,16 +224,20 @@ export function RailPlan() {
         </Panel>
       ) : null}
 
+      <LoadSection />
+
       {loading ? (
-        <div className="flex justify-center py-16">
+        <div className="flex justify-center border-t border-line py-16">
           <Loader2 className="size-4 animate-spin text-ink-3" />
         </div>
       ) : weeks.length === 0 ? (
-        <EmptyNote>
-          No sessions in this window. The Sunday planning job fills the coming week.
-        </EmptyNote>
+        <div className="border-t border-line pt-6">
+          <EmptyNote>
+            No sessions in this window. The Sunday planning job fills the coming week.
+          </EmptyNote>
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 border-t border-line pt-6">
           {/* The week strip is navigation: it wants width, not height. The
               selected day is the content, so it gets the full column below. */}
           <div className="space-y-5">
