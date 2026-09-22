@@ -28,6 +28,7 @@ struct PetehomeiOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
+        KeychainHelper.migrateServerURLIfNeeded()
         BackgroundSyncManager.shared.registerBackgroundTasks()
         HealthKitObserver.shared.start()
     }

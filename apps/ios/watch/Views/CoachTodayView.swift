@@ -193,7 +193,7 @@ private struct ReadinessStrip: View {
             Text("\(readiness.score)")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(readiness.blocked ? .red : .green)
+                .foregroundStyle(readiness.blocked ? .red : readinessColor(readiness.level))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Readiness")
@@ -201,7 +201,7 @@ private struct ReadinessStrip: View {
                     .foregroundStyle(.white)
                 Text(readiness.level.capitalized)
                     .font(.system(size: 10, design: .rounded))
-                    .foregroundStyle(readiness.blocked ? .red.opacity(0.85) : .secondary)
+                    .foregroundStyle(readiness.blocked ? .red.opacity(0.85) : readinessColor(readiness.level).opacity(0.85))
             }
 
             Spacer()
@@ -463,7 +463,7 @@ private struct ReadinessInfoSheet: View {
                     if let readiness {
                         Text("Score \(readiness.score) · \(readiness.level.capitalized)")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(readiness.blocked ? .red : .green)
+                            .foregroundStyle(readiness.blocked ? .red : readinessColor(readiness.level))
                             .monospacedDigit()
                     }
                     Text("Readiness is computed on the server from sleep, load, and knee guardrails. Knee health comes first — a low score can block hard sessions.")
@@ -482,6 +482,16 @@ private struct ReadinessInfoSheet: View {
                 }
             }
         }
+    }
+}
+
+private func readinessColor(_ level: String) -> Color {
+    switch level {
+    case "fresh": return .green
+    case "moderate": return .cyan
+    case "fatigued": return .orange
+    case "compromised": return .red
+    default: return .cyan
     }
 }
 

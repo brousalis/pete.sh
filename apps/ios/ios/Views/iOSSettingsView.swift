@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Settings view for the iOS app, accessible from SyncView toolbar
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     private let syncManager = HealthKitSyncManager.shared
     @State private var connectionTestResult: ConnectionTestResult?
+    @State private var serverURLInput: String = KeychainHelper.serverURL
+    @State private var showServerURLSaved = false
 
     enum ConnectionTestResult {
         case success
@@ -73,15 +74,25 @@ struct iOSSettingsView: View {
                         .foregroundStyle(syncManager.isAuthorized ? .green : .orange)
                 }
 
-                HStack {
-                    Text("Server")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Server URL")
                         .font(.system(size: 14, design: .rounded))
-                    Spacer()
-                    Text(KeychainHelper.serverURL)
+                    TextField("https://pete.sh", text: $serverURLInput)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.primary)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .onSubmit { saveServerURL() }
+                    if showServerURLSaved {
+                        Text("Saved")
+                            .font(.system(size: 11, design: .rounded))
+                            .foregroundStyle(.green)
+                    }
                 }
+                Button("Save URL") { saveServerURL() }
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(.cyan)
 
                 HStack {
                     Text("API")
@@ -99,6 +110,17 @@ struct iOSSettingsView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
             }
+        }
+    }
+
+    private func saveServerURL() {
+        let trimmed = serverURLInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        KeychainHelper.setServerURL(trimmed)
+        connectionTestResult = nil
+        showServerURLSaved = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            showServerURLSaved = false
         }
     }
 }

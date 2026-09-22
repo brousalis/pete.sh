@@ -8,7 +8,7 @@ struct WorkoutCard: View {
     var body: some View {
         HStack(spacing: 12) {
             // Activity icon
-            Image(systemName: TodayViewModel.icon(for: workout.workoutActivityType))
+            Image(systemName: Self.icon(for: workout.workoutActivityType))
                 .font(.system(size: 20))
                 .foregroundStyle(iconColor)
                 .frame(width: 36, height: 36)
@@ -18,7 +18,7 @@ struct WorkoutCard: View {
             // Details
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(TodayViewModel.name(for: workout.workoutActivityType))
+                    Text(Self.name(for: workout.workoutActivityType))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
 
@@ -31,7 +31,7 @@ struct WorkoutCard: View {
 
                 HStack(spacing: 8) {
                     // Duration
-                    Label(TodayViewModel.formattedDuration(workout.duration), systemImage: "clock")
+                    Label(Self.formattedDuration(workout.duration), systemImage: "clock")
 
                     // Active calories
                     if let calories = workout.statistics(for: .quantityType(forIdentifier: .activeEnergyBurned)!)?.sumQuantity()?.doubleValue(for: .kilocalorie()), calories > 0 {
@@ -72,6 +72,48 @@ struct WorkoutCard: View {
             break
         }
         return workout.statistics(for: .quantityType(forIdentifier: .distanceWalkingRunning)!)?.sumQuantity()?.doubleValue(for: .mile())
+    }
+
+    private static func icon(for type: HKWorkoutActivityType) -> String {
+        switch type {
+        case .running:                                          return "figure.run"
+        case .walking, .hiking:                                return "figure.walk"
+        case .cycling:                                         return "figure.outdoor.cycle"
+        case .swimming:                                        return "figure.pool.swim"
+        case .functionalStrengthTraining,
+             .traditionalStrengthTraining:                     return "dumbbell.fill"
+        case .highIntensityIntervalTraining:                   return "bolt.fill"
+        case .coreTraining:                                    return "figure.core.training"
+        case .rowing:                                          return "figure.rowing"
+        case .swimBikeRun:                                     return "figure.triathlon"
+        default:                                               return "figure.mixed.cardio"
+        }
+    }
+
+    private static func name(for type: HKWorkoutActivityType) -> String {
+        switch type {
+        case .running:                          return "Run"
+        case .walking:                          return "Walk"
+        case .hiking:                           return "Hike"
+        case .cycling:                          return "Ride"
+        case .swimming:                         return "Swim"
+        case .functionalStrengthTraining:       return "Functional Strength"
+        case .traditionalStrengthTraining:      return "Strength"
+        case .highIntensityIntervalTraining:    return "HIIT"
+        case .coreTraining:                     return "Core"
+        case .rowing:                           return "Row"
+        case .swimBikeRun:                      return "Triathlon"
+        default:                                return "Workout"
+        }
+    }
+
+    private static func formattedDuration(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds)
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
+        return String(format: "%d:%02d", m, s)
     }
 
     private var iconColor: Color {

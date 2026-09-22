@@ -294,9 +294,10 @@ struct TodayView: View {
 
     private func readinessColor(_ level: String) -> Color {
         switch level {
-        case "green", "high": return .green
-        case "yellow", "moderate": return .yellow
-        case "red", "low", "blocked": return .red
+        case "fresh": return .green
+        case "moderate": return .cyan
+        case "fatigued": return .orange
+        case "compromised": return .red
         default: return .cyan
         }
     }

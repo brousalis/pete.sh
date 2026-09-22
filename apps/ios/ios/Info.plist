@@ -11,6 +11,11 @@
 		<string>fetch</string>
 		<string>healthkit</string>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>petehome connects to your local server to sync training data when you're on your home network.</string>
 	<key>NSBonjourServices</key>

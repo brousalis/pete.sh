@@ -12,7 +12,7 @@ enum KeychainHelper {
     private static let apiKeyAccount = "api-key"
     private static let serverURLAccount = "server-url"
 
-    private static let defaultServerURL = "https://192.168.1.4:3000"
+    private static let defaultServerURL = "https://www.pete.sh"
 
     // MARK: - API key
 
@@ -58,6 +58,15 @@ enum KeychainHelper {
     @discardableResult
     static func setServerURL(_ url: String) -> Bool {
         write(account: serverURLAccount, value: url)
+    }
+
+    static func migrateServerURLIfNeeded() {
+        guard let stored = read(account: serverURLAccount) else { return }
+        let isLocalIP = stored.contains("192.168.") || stored.contains("10.0.") || stored.contains("localhost") || stored.contains("127.0.0.1")
+        if isLocalIP {
+            delete(account: serverURLAccount)
+            print("[KeychainHelper] Migrated server URL from \(stored) to \(defaultServerURL)")
+        }
     }
 
     /// Masked summary safe to show in a settings screen or log.
