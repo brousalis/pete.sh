@@ -14,6 +14,7 @@ struct CoachWebViewTab: View {
     @State private var lastActiveDate: Date?
 
     private let minimumSyncInterval: TimeInterval = 30 * 60
+    private let staleReloadInterval: TimeInterval = 15 * 60
 
     var body: some View {
         ZStack {
@@ -22,7 +23,6 @@ struct CoachWebViewTab: View {
                     url: coachURL,
                     isLoading: $isLoading,
                     pendingNavigationURL: $pendingNavigationURL,
-                    onRefresh: { reloadToken = UUID() },
                     onBridgeAction: handleBridgeAction
                 )
                 .id(reloadToken)
@@ -115,21 +115,20 @@ struct CoachWebViewTab: View {
     }
 
     private func handleAppBecameActive() {
-        let syncManager = HealthKitSyncManager.shared
+        let now = Date()
+        let elapsed = lastActiveDate.map { now.timeIntervalSince($0) } ?? .infinity
 
-        guard syncManager.autoSyncEnabled else { return }
-
-        let shouldSync: Bool
-        if !hasPerformedInitialSync {
-            shouldSync = true
-            hasPerformedInitialSync = true
-        } else if let lastActive = lastActiveDate {
-            shouldSync = Date().timeIntervalSince(lastActive) >= minimumSyncInterval
-        } else {
-            shouldSync = true
+        if elapsed >= staleReloadInterval {
+            reloadToken = UUID()
         }
 
-        lastActiveDate = Date()
+        lastActiveDate = now
+
+        let syncManager = HealthKitSyncManager.shared
+        guard syncManager.autoSyncEnabled else { return }
+
+        let shouldSync = !hasPerformedInitialSync || elapsed >= minimumSyncInterval
+        hasPerformedInitialSync = true
 
         if shouldSync {
             Task {

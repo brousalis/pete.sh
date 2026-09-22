@@ -1,12 +1,10 @@
 import SwiftUI
 import WebKit
 
-/// WKWebView wrapper for the local coach PWA.
 struct PetehomeWebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
     @Binding var pendingNavigationURL: URL?
-    var onRefresh: (() -> Void)?
     var onBridgeAction: ((String) -> Void)?
 
     func makeUIView(context: Context) -> WKWebView {
@@ -23,6 +21,7 @@ struct PetehomeWebView: UIViewRepresentable {
         webView.uiDelegate = context.coordinator
 
         let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = UIColor.systemGray
         refreshControl.addTarget(
             context.coordinator,
             action: #selector(Coordinator.handleRefresh(_:)),
@@ -37,12 +36,12 @@ struct PetehomeWebView: UIViewRepresentable {
 
         webView.load(URLRequest(url: url))
         context.coordinator.lastLoadedURL = url
+        context.coordinator.webView = webView
 
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        context.coordinator.onRefresh = onRefresh
         context.coordinator.onBridgeAction = onBridgeAction
 
         if let pending = pendingNavigationURL {
@@ -64,50 +63,54 @@ struct PetehomeWebView: UIViewRepresentable {
 
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: PetehomeWebView
-        var onRefresh: (() -> Void)?
         var onBridgeAction: ((String) -> Void)?
         weak var webView: WKWebView?
         var lastLoadedURL: URL?
+        private weak var activeRefreshControl: UIRefreshControl?
 
         init(_ parent: PetehomeWebView) {
             self.parent = parent
-            self.onRefresh = parent.onRefresh
             self.onBridgeAction = parent.onBridgeAction
             super.init()
         }
 
         @objc func handleRefresh(_ sender: UIRefreshControl) {
-            onRefresh?()
-            sender.endRefreshing()
-            if let webView = sender.superview?.superview as? WKWebView {
-                webView.reload()
+            guard let url = lastLoadedURL, let webView else {
+                sender.endRefreshing()
+                return
             }
+            activeRefreshControl = sender
+            webView.load(URLRequest(
+                url: url,
+                cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
+                timeoutInterval: 30
+            ))
+        }
+
+        private func endRefreshingIfNeeded() {
+            activeRefreshControl?.endRefreshing()
+            activeRefreshControl = nil
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             self.webView = webView
-            Task { @MainActor in
-                self.parent.isLoading = true
-            }
+            Task { @MainActor in self.parent.isLoading = true }
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Task { @MainActor in
-                self.parent.isLoading = false
-            }
+            Task { @MainActor in self.parent.isLoading = false }
+            endRefreshingIfNeeded()
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            Task { @MainActor in
-                self.parent.isLoading = false
-            }
+            Task { @MainActor in self.parent.isLoading = false }
+            endRefreshingIfNeeded()
             print("WebView navigation failed: \(error.localizedDescription)")
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            Task { @MainActor in
-                self.parent.isLoading = false
-            }
+            Task { @MainActor in self.parent.isLoading = false }
+            endRefreshingIfNeeded()
             print("WebView provisional navigation failed: \(error.localizedDescription)")
         }
 
@@ -190,12 +193,7 @@ struct PetehomeWebView: UIViewRepresentable {
 
         func postSyncStatus() {
             let manager = HealthKitSyncManager.shared
-            let lastSync: String
-            if let date = manager.lastSyncDate {
-                lastSync = ISO8601DateFormatter().string(from: date)
-            } else {
-                lastSync = ""
-            }
+            let lastSync = manager.lastSyncDate.map { ISO8601DateFormatter().string(from: $0) } ?? ""
             let inProgress = manager.isSyncing
             let error = manager.lastSyncError ?? ""
 

@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { LoadSection } from '@/components/coach/desk/load-section'
 import { SessionCard } from '@/components/coach/session-card'
@@ -14,6 +14,8 @@ import { SPORT_LABELS } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const DAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const SLOT_ORDER = ['morning', 'afternoon', 'evening', 'anytime', 'primary']
 
@@ -29,6 +31,8 @@ export function RailPlan() {
   const [movingSession, setMovingSession] = useState<TodaySession | null>(null)
   const [moving, setMoving] = useState(false)
   const [moveResult, setMoveResult] = useState<string | null>(null)
+  const detailRef = useRef<HTMLElement | null>(null)
+  const revealDetailRef = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -62,6 +66,13 @@ export function RailPlan() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (!revealDetailRef.current) return
+    revealDetailRef.current = false
+    if (!selectedDate || window.innerWidth >= 768) return
+    detailRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selectedDate])
 
   async function moveSession(session: TodaySession, toDate: string) {
     setMoving(true)
@@ -147,17 +158,18 @@ export function RailPlan() {
       }
       return
     }
+    revealDetailRef.current = true
     setSelectedDate((current) => (current === date ? null : date))
   }
 
   return (
-    <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6 px-4 py-5 sm:px-5 sm:py-6 md:px-8 md:py-8">
+      <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <h1 className="t-display">Plan</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/coach/tests"
-            className="t-label font-medium text-ink-3 underline-offset-4 transition-colors hover:text-ink-1 hover:underline"
+            className="shrink-0 t-label font-medium text-ink-3 underline-offset-4 transition-colors hover:text-ink-1 hover:underline"
           >
             Baseline tests
           </Link>
@@ -165,7 +177,7 @@ export function RailPlan() {
             <Button
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="size-10 text-ink-2 sm:size-8"
               aria-label="Previous four weeks"
               onClick={() => setOffset((v) => v - 4)}
             >
@@ -174,7 +186,7 @@ export function RailPlan() {
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-3 t-label font-medium text-ink-2"
+              className="h-10 px-3 t-label font-medium text-ink-2 sm:h-8"
               onClick={() => setOffset(0)}
               disabled={offset === 0}
             >
@@ -183,7 +195,7 @@ export function RailPlan() {
             <Button
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="size-10 text-ink-2 sm:size-8"
               aria-label="Next four weeks"
               onClick={() => setOffset((v) => v + 4)}
             >
@@ -267,6 +279,7 @@ export function RailPlan() {
             <DayDetail
               date={selectedDate}
               sessions={selectedSessions}
+              sectionRef={detailRef}
               onMove={(session) => {
                 setMoveResult(null)
                 setMovingSession(session)
@@ -283,11 +296,13 @@ export function RailPlan() {
 function DayDetail({
   date,
   sessions,
+  sectionRef,
   onMove,
   onClose,
 }: {
   date: string
   sessions: TodaySession[]
+  sectionRef: RefObject<HTMLElement | null>
   onMove: (session: TodaySession) => void
   onClose: () => void
 }) {
@@ -295,7 +310,7 @@ function DayDetail({
   const minutes = sessions.reduce((sum, session) => sum + (session.durationMinutes ?? 0), 0)
 
   return (
-    <section className="space-y-3.5 border-t border-line pt-5">
+    <section ref={sectionRef} className="space-y-3.5 border-t border-line pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h2 className="t-title">
@@ -315,7 +330,7 @@ function DayDetail({
         <button
           type="button"
           onClick={onClose}
-          className="t-label font-medium text-ink-3 transition-colors hover:text-ink-1"
+          className="-my-1.5 rounded-control px-2 py-1.5 t-label font-medium text-ink-3 transition-colors hover:text-ink-1"
         >
           Close
         </button>
@@ -328,7 +343,7 @@ function DayDetail({
       ) : (
         // Auto-fit keeps each card near a comfortable reading measure: two up
         // on a wide desk, one up when the column narrows.
-        <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(28rem,1fr))]">
+        <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(28rem,100%),1fr))]">
           {sessions.map((session) => (
             <SessionCard
               key={session.id}
@@ -415,7 +430,7 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
               </div>
               <p
                 className={cn(
-                  'mt-1.5 truncate t-micro',
+                  'mt-1.5 hidden truncate t-micro sm:block',
                   phase.current ? 'text-ink-1' : 'text-ink-3'
                 )}
               >
@@ -425,6 +440,13 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
           )
         })}
       </div>
+
+      {currentPhase ? (
+        <p className="mt-2 t-micro text-ink-3 sm:hidden">
+          <span className="text-ink-1">{currentPhase.label}</span> · weeks {currentPhase.weekFrom}–
+          {currentPhase.weekTo}
+        </p>
+      ) : null}
 
       <button
         type="button"
@@ -528,12 +550,13 @@ function WeekBlock({
         </span>
       }
     >
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {days.map((date, index) => (
           <DayCell
             key={date}
             date={date}
             dayLabel={DAY_NAMES[index] ?? ''}
+            dayInitial={DAY_INITIALS[index] ?? ''}
             sessions={week.sessions.filter((s) => s.sessionDate === date)}
             peakTss={peakTss}
             isToday={date === today}
@@ -551,6 +574,7 @@ function WeekBlock({
 function DayCell({
   date,
   dayLabel,
+  dayInitial,
   sessions,
   peakTss,
   isToday,
@@ -561,6 +585,7 @@ function DayCell({
 }: {
   date: string
   dayLabel: string
+  dayInitial: string
   sessions: TodaySession[]
   peakTss: number
   isToday: boolean
@@ -579,8 +604,9 @@ function DayCell({
       disabled={disabled}
       onClick={() => onDayClick(date)}
       aria-pressed={isSelected}
+      aria-label={dayCellLabel(date, dayLabel, sessions)}
       className={cn(
-        'flex min-h-[108px] flex-col gap-2 rounded-control p-2.5 text-left transition-colors',
+        'flex min-h-[76px] flex-col gap-1.5 rounded-control p-1.5 text-left transition-colors sm:min-h-[108px] sm:gap-2 sm:p-2.5',
         isSelected ? 'bg-surface-3' : 'bg-surface-1 hover:bg-surface-2',
         isToday && !isSelected && 'ring-1 ring-brand/50 ring-inset',
         isMoveTarget && 'ring-1 ring-brand ring-inset ring-dashed',
@@ -588,8 +614,11 @@ function DayCell({
         disabled && 'cursor-default opacity-40'
       )}
     >
-      <div className="flex items-baseline justify-between gap-1">
-        <span className="t-micro text-ink-3">{dayLabel}</span>
+      <div className="flex flex-col items-center gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-1">
+        <span className="t-micro text-ink-3">
+          <span className="sm:hidden">{dayInitial}</span>
+          <span className="hidden sm:inline">{dayLabel}</span>
+        </span>
         <span
           className={cn(
             't-num t-num-md',
@@ -602,7 +631,12 @@ function DayCell({
 
       <div className="min-w-0 flex-1 space-y-1.5">
         {sessions.length === 0 ? (
-          <span className="block t-label text-ink-3/70">Rest</span>
+          <span className="block t-label text-ink-3/70">
+            <span className="block text-center sm:hidden" aria-hidden>
+              ·
+            </span>
+            <span className="hidden sm:inline">Rest</span>
+          </span>
         ) : (
           sessions.map((session) => {
             const sport = sportClasses(session.sport)
@@ -625,7 +659,7 @@ function DayCell({
                   session.status === 'completed' && !linked && 'opacity-50'
                 )}
               >
-                <span className="flex items-baseline gap-1.5">
+                <span className="hidden items-baseline gap-1.5 sm:flex">
                   <span
                     className={cn('size-1.5 shrink-0 translate-y-[-1px] rounded-full', sport.dot)}
                     aria-hidden
@@ -641,7 +675,7 @@ function DayCell({
                 </span>
                 {/* Bar length encodes load (actual when linked), so the weekly
                     shape is visible without opening a single day. */}
-                <span className="mt-1 block h-[3px] overflow-hidden rounded-full bg-surface-3">
+                <span className="block h-1.5 overflow-hidden rounded-full bg-surface-3 sm:mt-1 sm:h-[3px]">
                   <span
                     className={cn('block h-full rounded-full', sport.bar)}
                     style={{
@@ -656,12 +690,27 @@ function DayCell({
       </div>
 
       {sessions.some((s) => s.guardrail && !s.guardrail.passed) ? (
-        <Chip tone="alert" className="px-1.5 py-0">
-          blocked
-        </Chip>
+        <>
+          <AlertTriangle className="size-3 shrink-0 text-tone-alert sm:hidden" aria-hidden />
+          <Chip tone="alert" className="hidden px-1.5 py-0 sm:inline-flex">
+            blocked
+          </Chip>
+        </>
       ) : null}
     </button>
   )
+}
+
+function dayCellLabel(date: string, dayLabel: string, sessions: TodaySession[]): string {
+  const day = `${dayLabel} ${Number(date.slice(8))}`
+  if (sessions.length === 0) return `${day} — rest`
+
+  const parts = sessions.map((session) => {
+    const sport = SPORT_LABELS[session.sport] ?? session.sport
+    return session.durationMinutes ? `${sport} ${session.durationMinutes} min` : sport
+  })
+
+  return `${day} — ${parts.join(', ')}`
 }
 
 function slotRank(slot: string): number {
