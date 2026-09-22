@@ -508,7 +508,10 @@ function checkReadiness(context: GuardrailContext, violations: GuardrailViolatio
   const fatiguedBelow = rule.params?.fatiguedBelow ?? 58
   const compromisedBelow = rule.params?.compromisedBelow ?? 38
 
-  if (readiness.score >= fatiguedBelow) return
+  if (readiness.score >= fatiguedBelow) {
+    checkSleepDebt(context, violations)
+    return
+  }
 
   const today = readiness.metricDate
   const todaySessions = context.sessions.filter((session) => session.sessionDate === today)
@@ -536,6 +539,49 @@ function checkReadiness(context: GuardrailContext, violations: GuardrailViolatio
         data: { sessionId: session.id, readiness: readiness.score },
       })
     }
+  }
+
+  checkSleepDebt(context, violations)
+}
+
+/** Warn when recent sleep averages under six hours — never blocks the plan. */
+function checkSleepDebt(context: GuardrailContext, violations: GuardrailViolation[]): void {
+  const readiness = context.readiness
+  if (!readiness) return
+
+  const hasDebt =
+    readiness.flags.includes('sleep_debt') ||
+    (readiness.inputs.sleepSeconds != null && readiness.inputs.sleepSeconds < 6 * 3600)
+
+  if (!hasDebt) return
+
+  const rule = getRule('recovery.sleep_debt')
+  const minHours = rule.params?.minHours ?? 6
+  const hours =
+    readiness.inputs.sleepSeconds != null
+      ? Math.round((readiness.inputs.sleepSeconds / 3600) * 10) / 10
+      : null
+
+  const today = readiness.metricDate
+  const qualityToday = context.sessions.filter(
+    (session) =>
+      session.sessionDate === today &&
+      HIGH_INTENSITY_TYPES.includes(session.sessionType) &&
+      session.sport !== 'pt' &&
+      session.sport !== 'rest'
+  )
+
+  for (const session of qualityToday) {
+    violations.push({
+      ruleId: rule.id,
+      severity: 'warn',
+      message:
+        hours != null
+          ? `Recent sleep is about ${hours} h (under ${minHours} h); "${session.title}" is quality work.`
+          : `Sleep debt flagged; "${session.title}" is quality work.`,
+      remedy: 'Consider converting intervals to steady aerobic work, or keep the session but drop intensity.',
+      data: { sessionId: session.id, sleepSeconds: readiness.inputs.sleepSeconds },
+    })
   }
 }
 

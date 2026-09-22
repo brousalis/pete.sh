@@ -7,7 +7,6 @@
 import { getSupabaseClientForOperation } from '@/lib/supabase/client'
 import type {
     AppleHealthCadenceSampleInsert,
-    AppleHealthDailyMetricsInsert,
     AppleHealthHrSampleInsert,
     AppleHealthPaceSampleInsert,
     AppleHealthRouteInsert,
@@ -61,6 +60,13 @@ interface DbWorkout {
   cycling_max_power: number | null
   effort_score: number | null
   is_indoor: boolean | null
+  // Swimming metrics
+  swimming_stroke_count: number | null
+  swimming_pool_length_meters: number | null
+  swimming_location: string | null
+  swimming_lap_count: number | null
+  swimming_avg_swolf: number | null
+  swimming_avg_pace_per_100: number | null
   source: string
   source_version: string | null
   device_name: string | null
@@ -131,6 +137,9 @@ interface DbDailyMetrics {
   source: string
   recorded_at: string
 }
+
+/** Athlete trains SCY; HealthKit lap length is often missing so we default to 25 yd. */
+const SCY_POOL_LENGTH_METERS = 22.86
 
 export class AppleHealthService {
   // ============================================
@@ -310,6 +319,9 @@ export class AppleHealthService {
     // Save per-length swim data and roll up SWOLF / pace per 100
     if (workout.swimmingMetrics?.lengths?.length) {
       await this.saveSwimLengths(workoutId, workout.swimmingMetrics)
+    } else if (workout.workoutType === 'swimming') {
+      // Older syncs often have lap events but no distance / pool length / lengths.
+      await this.enrichSwimMetricsFromLaps([workoutId])
     }
 
     // Persist walking samples when present (HealthKit data; no Maple side effects).
@@ -318,6 +330,20 @@ export class AppleHealthService {
     }
     if (workout.walkingMetrics?.stepLengthSamples?.length) {
       await this.saveWalkingStepLengthSamples(workoutId, workout.walkingMetrics.stepLengthSamples)
+    }
+
+    // Best-effort plan link so debriefs and adherence see the prescription.
+    try {
+      const { linkWorkoutToPlannedSession } = await import(
+        '@/lib/services/coach/adherence.service'
+      )
+      await linkWorkoutToPlannedSession({
+        workoutId,
+        workoutType: workout.workoutType,
+        startDate: workout.startDate,
+      })
+    } catch (error) {
+      console.error('[AppleHealth] Plan link failed:', error)
     }
 
     return { id: workoutId, success: true }
@@ -758,6 +784,32 @@ export class AppleHealthService {
   }
 
   /**
+   * Batch-load workout summaries by id (no samples). Used for completed
+   * session glances on Today / Plan.
+   */
+  async getWorkoutsByIds(ids: string[]): Promise<DbWorkout[]> {
+    if (ids.length === 0) return []
+
+    const supabase = getSupabaseClientForOperation('read')
+    if (!supabase) return []
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    const { data, error } = await db
+      .from('apple_health_workouts')
+      .select('*')
+      .in('id', ids)
+
+    if (error) {
+      console.error('Error fetching workouts by ids:', error)
+      return []
+    }
+
+    return (data as DbWorkout[]) || []
+  }
+
+  /**
    * Get a single workout with all details
    */
   async getWorkout(workoutId: string): Promise<{
@@ -770,6 +822,15 @@ export class AppleHealthService {
     cyclingPowerSamples: { timestamp: string; watts: number }[]
     workoutEvents: { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[]
     splits: { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null; elevation_change: number | null }[]
+    swimLengths: {
+      length_number: number
+      start_date: string
+      duration_seconds: number
+      stroke_count: number | null
+      stroke_style: string | null
+      swolf: number | null
+      is_rest: boolean
+    }[]
     route: DbRoute | null
   } | null> {
     const supabase = getSupabaseClientForOperation('read')
@@ -779,7 +840,7 @@ export class AppleHealthService {
     const db = supabase as any
 
     // Fetch workout
-    const { data: workout, error: workoutError } = await db
+    let { data: workout, error: workoutError } = await db
       .from('apple_health_workouts')
       .select('*')
       .eq('id', workoutId)
@@ -787,6 +848,20 @@ export class AppleHealthService {
 
     if (workoutError || !workout) {
       return null
+    }
+
+    // Lazy backfill for swims that have laps but no distance.
+    if (
+      workout.workout_type === 'swimming' &&
+      (workout.distance_meters == null || Number(workout.distance_meters) <= 0)
+    ) {
+      await this.enrichSwimMetricsFromLaps([workoutId])
+      const refreshed = await db
+        .from('apple_health_workouts')
+        .select('*')
+        .eq('id', workoutId)
+        .single()
+      if (refreshed.data) workout = refreshed.data
     }
 
     // Fetch all samples, events, and route in parallel
@@ -799,6 +874,7 @@ export class AppleHealthService {
       cyclingPowerResult,
       eventsResult,
       splitsResult,
+      swimLengthsResult,
       routeResult
     ] = await Promise.all([
       db
@@ -842,6 +918,11 @@ export class AppleHealthService {
         .eq('workout_id', workoutId)
         .order('split_number', { ascending: true }),
       db
+        .from('apple_health_swim_lengths')
+        .select('length_number, start_date, duration_seconds, stroke_count, stroke_style, swolf, is_rest')
+        .eq('workout_id', workoutId)
+        .order('length_number', { ascending: true }),
+      db
         .from('apple_health_routes')
         .select('*')
         .eq('workout_id', workoutId)
@@ -858,6 +939,15 @@ export class AppleHealthService {
       cyclingPowerSamples: (cyclingPowerResult.data || []) as { timestamp: string; watts: number }[],
       workoutEvents: (eventsResult.data || []) as { event_type: string; timestamp: string; duration: number | null; segment_index: number | null; lap_number: number | null }[],
       splits: (splitsResult.data || []) as { split_number: number; split_type: string; distance_meters: number; time_seconds: number; avg_pace: number | null; avg_heart_rate: number | null; avg_cadence: number | null; elevation_change: number | null }[],
+      swimLengths: (swimLengthsResult.data || []) as {
+        length_number: number
+        start_date: string
+        duration_seconds: number
+        stroke_count: number | null
+        stroke_style: string | null
+        swolf: number | null
+        is_rest: boolean
+      }[],
       route: (routeResult.data as DbRoute) || null,
     }
   }
@@ -903,7 +993,12 @@ export class AppleHealthService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
 
-    const metricsInsert: AppleHealthDailyMetricsInsert = {
+    // Only the iPhone companion queries sleep / overnight recovery vitals.
+    // Watch daily sync uses source "petehome" and must not null those columns.
+    const iosSleepSources = new Set(['petehome-ios', 'PeteTrain-iOS'])
+    const ownsSleepColumns = iosSleepSources.has(metrics.source)
+
+    const metricsInsert: Record<string, unknown> = {
       date: metrics.date,
       steps: metrics.steps,
       active_calories: metrics.activeCalories,
@@ -915,26 +1010,8 @@ export class AppleHealthService {
       stand_goal: metrics.standGoal || null,
       resting_heart_rate: metrics.restingHeartRate || null,
       heart_rate_variability: metrics.heartRateVariability || null,
-      hrv_overnight_avg: metrics.hrvOvernightAvg ?? null,
-      hrv_morning: metrics.hrvMorning ?? null,
-      hrv_sample_count: metrics.hrvSampleCount ?? null,
-      hrv_rmssd: metrics.hrvRmssd ?? null,
-      hrv_rmssd_overnight_avg: metrics.hrvRmssdOvernightAvg ?? null,
-      hrv_rmssd_morning: metrics.hrvRmssdMorning ?? null,
-      hrv_rmssd_sample_count: metrics.hrvRmssdSampleCount ?? null,
       vo2_max: metrics.vo2Max || null,
       apple_training_load: metrics.appleTrainingLoad ?? null,
-      sleep_duration: metrics.sleepDuration || null,
-      sleep_in_bed: metrics.sleepInBed ?? null,
-      sleep_start: metrics.sleepStart ?? null,
-      sleep_end: metrics.sleepEnd ?? null,
-      sleep_awake: metrics.sleepStages?.awake || null,
-      sleep_rem: metrics.sleepStages?.rem || null,
-      sleep_core: metrics.sleepStages?.core || null,
-      sleep_deep: metrics.sleepStages?.deep || null,
-      respiratory_rate: metrics.respiratoryRate ?? null,
-      wrist_temp_delta: metrics.wristTempDelta ?? null,
-      oxygen_saturation: metrics.oxygenSaturation ?? null,
       walking_hr_average: metrics.walkingHeartRateAverage || null,
       walking_double_support_pct: metrics.walkingDoubleSupportPercentage || null,
       walking_asymmetry_pct: metrics.walkingAsymmetryPercentage || null,
@@ -946,6 +1023,32 @@ export class AppleHealthService {
       source: metrics.source,
     }
 
+    if (ownsSleepColumns) {
+      metricsInsert.hrv_overnight_avg = metrics.hrvOvernightAvg ?? null
+      metricsInsert.hrv_morning = metrics.hrvMorning ?? null
+      metricsInsert.hrv_sample_count = metrics.hrvSampleCount ?? null
+      metricsInsert.hrv_rmssd = metrics.hrvRmssd ?? null
+      metricsInsert.hrv_rmssd_overnight_avg = metrics.hrvRmssdOvernightAvg ?? null
+      metricsInsert.hrv_rmssd_morning = metrics.hrvRmssdMorning ?? null
+      metricsInsert.hrv_rmssd_sample_count = metrics.hrvRmssdSampleCount ?? null
+      metricsInsert.sleep_duration = metrics.sleepDuration || null
+      metricsInsert.sleep_in_bed = metrics.sleepInBed ?? null
+      metricsInsert.sleep_start = metrics.sleepStart ?? null
+      metricsInsert.sleep_end = metrics.sleepEnd ?? null
+      metricsInsert.sleep_awake = metrics.sleepStages?.awake || null
+      metricsInsert.sleep_rem = metrics.sleepStages?.rem || null
+      metricsInsert.sleep_core = metrics.sleepStages?.core || null
+      metricsInsert.sleep_deep = metrics.sleepStages?.deep || null
+      metricsInsert.sleep_unspecified = metrics.sleepStages?.unspecified || null
+      metricsInsert.respiratory_rate = metrics.respiratoryRate ?? null
+      metricsInsert.wrist_temp_delta = metrics.wristTempDelta ?? null
+      metricsInsert.oxygen_saturation = metrics.oxygenSaturation ?? null
+      metricsInsert.breathing_disturbances = metrics.breathingDisturbances ?? null
+      metricsInsert.breathing_disturbances_elevated =
+        metrics.breathingDisturbancesElevated ?? null
+      metricsInsert.sleep_apnea_event_count = metrics.sleepApneaEventCount ?? null
+    }
+
     const { error } = await db
       .from('apple_health_daily_metrics')
       .upsert(metricsInsert, { onConflict: 'date' })
@@ -955,10 +1058,11 @@ export class AppleHealthService {
       return false
     }
 
-    if (metrics.hrvSamples?.length) {
+    // HRV sample series is phone-only overnight context; skip watch payloads.
+    if (ownsSleepColumns && metrics.hrvSamples?.length) {
       await this.saveHrvSamples(metrics.date, metrics.hrvSamples)
     }
-    if (metrics.hrvRmssdSamples?.length) {
+    if (ownsSleepColumns && metrics.hrvRmssdSamples?.length) {
       await this.saveHrvSamples(metrics.date, metrics.hrvRmssdSamples)
     }
 
@@ -1080,6 +1184,105 @@ export class AppleHealthService {
     if (updateError) {
       console.error('Error rolling up swim lengths:', updateError)
     }
+  }
+
+  /**
+   * Backfill swim distance / lap count / pace from HealthKit lap events.
+   *
+   * PeteTrain-era syncs often stored laps without pool length or distance.
+   * Athlete trains SCY (25 yd), so when pool length is missing we assume that.
+   * Returns the number of workouts updated.
+   */
+  async enrichSwimMetricsFromLaps(workoutIds?: string[]): Promise<number> {
+    const supabase = getSupabaseClientForOperation('write')
+    if (!supabase) return 0
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+
+    let workoutQuery = db
+      .from('apple_health_workouts')
+      .select(
+        'id, duration, distance_meters, swimming_pool_length_meters, swimming_lap_count, swimming_avg_pace_per_100, swimming_location'
+      )
+      .eq('workout_type', 'swimming')
+      .is('distance_meters', null)
+
+    if (workoutIds?.length) {
+      workoutQuery = workoutQuery.in('id', workoutIds)
+    } else {
+      workoutQuery = workoutQuery.limit(200)
+    }
+
+    const { data: workouts, error } = await workoutQuery
+    if (error || !workouts?.length) {
+      if (error) console.error('Error loading swims for lap enrichment:', error)
+      return 0
+    }
+
+    let updated = 0
+    for (const workout of workouts as Array<{
+      id: string
+      duration: number
+      distance_meters: number | null
+      swimming_pool_length_meters: number | null
+      swimming_lap_count: number | null
+      swimming_avg_pace_per_100: number | null
+      swimming_location: string | null
+    }>) {
+      const { data: laps, error: lapError } = await db
+        .from('apple_health_workout_events')
+        .select('duration')
+        .eq('workout_id', workout.id)
+        .eq('event_type', 'lap')
+
+      if (lapError || !laps?.length) continue
+
+      const lapCount = laps.length
+      const poolMeters =
+        workout.swimming_pool_length_meters && workout.swimming_pool_length_meters > 0
+          ? Number(workout.swimming_pool_length_meters)
+          : SCY_POOL_LENGTH_METERS
+      const distanceMeters = Math.round(lapCount * poolMeters * 100) / 100
+      if (distanceMeters <= 0) continue
+
+      const lapSeconds = (laps as Array<{ duration: number | null }>)
+        .map((lap) => lap.duration)
+        .filter((value): value is number => value != null && value > 0)
+      const swimSeconds =
+        lapSeconds.length > 0
+          ? lapSeconds.reduce((sum, value) => sum + value, 0)
+          : workout.duration
+
+      const pacePer100m =
+        swimSeconds > 0
+          ? Math.round((swimSeconds / distanceMeters) * 100 * 100) / 100
+          : null
+
+      const { error: updateError } = await db
+        .from('apple_health_workouts')
+        .update({
+          distance_meters: distanceMeters,
+          distance_miles: Math.round((distanceMeters / 1609.344) * 1000) / 1000,
+          swimming_pool_length_meters: poolMeters,
+          swimming_lap_count: lapCount,
+          swimming_location: workout.swimming_location ?? 'pool',
+          swimming_avg_pace_per_100:
+            workout.swimming_avg_pace_per_100 ?? pacePer100m,
+        })
+        .eq('id', workout.id)
+
+      if (updateError) {
+        console.error(`Error enriching swim ${workout.id}:`, updateError)
+        continue
+      }
+      updated++
+    }
+
+    if (updated > 0) {
+      console.log(`[AppleHealth] Enriched ${updated} swim workout(s) from lap events`)
+    }
+    return updated
   }
 
   /**

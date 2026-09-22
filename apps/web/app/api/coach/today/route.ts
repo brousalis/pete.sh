@@ -13,6 +13,7 @@ import {
   coachDb,
   getActiveInjuries,
   getCurrentBlock,
+  getDailyMetrics,
   getPtProtocols,
   getSessionsInRange,
   getSymptoms,
@@ -20,6 +21,7 @@ import {
   getBenchmarks,
 } from '@/lib/services/coach/coach-data.service'
 import { getLakeConditions, getWeatherContext } from '@/lib/services/coach/environment.service'
+import { enrichSessionsWithActivity } from '@/lib/services/coach/session-activity-glance.service'
 import { readinessGuidance } from '@petehome/coach-core'
 
 export const runtime = 'nodejs'
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // These can each fail without making the screen useless.
-    const [readiness, load, weather, lake, completions, briefing] = await Promise.all([
+    const [readiness, load, weather, lake, completions, briefing, dailyMetrics] = await Promise.all([
       computeAndStoreReadiness(date).catch(() => null),
       getLoadSummary(60).catch(() => null),
       getWeatherContext(date).catch(() => null),
@@ -60,7 +62,31 @@ export async function GET(request: NextRequest) {
         .maybeSingle()
         .then((result: { data: { entry?: string } | null }) => result.data?.entry ?? null)
         .catch(() => null),
+      getDailyMetrics(date, date).catch(() => []),
     ])
+
+    const night = dailyMetrics[0]
+    const lastNightSleep =
+      night?.sleepSeconds != null
+        ? {
+            hours: Math.round((night.sleepSeconds / 3600) * 10) / 10,
+            inBedHours:
+              night.sleepInBed != null
+                ? Math.round((night.sleepInBed / 3600) * 10) / 10
+                : null,
+            efficiencyPct:
+              night.sleepInBed != null && night.sleepInBed > 0
+                ? Math.round((night.sleepSeconds / night.sleepInBed) * 100)
+                : null,
+            deepMinutes: night.sleepDeep != null ? Math.round(night.sleepDeep / 60) : null,
+            remMinutes: night.sleepRem != null ? Math.round(night.sleepRem / 60) : null,
+            coreMinutes: night.sleepCore != null ? Math.round(night.sleepCore / 60) : null,
+            awakeMinutes: night.sleepAwake != null ? Math.round(night.sleepAwake / 60) : null,
+            start: night.sleepStart ?? null,
+            end: night.sleepEnd ?? null,
+            breathingDisturbancesElevated: night.breathingDisturbancesElevated ?? null,
+          }
+        : null
 
     const completed = new Map<string, boolean>(
       (completions ?? []).map((row: { protocol_id: string; skipped: boolean }) => [
@@ -78,40 +104,16 @@ export async function GET(request: NextRequest) {
       return true
     })
 
+    const uiSessions = await enrichSessionsWithActivity(sessions)
+
     return successResponse({
       date,
       briefing,
       readiness: readiness
         ? { ...readiness, guidance: readinessGuidance(readiness.level) }
         : null,
-      sessions: sessions.map((session) => ({
-        id: session.id,
-        slot: session.slot,
-        sport: session.sport,
-        type: session.sessionType,
-        title: session.title,
-        description: session.description,
-        durationMinutes: session.plannedDurationSeconds
-          ? Math.round(session.plannedDurationSeconds / 60)
-          : null,
-        distanceMeters: session.plannedDistanceMeters,
-        plannedLoad: session.plannedLoad,
-        steps: session.steps,
-        targets: session.targets,
-        rationale: session.rationale,
-        status: session.status,
-        guardrail: session.guardrailReport
-          ? {
-              passed: session.guardrailReport.passed,
-              severity: session.guardrailReport.severity,
-              violations: session.guardrailReport.violations.map((violation) => ({
-                severity: violation.severity,
-                message: violation.message,
-                remedy: violation.remedy,
-              })),
-            }
-          : null,
-      })),
+      lastNightSleep,
+      sessions: uiSessions,
       ptProtocols: applicableProtocols.map((protocol) => ({
         id: protocol.id,
         slug: protocol.slug,

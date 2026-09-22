@@ -31,6 +31,10 @@ import {
   resolveThresholds,
 } from './analytics.service'
 import {
+  getAdherenceSummary,
+  getRecentSessionFeedback,
+} from './adherence.service'
+import {
   coachDb,
   getActiveInjuries,
   getAthleteProfile,
@@ -44,6 +48,7 @@ import {
 } from './coach-data.service'
 import { getCostGovernor } from './cost.service'
 import { getLakeConditions, getWeatherContext } from './environment.service'
+import { getFuelContextForDay } from './fuel.service'
 import { searchKnowledge } from './knowledge.service'
 import { recall } from './memory.service'
 
@@ -104,7 +109,7 @@ export async function buildCoachContext(
   ])
 
   // These can fail independently without breaking the turn.
-  const [readiness, projection, weather, lake, memories, knowledge, ptCompletions] =
+  const [readiness, projection, weather, lake, memories, knowledge, ptCompletions, feedback, adherence, fuelCtx] =
     await Promise.all([
       computeAndStoreReadiness(today).catch(() => null),
       getRaceProjection().catch(() => null),
@@ -125,6 +130,9 @@ export async function buildCoachContext(
           return null
         }
       })(),
+      getRecentSessionFeedback(14).catch(() => []),
+      getAdherenceSummary(14).catch(() => null),
+      getFuelContextForDay(today).catch(() => null),
     ])
 
   const completedProtocolIds = new Set(
@@ -226,6 +234,47 @@ export async function buildCoachContext(
       itemCount: protocol.items.length,
       completedToday: completedProtocolIds.has(protocol.id),
     })),
+    recentFeedback: feedback.map((row) => ({
+      feedbackDate: row.feedbackDate,
+      sessionTitle: row.sessionTitle,
+      sport: row.sport,
+      rpe: row.rpe,
+      maxPain: row.maxPain,
+      notes: row.notes,
+    })),
+    adherence: adherence
+      ? {
+          from: adherence.from,
+          to: adherence.to,
+          planned: adherence.planned,
+          completed: adherence.completed,
+          skipped: adherence.skipped,
+          missed: adherence.missed,
+          completionRate: adherence.completionRate,
+          meanRpe: adherence.meanRpe,
+          ptMisses: adherence.ptMisses,
+          ptStreakDays: adherence.ptStreakDays,
+        }
+      : null,
+    fuel: fuelCtx
+      ? {
+          fuellingWindow: fuelCtx.targets.fuellingWindow,
+          plannedTss: fuelCtx.targets.plannedTss,
+          targets: fuelCtx.targets.targets,
+          logged: fuelCtx.targets.logged
+            ? {
+                kcal: fuelCtx.targets.logged.kcal,
+                proteinG: fuelCtx.targets.logged.proteinG,
+                carbsG: fuelCtx.targets.logged.carbsG,
+                fatG: fuelCtx.targets.logged.fatG,
+                hydrationMl: fuelCtx.targets.logged.hydrationMl,
+                entryCount: fuelCtx.targets.logged.entryCount,
+              }
+            : null,
+          flags: fuelCtx.targets.flags,
+          recentBlurbs: fuelCtx.recentBlurbs,
+        }
+      : null,
     today,
   }
 

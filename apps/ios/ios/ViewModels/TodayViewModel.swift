@@ -1,179 +1,96 @@
 import Foundation
-import HealthKit
 import Observation
 
 @MainActor
 @Observable
 final class TodayViewModel {
 
-    // MARK: - State
-
-    var todayMetrics: PetehomeDailyMetrics?
-    var recentWorkouts: [HKWorkout] = []
-    var syncedWorkoutIDs: Set<String> = []
+    var today: CoachTodayData?
     var isLoading = false
-    var error: String?
+    var errorMessage: String?
+    var sessionActionInFlight: String?
 
-    // MARK: - Dependencies
+    /// PT blocks toggled locally before check-in saves them.
+    var ptCompletedIds: Set<String> = []
 
-    private let syncManager = HealthKitSyncManager.shared
     private let api = PetehomeAPI.shared
+    private static let cacheKey = "coachTodayCache"
 
-    // MARK: - Load Data
+    func load(refresh: Bool = true) async {
+        if refresh {
+            isLoading = true
+            errorMessage = nil
+        }
 
-    func loadAll() async {
-        isLoading = true
-        error = nil
-
-        async let metricsTask: () = loadTodayMetrics()
-        async let workoutsTask: () = loadRecentWorkouts()
-        async let syncedTask: () = loadSyncedIDs()
-
-        _ = await (metricsTask, workoutsTask, syncedTask)
+        do {
+            let payload = try await api.fetchCoachToday()
+            today = payload
+            syncPtSelection(from: payload)
+            cache(payload)
+        } catch {
+            errorMessage = error.localizedDescription
+            if today == nil, let cached = loadCached() {
+                today = cached
+                syncPtSelection(from: cached)
+            }
+            print("[TodayViewModel] load failed: \(error)")
+        }
 
         isLoading = false
     }
 
-    func loadTodayMetrics() async {
+    func markSession(id: String, status: String) async {
+        sessionActionInFlight = id
+        defer { sessionActionInFlight = nil }
+
         do {
-            todayMetrics = try await syncManager.queryDailyMetrics(for: Date())
+            _ = try await api.patchSession(id: id, status: status)
+            await load(refresh: false)
         } catch {
-            print("[TodayViewModel] Failed to load today metrics: \(error)")
+            errorMessage = error.localizedDescription
         }
     }
 
-    func loadRecentWorkouts() async {
-        do {
-            recentWorkouts = try await syncManager.fetchAllWorkouts(days: 14)
-        } catch {
-            self.error = error.localizedDescription
-            print("[TodayViewModel] Failed to load workouts: \(error)")
+    func togglePtProtocol(_ protocolId: String) {
+        if ptCompletedIds.contains(protocolId) {
+            ptCompletedIds.remove(protocolId)
+        } else {
+            ptCompletedIds.insert(protocolId)
         }
     }
 
-    func loadSyncedIDs() async {
-        do {
-            syncedWorkoutIDs = try await api.getSyncedWorkoutIDs(limit: 200)
-        } catch {
-            print("[TodayViewModel] Failed to load synced IDs: \(error)")
+    func submitCheckin(_ request: CoachCheckInRequest) async throws -> CoachCheckInResult {
+        var body = request
+        if body.ptCompleted == nil, !ptCompletedIds.isEmpty {
+            body.ptCompleted = ptCompletedIds.map { CoachPtCompletion(protocolId: $0, skipped: false) }
         }
+        let result = try await api.submitCheckin(body)
+        await load(refresh: false)
+        return result
     }
 
-    // MARK: - Helpers
-
-    func isSynced(_ workout: HKWorkout) -> Bool {
-        syncedWorkoutIDs.contains(workout.uuid.uuidString)
+    var readinessBlocked: Bool {
+        guard let readiness = today?.readiness else { return false }
+        if readiness.level == "blocked" { return true }
+        return readiness.flags.contains { $0.lowercased().contains("block") }
     }
 
-    /// Group workouts by date (most recent first)
-    var workoutsByDate: [(date: Date, workouts: [HKWorkout])] {
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: recentWorkouts) { workout in
-            calendar.startOfDay(for: workout.startDate)
-        }
-        return grouped
-            .sorted { $0.key > $1.key }
-            .map { (date: $0.key, workouts: $0.value.sorted { $0.startDate > $1.startDate }) }
+    private func syncPtSelection(from payload: CoachTodayData) {
+        ptCompletedIds = Set(payload.ptProtocols.filter(\.completed).map(\.id))
     }
 
-    // MARK: - Workout Display Helpers
-
-    static func icon(for activityType: HKWorkoutActivityType) -> String {
-        switch activityType {
-        case .running:
-            return "figure.run"
-        case .walking:
-            return "figure.walk"
-        case .hiking:
-            return "figure.hiking"
-        case .cycling:
-            return "figure.outdoor.cycle"
-        case .functionalStrengthTraining, .traditionalStrengthTraining:
-            return "dumbbell.fill"
-        case .coreTraining:
-            return "figure.core.training"
-        case .highIntensityIntervalTraining:
-            return "bolt.heart.fill"
-        case .rowing:
-            return "figure.rower"
-        case .stairClimbing:
-            return "figure.stairs"
-        case .elliptical:
-            return "figure.elliptical"
-        case .swimming:
-            return "figure.pool.swim"
-        case .swimBikeRun:
-            return "figure.pool.swim"
-        case .yoga:
-            return "figure.yoga"
-        default:
-            return "figure.mixed.cardio"
-        }
+    private func cache(_ payload: CoachTodayData) {
+        guard let data = try? JSONEncoder().encode(payload) else { return }
+        UserDefaults.standard.set(data, forKey: Self.cacheKey)
     }
 
-    static func name(for activityType: HKWorkoutActivityType) -> String {
-        switch activityType {
-        case .running:
-            return "Running"
-        case .walking:
-            return "Walking"
-        case .hiking:
-            return "Hiking"
-        case .cycling:
-            return "Cycling"
-        case .functionalStrengthTraining:
-            return "Functional Strength"
-        case .traditionalStrengthTraining:
-            return "Strength Training"
-        case .coreTraining:
-            return "Core Training"
-        case .highIntensityIntervalTraining:
-            return "HIIT"
-        case .rowing:
-            return "Rowing"
-        case .stairClimbing:
-            return "Stair Climbing"
-        case .elliptical:
-            return "Elliptical"
-        case .swimming:
-            return "Swimming"
-        case .swimBikeRun:
-            return "Triathlon"
-        case .yoga:
-            return "Yoga"
-        default:
-            return "Workout"
-        }
-    }
-
-    static func formattedDuration(_ interval: TimeInterval) -> String {
-        let minutes = Int(interval) / 60
-        if minutes >= 60 {
-            let hours = minutes / 60
-            let mins = minutes % 60
-            return "\(hours)h \(mins)m"
-        }
-        return "\(minutes)m"
-    }
-
-    static func formattedCalories(_ calories: Double) -> String {
-        return "\(Int(calories))"
-    }
-
-    // MARK: - Activity Ring Progress
-
-    var moveProgress: Double {
-        guard let metrics = todayMetrics, let goal = metrics.moveGoal, goal > 0 else { return 0 }
-        return metrics.activeCalories / Double(goal)
-    }
-
-    var exerciseProgress: Double {
-        guard let metrics = todayMetrics, let goal = metrics.exerciseGoal, goal > 0 else { return 0 }
-        return Double(metrics.exerciseMinutes) / Double(goal)
-    }
-
-    var standProgress: Double {
-        guard let metrics = todayMetrics, let goal = metrics.standGoal, goal > 0 else { return 0 }
-        return Double(metrics.standHours) / Double(goal)
+    private func loadCached() -> CoachTodayData? {
+        guard let data = UserDefaults.standard.data(forKey: Self.cacheKey) else { return nil }
+        return try? JSONDecoder().decode(CoachTodayData.self, from: data)
     }
 }
+
+
+
+
+

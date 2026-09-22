@@ -2,18 +2,18 @@ import SwiftUI
 
 struct MainTabView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @State private var navigation = AppNavigation.shared
     @State private var hasPerformedInitialSync = false
     @State private var lastActiveDate: Date?
-    @State private var selectedTab = 0
 
     /// Minimum time between automatic syncs (30 minutes)
     private let minimumSyncInterval: TimeInterval = 30 * 60
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigation.selectedTab) {
             TodayView()
                 .tabItem {
-                    Label("Today", systemImage: "heart.text.square")
+                    Label("Today", systemImage: "sun.max.fill")
                 }
                 .tag(0)
 
@@ -23,28 +23,17 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            ShoppingListView()
-                .tabItem {
-                    Label("List", systemImage: "list.clipboard")
-                }
-
-            WebViewTab()
-                .tabItem {
-                    Label("Home", systemImage: "globe")
-                }
-                .tag(2)
-
-            ActivityView(selectedTab: $selectedTab)
+            ActivityView(selectedTab: $navigation.selectedTab)
                 .tabItem {
                     Label("Activity", systemImage: "figure.run")
                 }
-                .tag(3)
+                .tag(2)
 
-            HeartRateBroadcastView()
+            CoachWebViewTab(navigation: navigation)
                 .tabItem {
-                    Label("Broadcast", systemImage: "dot.radiowaves.left.and.right")
+                    Label("Coach", systemImage: "bubble.left.and.text.bubble.right.fill")
                 }
-                .tag(4)
+                .tag(3)
         }
         .tint(.white)
         .task {
@@ -56,6 +45,10 @@ struct MainTabView: View {
             } else if newPhase == .background {
                 BackgroundSyncManager.shared.scheduleBackgroundSync()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .coachNotificationTapped)) { notification in
+            let path = notification.userInfo?["path"] as? String
+            navigation.openCoach(path: path)
         }
     }
 

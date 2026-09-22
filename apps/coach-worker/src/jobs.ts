@@ -217,6 +217,9 @@ async function storeBriefing(date: string, text: string): Promise<void> {
  */
 export async function runDebrief(activityId: string): Promise<JobResult> {
   const { computeActivityLoad } = await import('@/lib/services/coach/analytics.service')
+  const { linkWorkoutToPlannedSession, refreshWeekActualLoad } = await import(
+    '@/lib/services/coach/adherence.service'
+  )
 
   const activity = await getActivity(activityId)
   if (!activity) {
@@ -231,9 +234,40 @@ export async function runDebrief(activityId: string): Promise<JobResult> {
 
   await computeAndStoreReadiness().catch(() => null)
 
+  const link = await linkWorkoutToPlannedSession({
+    workoutId: activity.id,
+    workoutType: activity.sport,
+    startDate: `${activity.activityDate}T12:00:00`,
+  }).catch(() => ({ sessionId: null as string | null, linked: false }))
+
+  let plannedLine = 'No matching planned session found.'
+  if (link.sessionId) {
+    const sessions = await getSessionsInRange(activity.activityDate, activity.activityDate)
+    const matched = sessions.find((session: { id: string }) => session.id === link.sessionId)
+    if (matched) {
+      plannedLine = [
+        `Linked planned session [${matched.id}] "${matched.title}" (${matched.sport}).`,
+        matched.plannedDurationSeconds
+          ? `Prescribed ${Math.round(matched.plannedDurationSeconds / 60)} min.`
+          : null,
+        matched.plannedLoad != null ? `Planned load ~${matched.plannedLoad} TSS.` : null,
+        matched.rationale ? `Rationale: ${matched.rationale}` : null,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    }
+
+    const weekStart = isoWeekStart(activity.activityDate)
+    await refreshWeekActualLoad(weekStart).catch(() => null)
+  }
+
   const result = await runCoachJob({
     job: 'debrief',
-    prompt: `A ${activity.sport} session just synced (activity id ${activity.id}, ${activity.activityDate}). Look at the detail and write the debrief.`,
+    prompt: [
+      `A ${activity.sport} session just synced (activity id ${activity.id}, ${activity.activityDate}).`,
+      plannedLine,
+      'Compare what was prescribed to what happened, then write the debrief.',
+    ].join(' '),
     focus: `${activity.sport} session debrief`,
     maxOutputTokens: 700,
     templateFallback: () =>
@@ -244,6 +278,18 @@ export async function runDebrief(activityId: string): Promise<JobResult> {
       (activity.tss ? `, ${activity.tss.toFixed(0)} TSS` : '') +
       '. Debrief unavailable: Claude budget reached.',
   })
+
+  // Persist debrief against the linked session so it enters feedback context.
+  if (link.sessionId) {
+    const { error: debriefError } = await coachDb()
+      .from('coach_session_feedback')
+      .insert({
+        session_id: link.sessionId,
+        feedback_date: activity.activityDate,
+        notes: `Debrief: ${firstLine(result.text, 400)}`,
+      })
+    if (debriefError) console.error('[coach] Failed to store debrief feedback:', debriefError.message)
+  }
 
   await sendCoachNotification({
     title: `${capitalise(activity.sport)} debrief`,
@@ -257,7 +303,7 @@ export async function runDebrief(activityId: string): Promise<JobResult> {
     ok: true,
     summary: firstLine(result.text, 120),
     costUsd: result.costUsd,
-    detail: { activityId, sport: activity.sport },
+    detail: { activityId, sport: activity.sport, sessionId: link.sessionId },
   }
 }
 
@@ -316,11 +362,25 @@ export async function runEveningNudge(): Promise<JobResult> {
 export async function runWeeklyPlan(): Promise<JobResult> {
   const nextMonday = isoWeekStart(daysAgo(-7))
 
-  const [block, load, projection] = await Promise.all([
+  const [
+    block,
+    load,
+    projection,
+    { getAdherenceSummary, getRecentSessionFeedback, formatAdherenceForPrompt },
+  ] = await Promise.all([
     getCurrentBlock(),
     getLoadSummary(),
     getRaceProjection().catch(() => null),
+    import('@/lib/services/coach/adherence.service'),
   ])
+
+  const [adherence, feedback] = await Promise.all([
+    getAdherenceSummary(14).catch(() => null),
+    getRecentSessionFeedback(14).catch(() => []),
+  ])
+
+  const adherenceBlock =
+    adherence != null ? formatAdherenceForPrompt(adherence, feedback) : 'Adherence data unavailable.'
 
   const prompt = [
     `Plan the training week beginning ${nextMonday}.`,
@@ -332,10 +392,11 @@ export async function runWeeklyPlan(): Promise<JobResult> {
     projection
       ? `Projected finish ${formatTime(projection.projectedSeconds)} against a goal of ${formatTime(projection.goalSeconds)}.`
       : '',
-    'Review the last two weeks first, then submit the week through propose_plan_change. If the guardrails reject it, fix the cause and resubmit.',
+    adherenceBlock,
+    'Use the adherence numbers above, then submit the week through propose_plan_change. If the guardrails reject it, fix the cause and resubmit.',
   ]
     .filter(Boolean)
-    .join(' ')
+    .join('\n')
 
   const result = await runCoachJob({
     job: 'weekly_plan',

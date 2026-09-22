@@ -39,6 +39,7 @@ const checkinSchema = z.object({
     .object({
       sessionId: z.string().uuid().optional(),
       rpe: z.number().int().min(1).max(10).optional(),
+      maxPain: z.number().int().min(0).max(10).optional(),
       mood: z.number().int().min(1).max(5).optional(),
       energy: z.number().int().min(1).max(5).optional(),
       sleepQuality: z.number().int().min(1).max(5).optional(),
@@ -47,7 +48,13 @@ const checkinSchema = z.object({
     })
     .optional(),
   ptCompleted: z
-    .array(z.object({ protocolId: z.string().uuid(), skipped: z.boolean().optional() }))
+    .array(
+      z.object({
+        protocolId: z.string().uuid(),
+        skipped: z.boolean().optional(),
+        completedItemIds: z.array(z.string().uuid()).optional(),
+      })
+    )
     .optional(),
 })
 
@@ -81,9 +88,11 @@ export async function POST(request: NextRequest) {
         mood: input.feedback.mood ?? null,
         energy: input.feedback.energy ?? null,
         sleep_quality: input.feedback.sleepQuality ?? null,
-        max_pain: input.symptoms?.length
-          ? Math.max(...input.symptoms.map((symptom) => symptom.painScore))
-          : null,
+        max_pain:
+          input.feedback.maxPain ??
+          (input.symptoms?.length
+            ? Math.max(...input.symptoms.map((symptom) => symptom.painScore))
+            : null),
         nutrition_adherence: input.feedback.nutritionAdherence ?? null,
         notes: input.feedback.notes ?? null,
       })
@@ -97,6 +106,7 @@ export async function POST(request: NextRequest) {
           protocol_id: completion.protocolId,
           completed_date: date,
           skipped: completion.skipped ?? false,
+          completed_items: completion.completedItemIds ?? [],
         },
         { onConflict: 'protocol_id,completed_date' }
       )

@@ -9,6 +9,9 @@
  * This module implements the replacement: maintenance energy, protein held
  * high and flat, carbohydrate periodised to the day's training load. Weight
  * is treated as a band to hold, not a target to cut toward.
+ *
+ * Day macros are owned by coach_fuel_entry rollups via recomputeNutritionDay.
+ * logNutritionMeta only updates hydration / adherence / notes.
  */
 
 import { daysAgo } from '@petehome/coach-core'
@@ -16,6 +19,16 @@ import { daysAgo } from '@petehome/coach-core'
 import { coachDb, getAthleteProfile, getDailyMetrics, getSessionsInRange } from './coach-data.service'
 
 export type FuellingWindow = 'high' | 'moderate' | 'low'
+
+export interface NutritionLogged {
+  kcal: number | null
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+  hydrationMl: number | null
+  adherence: number | null
+  entryCount: number
+}
 
 export interface NutritionTargets {
   date: string
@@ -28,14 +41,19 @@ export interface NutritionTargets {
     carbsG: number
     fatG: number
   }
-  logged: {
-    kcal: number | null
-    proteinG: number | null
-    carbsG: number | null
-    adherence: number | null
-  } | null
+  logged: NutritionLogged | null
   guidance: string[]
   flags: string[]
+}
+
+function chicagoDate(date?: string): string {
+  return date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (value == null) return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
 }
 
 /** Baseline energy expenditure before training, in kcal. */
@@ -53,14 +71,22 @@ function estimateRestingExpenditure(weightLbs: number, heightCm: number | null, 
 }
 
 export async function getNutritionTargets(date?: string): Promise<NutritionTargets> {
-  const target = date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+  const target = chicagoDate(date)
 
-  const [profile, sessions, metrics, logged] = await Promise.all([
+  const [profile, sessions, metrics, logged, entryCountRes] = await Promise.all([
     getAthleteProfile(),
     getSessionsInRange(target, target),
     getDailyMetrics(daysAgo(14), target),
     coachDb().from('coach_nutrition_day').select('*').eq('log_date', target).maybeSingle(),
+    coachDb()
+      .from('coach_fuel_entry')
+      .select('id', { count: 'exact', head: true })
+      .eq('log_date', target),
   ])
+
+  if (entryCountRes.error) {
+    console.error('[nutrition] fuel entry count failed:', entryCountRes.error.message)
+  }
 
   const plannedTss = sessions.reduce((sum, session) => sum + (session.plannedLoad ?? 0), 0)
 
@@ -108,10 +134,6 @@ export async function getNutritionTargets(date?: string): Promise<NutritionTarge
   }
 
   // --- RED-S surveillance ---------------------------------------------------
-  // Low energy availability shows up as a falling weight trend, a falling
-  // resting heart rate baseline alongside poor recovery, or suppressed HRV.
-  // Worth catching early: it degrades bone and tendon, which is the last
-  // thing this athlete needs.
   const weights = metrics
     .map((metric) => metric.bodyMassLbs)
     .filter((value): value is number => value != null)
@@ -151,6 +173,21 @@ export async function getNutritionTargets(date?: string): Promise<NutritionTarge
   }
 
   const loggedRow = logged.data as Record<string, unknown> | null
+  const entryCount = entryCountRes.count ?? 0
+
+  const actualKcal = asNullableNumber(loggedRow?.actual_kcal)
+  const actualProtein = asNullableNumber(loggedRow?.actual_protein_g)
+  const actualCarbs = asNullableNumber(loggedRow?.actual_carbs_g)
+  const actualFat = asNullableNumber(loggedRow?.actual_fat_g)
+  const hydrationMl = asNullableNumber(loggedRow?.hydration_ml)
+  const adherence = asNullableNumber(loggedRow?.adherence)
+
+  const hasLogged =
+    entryCount > 0 ||
+    actualKcal != null ||
+    actualProtein != null ||
+    actualCarbs != null ||
+    actualFat != null
 
   return {
     date: target,
@@ -158,37 +195,54 @@ export async function getNutritionTargets(date?: string): Promise<NutritionTarge
     fuellingWindow,
     bodyWeightLbs: Math.round(latestWeight * 10) / 10,
     targets: { kcal, proteinG, carbsG, fatG },
-    logged: loggedRow
+    logged: hasLogged
       ? {
-          kcal: loggedRow.actual_kcal ? Number(loggedRow.actual_kcal) : null,
-          proteinG: loggedRow.actual_protein_g ? Number(loggedRow.actual_protein_g) : null,
-          carbsG: loggedRow.actual_carbs_g ? Number(loggedRow.actual_carbs_g) : null,
-          adherence: loggedRow.adherence ? Number(loggedRow.adherence) : null,
+          kcal: actualKcal,
+          proteinG: actualProtein,
+          carbsG: actualCarbs,
+          fatG: actualFat,
+          hydrationMl,
+          adherence,
+          entryCount,
         }
-      : null,
+      : hydrationMl != null || adherence != null
+        ? {
+            kcal: null,
+            proteinG: null,
+            carbsG: null,
+            fatG: null,
+            hydrationMl,
+            adherence,
+            entryCount,
+          }
+        : null,
     guidance,
     flags,
   }
 }
 
-export interface NutritionLogInput {
+export interface NutritionMetaInput {
   date?: string
-  kcal?: number
-  proteinG?: number
-  carbsG?: number
-  fatG?: number
   hydrationMl?: number
   adherence?: number
   notes?: string
 }
 
-export async function logNutrition(input: NutritionLogInput): Promise<void> {
-  const date =
-    input.date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
-
-  // Targets are stored alongside the actuals so a past day can be reviewed
-  // against what was prescribed at the time, not against today's numbers.
+/**
+ * Update hydration / adherence / notes without touching day macros.
+ * Macros are owned by coach_fuel_entry via recomputeNutritionDay.
+ */
+export async function logNutritionMeta(input: NutritionMetaInput): Promise<void> {
+  const date = chicagoDate(input.date)
   const targets = await getNutritionTargets(date)
+
+  const existing = await coachDb()
+    .from('coach_nutrition_day')
+    .select('hydration_ml, adherence, notes, actual_kcal, actual_protein_g, actual_carbs_g, actual_fat_g')
+    .eq('log_date', date)
+    .maybeSingle()
+
+  const row = (existing.data ?? {}) as Record<string, unknown>
 
   const { error } = await coachDb()
     .from('coach_nutrition_day')
@@ -199,17 +253,102 @@ export async function logNutrition(input: NutritionLogInput): Promise<void> {
         target_protein_g: targets.targets.proteinG,
         target_carbs_g: targets.targets.carbsG,
         target_fat_g: targets.targets.fatG,
-        actual_kcal: input.kcal ?? null,
-        actual_protein_g: input.proteinG ?? null,
-        actual_carbs_g: input.carbsG ?? null,
-        actual_fat_g: input.fatG ?? null,
         fueling_window: targets.fuellingWindow,
-        hydration_ml: input.hydrationMl ?? null,
-        adherence: input.adherence ?? null,
-        notes: input.notes ?? null,
+        actual_kcal: row.actual_kcal ?? null,
+        actual_protein_g: row.actual_protein_g ?? null,
+        actual_carbs_g: row.actual_carbs_g ?? null,
+        actual_fat_g: row.actual_fat_g ?? null,
+        hydration_ml: input.hydrationMl ?? row.hydration_ml ?? null,
+        adherence: input.adherence ?? row.adherence ?? null,
+        notes: input.notes !== undefined ? input.notes : (row.notes ?? null),
       },
       { onConflict: 'log_date' }
     )
 
-  if (error) throw new Error(`Failed to log nutrition: ${error.message}`)
+  if (error) throw new Error(`Failed to update nutrition meta: ${error.message}`)
+}
+
+/**
+ * Sum fuel entries for a date into coach_nutrition_day.actual_*.
+ * Preserves hydration_ml, adherence, and notes.
+ */
+export async function recomputeNutritionDay(date?: string): Promise<void> {
+  const target = chicagoDate(date)
+  const targets = await getNutritionTargets(target)
+
+  const [{ data: entries, error: listError }, existing] = await Promise.all([
+    coachDb()
+      .from('coach_fuel_entry')
+      .select('kcal, protein_g, carbs_g, fat_g')
+      .eq('log_date', target),
+    coachDb()
+      .from('coach_nutrition_day')
+      .select('hydration_ml, adherence, notes')
+      .eq('log_date', target)
+      .maybeSingle(),
+  ])
+
+  if (listError) throw new Error(`Failed to load fuel entries: ${listError.message}`)
+
+  const rows = (entries ?? []) as {
+    kcal: number
+    protein_g: number
+    carbs_g: number
+    fat_g: number
+  }[]
+
+  const meta = (existing.data ?? {}) as Record<string, unknown>
+
+  const totals =
+    rows.length === 0
+      ? { kcal: null, proteinG: null, carbsG: null, fatG: null }
+      : {
+          kcal: rows.reduce((sum, row) => sum + row.kcal, 0),
+          proteinG: rows.reduce((sum, row) => sum + row.protein_g, 0),
+          carbsG: rows.reduce((sum, row) => sum + row.carbs_g, 0),
+          fatG: rows.reduce((sum, row) => sum + row.fat_g, 0),
+        }
+
+  const { error } = await coachDb()
+    .from('coach_nutrition_day')
+    .upsert(
+      {
+        log_date: target,
+        target_kcal: targets.targets.kcal,
+        target_protein_g: targets.targets.proteinG,
+        target_carbs_g: targets.targets.carbsG,
+        target_fat_g: targets.targets.fatG,
+        fueling_window: targets.fuellingWindow,
+        actual_kcal: totals.kcal,
+        actual_protein_g: totals.proteinG,
+        actual_carbs_g: totals.carbsG,
+        actual_fat_g: totals.fatG,
+        hydration_ml: meta.hydration_ml ?? null,
+        adherence: meta.adherence ?? null,
+        notes: meta.notes ?? null,
+      },
+      { onConflict: 'log_date' }
+    )
+
+  if (error) throw new Error(`Failed to recompute nutrition day: ${error.message}`)
+}
+
+/** @deprecated Use logNutritionMeta — kept for any stray callers during transition. */
+export async function logNutrition(input: NutritionMetaInput & {
+  kcal?: number
+  proteinG?: number
+  carbsG?: number
+  fatG?: number
+}): Promise<void> {
+  await logNutritionMeta(input)
+  if (
+    input.kcal != null ||
+    input.proteinG != null ||
+    input.carbsG != null ||
+    input.fatG != null
+  ) {
+    console.warn(
+      '[coach] logNutrition ignored macro fields — use coach_fuel_entry / recomputeNutritionDay'
+    )
+  }
 }

@@ -131,15 +131,24 @@ export interface DailyMetric {
   hrvSdnn: number | null
   /** Recovery HRV (RMSSD). Preferred for readiness once 4+ days exist. */
   hrvRmssd?: number | null
+  hrvOvernightAvg?: number | null
+  hrvMorning?: number | null
   vo2Max: number | null
   sleepSeconds: number | null
+  sleepInBed?: number | null
   sleepDeep: number | null
   sleepRem: number | null
   sleepCore: number | null
   sleepAwake: number | null
+  sleepUnspecified?: number | null
+  sleepStart?: string | null
+  sleepEnd?: string | null
   respiratoryRate: number | null
   wristTempDelta: number | null
   spo2: number | null
+  breathingDisturbances?: number | null
+  breathingDisturbancesElevated?: boolean | null
+  sleepApneaEventCount?: number | null
   bodyMassLbs: number | null
   bodyFatPercentage: number | null
   leanBodyMassLbs: number | null

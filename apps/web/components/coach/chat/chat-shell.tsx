@@ -18,6 +18,7 @@ import type {
   CoachConversationListItem,
   CoachConversationRecord,
 } from '@/lib/types/coach-ui.types'
+import { displaySessionTitle, sessionTitleFromPrompt } from '@/lib/utils/session-title'
 import { cn } from '@/lib/utils'
 
 import {
@@ -75,8 +76,9 @@ export function ChatShell({
       const response = await fetch('/api/coach/conversations', { credentials: 'include' })
       const payload = await response.json()
       if (payload.success && Array.isArray(payload.data)) {
-        setThreads(payload.data as CoachConversationListItem[])
-        return payload.data as CoachConversationListItem[]
+        const listed = payload.data as CoachConversationListItem[]
+        setThreads(listed)
+        return listed
       }
     } catch {
       // History is secondary to the open thread.
@@ -225,16 +227,17 @@ export function ChatShell({
     [threads, conversationId]
   )
 
-  const heading =
-    conversation?.title?.trim() ||
-    activeThread?.title?.trim() ||
-    (messages.length > 0 ? 'This session' : 'Coach')
+  const heading = displaySessionTitle(
+    conversation?.title ?? activeThread?.title,
+    messages.length > 0 ? 'This session' : 'New session'
+  )
 
   function handleFirstSend(text: string) {
     if (!conversationId) return
+    const title = sessionTitleFromPrompt(text)
     const optimistic: CoachConversationListItem = {
       id: conversationId,
-      title: text.length > 72 ? `${text.slice(0, 69)}…` : text,
+      title,
       message_count: 1,
       last_message_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -242,8 +245,21 @@ export function ChatShell({
     }
     setThreads((current) => [optimistic, ...current.filter((thread) => thread.id !== conversationId)])
     setConversation((current) =>
-      current ? { ...current, title: optimistic.title, message_count: 1 } : current
+      current ? { ...current, title, message_count: 1 } : current
     )
+  }
+
+  async function refreshAfterTurn() {
+    const listed = await loadThreads()
+    if (!conversationId) return
+    const match = listed.find((thread) => thread.id === conversationId)
+    if (match?.title) {
+      setConversation((current) =>
+        current && current.id === conversationId
+          ? { ...current, title: match.title, message_count: match.message_count }
+          : current
+      )
+    }
   }
 
   const historyProps = {
@@ -259,47 +275,55 @@ export function ChatShell({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <header className="relative flex h-11 shrink-0 items-center gap-1 border-b border-line px-3">
-        <div ref={historyRef} className="relative min-w-0 flex-1">
+      <header className="shrink-0 border-b border-line">
+        <div className="relative mx-auto flex h-12 w-full max-w-[40rem] items-center gap-2 px-4">
+          <div ref={historyRef} className="relative min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={toggleHistory}
+              className="group inline-flex max-w-full items-center gap-2 rounded-control py-1 text-left transition-colors hover:bg-surface-2"
+              aria-expanded={desktopHistoryOpen || mobileHistoryOpen}
+              aria-haspopup="listbox"
+              aria-label="Sessions"
+            >
+              <span className="min-w-0 px-2">
+                <span className="t-micro block text-ink-3">Session</span>
+                <span className="t-label flex items-center gap-1 font-semibold text-ink-1">
+                  <span className="truncate">{heading}</span>
+                  <ChevronDown
+                    className={cn(
+                      'size-3.5 shrink-0 text-ink-3 transition-transform',
+                      (desktopHistoryOpen || mobileHistoryOpen) && 'rotate-180'
+                    )}
+                  />
+                </span>
+              </span>
+            </button>
+
+            {desktopHistoryOpen ? (
+              <div className="absolute top-full left-0 z-40 mt-1 w-[18rem] overflow-hidden rounded-lg border border-line bg-surface-1 text-ink-1 shadow-md">
+                <div className="max-h-[min(28rem,70vh)]">
+                  <ChatHistory {...historyProps} />
+                </div>
+              </div>
+            ) : null}
+          </div>
+
           <button
             type="button"
-            onClick={toggleHistory}
-            className="inline-flex max-w-full items-center gap-1 rounded-control px-2 py-1 text-left transition-colors hover:bg-surface-2"
-            aria-expanded={desktopHistoryOpen || mobileHistoryOpen}
-            aria-haspopup="listbox"
-            aria-label="Sessions"
+            onClick={startNew}
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-control px-2.5 t-label font-medium text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
+            aria-label="New session"
+            title="New session"
           >
-            <span className="t-label truncate font-semibold">{heading}</span>
-            <ChevronDown
-              className={cn(
-                'size-3.5 shrink-0 text-ink-3 transition-transform',
-                (desktopHistoryOpen || mobileHistoryOpen) && 'rotate-180'
-              )}
-            />
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">New</span>
           </button>
-
-          {desktopHistoryOpen ? (
-            <div className="absolute top-full left-0 z-40 mt-1 w-[18rem] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md">
-              <div className="max-h-[min(28rem,70vh)]">
-                <ChatHistory {...historyProps} />
-              </div>
-            </div>
-          ) : null}
         </div>
-
-        <button
-          type="button"
-          onClick={startNew}
-          className="inline-flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
-          aria-label="New session"
-          title="New session"
-        >
-          <Plus className="size-3.5" />
-        </button>
       </header>
 
       {loading || !conversationId ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        <div className="flex flex-1 items-center justify-center text-sm text-ink-3">
           Opening the last session…
         </div>
       ) : (
@@ -311,7 +335,7 @@ export function ChatShell({
           summary={conversation?.summary ?? null}
           onDeepModeChange={setDeepMode}
           onSettled={() => {
-            void loadThreads()
+            void refreshAfterTurn()
           }}
           onFirstSend={handleFirstSend}
           onOpenPanel={onOpenPanel}
@@ -319,7 +343,7 @@ export function ChatShell({
       )}
 
       <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
-        <SheetContent side="left" className="w-[18rem] max-w-[85vw] p-3">
+        <SheetContent side="left" className="w-[18rem] max-w-[85vw] bg-surface-1 p-3">
           <SheetHeader className="sr-only">
             <SheetTitle>Sessions</SheetTitle>
             <SheetDescription>Reopen a previous conversation with the coach.</SheetDescription>

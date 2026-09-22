@@ -154,6 +154,12 @@ final class HealthKitSyncManager {
         if let rmssd = HealthKitPetehome.rmssdType {
             typesToRead.insert(rmssd)
         }
+        if let breathing = HealthKitPetehome.breathingDisturbancesType {
+            typesToRead.insert(breathing)
+        }
+        if let apnea = HealthKitPetehome.sleepApneaEventType {
+            typesToRead.insert(apnea)
+        }
 
         do {
             try await healthStore.requestAuthorization(toShare: [], read: typesToRead)
@@ -2183,12 +2189,15 @@ final class HealthKitSyncManager {
             end: endOfDay
         )
         async let spo2 = queryAverage(.oxygenSaturation, start: hrvWindowStart, end: hrvWindowEnd)
+        async let breathing = queryBreathingDisturbances(start: hrvWindowStart, end: hrvWindowEnd)
+        async let apneaCount = querySleepApneaEventCount(start: hrvWindowStart, end: hrvWindowEnd)
 
         // Fetch activity summary including stand hours AND activity ring goals
         let activitySummary = await queryActivitySummary(for: date)
 
         let hrvResult = await hrvSeries
         let rmssdResult = await rmssdSeries
+        let breathingResult = await breathing
 
         return await PetehomeDailyMetrics(
             date: date.dateOnlyString,
@@ -2222,6 +2231,9 @@ final class HealthKitSyncManager {
             // baseline, so it is stored as-is.
             wristTempDelta: await wristTemp,
             oxygenSaturation: (await spo2).map { $0 * 100 },
+            breathingDisturbances: breathingResult?.quantity,
+            breathingDisturbancesElevated: breathingResult?.elevated,
+            sleepApneaEventCount: await apneaCount,
             walkingHeartRateAverage: walkingHR != nil ? Int(walkingHR!) : nil,
             walkingDoubleSupportPercentage: walkingDoubleSupport,
             walkingAsymmetryPercentage: walkingAsymmetry,
@@ -2331,11 +2343,11 @@ final class HealthKitSyncManager {
             stages: PetehomeSleepStages(
                 awake: awake,
                 rem: rem,
-                // Unspecified sleep is folded into core so the stage totals
-                // reconcile with asleepSeconds on nights the watch did not
-                // produce full stage detection.
-                core: core + unspecifiedAsleep,
-                deep: deep
+                core: core,
+                deep: deep,
+                // Keep unspecified separate so core % is not inflated when
+                // the watch did not produce full stage detection.
+                unspecified: unspecifiedAsleep > 0 ? unspecifiedAsleep : nil
             )
         )
     }
@@ -2459,6 +2471,59 @@ final class HealthKitSyncManager {
                 continuation.resume(returning: value)
             }
 
+            self.healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Breathing disturbances / apnea
+
+    private struct BreathingDisturbancesResult {
+        let quantity: Double
+        let elevated: Bool?
+    }
+
+    /// Most recent Apple Sleeping Breathing Disturbances sample in the sleep window.
+    private func queryBreathingDisturbances(start: Date, end: Date) async -> BreathingDisturbancesResult? {
+        guard let type = HealthKitPetehome.breathingDisturbancesType else { return nil }
+
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let value = sample.quantity.doubleValue(for: .count())
+                let elevated = HealthKitPetehome.isBreathingDisturbancesElevated(sample.quantity)
+                continuation.resume(returning: BreathingDisturbancesResult(quantity: value, elevated: elevated))
+            }
+            self.healthStore.execute(query)
+        }
+    }
+
+    /// Count of sleepApneaEvent samples in the sleep window (usually zero).
+    private func querySleepApneaEventCount(start: Date, end: Date) async -> Int? {
+        guard let type = HealthKitPetehome.sleepApneaEventType else { return nil }
+
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, _ in
+                let count = samples?.count ?? 0
+                continuation.resume(returning: count > 0 ? count : 0)
+            }
             self.healthStore.execute(query)
         }
     }

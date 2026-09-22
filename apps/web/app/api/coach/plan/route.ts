@@ -16,6 +16,7 @@ import {
   getSessionsInRange,
 } from '@/lib/services/coach/coach-data.service'
 import { applyProposal, buildGuardrailContext } from '@/lib/services/coach/plan.service'
+import { enrichSessionsWithActivity } from '@/lib/services/coach/session-activity-glance.service'
 import { YEAR_PLAN_PHASES } from '@/lib/types/coach-ui.types'
 import { applyChanges, evaluateGuardrails, isoWeekStart, planProposalSchema } from '@petehome/coach-core'
 
@@ -37,9 +38,11 @@ export async function GET(request: NextRequest) {
       getCurrentBlock(),
     ])
 
-    const weeks = new Map<string, typeof sessions>()
-    for (const session of sessions) {
-      const week = isoWeekStart(session.sessionDate)
+    const uiSessions = await enrichSessionsWithActivity(sessions)
+
+    const weeks = new Map<string, typeof uiSessions>()
+    for (const session of uiSessions) {
+      const week = isoWeekStart(session.sessionDate ?? from)
       const list = weeks.get(week) ?? []
       list.push(session)
       weeks.set(week, list)

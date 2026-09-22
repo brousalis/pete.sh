@@ -39,6 +39,9 @@ final class HealthKitObserver {
         types.append(HKQuantityType(.bodyMass))
         types.append(HKQuantityType(.vo2Max))
         types.append(HKCategoryType(.sleepAnalysis))
+        if let breathing = HealthKitPetehome.breathingDisturbancesType {
+            types.append(breathing)
+        }
         return types
     }
 

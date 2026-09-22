@@ -188,12 +188,19 @@ final class PetehomeAPI {
         return Set(listResponse.data.map { $0.healthkit_id })
     }
 
-    // MARK: - Shopping List API
+    // MARK: - Coach API
 
-    /// Fetch the current week's meal plan
-    func fetchCurrentMealPlan() async throws -> MealPlanResponse {
-        let url = baseURL.appendingPathComponent("api/cooking/meal-plans")
-        var request = URLRequest(url: url)
+    /// Full Today bundle for the native Today tab.
+    func fetchCoachToday(date: String? = nil) async throws -> CoachTodayData {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("api/coach/today"),
+            resolvingAgainstBaseURL: false
+        )!
+        if let date {
+            components.queryItems = [URLQueryItem(name: "date", value: date)]
+        }
+
+        var request = URLRequest(url: components.url!)
         request.httpMethod = "GET"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
@@ -206,38 +213,25 @@ final class PetehomeAPI {
 
         try handleResponse(response, data: data)
 
-        return try decoder.decode(MealPlanResponse.self, from: data)
+        let envelope = try decoder.decode(CoachAPIEnvelope<CoachTodayData>.self, from: data)
+        guard let payload = envelope.data else {
+            throw PetehomeAPIError.httpError(500, envelope.error ?? "Missing today payload")
+        }
+        return payload
     }
 
-    /// Fetch the shopping list for a given meal plan
-    func fetchShoppingList(mealPlanId: String) async throws -> ShoppingListResponse {
-        let url = baseURL.appendingPathComponent("api/cooking/meal-plans/\(mealPlanId)/shopping-list")
+    /// Mark a planned session completed or skipped.
+    func patchSession(id: String, status: String) async throws -> CoachSessionPatchResult {
+        let url = baseURL
+            .appendingPathComponent("api/coach/sessions")
+            .appendingPathComponent(id)
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
-
-        if debugLoggingEnabled { logRequest(request, body: nil) }
-
-        let (data, response) = try await session.data(for: request)
-
-        if debugLoggingEnabled { logResponse(response, data: data) }
-
-        try handleResponse(response, data: data)
-
-        return try decoder.decode(ShoppingListResponse.self, from: data)
-    }
-
-    /// Update shopping list state (checked items, hidden items, manual items, trips)
-    func updateShoppingListState(listId: String, patch: ShoppingListStatePatch) async throws {
-        let url = baseURL.appendingPathComponent("api/cooking/shopping-lists/\(listId)/state")
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
+        request.httpMethod = "PATCH"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
 
-        let body = try encoder.encode(patch)
+        let body = try encoder.encode(CoachSessionPatchRequest(status: status))
         request.httpBody = body
 
         if debugLoggingEnabled { logRequest(request, body: body) }
@@ -247,6 +241,39 @@ final class PetehomeAPI {
         if debugLoggingEnabled { logResponse(response, data: data) }
 
         try handleResponse(response, data: data)
+
+        let envelope = try decoder.decode(CoachAPIEnvelope<CoachSessionPatchResult>.self, from: data)
+        guard let payload = envelope.data else {
+            throw PetehomeAPIError.httpError(500, envelope.error ?? "Missing session patch payload")
+        }
+        return payload
+    }
+
+    /// Daily check-in (symptoms, feedback, PT completion).
+    func submitCheckin(_ payload: CoachCheckInRequest) async throws -> CoachCheckInResult {
+        let url = baseURL.appendingPathComponent("api/coach/checkin")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
+
+        let body = try encoder.encode(payload)
+        request.httpBody = body
+
+        if debugLoggingEnabled { logRequest(request, body: body) }
+
+        let (data, response) = try await session.data(for: request)
+
+        if debugLoggingEnabled { logResponse(response, data: data) }
+
+        try handleResponse(response, data: data)
+
+        let envelope = try decoder.decode(CoachAPIEnvelope<CoachCheckInResult>.self, from: data)
+        guard let result = envelope.data else {
+            throw PetehomeAPIError.httpError(500, envelope.error ?? "Missing check-in payload")
+        }
+        return result
     }
 
     // MARK: - Activity Workouts
@@ -329,52 +356,6 @@ final class PetehomeAPI {
 
         print("Connection test successful")
         return true
-    }
-
-    // MARK: - Fridge Scan
-
-    /// Analyze a fridge scan (voice transcript or photo) via the cooking API
-    func analyzeFridgeScan(type: String, transcript: String?, imageBase64: String?) async throws -> FridgeScanResult {
-        let url = baseURL.appendingPathComponent("api/cooking/fridge-scan")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("petehome-ios/1.0", forHTTPHeaderField: "User-Agent")
-
-        var payload: [String: Any] = ["type": type]
-        if let transcript = transcript {
-            payload["transcript"] = transcript
-        }
-        if let imageBase64 = imageBase64 {
-            payload["image"] = imageBase64
-        }
-
-        do {
-            let body = try JSONSerialization.data(withJSONObject: payload)
-            request.httpBody = body
-
-            if debugLoggingEnabled {
-                // Don't log the full image data
-                let logBody = imageBase64 != nil ? "(image payload, \(body.count) bytes)" : String(data: body, encoding: .utf8) ?? "(binary)"
-                print("REQUEST: POST \(url.absoluteString)")
-                print("Body: \(logBody)")
-            }
-        } catch {
-            throw PetehomeAPIError.encodingFailed
-        }
-
-        let (data, response) = try await session.data(for: request)
-
-        if debugLoggingEnabled {
-            logResponse(response, data: data)
-        }
-
-        try handleResponse(response, data: data)
-
-        let result = try decoder.decode(FridgeScanResult.self, from: data)
-        print("[Fridge Scan] Analysis complete: \(result.data?.identified_items.count ?? 0) items identified")
-        return result
     }
 
     // MARK: - Sync with Retry

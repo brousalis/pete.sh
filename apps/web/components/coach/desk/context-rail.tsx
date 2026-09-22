@@ -1,17 +1,19 @@
 'use client'
 
 import {
-  Activity,
   CalendarRange,
+  Footprints,
   MessageSquare,
   MoreHorizontal,
   Sun,
   TrendingUp,
+  Utensils,
   type LucideIcon,
 } from 'lucide-react'
 
 import { ChatShell } from '@/components/coach/chat/chat-shell'
-import { RailKnee } from '@/components/coach/desk/rail-knee'
+import { RailActivity } from '@/components/coach/desk/rail-activity'
+import { RailFuel } from '@/components/coach/desk/rail-fuel'
 import { RailLoad } from '@/components/coach/desk/rail-load'
 import { RailMore } from '@/components/coach/desk/rail-more'
 import { RailPlan } from '@/components/coach/desk/rail-plan'
@@ -28,8 +30,9 @@ import { cn } from '@/lib/utils'
 const PANEL_ICONS: Record<DeskPanel, LucideIcon> = {
   today: Sun,
   plan: CalendarRange,
-  knee: Activity,
+  fuel: Utensils,
   load: TrendingUp,
+  activity: Footprints,
   coach: MessageSquare,
   more: MoreHorizontal,
 }
@@ -41,6 +44,7 @@ export function ContextRail({
   todayLoading,
   todayError,
   onTodayReload,
+  onSessionStatus,
   className,
 }: {
   panel: DeskPanel
@@ -49,9 +53,12 @@ export function ContextRail({
   todayLoading: boolean
   todayError: string | null
   onTodayReload: () => void
+  onSessionStatus?: (
+    sessionId: string,
+    status: 'completed' | 'skipped'
+  ) => Promise<void>
   className?: string
 }) {
-  const kneeTone = deriveKneeTone(today)
   const readiness = today?.readiness ?? null
 
   return (
@@ -69,7 +76,6 @@ export function ContextRail({
                 key={id}
                 id={id}
                 active={panel === id}
-                alert={id === 'knee' && kneeTone === 'alert'}
                 onSelect={onPanelChange}
               />
             ))}
@@ -94,30 +100,14 @@ export function ContextRail({
                 <span className="t-micro text-ink-3">ready</span>
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={() => onPanelChange('knee')}
-              className="flex items-center gap-1.5 rounded-control px-2 py-1 transition-colors hover:bg-surface-2"
-              title="Knee status"
-            >
-              <span
-                className={cn(
-                  'size-1.5 rounded-full',
-                  toneClasses(kneeTone).dot,
-                  kneeTone === 'alert' && 'animate-pulse-subtle'
-                )}
-                aria-hidden
-              />
-              <span className="t-micro text-ink-3">knee</span>
-            </button>
           </div>
         </div>
       </header>
 
       <div
         className={cn(
-          'min-h-0 flex-1',
-          panel === 'coach' ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'
+          'relative min-h-0 flex-1',
+          panel === 'coach' || panel === 'fuel' ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'
         )}
       >
         {panel === 'coach' ? (
@@ -126,8 +116,11 @@ export function ContextRail({
           <div
             key={panel}
             className={cn(
-              'animate-fade-in mx-auto min-h-full w-full pb-20 md:pb-0',
-              panel === 'today' || panel === 'plan' ? 'max-w-[72rem]' : 'max-w-[46rem]'
+              'animate-fade-in mx-auto min-h-full w-full',
+              panel === 'fuel' ? 'h-full overflow-y-auto overscroll-contain pb-0' : 'pb-20 md:pb-0',
+              panel === 'today' || panel === 'plan' || panel === 'load' || panel === 'activity'
+                ? 'max-w-[72rem]'
+                : 'max-w-[46rem]'
             )}
           >
             {panel === 'today' ? (
@@ -136,11 +129,13 @@ export function ContextRail({
                 loading={todayLoading}
                 error={todayError}
                 onReload={onTodayReload}
+                onSessionStatus={onSessionStatus}
               />
             ) : null}
             {panel === 'plan' ? <RailPlan /> : null}
-            {panel === 'knee' ? <RailKnee /> : null}
+            {panel === 'fuel' ? <RailFuel /> : null}
             {panel === 'load' ? <RailLoad /> : null}
+            {panel === 'activity' ? <RailActivity /> : null}
             {panel === 'more' ? <RailMore /> : null}
           </div>
         )}
@@ -150,7 +145,7 @@ export function ContextRail({
         className="shrink-0 border-t border-line bg-surface-0 pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Sections"
       >
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-7">
           {PANEL_ORDER.map((id) => {
             const Icon = PANEL_ICONS[id]
             const active = panel === id
@@ -168,12 +163,7 @@ export function ContextRail({
                 {active ? (
                   <span className="absolute top-0 h-0.5 w-8 rounded-full bg-brand" aria-hidden />
                 ) : null}
-                <span className="relative">
-                  <Icon className="size-[18px]" />
-                  {id === 'knee' && kneeTone === 'alert' ? (
-                    <span className="absolute -top-0.5 -right-1 size-1.5 rounded-full bg-tone-alert" />
-                  ) : null}
-                </span>
+                <Icon className="size-[18px]" />
                 <span className="text-[10px] leading-none font-medium">{PANEL_LABELS[id]}</span>
               </button>
             )
@@ -198,12 +188,10 @@ function Wordmark() {
 function TabButton({
   id,
   active,
-  alert,
   onSelect,
 }: {
   id: DeskPanel
   active: boolean
-  alert: boolean
   onSelect: (panel: DeskPanel) => void
 }) {
   return (
@@ -217,9 +205,6 @@ function TabButton({
       )}
     >
       {PANEL_LABELS[id]}
-      {alert ? (
-        <span className="absolute top-1 right-1 size-1.5 rounded-full bg-tone-alert" />
-      ) : null}
     </button>
   )
 }
@@ -229,22 +214,4 @@ function readinessTone(score: number): Tone {
   if (score >= 55) return 'info'
   if (score >= 40) return 'caution'
   return 'alert'
-}
-
-/**
- * Knee state is the product's top-priority signal, so it stays visible in the
- * chrome on every screen rather than living only inside the Knee tab.
- */
-function deriveKneeTone(today: TodayResponse | null): Tone {
-  if (!today) return 'neutral'
-  const mechanical = today.symptomsToday.some(
-    (symptom) => symptom.swelling || symptom.locking || symptom.instability
-  )
-  const redFlag = today.sessions.some((session) => session.guardrail?.severity === 'red_flag')
-  if (mechanical || redFlag) return 'alert'
-
-  const peakPain = today.symptomsToday.reduce((max, s) => Math.max(max, s.painScore), 0)
-  if (peakPain >= 4) return 'alert'
-  if (peakPain >= 2) return 'caution'
-  return 'good'
 }

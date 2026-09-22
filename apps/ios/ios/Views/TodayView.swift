@@ -1,241 +1,330 @@
 import SwiftUI
-import HealthKit
 
 struct TodayView: View {
     @State private var viewModel = TodayViewModel()
-    private let syncManager = HealthKitSyncManager.shared
+    @State private var showCheckIn = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    if !syncManager.isAuthorized {
-                        healthKitPrompt
-                    } else if viewModel.isLoading && viewModel.todayMetrics == nil {
+                    if viewModel.isLoading && viewModel.today == nil {
                         ProgressView()
                             .padding(.top, 60)
-                    } else {
-                        metricsCard
-                        recentWorkoutsSection
+                    } else if let error = viewModel.errorMessage, viewModel.today == nil {
+                        errorState(error)
+                    } else if let today = viewModel.today {
+                        readinessHeader(today)
+                        if viewModel.readinessBlocked {
+                            blockedBanner
+                        }
+                        chipsRow(today)
+                        sessionsSection(today)
+                        ptSection(today)
+                        if let briefing = today.briefing, !briefing.isEmpty {
+                            briefingCard(briefing)
+                        }
                     }
                 }
                 .padding()
             }
             .background(Color.black)
             .navigationTitle("Today")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Check in") { showCheckIn = true }
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                }
+            }
             .refreshable {
-                await viewModel.loadAll()
+                await viewModel.load()
             }
         }
         .task {
-            await viewModel.loadAll()
+            await viewModel.load()
+        }
+        .sheet(isPresented: $showCheckIn) {
+            CoachCheckInSheet { request in
+                try await viewModel.submitCheckin(request)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Sections
+
+    private func readinessHeader(_ today: CoachTodayData) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(formattedDate(today.date))
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(.secondary)
+                if let readiness = today.readiness {
+                    Text("Readiness \(readiness.score)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text(readiness.guidance.summary)
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Readiness unavailable")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                }
+            }
+            Spacer()
+            if let level = today.readiness?.level {
+                Text(level.capitalized)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(readinessColor(level).opacity(0.2))
+                    .foregroundStyle(readinessColor(level))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
+    }
+
+    private var blockedBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+            Text("Training hold active — knee guardrails blocked hard sessions today.")
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.red.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func chipsRow(_ today: CoachTodayData) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if let block = today.block {
+                    chip("\(block.name) · \(block.phase)")
+                }
+                if let load = today.load {
+                    if let ctl = load.ctl {
+                        chip(String(format: "CTL %.0f", ctl))
+                    }
+                    if let tsb = load.tsb {
+                        chip(String(format: "TSB %+.0f", tsb))
+                    }
+                    if let acwr = load.acwr {
+                        chip(String(format: "ACWR %.2f", acwr))
+                    }
+                }
+                if let sleep = today.lastNightSleep, let hours = sleep.hours {
+                    chip(String(format: "Sleep %.1fh", hours))
+                }
+                if let conditions = today.conditions {
+                    chip(conditions.summary)
+                }
+            }
         }
     }
 
-    // MARK: - HealthKit Not Authorized
-
-    private var healthKitPrompt: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "heart.text.square")
-                .font(.system(size: 48))
-                .foregroundStyle(.red.opacity(0.6))
-
-            Text("HealthKit Access Required")
+    private func sessionsSection(_ today: CoachTodayData) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sessions")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
 
-            Text("Grant access to view your health data and workouts.")
+            if today.sessions.isEmpty {
+                Text("No sessions planned today")
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(today.sessions) { session in
+                    sessionCard(session)
+                }
+            }
+        }
+    }
+
+    private func sessionCard(_ session: CoachTodaySession) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(session.title)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                Spacer()
+                statusBadge(session.status)
+            }
+
+            HStack(spacing: 12) {
+                Label(session.sport.capitalized, systemImage: sportIcon(session.sport))
+                if let minutes = session.durationMinutes {
+                    Text("\(minutes) min")
+                }
+                if let meters = session.distanceMeters {
+                    Text(formatDistance(meters))
+                }
+            }
+            .font(.system(size: 13, design: .rounded))
+            .foregroundStyle(.secondary)
+
+            if let guardrail = session.guardrail, !guardrail.passed {
+                Text(guardrail.violations.first?.message ?? "Guardrail hold")
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(.orange)
+            }
+
+            if session.status == "planned" {
+                HStack {
+                    Button("Done") {
+                        Task { await viewModel.markSession(id: session.id, status: "completed") }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .disabled(viewModel.sessionActionInFlight == session.id)
+
+                    Button("Skip") {
+                        Task { await viewModel.markSession(id: session.id, status: "skipped") }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.sessionActionInFlight == session.id)
+                }
+            }
+        }
+        .padding(14)
+        .background(cardBackground)
+    }
+
+    private func ptSection(_ today: CoachTodayData) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("PT & armor")
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+
+            if today.ptProtocols.isEmpty {
+                Text("No PT blocks for today")
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(today.ptProtocols) { block in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { viewModel.ptCompletedIds.contains(block.id) },
+                            set: { _ in viewModel.togglePtProtocol(block.id) }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(block.name)
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                Text(block.timeOfDay.capitalized)
+                                    .font(.system(size: 12, design: .rounded))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .tint(.cyan)
+
+                        ForEach(block.exercises.prefix(3)) { exercise in
+                            Text("· \(exercise.name)")
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(12)
+                    .background(cardBackground)
+                }
+
+                Text("PT completion saves with your next check-in.")
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func briefingCard(_ briefing: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Briefing")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+            Text(briefing)
+                .font(.system(size: 14, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    private func errorState(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 36))
+                .foregroundStyle(.orange)
+            Text("Could not load today")
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+            Text(message)
                 .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-
-            Button {
-                Task {
-                    _ = await syncManager.requestHealthKitAuthorization()
-                    await viewModel.loadAll()
-                }
-            } label: {
-                Text("Open Health Settings")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.red.opacity(0.8))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            Button("Retry") {
+                Task { await viewModel.load() }
             }
+            .buttonStyle(.borderedProminent)
         }
         .padding(.top, 40)
     }
 
-    // MARK: - Today's Metrics Card
+    // MARK: - Helpers
 
-    private var metricsCard: some View {
-        VStack(spacing: 16) {
-            // Activity Rings Row
-            HStack(spacing: 20) {
-                ringItem(
-                    label: "Move",
-                    value: viewModel.todayMetrics.map { "\(Int($0.activeCalories))" } ?? "–",
-                    unit: "cal",
-                    progress: viewModel.moveProgress,
-                    color: .red
-                )
-
-                ringItem(
-                    label: "Exercise",
-                    value: viewModel.todayMetrics.map { "\($0.exerciseMinutes)" } ?? "–",
-                    unit: "min",
-                    progress: viewModel.exerciseProgress,
-                    color: .green
-                )
-
-                ringItem(
-                    label: "Stand",
-                    value: viewModel.todayMetrics.map { "\($0.standHours)" } ?? "–",
-                    unit: "hrs",
-                    progress: viewModel.standProgress,
-                    color: .cyan
-                )
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Health Metrics Grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                if let metrics = viewModel.todayMetrics {
-                    metricItem(icon: "figure.walk", label: "Steps", value: "\(metrics.steps)", color: .orange)
-
-                    if let rhr = metrics.restingHeartRate {
-                        metricItem(icon: "heart.fill", label: "Resting HR", value: "\(rhr)", color: .red)
-                    }
-
-                    if let hrv = metrics.heartRateVariability {
-                        metricItem(icon: "waveform.path.ecg", label: "HRV", value: "\(Int(hrv))", color: .pink)
-                    }
-
-                    if let weight = metrics.bodyMassLbs {
-                        metricItem(icon: "scalemass.fill", label: "Weight", value: String(format: "%.1f", weight), color: .purple)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.06))
-        )
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .fill(Color.white.opacity(0.06))
     }
 
-    // MARK: - Ring Item
-
-    private func ringItem(label: String, value: String, unit: String, progress: Double, color: Color) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .stroke(color.opacity(0.2), lineWidth: 6)
-                    .frame(width: 52, height: 52)
-
-                Circle()
-                    .trim(from: 0, to: min(progress, 1.0))
-                    .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 52, height: 52)
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 0) {
-                    Text(value)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
-                    Text(unit)
-                        .font(.system(size: 9, design: .rounded))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Text(label)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundStyle(color)
-        }
-        .frame(maxWidth: .infinity)
+    private func chip(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white.opacity(0.08))
+            .clipShape(Capsule())
     }
 
-    // MARK: - Metric Item
-
-    private func metricItem(icon: String, label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(color)
-
-            Text(value)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-
-            Text(label)
-                .font(.system(size: 10, design: .rounded))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+    private func statusBadge(_ status: String) -> some View {
+        Text(status.capitalized)
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.white.opacity(0.1))
+            .clipShape(Capsule())
     }
 
-    // MARK: - Recent Workouts
-
-    private var recentWorkoutsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Workouts")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-
-            if viewModel.recentWorkouts.isEmpty && !viewModel.isLoading {
-                Text("No workouts in the last 14 days")
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 20)
-                    .frame(maxWidth: .infinity)
-            } else {
-                ForEach(viewModel.workoutsByDate, id: \.date) { group in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(relativeDateLabel(group.date))
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(group.workouts, id: \.uuid) { workout in
-                            WorkoutCard(
-                                workout: workout,
-                                isSynced: viewModel.isSynced(workout)
-                            )
-                        }
-                    }
-                    .padding(.bottom, 4)
-                }
-            }
+    private func readinessColor(_ level: String) -> Color {
+        switch level {
+        case "green", "high": return .green
+        case "yellow", "moderate": return .yellow
+        case "red", "low", "blocked": return .red
+        default: return .cyan
         }
     }
 
-    // MARK: - Date Helpers
-
-    private func relativeDateLabel(_ date: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
-            return "Today"
-        } else if calendar.isDateInYesterday(date) {
-            return "Yesterday"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEEE, MMM d"
-            return formatter.string(from: date)
+    private func sportIcon(_ sport: String) -> String {
+        switch sport {
+        case "run": return "figure.run"
+        case "bike": return "figure.outdoor.cycle"
+        case "swim": return "figure.pool.swim"
+        case "strength": return "dumbbell.fill"
+        default: return "figure.mixed.cardio"
         }
+    }
+
+    private func formatDistance(_ meters: Double) -> String {
+        let miles = meters / 1609.34
+        return String(format: "%.1f mi", miles)
+    }
+
+    private func formattedDate(_ iso: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let date = formatter.date(from: iso) else { return iso }
+        formatter.dateStyle = .full
+        return formatter.string(from: date)
     }
 }
 
 #Preview {
     TodayView()
-        .preferredColorScheme(.dark)
 }

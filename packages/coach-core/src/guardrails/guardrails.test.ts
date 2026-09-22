@@ -437,6 +437,29 @@ describe('readiness gating', () => {
     assert.ok(!report.violations.some((v) => v.ruleId === 'recovery.readiness_gate'))
   })
 
+  it('warns on sleep debt for quality work without blocking', () => {
+    const withDebt: Readiness = {
+      ...readiness(85),
+      flags: ['sleep_debt'],
+      inputs: {
+        ...readiness(85).inputs,
+        sleepSeconds: 5.5 * 3600,
+      },
+    }
+
+    const report = evaluateGuardrails(
+      context({
+        sessions: [session({ sport: 'bike', sessionType: 'threshold', targets: { cadenceRange: [90, 100] } })],
+        readiness: withDebt,
+      })
+    )
+
+    const violation = report.violations.find((v) => v.ruleId === 'recovery.sleep_debt')
+    assert.ok(violation)
+    assert.equal(violation!.severity, 'warn')
+    assert.ok(!report.violations.some((v) => v.ruleId === 'recovery.readiness_gate'))
+  })
+
   it('never responds to low readiness by adding volume', () => {
     // Encoded as a property of the remedy text, since the engine only ever
     // recommends reducing. If a future change suggests "add easy volume",

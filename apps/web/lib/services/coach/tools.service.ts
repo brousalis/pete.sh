@@ -179,18 +179,48 @@ export function createToolDeps(): CoachToolDeps {
       const { getDailyMetrics } = await import('./coach-data.service')
       const metrics = await getDailyMetrics(daysAgo(input.days), new Date().toISOString().slice(0, 10))
 
-      return metrics.map((metric) => ({
-        date: metric.metricDate,
-        hrvSdnn: metric.hrvSdnn,
-        restingHr: metric.restingHeartRate,
-        sleepHours: metric.sleepSeconds ? Math.round((metric.sleepSeconds / 3600) * 10) / 10 : null,
-        sleepDeepMinutes: metric.sleepDeep ? Math.round(metric.sleepDeep / 60) : null,
-        respiratoryRate: metric.respiratoryRate,
-        wristTempDelta: metric.wristTempDelta,
-        weightLbs: metric.bodyMassLbs,
-        bodyFatPct: metric.bodyFatPercentage,
-        vo2Max: metric.vo2Max,
-      }))
+      return metrics.map((metric) => {
+        const sleepHours = metric.sleepSeconds
+          ? Math.round((metric.sleepSeconds / 3600) * 10) / 10
+          : null
+        const inBedHours = metric.sleepInBed
+          ? Math.round((metric.sleepInBed / 3600) * 10) / 10
+          : null
+        const efficiency =
+          metric.sleepSeconds != null && metric.sleepInBed != null && metric.sleepInBed > 0
+            ? Math.round((metric.sleepSeconds / metric.sleepInBed) * 100)
+            : null
+
+        return {
+          date: metric.metricDate,
+          hrvSdnn: metric.hrvSdnn,
+          hrvRmssd: metric.hrvRmssd ?? null,
+          hrvOvernightAvg: metric.hrvOvernightAvg ?? null,
+          hrvMorning: metric.hrvMorning ?? null,
+          restingHr: metric.restingHeartRate,
+          sleepHours,
+          sleepInBedHours: inBedHours,
+          sleepEfficiencyPct: efficiency,
+          sleepStart: metric.sleepStart ?? null,
+          sleepEnd: metric.sleepEnd ?? null,
+          sleepDeepMinutes: metric.sleepDeep ? Math.round(metric.sleepDeep / 60) : null,
+          sleepRemMinutes: metric.sleepRem ? Math.round(metric.sleepRem / 60) : null,
+          sleepCoreMinutes: metric.sleepCore ? Math.round(metric.sleepCore / 60) : null,
+          sleepAwakeMinutes: metric.sleepAwake ? Math.round(metric.sleepAwake / 60) : null,
+          sleepUnspecifiedMinutes: metric.sleepUnspecified
+            ? Math.round(metric.sleepUnspecified / 60)
+            : null,
+          respiratoryRate: metric.respiratoryRate,
+          wristTempDelta: metric.wristTempDelta,
+          spo2: metric.spo2,
+          breathingDisturbances: metric.breathingDisturbances ?? null,
+          breathingDisturbancesElevated: metric.breathingDisturbancesElevated ?? null,
+          sleepApneaEventCount: metric.sleepApneaEventCount ?? null,
+          weightLbs: metric.bodyMassLbs,
+          bodyFatPct: metric.bodyFatPercentage,
+          vo2Max: metric.vo2Max,
+        }
+      })
     },
 
     async getTrainingLoad(input) {

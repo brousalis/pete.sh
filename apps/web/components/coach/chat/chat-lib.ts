@@ -1,6 +1,7 @@
 import type { UIMessage } from 'ai'
 
 import type { CoachConversationListItem } from '@/lib/types/coach-ui.types'
+import { displaySessionTitle } from '@/lib/utils/session-title'
 
 export const ACTIVE_CONVERSATION_KEY = 'petehome.activeConversationId'
 
@@ -31,7 +32,7 @@ export const TOOL_LABELS: Record<string, string> = {
   compute_zones: 'zones',
   get_benchmarks: 'benchmarks',
   get_gear: 'gear',
-  get_nutrition_targets: 'fuelling',
+  get_nutrition_targets: 'fuel',
   get_pt_protocol: 'PT protocol',
   propose_plan_change: 'plan change',
   log_symptom: 'symptom log',
@@ -118,8 +119,7 @@ export function formatRelativeTime(iso: string | null | undefined): string {
 }
 
 export function threadTitle(thread: CoachConversationListItem): string {
-  const title = thread.title?.trim()
-  return title && title.length > 0 ? title : 'Untitled session'
+  return displaySessionTitle(thread.title, 'Untitled session')
 }
 
 type ThreadGroup = { label: string; items: CoachConversationListItem[] }

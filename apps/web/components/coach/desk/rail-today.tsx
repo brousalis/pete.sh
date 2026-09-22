@@ -15,13 +15,17 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { CheckInSheet } from '@/components/coach/check-in-sheet'
+import {
+  SessionFeedbackSheet,
+  type SessionFeedbackTarget,
+} from '@/components/coach/session-feedback-sheet'
 import { ReadinessPanel } from '@/components/coach/readiness-panel'
 import { SessionCard } from '@/components/coach/session-card'
 import { Metric, MetricRow } from '@/components/coach/ui/metric'
 import { Chip, Panel, PanelHeader, Section } from '@/components/coach/ui/panel'
 import { acwrTone, tsbTone, type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
-import type { PtProtocolView, TodayResponse } from '@/lib/types/coach-ui.types'
+import type { LastNightSleepView, PtProtocolView, TodayResponse } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
 export function RailToday({
@@ -29,19 +33,45 @@ export function RailToday({
   loading,
   error,
   onReload,
+  onSessionStatus,
   onCheckInOpen,
 }: {
   data: TodayResponse | null
   loading: boolean
   error: string | null
   onReload: () => void
+  onSessionStatus?: (
+    sessionId: string,
+    status: 'completed' | 'skipped'
+  ) => Promise<void>
   onCheckInOpen?: (open: boolean) => void
 }) {
   const [checkInOpen, setCheckInOpen] = useState(false)
+  const [busySessionId, setBusySessionId] = useState<string | null>(null)
+  const [sessionFeedback, setSessionFeedback] = useState<SessionFeedbackTarget | null>(null)
 
   function setCheckIn(open: boolean) {
     setCheckInOpen(open)
     onCheckInOpen?.(open)
+  }
+
+  async function handleSessionStatus(
+    sessionId: string,
+    status: 'completed' | 'skipped'
+  ): Promise<void> {
+    if (!onSessionStatus || busySessionId) return
+    const session = data?.sessions.find((row) => row.id === sessionId)
+    setBusySessionId(sessionId)
+    try {
+      await onSessionStatus(sessionId, status)
+      setSessionFeedback({
+        sessionId,
+        title: session?.title ?? 'Session',
+        status,
+      })
+    } finally {
+      setBusySessionId(null)
+    }
   }
 
   if (loading) {
@@ -152,6 +182,7 @@ export function RailToday({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
         <div className="min-w-0 space-y-6">
           <ReadinessPanel readiness={data.readiness} />
+          {data.lastNightSleep ? <LastNightSleepCard sleep={data.lastNightSleep} /> : null}
 
           <Section title={restDay ? 'Sessions · rest day' : 'Sessions'}>
             {restDay ? (
@@ -166,7 +197,17 @@ export function RailToday({
                   <SessionCard
                     key={session.id}
                     session={session}
-                    onComplete={() => void onReload()}
+                    busy={busySessionId === session.id}
+                    onComplete={
+                      onSessionStatus
+                        ? (sessionId) => void handleSessionStatus(sessionId, 'completed')
+                        : undefined
+                    }
+                    onSkip={
+                      onSessionStatus
+                        ? (sessionId) => void handleSessionStatus(sessionId, 'skipped')
+                        : undefined
+                    }
                   />
                 ))}
               </div>
@@ -225,6 +266,13 @@ export function RailToday({
       </div>
 
       <CheckInSheet open={checkInOpen} onOpenChange={setCheckIn} onSubmitted={onReload} />
+      <SessionFeedbackSheet
+        target={sessionFeedback}
+        onOpenChange={(open) => {
+          if (!open) setSessionFeedback(null)
+        }}
+        onSubmitted={onReload}
+      />
     </div>
   )
 }
@@ -280,6 +328,45 @@ function Fact({ icon, children }: { icon: React.ReactNode; children: React.React
   )
 }
 
+function LastNightSleepCard({ sleep }: { sleep: LastNightSleepView }) {
+  const stages = [
+    sleep.deepMinutes != null ? `Deep ${sleep.deepMinutes}m` : null,
+    sleep.remMinutes != null ? `REM ${sleep.remMinutes}m` : null,
+    sleep.coreMinutes != null ? `Core ${sleep.coreMinutes}m` : null,
+    sleep.awakeMinutes != null ? `Awake ${sleep.awakeMinutes}m` : null,
+  ].filter(Boolean)
+
+  return (
+    <Panel>
+      <PanelHeader label="Last night" className="mb-3" />
+      <MetricRow>
+        <Metric label="Asleep" value={sleep.hours} unit="h" size="sm" align="center" decimals={1} />
+        <Metric
+          label="In bed"
+          value={sleep.inBedHours}
+          unit="h"
+          size="sm"
+          align="center"
+          decimals={1}
+        />
+        <Metric
+          label="Efficiency"
+          value={sleep.efficiencyPct}
+          unit="%"
+          size="sm"
+          align="center"
+        />
+      </MetricRow>
+      {stages.length > 0 ? (
+        <p className="mt-2.5 t-label text-ink-3">{stages.join(' · ')}</p>
+      ) : null}
+      {sleep.breathingDisturbancesElevated ? (
+        <p className="mt-1.5 t-label text-tone-caution">Elevated breathing disturbances</p>
+      ) : null}
+    </Panel>
+  )
+}
+
 function MorningBriefing({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
   const long = text.length > 260
@@ -311,21 +398,54 @@ function MorningBriefing({ text }: { text: string }) {
 function PtRow({ protocol, onChanged }: { protocol: PtProtocolView; onChanged: () => void }) {
   const [expanded, setExpanded] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [askPain, setAskPain] = useState(false)
+  const [ptPain, setPtPain] = useState(0)
 
-  async function markComplete(event: React.MouseEvent) {
-    event.stopPropagation()
+  const contextLabel =
+    protocol.timeOfDay === 'pre_session'
+      ? 'Before today’s run'
+      : protocol.timeOfDay === 'post_session'
+        ? 'After today’s run'
+        : protocol.timeOfDay === 'morning'
+          ? 'Morning'
+          : protocol.timeOfDay === 'evening'
+            ? 'Evening'
+            : null
+
+  async function commitComplete(painScore: number) {
     setSaving(true)
     try {
       await fetch('/api/coach/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ptCompleted: [{ protocolId: protocol.id }] }),
+        body: JSON.stringify({
+          ptCompleted: [{ protocolId: protocol.id }],
+          symptoms:
+            painScore > 0
+              ? [
+                  {
+                    site: 'r_knee_medial',
+                    painScore,
+                    context: 'during',
+                    notes: `During ${protocol.name}`,
+                  },
+                ]
+              : undefined,
+        }),
       })
+      setAskPain(false)
+      setPtPain(0)
       onChanged()
     } finally {
       setSaving(false)
     }
+  }
+
+  async function markComplete(event: React.MouseEvent) {
+    event.stopPropagation()
+    if (protocol.completed || saving) return
+    setAskPain(true)
   }
 
   return (
@@ -359,12 +479,59 @@ function PtRow({ protocol, onChanged }: { protocol: PtProtocolView; onChanged: (
             {protocol.name}
           </p>
           <p className="mt-0.5 t-label text-ink-3">
+            {contextLabel ? `${contextLabel} · ` : ''}
             {protocol.exercises.length} exercises
             {protocol.durationMinutes ? ` · ~${protocol.durationMinutes} min` : ''}
             {protocol.mandatory ? ' · required' : ''}
           </p>
         </button>
+
+        {!protocol.completed ? (
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link href={`/coach/pt/${protocol.slug}?view=remote`}>Start</Link>
+          </Button>
+        ) : null}
       </div>
+
+      {askPain && !protocol.completed ? (
+        <div className="mt-2.5 space-y-2 border-t border-line pt-2.5 pl-8">
+          <p className="t-label text-ink-2">Pain during this block? (0 = none)</p>
+          <div className="flex gap-1">
+            {Array.from({ length: 11 }, (_, value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPtPain(value)}
+                className={cn(
+                  'h-8 flex-1 rounded text-[11px] tabular-nums transition-colors',
+                  ptPain === value
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted hover:bg-muted/70'
+                )}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={saving}
+              onClick={() => {
+                setAskPain(false)
+                setPtPain(0)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" disabled={saving} onClick={() => void commitComplete(ptPain)}>
+              {saving ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {expanded ? (
         <ul className="animate-fade-in-up mt-2.5 space-y-1.5 border-t border-line pt-2.5 pl-8">
@@ -413,9 +580,35 @@ export function useTodayData() {
     }
   }, [])
 
+  const setSessionStatus = useCallback(
+    async (sessionId: string, status: 'completed' | 'skipped') => {
+      const response = await fetch(`/api/coach/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+      })
+      const payload = await response.json()
+      if (!payload.success) {
+        throw new Error(payload.error ?? 'Unable to update session')
+      }
+
+      setData((current) => {
+        if (!current) return current
+        return {
+          ...current,
+          sessions: current.sessions.map((session) =>
+            session.id === sessionId ? { ...session, status } : session
+          ),
+        }
+      })
+    },
+    []
+  )
+
   useEffect(() => {
     void load()
   }, [load])
 
-  return { data, loading, error, reload: load }
+  return { data, loading, error, reload: load, setSessionStatus }
 }

@@ -12,8 +12,8 @@ import {
 } from '@/components/coach/desk/desk-types'
 
 /**
- * Single-surface coaching desk. Today / Plan / Knee / Load / More / Coach
- * are tabs. Chat is a tab, not a rail.
+ * Single-surface coaching desk. Today / Plan / Load / Activity / More / Coach
+ * are tabs. Chat is a tab, not a rail. Knee lives under More.
  */
 export function CoachDesk() {
   return (
@@ -29,7 +29,7 @@ function CoachDeskInner() {
   const panel = parseDeskPanel(
     searchParams.get('panel') ?? (searchParams.get('focus') === 'coach' ? 'coach' : null)
   )
-  const { data: today, loading, error, reload } = useTodayData()
+  const { data: today, loading, error, reload, setSessionStatus } = useTodayData()
 
   const setPanel = useCallback(
     (next: DeskPanel) => {
@@ -37,6 +37,7 @@ function CoachDeskInner() {
       if (next === 'today') params.delete('panel')
       else params.set('panel', next)
       params.delete('focus')
+      if (next !== 'activity') params.delete('workout')
       const query = params.toString()
       router.replace(query ? `/coach?${query}` : '/coach', { scroll: false })
     },
@@ -51,6 +52,7 @@ function CoachDeskInner() {
       todayLoading={loading}
       todayError={error}
       onTodayReload={() => void reload()}
+      onSessionStatus={setSessionStatus}
       className="h-full min-h-0"
     />
   )

@@ -6,15 +6,5 @@
 	<string>$(PETEHOME_API_KEY)</string>
 	<key>PETEHOME_SERVER_URL</key>
 	<string>$(PETEHOME_SERVER_URL)</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>petehome needs access to read your health data to display your step count and activity progress.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>petehome needs access to save your workout data to Apple Health.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>petehome uses your location to detect when you arrive at the gym, send workout reminders, and track Maple walk routes and bathroom markers.</string>
-	<key>WKBackgroundModes</key>
-	<array>
-		<string>workout-processing</string>
-	</array>
 </dict>
 </plist>

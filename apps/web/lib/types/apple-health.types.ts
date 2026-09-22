@@ -401,12 +401,20 @@ export interface DailyHealthMetrics {
     rem: number
     core: number
     deep: number
+    /** asleepUnspecified — not folded into core */
+    unspecified?: number
   }
 
   // Overnight vitals
   respiratoryRate?: number // breaths per minute
   wristTempDelta?: number // °C deviation from personal baseline
   oxygenSaturation?: number // percent
+  /** Apple Sleeping Breathing Disturbances quantity (count) */
+  breathingDisturbances?: number
+  /** HKAppleSleepingBreathingDisturbancesClassification.elevated */
+  breathingDisturbancesElevated?: boolean
+  /** Sparse clinical sleepApneaEvent count for the metric night */
+  sleepApneaEventCount?: number
 
   // Walking metrics
   walkingHeartRateAverage?: number

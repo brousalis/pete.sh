@@ -223,9 +223,13 @@ export interface AppleHealthDailyMetricsInsert {
   sleep_rem?: number | null
   sleep_core?: number | null
   sleep_deep?: number | null
+  sleep_unspecified?: number | null
   respiratory_rate?: number | null
   wrist_temp_delta?: number | null
   oxygen_saturation?: number | null
+  breathing_disturbances?: number | null
+  breathing_disturbances_elevated?: boolean | null
+  sleep_apnea_event_count?: number | null
   walking_hr_average?: number | null
   walking_double_support_pct?: number | null
   walking_asymmetry_pct?: number | null

@@ -148,20 +148,49 @@ export function computeReadiness(inputs: ReadinessInputs): Readiness {
     else if (avgHours >= 6) sleepScore = 42
     else sleepScore = 18
 
-    // Deep sleep is where most physical recovery happens; a normal total with
-    // very little deep sleep is not the same as a good night.
+    // Deep % uses staged sleep only — unspecified must not inflate the
+    // denominator or be counted as core.
+    const stagedSeconds = stagedSleepSeconds(today)
     const deep = today?.sleepDeep ?? null
-    if (deep != null && sleepSeconds && sleepSeconds > 0) {
-      const deepPct = (deep / sleepSeconds) * 100
+    if (deep != null && stagedSeconds && stagedSeconds > 0) {
+      const deepPct = (deep / stagedSeconds) * 100
       if (deepPct < 10) {
         sleepScore = Math.round(sleepScore * 0.9)
         flags.push('low_deep_sleep')
       }
     }
 
+    const inBed = today?.sleepInBed ?? null
+    if (sleepSeconds != null && inBed != null && inBed > 0) {
+      const efficiency = sleepSeconds / inBed
+      if (efficiency < 0.85) {
+        sleepScore = Math.round(sleepScore * 0.95)
+        flags.push('low_sleep_efficiency')
+      }
+    }
+
     sleepDetail = `${avgHours.toFixed(1)} h average over ${recentSleep.length} night${recentSleep.length === 1 ? '' : 's'}`
 
     if (avgHours < 6) flags.push('sleep_debt')
+  }
+
+  // Overnight vitals — flags only, no weight change.
+  if (today?.breathingDisturbancesElevated === true) {
+    flags.push('elevated_breathing_disturbances')
+  }
+
+  const respBaseline = rollingMean(history.map((m) => m.respiratoryRate), 7)
+  if (today?.respiratoryRate != null && respBaseline != null && today.respiratoryRate >= respBaseline + 1.5) {
+    flags.push('elevated_respiratory_rate')
+  }
+
+  const tempBaseline = rollingMean(history.map((m) => m.wristTempDelta), 7)
+  if (
+    today?.wristTempDelta != null &&
+    tempBaseline != null &&
+    today.wristTempDelta >= tempBaseline + 0.3
+  ) {
+    flags.push('elevated_wrist_temp')
   }
 
   components.push({
@@ -343,6 +372,16 @@ function rollingMean(values: (number | null)[], days: number): number | null {
   const recent = values.filter((value): value is number => value != null).slice(-days)
   if (recent.length < MIN_BASELINE_SAMPLES) return null
   return round2(recent.reduce((a, b) => a + b, 0) / recent.length)
+}
+
+/** Staged (REM+core+deep) seconds — excludes unspecified and awake. */
+function stagedSleepSeconds(metric: DailyMetric | undefined): number | null {
+  if (!metric) return null
+  const parts = [metric.sleepRem, metric.sleepCore, metric.sleepDeep].filter(
+    (value): value is number => value != null
+  )
+  if (parts.length === 0) return null
+  return parts.reduce((a, b) => a + b, 0)
 }
 
 function rollingSd(values: (number | null)[], days: number): number | null {

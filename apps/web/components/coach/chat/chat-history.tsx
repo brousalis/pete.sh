@@ -30,14 +30,12 @@ export function ChatHistory({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5 py-1.5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          Sessions
-        </p>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-2.5 py-2">
+        <p className="t-micro text-ink-3">Sessions</p>
         <button
           type="button"
           onClick={onNew}
-          className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex h-6 items-center gap-1 rounded-control px-1.5 t-label text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
         >
           <Plus className="size-3" />
           New
@@ -49,15 +47,13 @@ export function ChatHistory({
         aria-label="Past sessions"
       >
         {threads.length === 0 ? (
-          <p className="px-2 pt-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="px-2 pt-4 t-label leading-relaxed text-ink-3">
             Nothing yet. Your first question becomes a session.
           </p>
         ) : (
           groups.map((group) => (
             <div key={group.label} className="mb-2.5 pt-1.5">
-              <p className="px-2 pb-1 text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
-                {group.label}
-              </p>
+              <p className="px-2 pb-1 t-micro text-ink-3/70">{group.label}</p>
               <ul className="space-y-px">
                 {group.items.map((thread) => {
                   const active = thread.id === activeId
@@ -65,8 +61,8 @@ export function ChatHistory({
                     <li key={thread.id}>
                       <div
                         className={cn(
-                          'group flex items-stretch rounded-md transition-colors',
-                          active ? 'bg-foreground/[0.07]' : 'hover:bg-muted/70'
+                          'group flex items-stretch rounded-control transition-colors',
+                          active ? 'bg-surface-2' : 'hover:bg-surface-2/70'
                         )}
                       >
                         <button
@@ -76,13 +72,13 @@ export function ChatHistory({
                         >
                           <p
                             className={cn(
-                              'truncate text-[13px] leading-snug',
-                              active ? 'font-medium text-foreground' : 'text-foreground/90'
+                              'truncate t-label leading-snug',
+                              active ? 'font-semibold text-ink-1' : 'text-ink-1/90'
                             )}
                           >
                             {threadTitle(thread)}
                           </p>
-                          <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          <p className="mt-0.5 text-[10px] text-ink-3">
                             {formatRelativeTime(thread.last_message_at ?? thread.created_at)}
                             {thread.message_count ? ` · ${thread.message_count}` : ''}
                           </p>
@@ -94,7 +90,7 @@ export function ChatHistory({
                               setPendingDelete(null)
                               onDelete(thread.id)
                             }}
-                            className="me-1 self-center rounded px-1.5 py-0.5 text-[10px] text-accent-rose hover:bg-background"
+                            className="me-1 self-center rounded px-1.5 py-0.5 text-[10px] text-tone-alert hover:bg-surface-1"
                           >
                             Delete
                           </button>
@@ -102,7 +98,7 @@ export function ChatHistory({
                           <button
                             type="button"
                             onClick={() => setPendingDelete(thread.id)}
-                            className="me-0.5 inline-flex size-6 shrink-0 items-center justify-center self-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-accent-rose group-hover:opacity-100"
+                            className="me-0.5 inline-flex size-6 shrink-0 items-center justify-center self-center rounded text-ink-3 opacity-0 transition-opacity hover:bg-surface-1 hover:text-tone-alert group-hover:opacity-100"
                             aria-label={`Delete ${threadTitle(thread)}`}
                           >
                             <Trash2 className="size-3" />

@@ -66,7 +66,7 @@ export function RailKnee() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-20">
+      <div className="flex items-center justify-center py-10">
         <Loader2 className="size-4 animate-spin text-ink-3" />
       </div>
     )
@@ -82,49 +82,53 @@ export function RailKnee() {
   )
 
   return (
-    <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="t-display">Knee</h1>
-        <Button size="sm" variant="outline" onClick={() => setCheckInOpen(true)}>
-          <ClipboardCheck className="mr-1.5 size-4" />
-          Log symptom
-        </Button>
-      </header>
-
-      <Panel className="px-5 py-5">
-        <MetricRow>
-          <Metric
-            label="Pain-free days"
-            value={data.painFreeDays}
-            size="lg"
-            tone={data.painFreeDays >= 7 ? 'good' : data.painFreeDays >= 3 ? 'neutral' : 'caution'}
-          />
-          <Metric
-            label="Today's peak"
-            value={worstPain == null ? '—' : `${worstPain}`}
-            unit={worstPain == null ? undefined : '/10'}
-            size="lg"
-            tone={painTone(worstPain)}
-          />
-          <Metric
-            label="NSAID days"
-            value={data.medication.nsaidDaysInWindow}
-            size="lg"
-            tone={data.medication.reviewSuggested ? 'caution' : 'neutral'}
-            hint="14d window"
-          />
-        </MetricRow>
-      </Panel>
-
-      {data.medication.reviewSuggested ? (
-        <Panel tone="caution" className="flex gap-3">
-          <Pill className="mt-0.5 size-4 shrink-0 text-tone-caution" />
-          <p className="t-body text-ink-2">
-            NSAIDs on {data.medication.nsaidDaysInWindow} days in this window — worth raising with
-            the sports MD.
-          </p>
+    <div className="space-y-6">
+      <Section
+        title="Knee"
+        action={
+          <Button size="sm" variant="outline" onClick={() => setCheckInOpen(true)}>
+            <ClipboardCheck className="mr-1.5 size-4" />
+            Log symptom
+          </Button>
+        }
+      >
+        <Panel className="px-5 py-5">
+          <MetricRow>
+            <Metric
+              label="Pain-free days"
+              value={data.painFreeDays}
+              size="lg"
+              tone={
+                data.painFreeDays >= 7 ? 'good' : data.painFreeDays >= 3 ? 'neutral' : 'caution'
+              }
+            />
+            <Metric
+              label="Today's peak"
+              value={worstPain == null ? '—' : `${worstPain}`}
+              unit={worstPain == null ? undefined : '/10'}
+              size="lg"
+              tone={painTone(worstPain)}
+            />
+            <Metric
+              label="NSAID days"
+              value={data.medication.nsaidDaysInWindow}
+              size="lg"
+              tone={data.medication.reviewSuggested ? 'caution' : 'neutral'}
+              hint="14d window"
+            />
+          </MetricRow>
         </Panel>
-      ) : null}
+
+        {data.medication.reviewSuggested ? (
+          <Panel tone="caution" className="mt-2.5 flex gap-3">
+            <Pill className="mt-0.5 size-4 shrink-0 text-tone-caution" />
+            <p className="t-body text-ink-2">
+              NSAIDs on {data.medication.nsaidDaysInWindow} days in this window — worth raising
+              with the sports MD.
+            </p>
+          </Panel>
+        ) : null}
+      </Section>
 
       {primary ? (
         <Section title="Diagnosis">

@@ -10,8 +10,9 @@ import {
   Footprints,
   Waves,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
+import { SessionActivityGlance } from '@/components/coach/session-activity-glance'
 import { Disclosure, Panel } from '@/components/coach/ui/panel'
 import { sportClasses } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
@@ -32,19 +33,29 @@ export function SessionCard({
   onComplete,
   onSkip,
   onMove,
+  onOpenActivity,
+  busy = false,
   compact = false,
   defaultShowSteps = false,
+  showActivitySparkline = true,
 }: {
   session: TodaySession
   onComplete?: (sessionId: string) => void
   onSkip?: (sessionId: string) => void
   onMove?: (session: TodaySession) => void
+  onOpenActivity?: (activityId: string) => void
+  busy?: boolean
   compact?: boolean
   defaultShowSteps?: boolean
+  showActivitySparkline?: boolean
 }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const Icon = SPORT_ICONS[session.sport] ?? Dumbbell
   const sport = sportClasses(session.sport)
   const done = session.status === 'completed'
+  const skipped = session.status === 'skipped'
+  const linked = done && session.activity != null
   const blocked = session.guardrail != null && !session.guardrail.passed && !done
 
   const blockingViolations =
@@ -52,12 +63,23 @@ export function SessionCard({
       (violation) => violation.severity === 'block' || violation.severity === 'red_flag'
     ) ?? []
 
-  const facts = [
+  const plannedFacts = [
     session.durationMinutes ? { value: String(session.durationMinutes), unit: 'min' } : null,
     formatDistance(session.distanceMeters, session.sport),
     session.plannedLoad ? { value: String(session.plannedLoad), unit: 'TSS' } : null,
     ...formatTargets(session),
   ].filter((fact): fact is { value: string; unit: string } => fact != null)
+
+  function openActivity(activityId: string) {
+    if (onOpenActivity) {
+      onOpenActivity(activityId)
+      return
+    }
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('panel', 'activity')
+    params.set('workout', activityId)
+    router.replace(`/coach?${params.toString()}`, { scroll: false })
+  }
 
   return (
     <Panel
@@ -65,13 +87,18 @@ export function SessionCard({
         'relative overflow-hidden',
         compact ? 'px-3.5 py-3' : 'px-4 py-4',
         blocked && 'border border-tone-alert/40',
-        done && 'opacity-70'
+        // Linked completions are review surfaces — keep full weight.
+        ((done && !linked) || skipped) && 'opacity-70'
       )}
     >
       {/* Sport is identified by a spine rather than a badge, so the eye can
           sort a stack of sessions by discipline without reading them. */}
       <span
-        className={cn('absolute inset-y-0 left-0 w-[3px]', sport.bar, done && 'opacity-40')}
+        className={cn(
+          'absolute inset-y-0 left-0 w-[3px]',
+          sport.bar,
+          ((done && !linked) || skipped) && 'opacity-40'
+        )}
         aria-hidden
       />
 
@@ -80,11 +107,13 @@ export function SessionCard({
           className={cn(
             'grid shrink-0 place-items-center rounded-control',
             compact ? 'size-8' : 'size-9',
-            done ? 'bg-tone-good/15' : sport.soft
+            done ? 'bg-tone-good/15' : skipped ? 'bg-surface-2' : sport.soft
           )}
         >
           {done ? (
             <Check className="size-4 text-tone-good" />
+          ) : skipped ? (
+            <Ban className="size-4 text-ink-3" />
           ) : (
             <Icon className={cn('size-4', sport.text)} />
           )}
@@ -92,7 +121,13 @@ export function SessionCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h3 className={cn(compact ? 't-subtitle' : 't-title', done && 'line-through')}>
+            <h3
+              className={cn(
+                compact ? 't-subtitle' : 't-title',
+                // Strikethrough only when there is nothing to review.
+                ((done && !linked) || skipped) && 'line-through'
+              )}
+            >
               {session.title}
             </h3>
             <span className={cn('t-micro', sport.text)}>
@@ -103,22 +138,38 @@ export function SessionCard({
             ) : null}
           </div>
 
-          {facts.length > 0 ? (
-            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              {facts.map((fact, index) => (
-                <span key={index} className="inline-flex items-baseline gap-1">
-                  <span className="t-num t-num-sm text-ink-1">{fact.value}</span>
-                  <span className="t-micro text-ink-3">{fact.unit}</span>
-                </span>
-              ))}
+          {linked && session.activity ? (
+            <div className="mt-1.5">
+              <SessionActivityGlance
+                session={session}
+                activity={session.activity}
+                onOpenActivity={openActivity}
+                showSparkline={showActivitySparkline && !compact}
+              />
             </div>
-          ) : null}
+          ) : (
+            <>
+              {plannedFacts.length > 0 ? (
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  {plannedFacts.map((fact, index) => (
+                    <span key={index} className="inline-flex items-baseline gap-1">
+                      <span className="t-num t-num-sm text-ink-1">{fact.value}</span>
+                      <span className="t-micro text-ink-3">{fact.unit}</span>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {done && !linked ? (
+                <p className="mt-1 t-micro text-ink-3">Done · no workout linked</p>
+              ) : null}
+            </>
+          )}
 
-          {session.description && !compact ? (
+          {session.description && !compact && !linked ? (
             <p className="mt-2.5 t-body text-ink-2">{session.description}</p>
           ) : null}
 
-          {session.rationale && !compact ? (
+          {session.rationale && !compact && !linked ? (
             <p className="mt-2.5 border-l-2 border-line-strong pl-2.5 t-label leading-relaxed text-ink-3">
               {session.rationale}
             </p>
@@ -142,7 +193,7 @@ export function SessionCard({
         </div>
       ) : null}
 
-      {hasSteps(session) ? (
+      {hasSteps(session) && !linked ? (
         <Disclosure
           label="Structure"
           openLabel="Hide structure"
@@ -153,21 +204,28 @@ export function SessionCard({
         </Disclosure>
       ) : null}
 
-      {session.status === 'planned' && (onComplete || onSkip || onMove) ? (
+      {(session.status === 'planned' || session.status === 'modified') &&
+      (onComplete || onSkip || onMove) ? (
         <div className="mt-3.5 flex gap-2 pl-1.5">
           {onComplete ? (
             <Button
               size="sm"
               className="flex-1 bg-brand text-brand-ink hover:bg-brand/90"
-              disabled={blocked}
+              disabled={blocked || busy}
               onClick={() => onComplete(session.id)}
             >
               <Check className="mr-1.5 size-3.5" />
-              Mark done
+              {busy ? 'Saving…' : 'Mark done'}
             </Button>
           ) : null}
           {onSkip ? (
-            <Button size="sm" variant="ghost" className="text-ink-2" onClick={() => onSkip(session.id)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-ink-2"
+              disabled={busy}
+              onClick={() => onSkip(session.id)}
+            >
               <Ban className="mr-1.5 size-3.5" />
               Skip
             </Button>
@@ -177,6 +235,7 @@ export function SessionCard({
               size="sm"
               variant={onComplete || onSkip ? 'ghost' : 'outline'}
               className={cn('text-ink-2', !onComplete && !onSkip && 'flex-1')}
+              disabled={busy}
               onClick={() => onMove(session)}
             >
               <ArrowRightLeft className="mr-1.5 size-3.5" />

@@ -50,13 +50,12 @@ export async function buildGuardrailContext(
   windowStart: string,
   windowEnd: string
 ): Promise<Omit<GuardrailContext, 'sessions'>> {
-  const [injuries, symptoms, load, protocols, quadTests, activities, existing] =
+  const [injuries, symptoms, load, protocols, activities, existing] =
     await Promise.all([
       getActiveInjuries(),
       getSymptoms(daysAgo(21)),
       getLoadSummary(),
       getPtProtocols(),
-      getBenchmarks('quad_symmetry'),
       queryActivities({ from: daysAgo(56), limit: 400 }),
       getSessionsInRange(daysAgo(14), windowEnd),
     ])
@@ -81,8 +80,15 @@ export async function buildGuardrailContext(
     }
   }
 
-  // The most recent quad symmetry test decides whether run intensity is open.
-  const latestQuadTest = quadTests[0]
+  // The most recent quad symmetry / step-down test decides whether run intensity is open.
+  const [quadSymmetry, stepDown, singleLeg] = await Promise.all([
+    getBenchmarks('quad_symmetry'),
+    getBenchmarks('step_down'),
+    getBenchmarks('single_leg_squat'),
+  ])
+  const latestQuadTest = [...quadSymmetry, ...stepDown, ...singleLeg].sort((a, b) =>
+    b.testDate.localeCompare(a.testDate)
+  )[0]
   const quadSymmetryPassed = latestQuadTest ? latestQuadTest.passed === true : false
 
   // First run after the layoff starts the six-week spacing window.

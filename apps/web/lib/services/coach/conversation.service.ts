@@ -14,9 +14,12 @@ import type { UIMessage } from 'ai'
 import {
   CONVERSATION_SUMMARY_PROMPT,
   MEMORY_DIGEST_PROMPT,
+  SESSION_TITLE_PROMPT,
   shouldSummarise,
   VERBATIM_MESSAGE_WINDOW,
 } from '@petehome/coach-core'
+
+import { sessionTitleFromPrompt } from '@/lib/utils/session-title'
 
 import { coachDb } from './coach-data.service'
 import { remember } from './memory.service'
@@ -203,7 +206,54 @@ async function deriveTitle(
   const text = extractText(firstUser)
   if (!text) return null
 
-  return text.length > 60 ? `${text.slice(0, 57)}…` : text
+  const fallback = sessionTitleFromPrompt(text)
+
+  try {
+    const { generateText } = await import('ai')
+    const { anthropic } = await import('@ai-sdk/anthropic')
+    const { MODELS, usageFromAiSdk, calculateCost } = await import('@petehome/coach-core')
+
+    const result = await generateText({
+      model: anthropic(MODELS.fast.id),
+      system: SESSION_TITLE_PROMPT,
+      prompt: text.slice(0, 600),
+      maxOutputTokens: 24,
+    })
+
+    const cleaned = cleanGeneratedTitle(result.text) ?? fallback
+
+    const usage = usageFromAiSdk(result.usage, result.providerMetadata as Record<string, unknown>)
+    await coachDb()
+      .from('coach_agent_run')
+      .insert({
+        job: 'digest',
+        model: MODELS.fast.id,
+        conversation_id: conversationId,
+        finished_at: new Date().toISOString(),
+        input_tokens: usage.inputTokens,
+        output_tokens: usage.outputTokens,
+        cost_usd: calculateCost('fast', usage),
+        status: 'success',
+        budget_state: 'normal',
+      })
+
+    return cleaned
+  } catch (error) {
+    console.error('[coach] Title derivation failed:', error)
+    return fallback
+  }
+}
+
+function cleanGeneratedTitle(raw: string): string | null {
+  const line = raw
+    .split('\n')[0]
+    ?.trim()
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .replace(/[.?!]+$/, '')
+    .trim()
+
+  if (!line || line.length < 2 || line.length > 60) return null
+  return line.charAt(0).toUpperCase() + line.slice(1)
 }
 
 export function extractText(message: UIMessage): string {

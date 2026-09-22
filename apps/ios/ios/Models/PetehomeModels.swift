@@ -359,6 +359,12 @@ struct PetehomeDailyMetrics: Codable {
     var respiratoryRate: Double? = nil
     var wristTempDelta: Double? = nil
     var oxygenSaturation: Double? = nil
+    /// Apple Sleeping Breathing Disturbances quantity (count).
+    var breathingDisturbances: Double? = nil
+    /// True when HKAppleSleepingBreathingDisturbancesClassification is elevated.
+    var breathingDisturbancesElevated: Bool? = nil
+    /// Sparse sleepApneaEvent count for the metric night.
+    var sleepApneaEventCount: Int? = nil
 
     // Walking metrics (optional)
     let walkingHeartRateAverage: Int?
@@ -381,6 +387,8 @@ struct PetehomeSleepStages: Codable {
     let rem: Int?
     let core: Int?
     let deep: Int?
+    /// asleepUnspecified — kept separate so core % is not inflated.
+    var unspecified: Int? = nil
 }
 
 /// A single SDNN reading. Stored as a series so the server can recompute

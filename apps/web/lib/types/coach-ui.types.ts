@@ -7,6 +7,30 @@
  */
 
 import type { GuardrailSeverity, ReadinessLevel, Sport } from '@petehome/coach-core'
+import type { HeartRateZone } from '@/lib/types/apple-health.types'
+
+/** Linked workout summary for completed session cards (no samples). */
+export interface SessionActivityGlance {
+  id: string
+  workoutType: string
+  durationSeconds: number
+  distanceMeters: number | null
+  tss: number | null
+  hrAverage: number | null
+  hrZones: HeartRateZone[] | null
+  zoneSeconds: { z1: number; z2: number; z3: number; z4: number; z5: number } | null
+  paceAverage: number | null
+  cadenceAverage: number | null
+  cyclingAvgPower: number | null
+  cyclingAvgSpeed: number | null
+  swimPacePer100: number | null
+  swimSwolf: number | null
+  swimLapCount: number | null
+  activeCalories: number | null
+  effortScore: number | null
+  elevationGainMeters: number | null
+  isIndoor: boolean | null
+}
 
 export interface TodaySession {
   id: string
@@ -35,6 +59,8 @@ export interface TodaySession {
     severity: GuardrailSeverity
     violations: { severity: GuardrailSeverity; message: string; remedy?: string }[]
   } | null
+  /** Present when status is completed and a HealthKit workout is linked. */
+  activity?: SessionActivityGlance | null
 }
 
 export interface PtProtocolView {
@@ -47,11 +73,13 @@ export interface PtProtocolView {
   completed: boolean
   skipped: boolean
   exercises: {
+    id: string
     name: string
     slug: string
     category: string
     prescription: Record<string, unknown>
     cues: string | null
+    demoYoutubeId?: string | null
   }[]
 }
 
@@ -62,6 +90,20 @@ export interface ReadinessView {
   components: { key: string; label: string; score: number; weight: number; detail: string }[]
   flags: string[]
   guidance: { action: string; summary: string }
+}
+
+/** Last night from apple_health_daily_metrics for the Today rail. */
+export interface LastNightSleepView {
+  hours: number | null
+  inBedHours: number | null
+  efficiencyPct: number | null
+  deepMinutes: number | null
+  remMinutes: number | null
+  coreMinutes: number | null
+  awakeMinutes: number | null
+  start: string | null
+  end: string | null
+  breathingDisturbancesElevated: boolean | null
 }
 
 export interface ConditionsView {
@@ -82,6 +124,7 @@ export interface TodayResponse {
   date: string
   briefing: string | null
   readiness: ReadinessView | null
+  lastNightSleep: LastNightSleepView | null
   sessions: TodaySession[]
   ptProtocols: PtProtocolView[]
   symptomsToday: {

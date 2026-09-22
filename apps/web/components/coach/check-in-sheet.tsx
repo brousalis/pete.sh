@@ -101,7 +101,7 @@ export function CheckInSheet({
         if (!next) reset()
       }}
     >
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
+      <SheetContent side="bottom" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Check in</SheetTitle>
           <SheetDescription>
@@ -110,7 +110,7 @@ export function CheckInSheet({
         </SheetHeader>
 
         {result ? (
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {result.redFlag ? (
               <div className="flex gap-2 rounded-md bg-accent-rose/10 p-3">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-accent-rose" />
@@ -152,7 +152,7 @@ export function CheckInSheet({
             </Button>
           </div>
         ) : (
-          <div className="space-y-5 py-4">
+          <div className="space-y-5 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div>
               <Label className="text-xs">Where</Label>
               <select

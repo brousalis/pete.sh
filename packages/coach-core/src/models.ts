@@ -92,6 +92,7 @@ export type CoachJob =
   | 'journal'
   | 'intake'
   | 'eval'
+  | 'fuel_estimate'
 
 export interface JobPolicy {
   tier: ModelTier
@@ -121,6 +122,8 @@ export const JOB_POLICIES = {
   journal: { tier: 'standard', cacheTtl: '1h', budgetExempt: false, batchEligible: true, maxSteps: 4 },
   intake: { tier: 'deep', cacheTtl: '5m', budgetExempt: false, batchEligible: false, maxSteps: 16 },
   eval: { tier: 'standard', cacheTtl: '5m', budgetExempt: false, batchEligible: true, maxSteps: 12 },
+  // Tiny isolated meal estimate — never attach coach context.
+  fuel_estimate: { tier: 'fast', cacheTtl: '5m', budgetExempt: false, batchEligible: false, maxSteps: 1 },
 } as const satisfies Record<CoachJob, JobPolicy>
 
 export function getModel(tier: ModelTier): ModelSpec {

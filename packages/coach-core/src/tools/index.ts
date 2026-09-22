@@ -142,7 +142,7 @@ export function createCoachTools(
 
     get_daily_metrics: tool({
       description:
-        'Daily health metrics: HRV against baseline, resting heart rate, sleep with stages, respiratory rate, wrist temperature, weight and body composition.',
+        'Daily health metrics: overnight HRV (RMSSD preferred, else SDNN), resting heart rate, sleep duration/stages/efficiency/timing, SpO2, respiratory rate, wrist temperature, breathing disturbances, weight and body composition.',
       inputSchema: z.object({
         days: z.number().int().min(1).max(90).default(14),
       }),

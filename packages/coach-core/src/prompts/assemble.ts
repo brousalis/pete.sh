@@ -85,6 +85,44 @@ export interface KnowledgeSnippet {
   content: string
 }
 
+export interface FeedbackCard {
+  feedbackDate: string
+  sessionTitle: string | null
+  sport: string | null
+  rpe: number | null
+  maxPain: number | null
+  notes: string | null
+}
+
+export interface AdherenceCard {
+  from: string
+  to: string
+  planned: number
+  completed: number
+  skipped: number
+  missed: number
+  completionRate: number | null
+  meanRpe: number | null
+  ptMisses: number
+  ptStreakDays: number
+}
+
+export interface FuelCard {
+  fuellingWindow: 'high' | 'moderate' | 'low'
+  plannedTss: number
+  targets: { kcal: number; proteinG: number; carbsG: number; fatG: number }
+  logged: {
+    kcal: number | null
+    proteinG: number | null
+    carbsG: number | null
+    fatG: number | null
+    hydrationMl: number | null
+    entryCount: number
+  } | null
+  flags: string[]
+  recentBlurbs: string[]
+}
+
 export interface AssembleInput {
   athlete: AthleteCard
   injuries: InjuryStatus[]
@@ -101,6 +139,10 @@ export interface AssembleInput {
   knowledge: KnowledgeSnippet[]
   conversationSummary: string | null
   ptProtocols: { name: string; timeOfDay: string; itemCount: number; completedToday: boolean }[]
+  recentFeedback: FeedbackCard[]
+  adherence: AdherenceCard | null
+  /** Today's fuelling — folded into the Today section, not a separate priority band. */
+  fuel?: FuelCard | null
   today: string
 }
 
@@ -160,7 +202,7 @@ export function assembleContext(
   sections.push({
     title: 'recent_training',
     priority: 6,
-    content: renderRecentTraining(input.recentActivities),
+    content: renderRecentTraining(input.recentActivities, input.recentFeedback, input.adherence),
   })
 
   // 7. Conversation summary, so a long thread keeps its thread.
@@ -353,6 +395,31 @@ function renderToday(input: AssembleInput, today: string): string {
     }
   }
 
+  if (input.fuel) {
+    const fuel = input.fuel
+    const t = fuel.targets
+    const logged = fuel.logged
+    lines.push(
+      `\nFuel (${fuel.fuellingWindow} day, ${fuel.plannedTss} TSS planned): target ${t.kcal} kcal / P ${t.proteinG}g / C ${t.carbsG}g / F ${t.fatG}g`
+    )
+    if (logged && (logged.kcal != null || logged.entryCount > 0)) {
+      lines.push(
+        `  Logged: ${logged.kcal ?? 0} kcal / P ${logged.proteinG ?? 0}g / C ${logged.carbsG ?? 0}g / F ${logged.fatG ?? 0}g (${logged.entryCount} entries)`
+      )
+      if (logged.hydrationMl != null) {
+        lines.push(`  Hydration: ${logged.hydrationMl} ml`)
+      }
+    } else {
+      lines.push('  Logged: nothing yet')
+    }
+    if (fuel.recentBlurbs.length) {
+      lines.push(`  Recent: ${fuel.recentBlurbs.join('; ')}`)
+    }
+    if (fuel.flags.length) {
+      lines.push(`  Flags: ${fuel.flags.join(', ')}`)
+    }
+  }
+
   return lines.join('\n')
 }
 
@@ -444,12 +511,49 @@ function renderSessionLine(session: PlannedSession): string {
   return parts.join(' · ')
 }
 
-function renderRecentTraining(activities: Activity[]): string {
-  if (activities.length === 0) {
-    return '## Recent training\n\nNo activities recorded.'
+function renderRecentTraining(
+  activities: Activity[],
+  feedback: FeedbackCard[],
+  adherence: AdherenceCard | null
+): string {
+  const lines = ['## Recent training (last 14 days)']
+
+  if (adherence) {
+    lines.push(
+      `Adherence: ${adherence.completed}/${adherence.planned} completed` +
+        (adherence.completionRate != null
+          ? ` (${Math.round(adherence.completionRate * 100)}%)`
+          : '') +
+        `, ${adherence.skipped} skipped, ${adherence.missed} missed`
+    )
+    if (adherence.meanRpe != null) {
+      lines.push(`Mean RPE ${adherence.meanRpe.toFixed(1)}`)
+    }
+    lines.push(
+      `PT: ${adherence.ptMisses} day(s) with misses · current full-compliance streak ${adherence.ptStreakDays}`
+    )
   }
 
-  const lines = ['## Recent training (last 14 days)']
+  if (feedback.length) {
+    lines.push('\nSession feedback:')
+    for (const row of feedback.slice(0, 10)) {
+      const parts = [
+        row.feedbackDate,
+        row.sport ?? row.sessionTitle ?? 'session',
+        row.rpe != null ? `RPE ${row.rpe}` : null,
+        row.maxPain != null ? `pain ${row.maxPain}/10` : null,
+        row.notes ? `— ${row.notes.slice(0, 100)}` : null,
+      ].filter(Boolean)
+      lines.push(`  ${parts.join(' · ')}`)
+    }
+  }
+
+  if (activities.length === 0) {
+    lines.push('\nNo Apple Health activities recorded.')
+    return lines.join('\n')
+  }
+
+  lines.push('\nActivities:')
   const recent = activities.slice(0, 20)
 
   for (const activity of recent) {
@@ -480,6 +584,7 @@ function renderBody(metrics: DailyMetric[]): string {
   if (metrics.length === 0) return '## Body\n\nNo metrics recorded.'
 
   const recent = metrics.slice(-14)
+  const last = recent[recent.length - 1]
   const lines = ['## Body and sleep (14-day trend)']
 
   const weights = recent
@@ -487,9 +592,9 @@ function renderBody(metrics: DailyMetric[]): string {
     .filter((value): value is number => value != null)
   if (weights.length >= 2) {
     const first = weights[0]!
-    const last = weights[weights.length - 1]!
+    const lastWeight = weights[weights.length - 1]!
     lines.push(
-      `Weight: ${last.toFixed(1)} lb (${last > first ? '+' : ''}${(last - first).toFixed(1)} over the window)`
+      `Weight: ${lastWeight.toFixed(1)} lb (${lastWeight > first ? '+' : ''}${(lastWeight - first).toFixed(1)} over the window)`
     )
   }
 
@@ -500,6 +605,33 @@ function renderBody(metrics: DailyMetric[]): string {
     lines.push(`Body fat: ${bodyFat[bodyFat.length - 1]!.toFixed(1)}%`)
   }
 
+  if (last?.sleepSeconds != null) {
+    const hours = (last.sleepSeconds / 3600).toFixed(1)
+    const stages: string[] = []
+    if (last.sleepDeep != null) stages.push(`deep ${Math.round(last.sleepDeep / 60)}m`)
+    if (last.sleepRem != null) stages.push(`REM ${Math.round(last.sleepRem / 60)}m`)
+    if (last.sleepCore != null) stages.push(`core ${Math.round(last.sleepCore / 60)}m`)
+    if (last.sleepAwake != null) stages.push(`awake ${Math.round(last.sleepAwake / 60)}m`)
+    if (last.sleepUnspecified != null) {
+      stages.push(`unspecified ${Math.round(last.sleepUnspecified / 60)}m`)
+    }
+
+    let lastNight = `Last night: ${hours} h asleep`
+    if (
+      last.sleepInBed != null &&
+      last.sleepInBed > 0 &&
+      last.sleepSeconds != null
+    ) {
+      const efficiency = Math.round((last.sleepSeconds / last.sleepInBed) * 100)
+      lastNight += ` (${efficiency}% efficiency)`
+    }
+    if (last.sleepStart && last.sleepEnd) {
+      lastNight += `, ${formatClock(last.sleepStart)}–${formatClock(last.sleepEnd)}`
+    }
+    lines.push(lastNight)
+    if (stages.length) lines.push(`Stages: ${stages.join(', ')}`)
+  }
+
   const sleep = recent
     .map((metric) => metric.sleepSeconds)
     .filter((value): value is number => value != null)
@@ -508,18 +640,55 @@ function renderBody(metrics: DailyMetric[]): string {
     lines.push(`Sleep: ${avg.toFixed(1)} h average over ${sleep.length} nights`)
   }
 
+  const rmssd = recent
+    .map((metric) => metric.hrvRmssd)
+    .filter((value): value is number => value != null)
   const hrv = recent
     .map((metric) => metric.hrvSdnn)
     .filter((value): value is number => value != null)
-  if (hrv.length) {
+  if (rmssd.length) {
+    const avg = rmssd.reduce((a, b) => a + b, 0) / rmssd.length
+    lines.push(`HRV (RMSSD overnight): ${avg.toFixed(0)} ms average`)
+  } else if (hrv.length) {
     const avg = hrv.reduce((a, b) => a + b, 0) / hrv.length
     lines.push(`HRV (SDNN): ${avg.toFixed(0)} ms average`)
+  }
+
+  if (last?.respiratoryRate != null) {
+    lines.push(`Respiratory rate (last night): ${last.respiratoryRate.toFixed(1)} breaths/min`)
+  }
+  if (last?.wristTempDelta != null) {
+    const sign = last.wristTempDelta >= 0 ? '+' : ''
+    lines.push(`Wrist temp delta: ${sign}${last.wristTempDelta.toFixed(2)}°C`)
+  }
+  if (last?.spo2 != null) {
+    lines.push(`Overnight SpO2: ${last.spo2.toFixed(1)}%`)
+  }
+  if (last?.breathingDisturbancesElevated === true) {
+    lines.push(
+      `Breathing disturbances: elevated${last.breathingDisturbances != null ? ` (${last.breathingDisturbances})` : ''}`
+    )
+  } else if (last?.breathingDisturbances != null) {
+    lines.push(`Breathing disturbances: ${last.breathingDisturbances} (not elevated)`)
+  }
+  if (last?.sleepApneaEventCount != null && last.sleepApneaEventCount > 0) {
+    lines.push(`Sleep apnea events (rare clinical): ${last.sleepApneaEventCount}`)
   }
 
   const vo2 = recent.map((metric) => metric.vo2Max).filter((value): value is number => value != null)
   if (vo2.length) lines.push(`VO2max estimate: ${vo2[vo2.length - 1]!.toFixed(1)}`)
 
   return lines.join('\n')
+}
+
+function formatClock(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/Chicago',
+  })
 }
 
 function renderEnvironment(environment: EnvironmentCard): string {

@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { SessionCard } from '@/components/coach/session-card'
@@ -403,29 +403,31 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
         })}
       </div>
 
-      <div className="mt-4 flex items-start justify-between gap-3 border-t border-line pt-3.5">
-        <p className="min-w-0 t-body text-ink-2">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+        className="mt-4 flex w-full items-start justify-between gap-3 border-t border-line pt-3.5 text-left text-ink-2 transition-colors hover:text-ink-1"
+      >
+        <span className="min-w-0 t-body">
           {plan.currentBlock ? (
-            <>
-              <span className="font-medium text-ink-1">
-                Block {plan.currentBlock.number}: {plan.currentBlock.name}
-              </span>
-            </>
+            <span className="font-medium text-ink-1">
+              Block {plan.currentBlock.number}: {plan.currentBlock.name}
+            </span>
           ) : currentPhase ? (
             <>
               <span className="font-medium text-ink-1">{currentPhase.label}</span> —{' '}
               {currentPhase.intent}
             </>
           ) : null}
-        </p>
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="shrink-0 t-label font-medium text-ink-3 transition-colors hover:text-ink-1"
-        >
-          {expanded ? 'Less' : 'Detail'}
-        </button>
-      </div>
+        </span>
+        <ChevronDown
+          className={cn(
+            'mt-0.5 size-4 shrink-0 text-ink-3 transition-transform duration-200',
+            expanded && 'rotate-180'
+          )}
+        />
+      </button>
 
       {expanded ? (
         <div className="animate-fade-in-up mt-3 space-y-2.5">
@@ -581,12 +583,24 @@ function DayCell({
         ) : (
           sessions.map((session) => {
             const sport = sportClasses(session.sport)
-            const load = session.plannedLoad ?? 0
+            const linked = session.status === 'completed' && session.activity != null
+            const actualMin =
+              linked && session.activity
+                ? Math.round(session.activity.durationSeconds / 60)
+                : null
+            const durationLabel = actualMin ?? session.durationMinutes
+            const load =
+              linked && session.activity?.tss != null && session.activity.tss > 0
+                ? session.activity.tss
+                : (session.plannedLoad ?? 0)
             return (
               <span
                 key={session.id}
-                title={`${session.title}${load ? ` · ${load} TSS` : ''}`}
-                className={cn('block min-w-0', session.status === 'completed' && 'opacity-50')}
+                title={`${session.title}${load ? ` · ${Math.round(load)} TSS` : ''}`}
+                className={cn(
+                  'block min-w-0',
+                  session.status === 'completed' && !linked && 'opacity-50'
+                )}
               >
                 <span className="flex items-baseline gap-1.5">
                   <span
@@ -596,18 +610,20 @@ function DayCell({
                   <span className="truncate t-label text-ink-1">
                     {SPORT_LABELS[session.sport] ?? session.sport}
                   </span>
-                  {session.durationMinutes ? (
+                  {durationLabel ? (
                     <span className="t-num ml-auto shrink-0 text-[11px] text-ink-3">
-                      {session.durationMinutes}′
+                      {durationLabel}′
                     </span>
                   ) : null}
                 </span>
-                {/* Bar length encodes planned load, so the weekly shape is
-                    visible without opening a single day. */}
+                {/* Bar length encodes load (actual when linked), so the weekly
+                    shape is visible without opening a single day. */}
                 <span className="mt-1 block h-[3px] overflow-hidden rounded-full bg-surface-3">
                   <span
                     className={cn('block h-full rounded-full', sport.bar)}
-                    style={{ width: `${Math.max(12, (load / peakTss) * 100)}%` }}
+                    style={{
+                      width: `${Math.max(12, peakTss > 0 ? (load / peakTss) * 100 : 12)}%`,
+                    }}
                   />
                 </span>
               </span>

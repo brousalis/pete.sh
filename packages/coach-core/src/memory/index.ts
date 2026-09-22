@@ -198,6 +198,23 @@ Drop:
 Write in the second person, addressing the athlete's history as facts you
 know. Under 300 words.`
 
+/**
+ * Short session title for the chat history list.
+ *
+ * Runs on the fast model once, on the first turn. Prefer a topic label over a
+ * truncated question so the sidebar stays scannable.
+ */
+export const SESSION_TITLE_PROMPT = `Write a short title for this coaching session.
+
+Rules:
+  - 2 to 6 words
+  - Sentence case (capitalise the first word and proper nouns only)
+  - Name the topic, not the question ("Sleep tracking", not "How should I track sleep")
+  - No quotes, no trailing punctuation, no emojis
+  - Prefer concrete nouns from the athlete's message
+
+Reply with the title only.`
+
 /** How many recent messages stay verbatim before summarisation. */
 export const VERBATIM_MESSAGE_WINDOW = 12
 

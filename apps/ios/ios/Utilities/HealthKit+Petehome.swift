@@ -15,6 +15,31 @@ enum HealthKitPetehome {
         )
     }
 
+    /// Apple Sleeping Breathing Disturbances (iOS 18+).
+    static var breathingDisturbancesType: HKQuantityType? {
+        HKQuantityType.quantityType(
+            forIdentifier: HKQuantityTypeIdentifier(rawValue: "HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances")
+        )
+    }
+
+    /// Sleep apnea event category (iOS 18+). Rare clinical notifications.
+    static var sleepApneaEventType: HKCategoryType? {
+        HKObjectType.categoryType(
+            forIdentifier: HKCategoryTypeIdentifier(rawValue: "HKCategoryTypeIdentifierSleepApneaEvent")
+        )
+    }
+
+    /// Classify a breathing-disturbances quantity as elevated when available.
+    static func isBreathingDisturbancesElevated(_ quantity: HKQuantity) -> Bool? {
+        if #available(iOS 18.0, *) {
+            guard let classification = HKAppleSleepingBreathingDisturbancesClassification(classifying: quantity) else {
+                return nil
+            }
+            return classification == .elevated
+        }
+        return nil
+    }
+
     static func includes(_ workout: HKWorkout, _ type: HKWorkoutActivityType) -> Bool {
         if workout.workoutActivityType == type { return true }
         return workout.workoutActivities.contains {

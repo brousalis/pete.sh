@@ -280,6 +280,10 @@ export async function computeAndStoreReadiness(date?: string): Promise<Readiness
         rhr: readiness.inputs.rhr,
         rhr_baseline_7d: readiness.inputs.rhrBaseline7d,
         sleep_seconds: readiness.inputs.sleepSeconds,
+        // Petehome readiness sleep component (0–100), not Apple Sleep Score.
+        sleep_score: readiness.components.find((c) => c.key === 'sleep')?.score ?? null,
+        respiratory_rate: metrics.find((m) => m.metricDate === target)?.respiratoryRate ?? null,
+        wrist_temp_delta: metrics.find((m) => m.metricDate === target)?.wristTempDelta ?? null,
         ctl: readiness.inputs.ctl,
         atl: readiness.inputs.atl,
         tsb: readiness.inputs.tsb,

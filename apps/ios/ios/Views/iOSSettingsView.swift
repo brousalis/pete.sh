@@ -4,7 +4,6 @@ import SwiftUI
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     private let syncManager = HealthKitSyncManager.shared
-    @State private var showFridgeScanner = false
     @State private var connectionTestResult: ConnectionTestResult?
 
     enum ConnectionTestResult {
@@ -14,7 +13,6 @@ struct iOSSettingsView: View {
 
     var body: some View {
         List {
-            // Auto-Sync
             Section("Sync") {
                 Toggle(isOn: Binding(
                     get: { syncManager.autoSyncEnabled },
@@ -29,7 +27,6 @@ struct iOSSettingsView: View {
                 }
                 .tint(.cyan)
 
-                // Connection test
                 Button {
                     connectionTestResult = nil
                     Task {
@@ -57,26 +54,6 @@ struct iOSSettingsView: View {
                 }
             }
 
-            // Tools
-            Section("Tools") {
-                Button {
-                    showFridgeScanner = true
-                } label: {
-                    HStack {
-                        Image(systemName: "refrigerator.fill")
-                            .foregroundStyle(.blue)
-                        Text("Fridge Scanner")
-                            .font(.system(size: 15, design: .rounded))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // App Info
             Section("About") {
                 HStack {
                     Text("App")
@@ -97,6 +74,16 @@ struct iOSSettingsView: View {
                 }
 
                 HStack {
+                    Text("Server")
+                        .font(.system(size: 14, design: .rounded))
+                    Spacer()
+                    Text(KeychainHelper.serverURL)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+
+                HStack {
                     Text("API")
                         .font(.system(size: 14, design: .rounded))
                     Spacer()
@@ -112,20 +99,6 @@ struct iOSSettingsView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
             }
-        }
-        .sheet(isPresented: $showFridgeScanner) {
-            FridgeScannerSheet(
-                scanManager: FridgeScanManager.shared,
-                onScanComplete: { items, scanId in
-                    NotificationCenter.default.post(
-                        name: .fridgeScanCompleted,
-                        object: nil,
-                        userInfo: ["items": items, "scanId": scanId]
-                    )
-                }
-            )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
     }
 }

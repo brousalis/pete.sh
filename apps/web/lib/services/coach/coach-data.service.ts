@@ -203,6 +203,13 @@ export async function getActivity(id: string): Promise<Activity | null> {
   return data ? mapActivity(data) : null
 }
 
+export async function getActivitiesByIds(ids: string[]): Promise<Activity[]> {
+  if (ids.length === 0) return []
+  const { data, error } = await db().from('coach_activity_v').select('*').in('id', ids)
+  if (error) throw new Error(`Failed to load activities: ${error.message}`)
+  return (data ?? []).map((row: Record<string, unknown>) => mapActivity(row))
+}
+
 /**
  * Heart rate series for an activity, as seconds-from-start offsets.
  *
@@ -261,15 +268,27 @@ export async function getDailyMetrics(from: string, to: string): Promise<DailyMe
     restingHeartRate: toNumber(row.resting_heart_rate),
     hrvSdnn: toNumber(row.hrv_sdnn),
     hrvRmssd: toNumber(row.hrv_rmssd),
+    hrvOvernightAvg: toNumber(row.hrv_overnight_avg),
+    hrvMorning: toNumber(row.hrv_morning),
     vo2Max: toNumber(row.vo2_max),
     sleepSeconds: toNumber(row.sleep_seconds),
+    sleepInBed: toNumber(row.sleep_in_bed),
     sleepDeep: toNumber(row.sleep_deep),
     sleepRem: toNumber(row.sleep_rem),
     sleepCore: toNumber(row.sleep_core),
     sleepAwake: toNumber(row.sleep_awake),
+    sleepUnspecified: toNumber(row.sleep_unspecified),
+    sleepStart: (row.sleep_start as string | null) ?? null,
+    sleepEnd: (row.sleep_end as string | null) ?? null,
     respiratoryRate: toNumber(row.respiratory_rate),
     wristTempDelta: toNumber(row.wrist_temp_delta),
     spo2: toNumber(row.spo2),
+    breathingDisturbances: toNumber(row.breathing_disturbances),
+    breathingDisturbancesElevated:
+      typeof row.breathing_disturbances_elevated === 'boolean'
+        ? row.breathing_disturbances_elevated
+        : null,
+    sleepApneaEventCount: toNumber(row.sleep_apnea_event_count),
     bodyMassLbs: toNumber(row.body_mass_lbs),
     bodyFatPercentage: toNumber(row.body_fat_percentage),
     leanBodyMassLbs: toNumber(row.lean_body_mass_lbs),
@@ -374,11 +393,15 @@ export interface PtProtocol {
   isMandatory: boolean
   description: string | null
   items: {
+    id: string
     name: string
     slug: string
     category: string
     prescription: Record<string, unknown>
     cues: string | null
+    demoYoutubeId: string | null
+    demoStartSeconds: number
+    demoLoopSeconds: number
   }[]
 }
 
@@ -388,7 +411,8 @@ export async function getPtProtocols(): Promise<PtProtocol[]> {
     .select(
       `id, slug, name, time_of_day, cadence, duration_minutes, is_mandatory, description,
        coach_pt_protocol_item ( sort_order, prescription_override,
-         coach_pt_exercise ( slug, name, category, prescription, cues ) )`
+         coach_pt_exercise ( id, slug, name, category, prescription, cues,
+           demo_youtube_id, demo_start_seconds, demo_loop_seconds ) )`
     )
     .eq('is_active', true)
 
@@ -410,14 +434,23 @@ export async function getPtProtocols(): Promise<PtProtocol[]> {
       items: rawItems
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
         .map((item) => ({
+          id: item.coach_pt_exercise?.id ?? '',
           slug: item.coach_pt_exercise?.slug ?? '',
           name: item.coach_pt_exercise?.name ?? '',
           category: item.coach_pt_exercise?.category ?? '',
           prescription: item.prescription_override ?? item.coach_pt_exercise?.prescription ?? {},
           cues: item.coach_pt_exercise?.cues ?? null,
+          demoYoutubeId: item.coach_pt_exercise?.demo_youtube_id ?? null,
+          demoStartSeconds: toNumber(item.coach_pt_exercise?.demo_start_seconds) ?? 0,
+          demoLoopSeconds: toNumber(item.coach_pt_exercise?.demo_loop_seconds) ?? 30,
         })),
     }
   })
+}
+
+export async function getPtProtocolBySlug(slug: string): Promise<PtProtocol | null> {
+  const protocols = await getPtProtocols()
+  return protocols.find((protocol) => protocol.slug === slug) ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -473,6 +506,50 @@ export async function getSessionsInRange(from: string, to: string): Promise<Plan
 
   if (error) throw new Error(`Failed to load sessions: ${error.message}`)
   return (data ?? []).map(mapSession)
+}
+
+export type AthleteSessionStatus = 'completed' | 'skipped'
+
+/**
+ * Athlete-facing status flip (mark done / skip). Idempotent: repeating the
+ * same status is a no-op success. Does not go through applyProposal — this is
+ * recording what happened, not rewriting the prescription.
+ */
+export async function setSessionAthleteStatus(
+  sessionId: string,
+  status: AthleteSessionStatus
+): Promise<PlannedSession> {
+  const existing = await db()
+    .from('coach_planned_session')
+    .select('*')
+    .eq('id', sessionId)
+    .maybeSingle()
+
+  if (existing.error) {
+    throw new Error(`Failed to load session: ${existing.error.message}`)
+  }
+  if (!existing.data) {
+    throw new Error('Session not found.')
+  }
+
+  const current = mapSession(existing.data)
+  if (current.status === status) return current
+
+  if (current.status !== 'planned' && current.status !== 'modified') {
+    throw new Error(
+      `Session is already ${current.status}; only planned sessions can be marked ${status}.`
+    )
+  }
+
+  const { data, error } = await db()
+    .from('coach_planned_session')
+    .update({ status })
+    .eq('id', sessionId)
+    .select('*')
+    .single()
+
+  if (error) throw new Error(`Failed to update session status: ${error.message}`)
+  return mapSession(data)
 }
 
 export async function getWeek(weekStart: string): Promise<PlanWeek | null> {

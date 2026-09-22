@@ -4,28 +4,16 @@ import { Bell, ChevronRight, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-import { Metric, MetricRow } from '@/components/coach/ui/metric'
 import { GearSection } from '@/components/coach/desk/gear-section'
+import { RailKnee } from '@/components/coach/desk/rail-knee'
 import { Chip, Panel, Section, Track } from '@/components/coach/ui/panel'
 import { type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { SpendSummaryView } from '@/lib/types/coach-ui.types'
-import { cn } from '@/lib/utils'
-
-interface NutritionResponse {
-  plannedTss: number
-  fuellingWindow: 'high' | 'moderate' | 'low'
-  bodyWeightLbs: number
-  targets: { kcal: number; proteinG: number; carbsG: number; fatG: number }
-  logged: { kcal: number | null; proteinG: number | null; carbsG: number | null } | null
-  guidance: string[]
-  flags: string[]
-}
 
 export function RailMore() {
-  const [nutrition, setNutrition] = useState<NutritionResponse | null>(null)
   const [spend, setSpend] = useState<SpendSummaryView | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -38,11 +26,9 @@ export function RailMore() {
   useEffect(() => {
     void (async () => {
       try {
-        const [nutritionRes, spendRes] = await Promise.all([
-          fetch('/api/coach/nutrition', { credentials: 'include' }).then((r) => r.json()),
-          fetch('/api/coach/spend', { credentials: 'include' }).then((r) => r.json()),
-        ])
-        if (nutritionRes.success) setNutrition(nutritionRes.data)
+        const spendRes = await fetch('/api/coach/spend', { credentials: 'include' }).then((r) =>
+          r.json()
+        )
         if (spendRes.success) {
           const data = spendRes.data as SpendSummaryView
           setSpend(data)
@@ -113,72 +99,21 @@ export function RailMore() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-20">
-        <Loader2 className="size-4 animate-spin text-ink-3" />
-      </div>
-    )
-  }
-
-  const kcalPct = nutrition?.logged?.kcal
-    ? (nutrition.logged.kcal / nutrition.targets.kcal) * 100
-    : 0
-
   return (
     <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
       <h1 className="t-display">More</h1>
 
-      {nutrition ? (
-        <Section title="Fuelling">
-          <Panel className="px-5 py-4">
-            <div className="mb-3.5 flex items-start justify-between gap-3">
-              <div>
-                <p className="t-num t-num-xl text-ink-1">
-                  {nutrition.logged?.kcal ?? nutrition.targets.kcal}
-                  {nutrition.logged?.kcal ? (
-                    <span className="t-num-md text-ink-3">/{nutrition.targets.kcal}</span>
-                  ) : null}
-                </p>
-                <p className="mt-1 t-micro text-ink-3">
-                  kcal target · {nutrition.plannedTss} TSS planned
-                </p>
-              </div>
-              <Chip tone={fuellingTone(nutrition.fuellingWindow)}>
-                {nutrition.fuellingWindow} day
-              </Chip>
-            </div>
+      <RailKnee />
 
-            {nutrition.logged?.kcal ? (
-              <Track pct={kcalPct} tone={kcalPct > 110 ? 'caution' : 'good'} className="mb-3.5" />
-            ) : null}
-
-            <MetricRow>
-              <Macro
-                label="Protein"
-                target={nutrition.targets.proteinG}
-                actual={nutrition.logged?.proteinG}
-              />
-              <Macro
-                label="Carbs"
-                target={nutrition.targets.carbsG}
-                actual={nutrition.logged?.carbsG}
-              />
-              <Macro label="Fat" target={nutrition.targets.fatG} />
-            </MetricRow>
-
-            {nutrition.guidance[0] ? (
-              <p className="mt-3.5 border-t border-line pt-3 t-body text-ink-2">
-                {nutrition.guidance[0]}
-              </p>
-            ) : null}
-          </Panel>
-        </Section>
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="size-4 animate-spin text-ink-3" />
+        </div>
       ) : null}
 
-      <GearSection />
+      {!loading ? <GearSection /> : null}
 
-      {spend ? (
+      {!loading && spend ? (
         <Section title="Claude budget">
           <Panel className="space-y-4">
             {spend.state !== 'normal' ? (
@@ -234,35 +169,37 @@ export function RailMore() {
         </Section>
       ) : null}
 
-      <Section title="Device">
-        <Panel className="divide-y divide-line py-0">
-          <div className="flex items-center gap-3 py-3.5">
-            <Bell className="size-4 shrink-0 text-ink-3" />
-            <div className="min-w-0 flex-1">
-              <p className="t-body text-ink-1">Push notifications</p>
-              <p className="mt-0.5 t-label text-ink-3">
-                {pushState === 'granted'
-                  ? 'Enabled on this device.'
-                  : pushState === 'unsupported'
-                    ? 'Not supported in this browser.'
-                    : pushState === 'denied'
-                      ? 'Blocked — enable in browser settings.'
-                      : 'Briefings and guardrail alerts.'}
-              </p>
+      {!loading ? (
+        <Section title="Device">
+          <Panel className="divide-y divide-line py-0">
+            <div className="flex items-center gap-3 py-3.5">
+              <Bell className="size-4 shrink-0 text-ink-3" />
+              <div className="min-w-0 flex-1">
+                <p className="t-body text-ink-1">Push notifications</p>
+                <p className="mt-0.5 t-label text-ink-3">
+                  {pushState === 'granted'
+                    ? 'Enabled on this device.'
+                    : pushState === 'unsupported'
+                      ? 'Not supported in this browser.'
+                      : pushState === 'denied'
+                        ? 'Blocked — enable in browser settings.'
+                        : 'Briefings and guardrail alerts.'}
+                </p>
+              </div>
+              {pushState === 'granted' ? (
+                <Chip tone="good">On</Chip>
+              ) : pushState === 'unsupported' ? null : (
+                <Button size="sm" variant="outline" onClick={() => void enablePush()}>
+                  Enable
+                </Button>
+              )}
             </div>
-            {pushState === 'granted' ? (
-              <Chip tone="good">On</Chip>
-            ) : pushState === 'unsupported' ? null : (
-              <Button size="sm" variant="outline" onClick={() => void enablePush()}>
-                Enable
-              </Button>
-            )}
-          </div>
 
-          <NavRow href="/coach/onboard" label="Intake interview" />
-          <NavRow href="/coach/tests" label="Baseline tests" />
-        </Panel>
-      </Section>
+            <NavRow href="/coach/onboard" label="Intake interview" />
+            <NavRow href="/coach/tests" label="Baseline tests" />
+          </Panel>
+        </Section>
+      ) : null}
     </div>
   )
 }
@@ -276,26 +213,6 @@ function NavRow({ href, label }: { href: string; label: string }) {
       <span className="t-body flex-1 text-ink-1">{label}</span>
       <ChevronRight className="size-4 text-ink-3 transition-transform group-hover:translate-x-0.5" />
     </Link>
-  )
-}
-
-function Macro({
-  label,
-  target,
-  actual,
-}: {
-  label: string
-  target: number
-  actual?: number | null
-}) {
-  return (
-    <Metric
-      label={label}
-      value={actual != null ? `${actual}/${target}` : String(target)}
-      unit="g"
-      size="md"
-      align="center"
-    />
   )
 }
 
@@ -330,12 +247,6 @@ function SpendBar({
       ) : null}
     </div>
   )
-}
-
-function fuellingTone(window: 'high' | 'moderate' | 'low'): Tone {
-  if (window === 'high') return 'caution'
-  if (window === 'low') return 'neutral'
-  return 'good'
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {

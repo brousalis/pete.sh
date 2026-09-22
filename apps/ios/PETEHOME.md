@@ -31,3 +31,32 @@ If Keychain already has an old URL/key from a prior install, clear it or call
 `KeychainHelper.setServerURL` / `setAPIKey` — Config only seeds empty Keychain.
 
 Display name on device: **petehome**.
+
+## iPhone app (hybrid coach)
+
+Four tabs:
+
+| Tab | Surface |
+|-----|---------|
+| **Today** | Native coach day — `GET /api/coach/today`, check-in, session done/skip, PT checklist |
+| **Sync** | HealthKit ingest controls (unchanged pipeline → `/api/apple-health/*`) |
+| **Activity** | Server-backed workout list/detail |
+| **Coach** | WKWebView at `{PETEHOME_SERVER_URL}/coach` (plan, fuel, chat, load, more) |
+
+Removed from phone: shopping list, fridge scan, HR BLE broadcast, legacy pete.sh “Home” tab.
+
+Push notifications deep-link into the **Coach** tab (`CoachPushManager` → `AppNavigation`).
+
+WorkoutKit scheduling (`CoachWorkoutScheduler`) and APNs registration still run on launch.
+
+Watch app overhaul is tracked separately; watch target unchanged in this pass.
+
+## Manual QA (sync + coach)
+
+1. HealthKit authorize → Sync tab → workouts + daily land in web Activity.
+2. Background: new Watch workout triggers observer sync within debounce window.
+3. Backgrounding schedules `BGAppRefreshTask` (`com.petehome.dailyMetricsSync`).
+4. Today tab loads sessions/readiness when LAN server is up (cached fallback offline).
+5. Coach tab loads `/coach`; notification tap opens the pushed path.
+6. WorkoutKit sync on foreground (iOS 18+).
+7. APNs token POSTs to `/api/coach/push/subscribe`.
