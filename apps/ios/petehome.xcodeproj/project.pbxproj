@@ -7,64 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AAA00001 /* PetehomeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001 /* PetehomeApp.swift */; };
-		AAA00002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00002 /* ContentView.swift */; };
-		AAA00003 /* DayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00003 /* DayView.swift */; };
-		AAA00004 /* SectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00004 /* SectionDetailView.swift */; };
-		AAA00005 /* ExerciseRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005 /* ExerciseRow.swift */; };
-		AAA00006 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00006 /* HistoryView.swift */; };
-		AAA00007 /* Day.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007 /* Day.swift */; };
-		AAA00009 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00009 /* Exercise.swift */; };
-		AAA00010 /* WorkoutRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00010 /* WorkoutRecord.swift */; };
-		AAA00012 /* CycleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012 /* CycleManager.swift */; };
-		AAA00013 /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013 /* WorkoutViewModel.swift */; };
-		AAA00014 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014 /* HistoryViewModel.swift */; };
-		AAA00015 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00015 /* Extensions.swift */; };
-		AAA00016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBB00016 /* Assets.xcassets */; };
-		AAA00017 /* DayPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017 /* DayPickerView.swift */; };
-		AAA00018 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00018 /* SettingsView.swift */; };
-		AAA00020 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00020 /* HealthKitManager.swift */; };
-		AAA00022 /* StepCountCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00022 /* StepCountCard.swift */; };
-		AAA00023 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00023 /* WorkoutCompleteView.swift */; };
-		AAA00024 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00024 /* HealthKit.framework */; };
-		AAA00026 /* ExerciseLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00026 /* ExerciseLog.swift */; };
-		AAA00027 /* PRManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00027 /* PRManager.swift */; };
-		AAA00028 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00028 /* DataExporter.swift */; };
-		AAA00030 /* WeightInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00030 /* WeightInputSheet.swift */; };
-		AAA00031 /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00031 /* ExerciseHistoryView.swift */; };
-		AAA00032 /* DataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00032 /* DataExportView.swift */; };
-		AAA00034 /* WorkoutFlowComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00034 /* WorkoutFlowComponents.swift */; };
-		AAA00036 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00036 /* LocationManager.swift */; };
-		AAA00037 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBB00037 /* CoreLocation.framework */; };
-		AAA00038 /* ProgressAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00038 /* ProgressAnalytics.swift */; };
-		AAA00043 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00043 /* NotificationManager.swift */; };
-		AAA00044 /* FatigueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00044 /* FatigueManager.swift */; };
-		AAA00045 /* FatigueIndicatorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00045 /* FatigueIndicatorCard.swift */; };
-		AAA00046 /* MonthlyCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00046 /* MonthlyCalendarView.swift */; };
-		AAA00051 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00051 /* KeychainHelper.swift */; };
-		AAA00052 /* PetehomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00052 /* PetehomeModels.swift */; };
-		AAA00053 /* PetehomeAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00053 /* PetehomeAPI.swift */; };
-		AAA00054 /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00054 /* SyncManager.swift */; };
-		AAA00055 /* UnifiedExerciseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00055 /* UnifiedExerciseListView.swift */; };
-		AAA00056 /* SettingsHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00056 /* SettingsHistoryView.swift */; };
-		AAA00057 /* APIWorkoutModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00057 /* APIWorkoutModels.swift */; };
-		AAA00058 /* WorkoutMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00058 /* WorkoutMapper.swift */; };
-		AAA00059 /* WorkoutDefinitionsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00059 /* WorkoutDefinitionsCache.swift */; };
-		AAA00060 /* WorkoutDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00060 /* WorkoutDataManager.swift */; };
-		AAA00061 /* MapleWalkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00061 /* MapleWalkManager.swift */; };
-		AAA00062 /* MapleWalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00062 /* MapleWalkView.swift */; };
-		AAA00063 /* MapleWalkSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00063 /* MapleWalkSummaryView.swift */; };
-		AAA00064 /* HRBroadcastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00064 /* HRBroadcastManager.swift */; };
-		AAA00065 /* HRBroadcastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00065 /* HRBroadcastView.swift */; };
 		CBB3A45F2F0C2DCE00D10471 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
 		CBB3A4602F0C2DCE00D10471 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */; };
-		WATCHWKIT01 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
 		CBB3A46D2F0C2DD100D10471 /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CBB3A45E2F0C2DCE00D10471 /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CBCC38F22F2D7D720013DFC7 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F12F2D7D720013DFC7 /* WebKit.framework */; };
 		CBCC38F42F2D7D790013DFC7 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */; };
 		CBCC38F62F2D7D7E0013DFC7 /* HealthKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */; };
 		CBCC38F82F2D7D7E0013DFC8 /* Charts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBCC38F72F2D7D7E0013DFC8 /* Charts.framework */; };
-		CBEB93D52EEB33AC008E365D /* WorkoutSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */; };
+		WATCHWKIT01 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,56 +42,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		BBB00001 /* PetehomeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetehomeApp.swift; sourceTree = "<group>"; };
-		BBB00002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		BBB00003 /* DayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayView.swift; sourceTree = "<group>"; };
-		BBB00004 /* SectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionDetailView.swift; sourceTree = "<group>"; };
-		BBB00005 /* ExerciseRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseRow.swift; sourceTree = "<group>"; };
-		BBB00006 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		BBB00007 /* Day.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Day.swift; sourceTree = "<group>"; };
-		BBB00009 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
-		BBB00010 /* WorkoutRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRecord.swift; sourceTree = "<group>"; };
-		BBB00012 /* CycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleManager.swift; sourceTree = "<group>"; };
-		BBB00013 /* WorkoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
-		BBB00014 /* HistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModel.swift; sourceTree = "<group>"; };
-		BBB00015 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		BBB00016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BBB00017 /* DayPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPickerView.swift; sourceTree = "<group>"; };
-		BBB00018 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		BBB00019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		BBB00020 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
-		BBB00022 /* StepCountCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCountCard.swift; sourceTree = "<group>"; };
-		BBB00023 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
 		BBB00024 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		BBB00026 /* ExerciseLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLog.swift; sourceTree = "<group>"; };
-		BBB00027 /* PRManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRManager.swift; sourceTree = "<group>"; };
-		BBB00028 /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExporter.swift; sourceTree = "<group>"; };
-		BBB00030 /* WeightInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInputSheet.swift; sourceTree = "<group>"; };
-		BBB00031 /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
-		BBB00032 /* DataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportView.swift; sourceTree = "<group>"; };
-		BBB00034 /* WorkoutFlowComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFlowComponents.swift; sourceTree = "<group>"; };
-		BBB00036 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		BBB00037 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
-		BBB00038 /* ProgressAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressAnalytics.swift; sourceTree = "<group>"; };
-		BBB00043 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		BBB00044 /* FatigueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueManager.swift; sourceTree = "<group>"; };
-		BBB00045 /* FatigueIndicatorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueIndicatorCard.swift; sourceTree = "<group>"; };
-		BBB00046 /* MonthlyCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyCalendarView.swift; sourceTree = "<group>"; };
-		BBB00051 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		BBB00052 /* PetehomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetehomeModels.swift; sourceTree = "<group>"; };
-		BBB00053 /* PetehomeAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetehomeAPI.swift; sourceTree = "<group>"; };
-		BBB00054 /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
-		BBB00055 /* UnifiedExerciseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedExerciseListView.swift; sourceTree = "<group>"; };
-		BBB00056 /* SettingsHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHistoryView.swift; sourceTree = "<group>"; };
-		BBB00057 /* APIWorkoutModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWorkoutModels.swift; sourceTree = "<group>"; };
-		BBB00058 /* WorkoutMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMapper.swift; sourceTree = "<group>"; };
-		BBB00059 /* WorkoutDefinitionsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDefinitionsCache.swift; sourceTree = "<group>"; };
-		BBB00060 /* WorkoutDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDataManager.swift; sourceTree = "<group>"; };
-		BBB00061 /* MapleWalkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkManager.swift; sourceTree = "<group>"; };
-		BBB00062 /* MapleWalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkView.swift; sourceTree = "<group>"; };
-		BBB00063 /* MapleWalkSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapleWalkSummaryView.swift; sourceTree = "<group>"; };
-		BBB00064 /* HRBroadcastManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HRBroadcastManager.swift; sourceTree = "<group>"; };
-		BBB00065 /* HRBroadcastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HRBroadcastView.swift; sourceTree = "<group>"; };
 		BBB00070 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		CBB3A3C42F0C2CCB00D10471 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CBB3A3C62F0C2CCB00D10471 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -152,8 +54,6 @@
 		CBCC38F32F2D7D790013DFC7 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKit.framework; sourceTree = DEVELOPER_DIR; };
 		CBCC38F52F2D7D7E0013DFC7 /* HealthKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKitUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/HealthKitUI.framework; sourceTree = DEVELOPER_DIR; };
 		CBCC38F72F2D7D7E0013DFC8 /* Charts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Charts.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/Charts.framework; sourceTree = DEVELOPER_DIR; };
-		CBEB93D32EEB1B87008E365D /* watch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = watch.entitlements; sourceTree = "<group>"; };
-		CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSection.swift; sourceTree = "<group>"; };
 		CCC00001 /* Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Watch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -165,6 +65,13 @@
 			);
 			target = CBB3A45D2F0C2DCE00D10471 /* WidgetsExtension */;
 		};
+		CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CBCC38CA2F2D69350013DFC7 /* iOS */;
+		};
 		WATCH0001EXC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -173,20 +80,12 @@
 			);
 			target = FFF00001 /* Watch */;
 		};
-		CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CBCC38CA2F2D69350013DFC7 /* iOS */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CBB3A3C82F0C2CCB00D10471 /* watch */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (WATCH0001EXC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = watch; sourceTree = "<group>"; };
-		CBB3A4442F0C2D2800D10471 /* widgets */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = widgets; sourceTree = "<group>"; };
 		CBB3A4612F0C2DCE00D10471 /* widgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBB3A46E2F0C2DD100D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = widgets; sourceTree = "<group>"; };
-		CBCC38CC2F2D69350013DFC7 /* iOS */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ios; sourceTree = "<group>"; };
+		CBCC38CC2F2D69350013DFC7 /* ios */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CBCC39002F2D7E0000D10471 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ios; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -250,27 +149,11 @@
 				CBB3A4772F0C2EA400D10471 /* WidgetsExtension.entitlements */,
 				CBB3A3C82F0C2CCB00D10471 /* watch */,
 				CBB3A4612F0C2DCE00D10471 /* widgets */,
-				CBCC38CC2F2D69350013DFC7 /* iOS */,
+				CBCC38CC2F2D69350013DFC7 /* ios */,
 				CBB3A3C32F0C2CCB00D10471 /* Frameworks */,
 				EEE00003 /* Products */,
 				CBEB93D22EEB19BC008E365D /* Recovered References */,
 			);
-			sourceTree = "<group>";
-		};
-		EEE00002 /* Watch */ = {
-			isa = PBXGroup;
-			children = (
-				CBEB93D32EEB1B87008E365D /* watch.entitlements */,
-				EEE00004 /* App */,
-				EEE00005 /* Models */,
-				EEE00006 /* Views */,
-				EEE00007 /* ViewModels */,
-				EEE00008 /* Data */,
-				EEE00009 /* Utilities */,
-				BBB00016 /* Assets.xcassets */,
-				BBB00019 /* Info.plist */,
-			);
-			path = watch;
 			sourceTree = "<group>";
 		};
 		EEE00003 /* Products */ = {
@@ -281,95 +164,6 @@
 				CBCC38CB2F2D69350013DFC7 /* iOS.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		EEE00004 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00001 /* PetehomeApp.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		EEE00005 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00007 /* Day.swift */,
-				BBB00009 /* Exercise.swift */,
-				CBEB93D42EEB33AB008E365D /* WorkoutSection.swift */,
-				BBB00010 /* WorkoutRecord.swift */,
-				BBB00026 /* ExerciseLog.swift */,
-				BBB00052 /* PetehomeModels.swift */,
-				BBB00057 /* APIWorkoutModels.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		EEE00006 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00002 /* ContentView.swift */,
-				BBB00003 /* DayView.swift */,
-				BBB00004 /* SectionDetailView.swift */,
-				BBB00005 /* ExerciseRow.swift */,
-				BBB00006 /* HistoryView.swift */,
-				BBB00017 /* DayPickerView.swift */,
-				BBB00018 /* SettingsView.swift */,
-				BBB00022 /* StepCountCard.swift */,
-				BBB00023 /* WorkoutCompleteView.swift */,
-				BBB00055 /* UnifiedExerciseListView.swift */,
-				BBB00056 /* SettingsHistoryView.swift */,
-				BBB00030 /* WeightInputSheet.swift */,
-				BBB00031 /* ExerciseHistoryView.swift */,
-				BBB00032 /* DataExportView.swift */,
-				BBB00034 /* WorkoutFlowComponents.swift */,
-				BBB00045 /* FatigueIndicatorCard.swift */,
-				BBB00046 /* MonthlyCalendarView.swift */,
-				BBB00062 /* MapleWalkView.swift */,
-				BBB00063 /* MapleWalkSummaryView.swift */,
-				BBB00065 /* HRBroadcastView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		EEE00007 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00013 /* WorkoutViewModel.swift */,
-				BBB00014 /* HistoryViewModel.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		EEE00008 /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00012 /* CycleManager.swift */,
-				BBB00020 /* HealthKitManager.swift */,
-				BBB00027 /* PRManager.swift */,
-				BBB00028 /* DataExporter.swift */,
-				BBB00036 /* LocationManager.swift */,
-				BBB00038 /* ProgressAnalytics.swift */,
-				BBB00043 /* NotificationManager.swift */,
-				BBB00044 /* FatigueManager.swift */,
-				BBB00051 /* KeychainHelper.swift */,
-				BBB00053 /* PetehomeAPI.swift */,
-				BBB00054 /* SyncManager.swift */,
-				BBB00058 /* WorkoutMapper.swift */,
-				BBB00059 /* WorkoutDefinitionsCache.swift */,
-				BBB00060 /* WorkoutDataManager.swift */,
-				BBB00061 /* MapleWalkManager.swift */,
-				BBB00064 /* HRBroadcastManager.swift */,
-			);
-			path = Data;
-			sourceTree = "<group>";
-		};
-		EEE00009 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				BBB00015 /* Extensions.swift */,
-			);
-			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -410,7 +204,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CBCC38CC2F2D69350013DFC7 /* iOS */,
+				CBCC38CC2F2D69350013DFC7 /* ios */,
 			);
 			name = iOS;
 			packageProductDependencies = (
@@ -449,7 +243,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
-				LastUpgradeCheck = 2610;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					CBB3A45D2F0C2DCE00D10471 = {
 						CreatedOnToolsVersion = 26.1.1;
@@ -547,7 +341,6 @@
 				CODE_SIGN_ENTITLEMENTS = WidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = widgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
@@ -580,7 +373,6 @@
 				CODE_SIGN_ENTITLEMENTS = WidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = widgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
@@ -614,7 +406,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ios/Info.plist;
@@ -653,7 +444,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ios/Info.plist;
@@ -719,6 +509,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -784,6 +575,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 4K496YHEJE;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -814,7 +606,6 @@
 				CODE_SIGN_ENTITLEMENTS = watch/watch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = watch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
@@ -842,7 +633,6 @@
 				CODE_SIGN_ENTITLEMENTS = watch/watch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4K496YHEJE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = watch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = petehome;
