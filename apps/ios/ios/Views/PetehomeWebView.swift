@@ -7,6 +7,7 @@ struct PetehomeWebView: UIViewRepresentable {
     @Binding var isLoading: Bool
     @Binding var pendingNavigationURL: URL?
     var onRefresh: (() -> Void)?
+    var onBridgeAction: ((String) -> Void)?
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -42,6 +43,7 @@ struct PetehomeWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.onRefresh = onRefresh
+        context.coordinator.onBridgeAction = onBridgeAction
 
         if let pending = pendingNavigationURL {
             pendingNavigationURL = nil
@@ -63,12 +65,14 @@ struct PetehomeWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: PetehomeWebView
         var onRefresh: (() -> Void)?
+        var onBridgeAction: ((String) -> Void)?
         weak var webView: WKWebView?
         var lastLoadedURL: URL?
 
         init(_ parent: PetehomeWebView) {
             self.parent = parent
             self.onRefresh = parent.onRefresh
+            self.onBridgeAction = parent.onBridgeAction
             super.init()
         }
 
@@ -163,18 +167,56 @@ struct PetehomeWebView: UIViewRepresentable {
                   let body = message.body as? [String: Any],
                   let action = body["action"] as? String else { return }
 
-            Task { @MainActor in
-                switch action {
-                case "syncNow":
-                    _ = await HealthKitSyncManager.shared.syncRecent()
-                case "syncAll":
-                    _ = await HealthKitSyncManager.shared.syncAllHistory()
-                case "testConnection":
-                    _ = await HealthKitSyncManager.shared.testConnection()
-                default:
-                    break
+            switch action {
+            case "openSync", "openSettings":
+                onBridgeAction?(action)
+            default:
+                Task { @MainActor in
+                    switch action {
+                    case "syncNow":
+                        _ = await HealthKitSyncManager.shared.syncRecent()
+                        postSyncStatus()
+                    case "syncAll":
+                        _ = await HealthKitSyncManager.shared.syncAllHistory()
+                        postSyncStatus()
+                    case "testConnection":
+                        _ = await HealthKitSyncManager.shared.testConnection()
+                    default:
+                        break
+                    }
                 }
             }
+        }
+
+        func postSyncStatus() {
+            let manager = HealthKitSyncManager.shared
+            let lastSync: String
+            if let date = manager.lastSyncDate {
+                lastSync = ISO8601DateFormatter().string(from: date)
+            } else {
+                lastSync = ""
+            }
+            let inProgress = manager.isSyncing
+            let error = manager.lastSyncError ?? ""
+
+            let js = """
+            window.dispatchEvent(new CustomEvent('petehome:sync', {
+                detail: {
+                    lastSync: \(jsonString(lastSync)),
+                    inProgress: \(inProgress),
+                    error: \(jsonString(error))
+                }
+            }));
+            """
+            webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+
+        private func jsonString(_ value: String) -> String {
+            let escaped = value
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "\n", with: "\\n")
+            return "\"\(escaped)\""
         }
 
         private func isCoachHost(_ url: URL) -> Bool {

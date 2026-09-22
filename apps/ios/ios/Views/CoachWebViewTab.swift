@@ -1,62 +1,76 @@
 import SwiftUI
 
-/// Full coach desk in WKWebView at `{serverURL}/coach`.
 struct CoachWebViewTab: View {
-    @Bindable var navigation: AppNavigation
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isLoading = true
     @State private var serverReachable = true
     @State private var coachURL = CoachURLBuilder.coachDeskURL()
     @State private var reloadToken = UUID()
+    @State private var pendingNavigationURL: URL? = nil
+    @State private var showSyncSheet = false
+    @State private var showSettingsSheet = false
+    @State private var hasPerformedInitialSync = false
+    @State private var lastActiveDate: Date?
+
+    private let minimumSyncInterval: TimeInterval = 30 * 60
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if serverReachable {
-                    PetehomeWebView(
-                        url: coachURL,
-                        isLoading: $isLoading,
-                        pendingNavigationURL: .constant(nil),
-                        onRefresh: { reloadToken = UUID() }
-                    )
-                    .id(reloadToken)
-                    .ignoresSafeArea(edges: .bottom)
+        ZStack {
+            if serverReachable {
+                PetehomeWebView(
+                    url: coachURL,
+                    isLoading: $isLoading,
+                    pendingNavigationURL: $pendingNavigationURL,
+                    onRefresh: { reloadToken = UUID() },
+                    onBridgeAction: handleBridgeAction
+                )
+                .id(reloadToken)
+                .ignoresSafeArea()
 
-                    if isLoading {
-                        loadingOverlay
-                    }
-                } else {
-                    unreachableView
+                if isLoading {
+                    loadingOverlay
                 }
-            }
-            .background(Color.black)
-            .navigationTitle("Coach")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        reloadToken = UUID()
-                        coachURL = CoachURLBuilder.coachDeskURL()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-
-                    Button {
-                        UIApplication.shared.open(coachURL)
-                    } label: {
-                        Image(systemName: "safari")
-                    }
-                }
+            } else {
+                unreachableView
             }
         }
+        .background(Color.black)
         .task {
             await verifyServer()
+            _ = await HealthKitSyncManager.shared.requestHealthKitAuthorization()
         }
-        .onChange(of: navigation.pendingCoachPath) { _, path in
-            guard path != nil else { return }
-            coachURL = CoachURLBuilder.url(forPath: path)
-            navigation.pendingCoachPath = nil
-            reloadToken = UUID()
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                handleAppBecameActive()
+            } else if newPhase == .background {
+                BackgroundSyncManager.shared.scheduleBackgroundSync()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .coachNotificationTapped)) { notification in
+            let path = notification.userInfo?["path"] as? String
+            pendingNavigationURL = CoachURLBuilder.url(forPath: path)
+        }
+        .sheet(isPresented: $showSyncSheet) {
+            SyncView()
+                .presentationDetents([.large])
+                .preferredColorScheme(.dark)
+        }
+        .sheet(isPresented: $showSettingsSheet) {
+            iOSSettingsView()
+                .presentationDetents([.large])
+                .preferredColorScheme(.dark)
+        }
+    }
+
+    private func handleBridgeAction(_ action: String) {
+        switch action {
+        case "openSync":
+            showSyncSheet = true
+        case "openSettings":
+            showSettingsSheet = true
+        default:
+            break
         }
     }
 
@@ -99,9 +113,33 @@ struct CoachWebViewTab: View {
             coachURL = CoachURLBuilder.coachDeskURL()
         }
     }
+
+    private func handleAppBecameActive() {
+        let syncManager = HealthKitSyncManager.shared
+
+        guard syncManager.autoSyncEnabled else { return }
+
+        let shouldSync: Bool
+        if !hasPerformedInitialSync {
+            shouldSync = true
+            hasPerformedInitialSync = true
+        } else if let lastActive = lastActiveDate {
+            shouldSync = Date().timeIntervalSince(lastActive) >= minimumSyncInterval
+        } else {
+            shouldSync = true
+        }
+
+        lastActiveDate = Date()
+
+        if shouldSync {
+            Task {
+                _ = await syncManager.syncDailyMetrics(days: 1)
+            }
+        }
+    }
 }
 
 #Preview {
-    CoachWebViewTab(navigation: AppNavigation.shared)
+    CoachWebViewTab()
         .preferredColorScheme(.dark)
 }
