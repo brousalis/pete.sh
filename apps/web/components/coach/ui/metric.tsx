@@ -87,15 +87,20 @@ export function Metric({
  */
 export function MetricRow({
   children,
+  stack = false,
   className,
 }: {
   children: React.ReactNode
+  stack?: boolean
   className?: string
 }) {
   return (
     <div
       className={cn(
-        'grid grid-flow-col auto-cols-fr divide-x divide-line [&>*]:px-3 [&>*:first-child]:pl-0 [&>*:last-child]:pr-0',
+        'grid divide-line',
+        stack
+          ? 'grid-cols-2 gap-x-3 gap-y-4 sm:grid-flow-col sm:auto-cols-fr sm:grid-cols-none sm:gap-x-0 sm:gap-y-0 sm:divide-x sm:[&>*]:px-3 sm:[&>*:first-child]:pl-0 sm:[&>*:last-child]:pr-0'
+          : 'grid-flow-col auto-cols-fr divide-x [&>*]:px-3 [&>*:first-child]:pl-0 [&>*:last-child]:pr-0',
         className
       )}
     >

@@ -35,7 +35,7 @@ struct PetehomeiOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            CoachWebViewTab()
                 .onAppear {
                     BackgroundSyncManager.shared.scheduleBackgroundSync()
 

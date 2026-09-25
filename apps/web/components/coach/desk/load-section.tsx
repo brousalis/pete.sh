@@ -111,7 +111,7 @@ export function LoadSection() {
     <div className="space-y-6">
       {load ? (
         <Panel className="px-5 py-5">
-          <MetricRow>
+          <MetricRow stack>
             <Metric
               label="Fitness"
               value={load.current?.ctl ?? null}
@@ -309,7 +309,9 @@ function ProjectionPanel({ projection }: { projection: ProjectionView }) {
                   {over ? '+' : '−'}
                   {formatTime(Math.abs(split.deltaSeconds))}
                 </span>
-                <span className="t-label min-w-0 flex-1 truncate text-ink-3">{split.basis}</span>
+                <span className="hidden t-label min-w-0 flex-1 truncate text-ink-3 sm:block">
+                  {split.basis}
+                </span>
               </div>
             )
           })}

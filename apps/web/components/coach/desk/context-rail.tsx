@@ -5,6 +5,8 @@ import {
   Footprints,
   MessageSquare,
   MoreHorizontal,
+  RefreshCw,
+  Settings,
   Sun,
   Utensils,
   type LucideIcon,
@@ -22,6 +24,7 @@ import {
   type DeskPanel,
 } from '@/components/coach/desk/desk-types'
 import { toneClasses, type Tone } from '@/components/coach/ui/tone'
+import { useNativeBridge } from '@/hooks/use-native-bridge'
 import type { TodayResponse } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
@@ -57,6 +60,7 @@ export function ContextRail({
   className?: string
 }) {
   const readiness = today?.readiness ?? null
+  const native = useNativeBridge()
 
   return (
     <section className={cn('flex min-h-0 min-w-0 flex-col bg-surface-0', className)}>
@@ -78,7 +82,39 @@ export function ContextRail({
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
+            {native.isNative ? (
+              <>
+                <button
+                  type="button"
+                  onClick={native.openSync}
+                  title={
+                    native.syncStatus?.inProgress
+                      ? 'Syncing…'
+                      : native.syncStatus?.lastSync
+                        ? `Last sync ${formatSyncTime(native.syncStatus.lastSync)}`
+                        : 'Sync HealthKit'
+                  }
+                  className="grid size-8 place-items-center rounded-control text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
+                >
+                  <RefreshCw
+                    className={cn(
+                      'size-4',
+                      native.syncStatus?.inProgress && 'animate-spin text-brand'
+                    )}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={native.openSettings}
+                  title="iPhone settings"
+                  className="grid size-8 place-items-center rounded-control text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
+                >
+                  <Settings className="size-4" />
+                </button>
+              </>
+            ) : null}
+
             {readiness ? (
               <button
                 type="button"
@@ -234,4 +270,16 @@ function readinessTone(score: number): Tone {
   if (score >= 55) return 'info'
   if (score >= 40) return 'caution'
   return 'alert'
+}
+
+function formatSyncTime(iso: string): string {
+  const date = new Date(iso)
+  if (isNaN(date.getTime())) return ''
+  const diffMs = Date.now() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  return `${Math.floor(diffHr / 24)}d ago`
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, ChevronRight, Loader2 } from 'lucide-react'
+import { Bell, ChevronRight, History, Loader2, RefreshCw, Settings, Smartphone } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -11,9 +11,11 @@ import { type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useNativeBridge } from '@/hooks/use-native-bridge'
 import type { SpendSummaryView } from '@/lib/types/coach-ui.types'
 
 export function RailMore() {
+  const native = useNativeBridge()
   const [spend, setSpend] = useState<SpendSummaryView | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -169,6 +171,66 @@ export function RailMore() {
         </Section>
       ) : null}
 
+      {native.isNative ? (
+        <Section title="iPhone">
+          <Panel className="divide-y divide-line py-0">
+            <div className="flex items-center gap-3 py-3.5">
+              <Smartphone className="size-4 shrink-0 text-ink-3" />
+              <div className="min-w-0 flex-1">
+                <p className="t-body text-ink-1">HealthKit sync</p>
+                <p className="mt-0.5 t-label text-ink-3">
+                  {native.syncStatus?.inProgress
+                    ? 'Syncing…'
+                    : native.syncStatus?.error
+                      ? native.syncStatus.error
+                      : native.syncStatus?.lastSync
+                        ? `Last synced ${formatSyncAge(native.syncStatus.lastSync)}`
+                        : 'Not yet synced this session'}
+                </p>
+              </div>
+              {native.syncStatus?.inProgress ? (
+                <RefreshCw className="size-4 animate-spin text-brand" />
+              ) : null}
+            </div>
+            <div className="flex items-center gap-3 py-3.5">
+              <RefreshCw className="size-4 shrink-0 text-ink-3" />
+              <div className="min-w-0 flex-1">
+                <p className="t-body text-ink-1">Sync now</p>
+                <p className="mt-0.5 t-label text-ink-3">Recent workouts + today's metrics</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={native.syncNow}
+                disabled={native.syncStatus?.inProgress}
+              >
+                Sync
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 py-3.5">
+              <History className="size-4 shrink-0 text-ink-3" />
+              <div className="min-w-0 flex-1">
+                <p className="t-body text-ink-1">Full sync sheet</p>
+                <p className="mt-0.5 t-label text-ink-3">Sync history, advanced controls</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={native.openSync}>
+                Open
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 py-3.5">
+              <Settings className="size-4 shrink-0 text-ink-3" />
+              <div className="min-w-0 flex-1">
+                <p className="t-body text-ink-1">iPhone settings</p>
+                <p className="mt-0.5 t-label text-ink-3">Server URL, API key</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={native.openSettings}>
+                Open
+              </Button>
+            </div>
+          </Panel>
+        </Section>
+      ) : null}
+
       {!loading ? (
         <Section title="Device">
           <Panel className="divide-y divide-line py-0">
@@ -247,6 +309,18 @@ function SpendBar({
       ) : null}
     </div>
   )
+}
+
+function formatSyncAge(iso: string): string {
+  const date = new Date(iso)
+  if (isNaN(date.getTime())) return ''
+  const diffMs = Date.now() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  return `${Math.floor(diffHr / 24)}d ago`
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {

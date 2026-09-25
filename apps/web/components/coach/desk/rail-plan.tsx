@@ -1,9 +1,17 @@
 'use client'
 
-import { AlertTriangle, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  X,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { LoadSection } from '@/components/coach/desk/load-section'
 import { PlanDatePicker } from '@/components/coach/desk/plan-date-picker'
@@ -20,11 +28,17 @@ import {
   isValidIsoDate,
   shiftChicagoDate,
 } from '@/lib/coach-dates'
-import type { PlanWeekView, TodaySession, YearPlanView } from '@/lib/types/coach-ui.types'
+import type {
+  PlanWeekView,
+  TodaySession,
+  YearPlanView,
+} from '@/lib/types/coach-ui.types'
 import { SPORT_LABELS } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const DAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const SLOT_ORDER = ['morning', 'afternoon', 'evening', 'anytime', 'primary']
 
@@ -49,6 +63,8 @@ export function RailPlan() {
   const [movingSession, setMovingSession] = useState<TodaySession | null>(null)
   const [moving, setMoving] = useState(false)
   const [moveResult, setMoveResult] = useState<string | null>(null)
+  const detailRef = useRef<HTMLElement | null>(null)
+  const revealDetailRef = useRef(false)
 
   const setDateParam = useCallback(
     (date: string | null) => {
@@ -64,7 +80,10 @@ export function RailPlan() {
   const jumpToDate = useCallback(
     (date: string, opts?: { syncUrl?: boolean }) => {
       const nextOffset = alignedWeekOffset(date)
-      const windowStart = addDays(chicagoMondayOf(chicagoToday()), nextOffset * 7)
+      const windowStart = addDays(
+        chicagoMondayOf(chicagoToday()),
+        nextOffset * 7
+      )
       const firstWeekEnd = addDays(windowStart, 6)
       setSelectedDate(date)
       setOffset(nextOffset)
@@ -89,16 +108,16 @@ export function RailPlan() {
         setWeeks(loaded)
         setYearPlan((payload.data.yearPlan as YearPlanView | null) ?? null)
 
-        setSelectedDate((current) => {
+        setSelectedDate(current => {
           if (current && current >= from && current <= to) return current
           // Week pager moved past the selection — drop it rather than show
           // an empty day detail for a date that isn't in this window.
           if (current && (current < from || current > to)) return null
 
-          const dated = loaded.flatMap((week) => week.sessions)
+          const dated = loaded.flatMap(week => week.sessions)
           const today = chicagoToday()
-          if (dated.some((session) => session.sessionDate === today)) return today
-          return dated.find((session) => session.sessionDate)?.sessionDate ?? null
+          if (dated.some(session => session.sessionDate === today)) return today
+          return dated.find(session => session.sessionDate)?.sessionDate ?? null
         })
       }
     } finally {
@@ -126,6 +145,12 @@ export function RailPlan() {
     if (!selectedDate && !urlDate) return
     setDateParam(selectedDate)
   }, [selectedDate, searchParams, setDateParam])
+  useEffect(() => {
+    if (!revealDetailRef.current) return
+    revealDetailRef.current = false
+    if (!selectedDate || window.innerWidth >= 768) return
+    detailRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selectedDate])
 
   async function moveSession(session: TodaySession, toDate: string) {
     setMoving(true)
@@ -149,7 +174,7 @@ export function RailPlan() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ dryRun: true, proposal }),
-      }).then((response) => response.json())
+      }).then(response => response.json())
 
       const report = dryRun?.data?.guardrailReport
       const blocking =
@@ -170,7 +195,7 @@ export function RailPlan() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ proposal }),
-      }).then((response) => response.json())
+      }).then(response => response.json())
 
       if (applied?.data?.applied) {
         setMoveResult(null)
@@ -188,10 +213,11 @@ export function RailPlan() {
   const visibleWeeks = showMore ? weeks : weeks.slice(0, 1)
   const peakTss = Math.max(
     1,
-    ...weeks.flatMap((w) =>
-      w.sessions.map((s) => {
+    ...weeks.flatMap(w =>
+      w.sessions.map(s => {
         const actual = s.activity?.tss
-        if (actual != null && actual > 0) return Math.max(s.plannedLoad ?? 0, actual)
+        if (actual != null && actual > 0)
+          return Math.max(s.plannedLoad ?? 0, actual)
         return s.plannedLoad ?? 0
       })
     )
@@ -199,8 +225,8 @@ export function RailPlan() {
 
   const selectedSessions = selectedDate
     ? weeks
-        .flatMap((week) => week.sessions)
-        .filter((session) => session.sessionDate === selectedDate)
+        .flatMap(week => week.sessions)
+        .filter(session => session.sessionDate === selectedDate)
         .sort((a, b) => slotRank(a.slot) - slotRank(b.slot))
     : []
 
@@ -211,7 +237,8 @@ export function RailPlan() {
       }
       return
     }
-    setSelectedDate((current) => (current === date ? null : date))
+    revealDetailRef.current = true
+    setSelectedDate(current => (current === date ? null : date))
   }
 
   function goToday() {
@@ -229,30 +256,30 @@ export function RailPlan() {
       })
 
   return (
-    <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6 px-4 py-5 sm:px-5 sm:py-6 md:px-8 md:py-8">
+      <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <h1 className="t-display">Plan</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/coach/tests"
-            className="t-label font-medium text-ink-3 underline-offset-4 transition-colors hover:text-ink-1 hover:underline"
+            className="t-label text-ink-3 hover:text-ink-1 shrink-0 font-medium underline-offset-4 transition-colors hover:underline"
           >
             Baseline tests
           </Link>
-          <div className="flex items-center gap-0.5 rounded-control bg-surface-1 p-0.5">
+          <div className="rounded-control bg-surface-1 flex items-center gap-0.5 p-0.5">
             <Button
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="text-ink-2 size-10 sm:size-8"
               aria-label="Previous four weeks"
-              onClick={() => setOffset((v) => v - 4)}
+              onClick={() => setOffset(v => v - 4)}
             >
               <ChevronLeft className="size-4" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 gap-1.5 px-2.5 t-label font-medium text-ink-2"
+              className="t-label text-ink-2 h-8 gap-1.5 px-2.5 font-medium"
               onClick={() => setPickerOpen(true)}
               aria-label="Jump to date"
             >
@@ -262,18 +289,20 @@ export function RailPlan() {
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-3 t-label font-medium text-ink-2"
+              className="t-label text-ink-2 h-8 px-3 font-medium"
               onClick={goToday}
-              disabled={offset === 0 && headerIsToday && selectedDate === chicagoToday()}
+              disabled={
+                offset === 0 && headerIsToday && selectedDate === chicagoToday()
+              }
             >
               Today
             </Button>
             <Button
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="text-ink-2 size-10 sm:size-8"
               aria-label="Next four weeks"
-              onClick={() => setOffset((v) => v + 4)}
+              onClick={() => setOffset(v => v + 4)}
             >
               <ChevronRight className="size-4" />
             </Button>
@@ -285,7 +314,7 @@ export function RailPlan() {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         date={selectedDate}
-        onSelect={(date) => jumpToDate(date)}
+        onSelect={date => jumpToDate(date)}
       />
 
       {loading && !yearPlan ? <YearPlanSummarySkeleton /> : null}
@@ -293,21 +322,27 @@ export function RailPlan() {
 
       {moveResult ? (
         <Panel tone="alert" className="flex gap-3">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-tone-alert" />
+          <AlertTriangle className="text-tone-alert mt-0.5 size-4 shrink-0" />
           <p className="t-body text-ink-2">{moveResult}</p>
         </Panel>
       ) : null}
 
       {movingSession ? (
-        <Panel tone="brand" className="flex items-center justify-between gap-3 py-2.5">
-          <p className="min-w-0 t-body text-ink-2">
-            Moving <span className="font-medium text-ink-1">{movingSession.title}</span> — pick a
-            day
+        <Panel
+          tone="brand"
+          className="flex items-center justify-between gap-3 py-2.5"
+        >
+          <p className="t-body text-ink-2 min-w-0">
+            Moving{' '}
+            <span className="text-ink-1 font-medium">
+              {movingSession.title}
+            </span>{' '}
+            — pick a day
           </p>
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 shrink-0 text-ink-2"
+            className="text-ink-2 h-7 shrink-0"
             disabled={moving}
             onClick={() => {
               setMovingSession(null)
@@ -323,13 +358,14 @@ export function RailPlan() {
       <LoadSection />
 
       {loading ? (
-        <div className="flex justify-center border-t border-line py-16">
-          <Loader2 className="size-4 animate-spin text-ink-3" />
+        <div className="border-line flex justify-center border-t py-16">
+          <Loader2 className="text-ink-3 size-4 animate-spin" />
         </div>
       ) : weeks.length === 0 ? (
-        <div className="space-y-6 border-t border-line pt-6">
+        <div className="border-line space-y-6 border-t pt-6">
           <EmptyNote>
-            No sessions in this window. The Sunday planning job fills the coming week.
+            No sessions in this window. The Sunday planning job fills the coming
+            week.
           </EmptyNote>
           {selectedDate && !movingSession ? (
             <DayDetail
@@ -337,16 +373,19 @@ export function RailPlan() {
               sessions={[]}
               onMove={() => undefined}
               onClose={() => setSelectedDate(null)}
-              onShiftDay={(delta) => jumpToDate(shiftChicagoDate(selectedDate, delta))}
+              onShiftDay={delta =>
+                jumpToDate(shiftChicagoDate(selectedDate, delta))
+              }
+              sectionRef={null as unknown as RefObject<HTMLElement | null>}
             />
           ) : null}
         </div>
       ) : (
-        <div className="space-y-6 border-t border-line pt-6">
+        <div className="border-line space-y-6 border-t pt-6">
           {/* The week strip is navigation: it wants width, not height. The
               selected day is the content, so it gets the full column below. */}
           <div className="space-y-5">
-            {visibleWeeks.map((week) => (
+            {visibleWeeks.map(week => (
               <WeekBlock
                 key={week.weekStart}
                 week={week}
@@ -360,10 +399,12 @@ export function RailPlan() {
             {weeks.length > 1 ? (
               <button
                 type="button"
-                onClick={() => setShowMore((value) => !value)}
-                className="w-full rounded-control border border-dashed border-line py-2 t-label font-medium text-ink-3 transition-colors hover:border-line-strong hover:text-ink-1"
+                onClick={() => setShowMore(value => !value)}
+                className="rounded-control border-line t-label text-ink-3 hover:border-line-strong hover:text-ink-1 w-full border border-dashed py-2 font-medium transition-colors"
               >
-                {showMore ? 'Show this week only' : `Show the next ${weeks.length - 1} weeks`}
+                {showMore
+                  ? 'Show this week only'
+                  : `Show the next ${weeks.length - 1} weeks`}
               </button>
             ) : null}
           </div>
@@ -372,12 +413,15 @@ export function RailPlan() {
             <DayDetail
               date={selectedDate}
               sessions={selectedSessions}
-              onMove={(session) => {
+              sectionRef={detailRef}
+              onMove={session => {
                 setMoveResult(null)
                 setMovingSession(session)
               }}
               onClose={() => setSelectedDate(null)}
-              onShiftDay={(delta) => jumpToDate(shiftChicagoDate(selectedDate, delta))}
+              onShiftDay={delta =>
+                jumpToDate(shiftChicagoDate(selectedDate, delta))
+              }
             />
           ) : null}
         </div>
@@ -389,36 +433,44 @@ export function RailPlan() {
 function DayDetail({
   date,
   sessions,
+  sectionRef,
   onMove,
   onClose,
   onShiftDay,
 }: {
   date: string
   sessions: TodaySession[]
+  sectionRef: RefObject<HTMLElement | null>
   onMove: (session: TodaySession) => void
   onClose: () => void
   onShiftDay: (delta: number) => void
 }) {
-  const plannedTss = sessions.reduce((sum, session) => sum + (session.plannedLoad ?? 0), 0)
-  const minutes = sessions.reduce((sum, session) => sum + (session.durationMinutes ?? 0), 0)
+  const plannedTss = sessions.reduce(
+    (sum, session) => sum + (session.plannedLoad ?? 0),
+    0
+  )
+  const minutes = sessions.reduce(
+    (sum, session) => sum + (session.durationMinutes ?? 0),
+    0
+  )
   const isToday = date === chicagoToday()
 
   return (
-    <section className="space-y-3.5 border-t border-line pt-5">
+    <section ref={sectionRef} className="border-line space-y-3.5 border-t pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <div className="flex items-center gap-0.5 rounded-control bg-surface-1 p-0.5">
+          <div className="rounded-control bg-surface-1 flex items-center gap-0.5 p-0.5">
             <Button
               type="button"
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="text-ink-2 size-8"
               aria-label="Previous day"
               onClick={() => onShiftDay(-1)}
             >
               <ChevronLeft className="size-4" />
             </Button>
-            <h2 className="min-w-[10rem] px-1 text-center t-title">
+            <h2 className="t-title min-w-[10rem] px-1 text-center">
               {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -429,7 +481,7 @@ function DayDetail({
               type="button"
               size="icon"
               variant="ghost"
-              className="size-8 text-ink-2"
+              className="text-ink-2 size-8"
               aria-label="Next day"
               onClick={() => onShiftDay(1)}
             >
@@ -439,7 +491,9 @@ function DayDetail({
           {sessions.length > 0 ? (
             <div className="flex items-baseline gap-3">
               {minutes > 0 ? <Tally value={minutes} unit="min" /> : null}
-              {plannedTss > 0 ? <Tally value={plannedTss} unit="TSS" tip="tss" /> : null}
+              {plannedTss > 0 ? (
+                <Tally value={plannedTss} unit="TSS" tip="tss" />
+              ) : null}
             </div>
           ) : null}
           {isToday ? <Chip tone="brand">Today</Chip> : null}
@@ -447,7 +501,7 @@ function DayDetail({
         <button
           type="button"
           onClick={onClose}
-          className="t-label font-medium text-ink-3 transition-colors hover:text-ink-1"
+          className="rounded-control t-label text-ink-3 hover:text-ink-1 -my-1.5 px-2 py-1.5 font-medium transition-colors"
         >
           Close
         </button>
@@ -460,8 +514,8 @@ function DayDetail({
       ) : (
         // Auto-fit keeps each card near a comfortable reading measure: two up
         // on a wide desk, one up when the column narrows.
-        <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(28rem,1fr))]">
-          {sessions.map((session) => (
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(28rem,100%),1fr))] items-start gap-3">
+          {sessions.map(session => (
             <SessionCard
               key={session.id}
               session={session}
@@ -475,7 +529,15 @@ function DayDetail({
   )
 }
 
-function Tally({ value, unit, tip }: { value: number; unit: string; tip?: 'tss' }) {
+function Tally({
+  value,
+  unit,
+  tip,
+}: {
+  value: number
+  unit: string
+  tip?: 'tss'
+}) {
   return (
     <span className="inline-flex items-baseline gap-1">
       <span className="t-num t-num-sm text-ink-1">{value}</span>
@@ -496,30 +558,34 @@ function YearPlanSummarySkeleton() {
     <Panel className="px-5 py-5" aria-hidden>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-2">
-          <div className="h-5 w-44 animate-pulse rounded-chip bg-surface-3" />
-          <div className="h-3.5 w-64 max-w-full animate-pulse rounded-chip bg-surface-3" />
+          <div className="rounded-chip bg-surface-3 h-5 w-44 animate-pulse" />
+          <div className="rounded-chip bg-surface-3 h-3.5 w-64 max-w-full animate-pulse" />
         </div>
         <div className="flex items-baseline gap-4">
           <div className="space-y-1.5 text-right">
-            <div className="ml-auto h-7 w-12 animate-pulse rounded-chip bg-surface-3" />
-            <div className="ml-auto h-3 w-14 animate-pulse rounded-chip bg-surface-3" />
+            <div className="rounded-chip bg-surface-3 ml-auto h-7 w-12 animate-pulse" />
+            <div className="rounded-chip bg-surface-3 ml-auto h-3 w-14 animate-pulse" />
           </div>
           <div className="space-y-1.5 text-right">
-            <div className="ml-auto h-7 w-14 animate-pulse rounded-chip bg-surface-3" />
-            <div className="ml-auto h-3 w-10 animate-pulse rounded-chip bg-surface-3" />
+            <div className="rounded-chip bg-surface-3 ml-auto h-7 w-14 animate-pulse" />
+            <div className="rounded-chip bg-surface-3 ml-auto h-3 w-10 animate-pulse" />
           </div>
         </div>
       </div>
       <div className="mt-4 flex gap-0.5">
         {[18, 22, 28, 16].map((span, index) => (
-          <div key={index} className="min-w-0 flex-none" style={{ flexBasis: `${span}%` }}>
-            <div className="h-1.5 animate-pulse rounded-full bg-surface-3" />
-            <div className="mt-1.5 h-3 w-3/4 animate-pulse rounded-chip bg-surface-3" />
+          <div
+            key={index}
+            className="min-w-0 flex-none"
+            style={{ flexBasis: `${span}%` }}
+          >
+            <div className="bg-surface-3 h-1.5 animate-pulse rounded-full" />
+            <div className="rounded-chip bg-surface-3 mt-1.5 h-3 w-3/4 animate-pulse" />
           </div>
         ))}
       </div>
-      <div className="mt-4 border-t border-line pt-3.5">
-        <div className="h-4 w-56 max-w-full animate-pulse rounded-chip bg-surface-3" />
+      <div className="border-line mt-4 border-t pt-3.5">
+        <div className="rounded-chip bg-surface-3 h-4 w-56 max-w-full animate-pulse" />
       </div>
     </Panel>
   )
@@ -531,13 +597,18 @@ function YearPlanSummarySkeleton() {
  */
 function YearPlanSummary({ plan }: { plan: YearPlanView }) {
   const [expanded, setExpanded] = useState(false)
-  const raceLabel = new Date(`${plan.goalRaceDate}T12:00:00`).toLocaleDateString('en-US', {
+  const raceLabel = new Date(
+    `${plan.goalRaceDate}T12:00:00`
+  ).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   })
-  const goalLabel = plan.goalTimeSeconds ? formatGoalTime(plan.goalTimeSeconds) : null
-  const currentPhase = plan.phases.find((phase) => phase.current) ?? plan.phases[0]
+  const goalLabel = plan.goalTimeSeconds
+    ? formatGoalTime(plan.goalTimeSeconds)
+    : null
+  const currentPhase =
+    plan.phases.find(phase => phase.current) ?? plan.phases[0]
   const week = plan.currentWeek ?? 0
 
   return (
@@ -545,27 +616,31 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="t-title">{plan.name}</p>
-          <p className="mt-1 t-label text-ink-3">
-            {[plan.goalRaceName ?? 'Goal race', raceLabel, goalLabel].filter(Boolean).join(' · ')}
+          <p className="t-label text-ink-3 mt-1">
+            {[plan.goalRaceName ?? 'Goal race', raceLabel, goalLabel]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
         </div>
         <div className="flex items-baseline gap-4">
           <div className="text-right">
-            <p className="t-num t-num-lg text-ink-1">{Math.max(0, plan.daysToRace)}</p>
-            <p className="mt-0.5 t-micro text-ink-3">days out</p>
+            <p className="t-num t-num-lg text-ink-1">
+              {Math.max(0, plan.daysToRace)}
+            </p>
+            <p className="t-micro text-ink-3 mt-0.5">days out</p>
           </div>
           <div className="text-right">
             <p className="t-num t-num-lg text-ink-2">
               {week}
-              <span className="text-[0.6em] text-ink-3">/{TOTAL_WEEKS}</span>
+              <span className="text-ink-3 text-[0.6em]">/{TOTAL_WEEKS}</span>
             </p>
-            <p className="mt-0.5 t-micro text-ink-3">weeks</p>
+            <p className="t-micro text-ink-3 mt-0.5">weeks</p>
           </div>
         </div>
       </div>
 
       <div className="mt-4 flex gap-0.5" role="presentation">
-        {plan.phases.map((phase) => {
+        {plan.phases.map(phase => {
           const span = phase.weekTo - phase.weekFrom + 1
           const filled =
             week >= phase.weekTo
@@ -580,15 +655,18 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
               style={{ flexBasis: `${(span / TOTAL_WEEKS) * 100}%` }}
               title={`${phase.label} · weeks ${phase.weekFrom}–${phase.weekTo}`}
             >
-              <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
+              <div className="bg-surface-3 h-1.5 overflow-hidden rounded-full">
                 <div
-                  className={cn('h-full rounded-full', phase.current ? 'bg-brand' : 'bg-ink-3')}
+                  className={cn(
+                    'h-full rounded-full',
+                    phase.current ? 'bg-brand' : 'bg-ink-3'
+                  )}
                   style={{ width: `${filled * 100}%` }}
                 />
               </div>
               <p
                 className={cn(
-                  'mt-1.5 truncate t-micro',
+                  't-micro mt-1.5 hidden truncate sm:block',
                   phase.current ? 'text-ink-1' : 'text-ink-3'
                 )}
               >
@@ -599,27 +677,36 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
         })}
       </div>
 
+      {currentPhase ? (
+        <p className="t-micro text-ink-3 mt-2 sm:hidden">
+          <span className="text-ink-1">{currentPhase.label}</span> · weeks{' '}
+          {currentPhase.weekFrom}–{currentPhase.weekTo}
+        </p>
+      ) : null}
+
       <button
         type="button"
-        onClick={() => setExpanded((value) => !value)}
+        onClick={() => setExpanded(value => !value)}
         aria-expanded={expanded}
-        className="mt-4 flex w-full items-start justify-between gap-3 border-t border-line pt-3.5 text-left text-ink-2 transition-colors hover:text-ink-1"
+        className="border-line text-ink-2 hover:text-ink-1 mt-4 flex w-full items-start justify-between gap-3 border-t pt-3.5 text-left transition-colors"
       >
-        <span className="min-w-0 t-body">
+        <span className="t-body min-w-0">
           {plan.currentBlock ? (
-            <span className="font-medium text-ink-1">
+            <span className="text-ink-1 font-medium">
               Block {plan.currentBlock.number}: {plan.currentBlock.name}
             </span>
           ) : currentPhase ? (
             <>
-              <span className="font-medium text-ink-1">{currentPhase.label}</span> —{' '}
-              {currentPhase.intent}
+              <span className="text-ink-1 font-medium">
+                {currentPhase.label}
+              </span>{' '}
+              — {currentPhase.intent}
             </>
           ) : null}
         </span>
         <ChevronDown
           className={cn(
-            'mt-0.5 size-4 shrink-0 text-ink-3 transition-transform duration-200',
+            'text-ink-3 mt-0.5 size-4 shrink-0 transition-transform duration-200',
             expanded && 'rotate-180'
           )}
         />
@@ -629,31 +716,41 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
         <div className="animate-fade-in-up mt-3 space-y-2.5">
           {plan.currentBlock && plan.currentBlock.goals.length > 0 ? (
             <ul className="space-y-1.5">
-              {plan.currentBlock.goals.map((goal) => (
-                <li key={goal} className="flex gap-2 t-label text-ink-2">
-                  <span className="mt-1.5 size-1 shrink-0 rounded-full bg-brand" aria-hidden />
+              {plan.currentBlock.goals.map(goal => (
+                <li key={goal} className="t-label text-ink-2 flex gap-2">
+                  <span
+                    className="bg-brand mt-1.5 size-1 shrink-0 rounded-full"
+                    aria-hidden
+                  />
                   {goal}
                 </li>
               ))}
             </ul>
           ) : null}
-          <ol className="space-y-1 border-t border-line pt-2.5">
-            {plan.phases.map((phase) => (
+          <ol className="border-line space-y-1 border-t pt-2.5">
+            {plan.phases.map(phase => (
               <li
                 key={`${phase.weekFrom}-${phase.weekTo}`}
                 className={cn(
-                  'flex gap-3 rounded-chip px-2 py-1.5',
+                  'rounded-chip flex gap-3 px-2 py-1.5',
                   phase.current ? 'bg-surface-2' : ''
                 )}
               >
-                <span className="t-num t-num-sm w-12 shrink-0 text-ink-3">
+                <span className="t-num t-num-sm text-ink-3 w-12 shrink-0">
                   {phase.weekFrom}–{phase.weekTo}
                 </span>
                 <span className="min-w-0">
-                  <span className={cn('t-label font-medium', phase.current ? 'text-ink-1' : 'text-ink-2')}>
+                  <span
+                    className={cn(
+                      't-label font-medium',
+                      phase.current ? 'text-ink-1' : 'text-ink-2'
+                    )}
+                  >
                     {phase.label}
                   </span>
-                  <span className="block t-label text-ink-3">{phase.intent}</span>
+                  <span className="t-label text-ink-3 block">
+                    {phase.intent}
+                  </span>
                 </span>
               </li>
             ))}
@@ -667,7 +764,9 @@ function YearPlanSummary({ plan }: { plan: YearPlanView }) {
 function formatGoalTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}` : `${minutes} min`
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}`
+    : `${minutes} min`
 }
 
 function WeekBlock({
@@ -685,12 +784,16 @@ function WeekBlock({
   moving: boolean
   onDayClick: (date: string) => void
 }) {
-  const days = Array.from({ length: 7 }, (_, index) => addDays(week.weekStart, index))
+  const days = Array.from({ length: 7 }, (_, index) =>
+    addDays(week.weekStart, index)
+  )
   const today = chicagoToday()
 
   return (
     <Section
-      title={`Week of ${new Date(`${week.weekStart}T12:00:00`).toLocaleDateString('en-US', {
+      title={`Week of ${new Date(
+        `${week.weekStart}T12:00:00`
+      ).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
       })}`}
@@ -703,13 +806,14 @@ function WeekBlock({
         </span>
       }
     >
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {days.map((date, index) => (
           <DayCell
             key={date}
             date={date}
             dayLabel={DAY_NAMES[index] ?? ''}
-            sessions={week.sessions.filter((s) => s.sessionDate === date)}
+            dayInitial={DAY_INITIALS[index] ?? ''}
+            sessions={week.sessions.filter(s => s.sessionDate === date)}
             peakTss={peakTss}
             isToday={date === today}
             isSelected={selectedDate === date}
@@ -726,6 +830,7 @@ function WeekBlock({
 function DayCell({
   date,
   dayLabel,
+  dayInitial,
   sessions,
   peakTss,
   isToday,
@@ -736,6 +841,7 @@ function DayCell({
 }: {
   date: string
   dayLabel: string
+  dayInitial: string
   sessions: TodaySession[]
   peakTss: number
   isToday: boolean
@@ -744,7 +850,8 @@ function DayCell({
   moving: boolean
   onDayClick: (date: string) => void
 }) {
-  const isMoveTarget = movingSession != null && movingSession.sessionDate !== date
+  const isMoveTarget =
+    movingSession != null && movingSession.sessionDate !== date
   const isMoveOrigin = movingSession?.sessionDate === date
   const disabled = moving || (movingSession != null && !isMoveTarget)
 
@@ -754,17 +861,21 @@ function DayCell({
       disabled={disabled}
       onClick={() => onDayClick(date)}
       aria-pressed={isSelected}
+      aria-label={dayCellLabel(date, dayLabel, sessions)}
       className={cn(
-        'flex min-h-[108px] flex-col gap-2 rounded-control p-2.5 text-left transition-colors',
+        'rounded-control flex min-h-[76px] flex-col gap-1.5 p-1.5 text-left transition-colors sm:min-h-[108px] sm:gap-2 sm:p-2.5',
         isSelected ? 'bg-surface-3' : 'bg-surface-1 hover:bg-surface-2',
-        isToday && !isSelected && 'ring-1 ring-brand/50 ring-inset',
-        isMoveTarget && 'ring-1 ring-brand ring-inset ring-dashed',
+        isToday && !isSelected && 'ring-brand/50 ring-1 ring-inset',
+        isMoveTarget && 'ring-brand ring-dashed ring-1 ring-inset',
         isMoveOrigin && 'opacity-50',
         disabled && 'cursor-default opacity-40'
       )}
     >
-      <div className="flex items-baseline justify-between gap-1">
-        <span className="t-micro text-ink-3">{dayLabel}</span>
+      <div className="flex flex-col items-center gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-1">
+        <span className="t-micro text-ink-3">
+          <span className="sm:hidden">{dayInitial}</span>
+          <span className="hidden sm:inline">{dayLabel}</span>
+        </span>
         <span
           className={cn(
             't-num t-num-md',
@@ -777,18 +888,26 @@ function DayCell({
 
       <div className="min-w-0 flex-1 space-y-1.5">
         {sessions.length === 0 ? (
-          <span className="block t-label text-ink-3/70">Rest</span>
+          <span className="t-label text-ink-3/70 block">
+            <span className="block text-center sm:hidden" aria-hidden>
+              ·
+            </span>
+            <span className="hidden sm:inline">Rest</span>
+          </span>
         ) : (
-          sessions.map((session) => {
+          sessions.map(session => {
             const sport = sportClasses(session.sport)
-            const linked = session.status === 'completed' && session.activity != null
+            const linked =
+              session.status === 'completed' && session.activity != null
             const actualMin =
               linked && session.activity
                 ? Math.round(session.activity.durationSeconds / 60)
                 : null
             const durationLabel = actualMin ?? session.durationMinutes
             const load =
-              linked && session.activity?.tss != null && session.activity.tss > 0
+              linked &&
+              session.activity?.tss != null &&
+              session.activity.tss > 0
                 ? session.activity.tss
                 : (session.plannedLoad ?? 0)
             return (
@@ -800,23 +919,26 @@ function DayCell({
                   session.status === 'completed' && !linked && 'opacity-50'
                 )}
               >
-                <span className="flex items-baseline gap-1.5">
+                <span className="hidden items-baseline gap-1.5 sm:flex">
                   <span
-                    className={cn('size-1.5 shrink-0 translate-y-[-1px] rounded-full', sport.dot)}
+                    className={cn(
+                      'size-1.5 shrink-0 translate-y-[-1px] rounded-full',
+                      sport.dot
+                    )}
                     aria-hidden
                   />
-                  <span className="truncate t-label text-ink-1">
+                  <span className="t-label text-ink-1 truncate">
                     {SPORT_LABELS[session.sport] ?? session.sport}
                   </span>
                   {durationLabel ? (
-                    <span className="t-num ml-auto shrink-0 text-[11px] text-ink-3">
+                    <span className="t-num text-ink-3 ml-auto shrink-0 text-[11px]">
                       {durationLabel}′
                     </span>
                   ) : null}
                 </span>
                 {/* Bar length encodes load (actual when linked), so the weekly
                     shape is visible without opening a single day. */}
-                <span className="mt-1 block h-[3px] overflow-hidden rounded-full bg-surface-3">
+                <span className="bg-surface-3 block h-1.5 overflow-hidden rounded-full sm:mt-1 sm:h-[3px]">
                   <span
                     className={cn('block h-full rounded-full', sport.bar)}
                     style={{
@@ -830,13 +952,37 @@ function DayCell({
         )}
       </div>
 
-      {sessions.some((s) => s.guardrail && !s.guardrail.passed) ? (
-        <Chip tone="alert" className="px-1.5 py-0">
-          blocked
-        </Chip>
+      {sessions.some(s => s.guardrail && !s.guardrail.passed) ? (
+        <>
+          <AlertTriangle
+            className="text-tone-alert size-3 shrink-0 sm:hidden"
+            aria-hidden
+          />
+          <Chip tone="alert" className="hidden px-1.5 py-0 sm:inline-flex">
+            blocked
+          </Chip>
+        </>
       ) : null}
     </button>
   )
+}
+
+function dayCellLabel(
+  date: string,
+  dayLabel: string,
+  sessions: TodaySession[]
+): string {
+  const day = `${dayLabel} ${Number(date.slice(8))}`
+  if (sessions.length === 0) return `${day} — rest`
+
+  const parts = sessions.map(session => {
+    const sport = SPORT_LABELS[session.sport] ?? session.sport
+    return session.durationMinutes
+      ? `${sport} ${session.durationMinutes} min`
+      : sport
+  })
+
+  return `${day} — ${parts.join(', ')}`
 }
 
 function slotRank(slot: string): number {
