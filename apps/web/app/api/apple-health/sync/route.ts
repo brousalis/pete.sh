@@ -3,9 +3,12 @@
  * POST - Batch sync multiple workouts and daily metrics from PeteWatch
  */
 
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { appleHealthService } from '@/lib/services/apple-health.service'
+
 import { verifyPeteWatchAuth } from '@/lib/api/petewatch-auth'
+import { appleHealthService } from '@/lib/services/apple-health.service'
+import { runDebrief } from '@/lib/services/coach/jobs.service'
 import type { AppleHealthBatchSyncPayload } from '@/lib/types/apple-health.types'
 
 /**
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload: AppleHealthBatchSyncPayload = await request.json()
-    
+
     const results = {
       workoutsSaved: 0,
       workoutsFailed: 0,
@@ -33,15 +36,20 @@ export async function POST(request: NextRequest) {
       errors: [] as string[],
     }
 
+    const savedWorkoutIds: string[] = []
+
     // Sync workouts
     if (payload.workouts && payload.workouts.length > 0) {
       for (const workout of payload.workouts) {
         try {
-          await appleHealthService.saveWorkout({ workout })
+          const saved = await appleHealthService.saveWorkout({ workout })
           results.workoutsSaved++
+          savedWorkoutIds.push(saved.id)
         } catch (error) {
           results.workoutsFailed++
-          results.errors.push(`Workout ${workout.id}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          results.errors.push(
+            `Workout ${workout.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
         }
       }
     }
@@ -58,9 +66,25 @@ export async function POST(request: NextRequest) {
           }
         } catch (error) {
           results.dailyMetricsFailed++
-          results.errors.push(`Daily metrics ${metrics.date}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          results.errors.push(
+            `Daily metrics ${metrics.date}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
         }
       }
+    }
+
+    // Cap debriefs so a big historical sync cannot run away.
+    const toDebrief = savedWorkoutIds.slice(0, 3)
+    if (toDebrief.length > 0) {
+      after(async () => {
+        for (const id of toDebrief) {
+          try {
+            await runDebrief(id)
+          } catch (error) {
+            console.error(`[coach] Post-sync debrief failed for ${id}:`, error)
+          }
+        }
+      })
     }
 
     const success = results.workoutsFailed === 0 && results.dailyMetricsFailed === 0

@@ -123,3 +123,6 @@ apps/ios/Config.xcconfig
 apps/coach-worker/.env
 packages/coach-core/dist/
 data/coach/
+
+.vercel
+.env*

@@ -4,10 +4,13 @@
  * GET - Get recent workouts
  */
 
+import { after } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { verifyPeteWatchAuth } from '@/lib/api/petewatch-auth'
 import { appleHealthService } from '@/lib/services/apple-health.service'
+import { runDebrief } from '@/lib/services/coach/jobs.service'
 import type { AppleHealthWorkoutPayload } from '@/lib/types/apple-health.types'
-import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * POST /api/apple-health/workout
@@ -34,6 +37,13 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await appleHealthService.saveWorkout(payload)
+
+    // Debrief after ingest (Hobby Vercel cannot run a */5 cron).
+    after(() =>
+      runDebrief(result.id).catch((error) =>
+        console.error('[coach] Post-ingest debrief failed:', error)
+      )
+    )
 
     return NextResponse.json({
       success: true,

@@ -23,10 +23,6 @@
     {
       "path": "/api/cron/nightly",
       "schedule": "30 7 * * *"
-    },
-    {
-      "path": "/api/cron/debrief-sweep",
-      "schedule": "*/5 * * * *"
     }
   ]
 }

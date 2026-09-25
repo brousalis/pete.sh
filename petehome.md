@@ -388,8 +388,8 @@ Implementation: `apps/web/lib/services/coach/jobs.service.ts` via `/api/cron/[jo
 | `30 1 * * *`   | `/api/cron/nudge`            | 20:30 check-in nudge                             |
 | `0 23 * * 0`   | `/api/cron/weekly-plan`      | Sun 18:00 weekly plan → approve in `/coach/plan` |
 | `30 7 * * *`   | `/api/cron/nightly`          | 02:30 TSS/PMC/readiness, memory, gear            |
-| `*/5 * * * *`  | `/api/cron/debrief-sweep`    | Recent workouts ≥2 min old                       |
 | on demand      | `/api/cron/block-review`     | Block review                                     |
+| on ingest      | apple-health workout/sync    | Debrief (Hobby cannot run */5 crons)             |
 
 Jobs call `runCoachJob` — same context assembly and tools as chat. If Claude is capped, briefings
 still go out from analytics. Manual: `yarn coach:job briefing|debrief|weekly-plan|nightly|…` or curl

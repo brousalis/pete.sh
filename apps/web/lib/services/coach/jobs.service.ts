@@ -528,6 +528,17 @@ export async function runBlockReview(): Promise<JobResult> {
  * readiness for days that have already passed.
  */
 export async function runNightlyMaintenance(): Promise<JobResult> {
+  // Catch any workouts that missed an ingest-triggered debrief (Hobby plan
+  // cannot run a */5 cron).
+  const sweep = await runDebriefSweep().catch((error) => {
+    console.error('[coach] Nightly debrief sweep failed:', error)
+    return {
+      job: 'debrief_sweep',
+      ok: false,
+      summary: error instanceof Error ? error.message : String(error),
+    } satisfies JobResult
+  })
+
   const analytics = await nightlyRecompute()
 
   const { recomputeGearUsage } = await import('./gear.service')
@@ -551,13 +562,14 @@ export async function runNightlyMaintenance(): Promise<JobResult> {
   return {
     job: 'nightly',
     ok: true,
-    summary: `Recomputed ${analytics.loadsComputed} loads and ${analytics.readinessDays} readiness days; decayed ${decayed} memories.`,
+    summary: `Recomputed ${analytics.loadsComputed} loads and ${analytics.readinessDays} readiness days; decayed ${decayed} memories; ${sweep.summary}`,
     detail: {
       ...analytics,
       memoriesDecayed: decayed,
       embeddingsBackfilled: embedded,
       gearUsageLinked: gearLinked,
       hrSampleCount: sampleCount ?? null,
+      debriefSweep: 'detail' in sweep ? sweep.detail : { summary: sweep.summary },
     },
   }
 }
