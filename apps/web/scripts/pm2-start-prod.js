@@ -8,7 +8,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const nextBin = path.join(__dirname, '..', 'node_modules', '.bin', 'next');
-const args = ['start', '-H', '0.0.0.0', '-p', '3000'];
+const args = ['start', '-H', '0.0.0.0', '-p', '1337'];
 
 console.log(`Starting Next.js production server...`);
 console.log(`Command: ${nextBin} ${args.join(' ')}`);

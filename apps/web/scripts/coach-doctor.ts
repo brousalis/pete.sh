@@ -83,7 +83,8 @@ function checkEnvironment(): void {
 
   const optional: [string, string][] = [
     ['VOYAGE_API_KEY', 'knowledge search and memory recall fall back to keyword only'],
-    ['SUPABASE_DB_URL', 'the worker cannot run scheduled jobs'],
+    ['SUPABASE_DB_URL', 'optional for local CLI only'],
+    ['CRON_SECRET', 'Vercel Cron /api/cron/* unauthorized'],
     ['VAPID_PUBLIC_KEY', 'no web push'],
     ['APNS_KEY_ID', 'no iPhone push'],
   ]
@@ -254,53 +255,32 @@ async function checkDatabase(): Promise<void> {
 }
 
 async function checkWorker(): Promise<void> {
-  const port = process.env.COACH_WORKER_PORT ?? '3021'
+  // Scheduled jobs run on Vercel Cron. A local worker process is optional CLI/health only.
+  if (process.env.CRON_SECRET) {
+    record('vercel cron', 'ok', 'CRON_SECRET set — /api/cron/* can authorize')
+  } else {
+    record(
+      'vercel cron',
+      'warn',
+      'CRON_SECRET not set — set it in Vercel (and locally for curl tests)'
+    )
+  }
 
+  const port = process.env.COACH_WORKER_PORT ?? '1338'
   try {
     const response = await fetch(`http://localhost:${port}/healthz`, {
       signal: AbortSignal.timeout(3000),
     })
-    const health = (await response.json()) as {
-      lastJobAt: string | null
-      lastJobName: string | null
-      jobsRun: number
-      jobsFailed: number
-      listenerConnected: boolean
-      stale: boolean
-    }
-
-    if (health.stale) {
-      record(
-        'coach worker',
-        'warn',
-        `running but no job since ${health.lastJobAt}`,
-        'Check pm2 logs petehome-worker'
-      )
-    } else {
-      record(
-        'coach worker',
-        'ok',
-        `${health.jobsRun} jobs run, ${health.jobsFailed} failed, last was ${health.lastJobName ?? 'none yet'}`
-      )
-    }
-
-    if (!health.listenerConnected) {
-      record(
-        'activity listener',
-        'warn',
-        'not connected — post-workout debriefs will not fire',
-        'Check SUPABASE_DB_URL'
-      )
-    } else {
-      record('activity listener', 'ok', 'connected')
-    }
-  } catch {
+    const health = (await response.json()) as { scheduler?: string; note?: string }
     record(
-      'coach worker',
-      'warn',
-      'not reachable — scheduled briefings, debriefs and the weekly plan will not run',
-      'yarn p:start:coach'
+      'local worker',
+      'ok',
+      health.scheduler === 'disabled'
+        ? 'reachable (scheduler disabled — good)'
+        : 'reachable — stop it in production so crons do not double-fire'
     )
+  } catch {
+    record('local worker', 'ok', 'not running (expected when relying on Vercel cron)')
   }
 }
 

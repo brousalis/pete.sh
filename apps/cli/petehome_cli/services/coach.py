@@ -24,7 +24,7 @@ from petehome_cli.config import (
 from petehome_cli.services.pm2 import PM2Service
 from petehome_cli.services.process import stream_command
 
-COACH_PM2_NAME = PM2_PROCESSES["coach"]
+COACH_PM2_NAME = PM2_PROCESSES["worker"]
 
 JOB_NAMES = (
     "briefing",

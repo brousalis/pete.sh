@@ -1,5 +1,5 @@
 /**
- * Server-side token storage for Google Calendar OAuth.
+ * Server-side token storage for Google Calendar and Spotify OAuth.
  * Tokens live in `.tokens.json` (gitignored) so local HTTPS / LAN clients
  * can share credentials without cookie cross-origin issues.
  */
@@ -9,6 +9,12 @@ import path from 'path'
 
 interface StoredTokens {
   google_calendar?: {
+    access_token: string
+    refresh_token?: string
+    expiry_date?: number
+    updated_at: string
+  }
+  spotify?: {
     access_token: string
     refresh_token?: string
     expiry_date?: number
@@ -113,4 +119,58 @@ export function getLegacyGoogleCalendarTokensRaw(): {
     refreshToken: ct.refresh_token || null,
     expiryDate: ct.expiry_date || null,
   }
+}
+
+// ============================================
+// Spotify Tokens
+// ============================================
+
+export function getSpotifyTokens(): {
+  accessToken: string | null
+  refreshToken: string | null
+  expiryDate: number | null
+} {
+  const tokens = readTokens()
+  const spotifyTokens = tokens.spotify
+
+  if (!spotifyTokens) {
+    return { accessToken: null, refreshToken: null, expiryDate: null }
+  }
+
+  if (spotifyTokens.expiry_date && Date.now() > spotifyTokens.expiry_date) {
+    return {
+      accessToken: null,
+      refreshToken: spotifyTokens.refresh_token || null,
+      expiryDate: null,
+    }
+  }
+
+  return {
+    accessToken: spotifyTokens.access_token || null,
+    refreshToken: spotifyTokens.refresh_token || null,
+    expiryDate: spotifyTokens.expiry_date || null,
+  }
+}
+
+export function setSpotifyTokens(tokens: {
+  access_token: string
+  refresh_token?: string | null
+  expiry_date?: number | null
+}): void {
+  const allTokens = readTokens()
+
+  allTokens.spotify = {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token || allTokens.spotify?.refresh_token || undefined,
+    expiry_date: tokens.expiry_date || undefined,
+    updated_at: new Date().toISOString(),
+  }
+
+  writeTokens(allTokens)
+}
+
+export function clearSpotifyTokens(): void {
+  const tokens = readTokens()
+  delete tokens.spotify
+  writeTokens(tokens)
 }

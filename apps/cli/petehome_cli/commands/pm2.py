@@ -76,7 +76,8 @@ async def cmd_status(_args: list[str], output: RichLog) -> None:
     output.write(table)
 
 
-_SERVICE_OPTIONS = "main, coach, all"
+_SERVICE_OPTIONS = "main, worker, all"
+_WORKER_ALIASES = frozenset({"worker", "coach"})
 
 
 async def cmd_start(args: list[str], output: RichLog) -> None:
@@ -87,12 +88,16 @@ async def cmd_start(args: list[str], output: RichLog) -> None:
 
     target = args[0].lower()
 
-    # .next wipe is for the Next main process; skip for coach-only starts.
-    if target != "coach":
+    # .next wipe is for the Next main process; skip for worker-only starts.
+    if target not in _WORKER_ALIASES:
         _clear_next_cache(output)
 
     if target == "all":
+        started: set[str] = set()
         for _short, name in PM2_PROCESSES.items():
+            if name in started:
+                continue
+            started.add(name)
             ok, _ = await PM2Service.start(name)
             if ok:
                 output.write(f"[green]✓[/] Started {name}")
@@ -155,7 +160,7 @@ async def cmd_restart(args: list[str], output: RichLog) -> None:
 
     target = args[0].lower()
 
-    if target != "coach":
+    if target not in _WORKER_ALIASES:
         _clear_next_cache(output)
 
     if target == "all":

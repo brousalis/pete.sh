@@ -49,12 +49,12 @@ Cook & Purdam tendon loading, IOC 2023 RED-S.
   fitness UI, maple, coffee, blog, homework, etc.) is gone. `/` redirects to `/coach`. There are
   **no** legacy-page redirects. Orphan Supabase tables from the old dashboard remain; no drop
   migration yet.
-- **Runtime split:** chat and HTTP run in local `apps/web` (Next.js on the home PC). Long and
-  scheduled work runs in `apps/coach-worker` under PM2, queued with pg-boss on Supabase Postgres.
-  Vercel is **not** part of the coaching stack anymore.
-- Shared logic lives in `packages/coach-core` (no Next.js deps). Web and worker must always agree.
-- Vercel AI SDK 6 + `@ai-sdk/anthropic` (SDK name only — hosting is local). Models pinned: Opus 5 /
-  Sonnet 5 / Haiku 4.5. Anthropic prompt caching via `providerOptions`.
+- **Runtime:** `apps/web` on Vercel (PWA + `/api/coach/*` + Vercel Cron for scheduled jobs). Job
+  runners live in `apps/web/lib/services/coach/jobs.service.ts`. The local PM2 worker is CLI-only
+  (do not leave its old scheduler running — it would double-fire).
+- Shared logic lives in `packages/coach-core` (no Next.js deps).
+- Vercel AI SDK 6 + `@ai-sdk/anthropic`. Models pinned: Opus 5 / Sonnet 5 / Haiku 4.5. Anthropic
+  prompt caching via `providerOptions`.
 - Autonomy: same-day **downgrades auto-apply**. Everything else waits for approval in `/coach/plan`.
 - Auth: signed cookie (`COACH_SESSION_SECRET` + `COACH_ACCESS_CODE`), not the originally sketched
   WebAuthn. Machine clients (watch, worker, MCP, ICS, PeteTrain) use one shared
@@ -69,19 +69,18 @@ Cook & Purdam tendon loading, IOC 2023 RED-S.
 petehome Watch
         │ HealthKit
         ▼
-petehome iOS ──POST /api/apple-health/{sync,workout,daily}──►  apps/web (local :3000)
-        │         (installed build may still target pete.sh → same Supabase)
+petehome iOS ──POST /api/apple-health/{sync,workout,daily}──►  apps/web (Vercel)
+        │         (or local :1337 for LAN)
         │ WorkoutKit / APNs (source exists; not shipped)
         ▼
    Apple Watch
                                                               packages/coach-core
                                                                     ▲
 Supabase                                                            │
-  apple_health_*  ──NOTIFY coach_activity──►  apps/coach-worker (PM2 :3021)
+  apple_health_*  ──►  Vercel Cron /api/cron/debrief-sweep (every 5m)
   coach_*  (plan, injury, memory, knowledge, agent_run)
-  pgboss schema
 
-Local PWA: /coach  +  /api/coach/*
+PWA: /coach  +  /api/coach/*  +  /api/cron/*
 ```
 
 Deterministic layer (analytics + Injury Guard) computes. The LLM interprets and proposes. The LLM
@@ -98,7 +97,9 @@ never does arithmetic on raw HR/GPS streams.
 | `apps/web/app/api/coach/`              | HTTP: chat, today, plan, check-in, MCP, calendar, watch, spend, …                                   |
 | `apps/web/app/(dashboard)/coach/`      | PWA: Today, Plan, Chat, Analytics, Body, Gear, Settings, onboard, tests                             |
 | `apps/web/components/coach/`           | Nav, session cards, check-in, chat notebook                                                         |
-| `apps/coach-worker`                    | PM2 process: cron, LISTEN, `/healthz`                                                               |
+| `apps/coach-worker`                    | CLI job runner (`yarn coach:job`); scheduler moved to Vercel                                        |
+| `apps/web/app/api/cron/`               | Vercel Cron entrypoints                                                                             |
+| `apps/web/vercel.json`                 | Cron schedules (UTC ≈ CDT)                                                                          |
 | `apps/web/supabase/migrations/037–041` | Schema, views, NOTIFY, PT seed, cleanup fixes                                                       |
 | `apps/ios`                             | petehome + watch. New observer/WorkoutKit/APNs code is **unshipped**                                |
 | `.claude/skills`                       | `/weekly-review`, `/injury-check`, `/race-projection`                                               |
@@ -155,7 +156,7 @@ coach.
    yd, Functional Strength, worn overnight).
 2. petehome iOS POSTs `/api/apple-health/{sync,workout,daily}` with the shared machine
    key (`PETEHOME_API_KEY` / `PETEWATCH_API_KEY`). Prefer local
-   `https://boufos.local:3000` via `Config.xcconfig` so ingest and coach hit the same host.
+   `https://boufos.local:1337` via `Config.xcconfig` so ingest and coach hit the same host.
 3. Rows land in `apple_health_workouts` / samples / `apple_health_daily_metrics`.
 4. Migration 038 `NOTIFY coach_activity` on insert. The worker LISTENs, waits ~2 minutes for late
    samples, then queues a singleton debrief.
@@ -373,30 +374,26 @@ Degrade-not-fail: 80% of cap → cheaper tier + 5k context. 100% → templated a
 
 Sustained cache-hit ratio below ~0.7 on chat means the stable prefix is being invalidated.
 
-### Scheduled jobs (`apps/coach-worker`)
+### Scheduled jobs (Vercel Cron)
 
-PM2 name `petehome-worker`, port 3021, cwd `apps/coach-worker`, env from `apps/web/.env`. Timezone
-`America/Chicago`. Queue schema `pgboss`.
+Schedules are UTC approximating **America/Chicago CDT (UTC−5)**. After the November DST flip, shift
+UTC hours by +1 or accept 1h drift. Auth: `Authorization: Bearer $CRON_SECRET` (or machine API key).
+Implementation: `apps/web/lib/services/coach/jobs.service.ts` via `/api/cron/[job]`.
 
-| Cron          | Job                                                                  |
-| ------------- | -------------------------------------------------------------------- |
-| `30 5 * * *`  | Morning briefing + auto-downgrade; write journal; push if configured |
-| `15 6 * * *`  | Morning Activation reminder                                          |
-| `0 20 * * *`  | Evening Armor reminder                                               |
-| `30 20 * * *` | Check-in nudge if no feedback                                        |
-| `0 18 * * 0`  | Sunday weekly plan (Opus) → approve in `/coach/plan`                 |
-| `30 2 * * *`  | Nightly TSS/PMC/readiness, memory decay, gear mileage                |
-| on NOTIFY     | Debrief ~2 min after a workout insert                                |
-| on demand     | Block review (`yarn coach:job block-review`)                         |
+| Cron (UTC)     | Path                         | Chicago CDT                                      |
+| -------------- | ---------------------------- | ------------------------------------------------ |
+| `30 10 * * *`  | `/api/cron/briefing`         | 05:30 briefing + auto-downgrade                  |
+| `15 11 * * *`  | `/api/cron/pt-morning`       | 06:15 Morning Activation                         |
+| `0 1 * * *`    | `/api/cron/pt-evening`       | 20:00 Evening Armor                              |
+| `30 1 * * *`   | `/api/cron/nudge`            | 20:30 check-in nudge                             |
+| `0 23 * * 0`   | `/api/cron/weekly-plan`      | Sun 18:00 weekly plan → approve in `/coach/plan` |
+| `30 7 * * *`   | `/api/cron/nightly`          | 02:30 TSS/PMC/readiness, memory, gear            |
+| `*/5 * * * *`  | `/api/cron/debrief-sweep`    | Recent workouts ≥2 min old                       |
+| on demand      | `/api/cron/block-review`     | Block review                                     |
 
-Jobs call `runCoachJob` — same context assembly and tools as chat — so Sunday planning and a
-question in the notebook produce the same coach. If Claude is capped, briefings still go out from
-analytics.
-
-Health: `GET http://localhost:3021/healthz`. CLI:
-`yarn coach:job briefing|debrief|weekly-plan|nightly|…`.
-
-If the PC sleeps, 05:30 and Sunday 18:00 do not run.
+Jobs call `runCoachJob` — same context assembly and tools as chat. If Claude is capped, briefings
+still go out from analytics. Manual: `yarn coach:job briefing|debrief|weekly-plan|nightly|…` or curl
+the cron route. Do **not** run the old PM2 scheduler alongside production.
 
 ---
 
@@ -531,15 +528,14 @@ a dry run cannot rewrite the real plan.
 
 **Not live / do not assume**
 
-- Public hosting — `apps/web` is local-only; do not expect `pete.sh/coach`
-- Worker — must be started (`yarn p:start:coach`) and the PC must stay awake for cron
 - Voyage, VAPID web push, APNs — optional; jobs still write the briefing to the journal
 - Knowledge must be **ingested** into Supabase (`yarn coach:ingest`); files on disk alone are not
   searched
 - petehome rebuild / WorkoutKit on the watch / watch fetching coach sessions
 - CSS / VDOT / FTP until week-3 tests
 
-Minimum viable daily coach: home PC awake, worker + local `/coach`, installed petehome left alone.
+Minimum viable daily coach: Vercel deploy with cron + env secrets; HealthKit ingest hitting
+production; `pm2 stop petehome-worker` so local cron does not double-fire.
 
 ---
 
@@ -552,7 +548,7 @@ Minimum viable daily coach: home PC awake, worker + local `/coach`, installed pe
 | Hard training rules                   | `guardrails/rules.ts` + `engine.ts`           |
 | Whether a calendar write is legal     | `plan/index.ts` + `plan.service.ts`           |
 | A number (TSS, readiness, projection) | `analytics/*` — never the prompt              |
-| A scheduled behaviour                 | `apps/coach-worker/src/jobs.ts`               |
+| A scheduled behaviour                 | `apps/web/lib/services/coach/jobs.service.ts` + `vercel.json` |
 | What a tool returns                   | `tools.service.ts` (keep it compact)          |
 | Cost / model routing                  | `models.ts` + `cost/index.ts`                 |
 

@@ -1,7 +1,6 @@
 # Scripts
 
-Coach tooling for the local petehome app. Home-sync / Spotify / Trader Joe’s /
-dashboard scripts were removed with the teardown.
+Coach tooling for the local petehome app, plus a setlist → Spotify helper.
 
 ## Coach
 
@@ -18,10 +17,31 @@ yarn coach:eval
 yarn export:swim
 ```
 
+## Setlist → Spotify
+
+```bash
+yarn setlist:spotify "Bilmuri" "Dance Gavin Dance"
+yarn setlist:spotify Bilmuri --shows 3 --name "Riot Fest prep"
+yarn setlist:spotify Bilmuri --auth   # force OAuth if tokens are stale
+```
+
+Needs `SETLISTFM_API_KEY`, `NEXT_SPOTIFY_CLIENT_ID`, `NEXT_SPOTIFY_CLIENT_SECRET`
+in `.env`.
+
+**One-time Spotify setup:** in the [Spotify developer dashboard](https://developer.spotify.com/dashboard)
+add this Redirect URI (exact match):
+
+```
+http://127.0.0.1:8765/callback
+```
+
+Override with `SPOTIFY_REDIRECT_URI` if you prefer a different registered URI.
+Then run with `--auth` once to write `.tokens.json`.
+
 From repo root (worker):
 
 ```bash
-yarn p:start:coach
+yarn p:start:worker
 yarn coach:job briefing
 ```
 

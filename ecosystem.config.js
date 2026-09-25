@@ -10,23 +10,10 @@
  *   pm2 status
  */
 
-const fs = require('fs')
 const path = require('path')
 
 const webAppDir = path.join(__dirname, 'apps', 'web')
 const coachWorkerDir = path.join(__dirname, 'apps', 'coach-worker')
-
-/** Yarn workspaces hoist tsx to the monorepo root; fall back to a local install. */
-function resolveTsxCli() {
-  const candidates = [
-    path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
-    path.join(coachWorkerDir, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
-  ]
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate
-  }
-  return candidates[0]
-}
 
 module.exports = {
   apps: [
@@ -38,9 +25,10 @@ module.exports = {
       cwd: webAppDir,
       instances: 1,
       exec_mode: 'fork',
+      windowsHide: true,
       env: {
         NODE_ENV: 'development',
-        PORT: 3000,
+        PORT: 1337,
         HOSTNAME: '0.0.0.0',
       },
       autorestart: true,
@@ -57,15 +45,16 @@ module.exports = {
     {
       // petehome worker – scheduled agent jobs, analytics recompute, push.
       // Runs on the home PC so long jobs are not bound by HTTP timeouts.
+      // Wrapper keeps Windows from opening a visible node.exe console.
       name: 'petehome-worker',
-      script: resolveTsxCli(),
-      args: path.join(coachWorkerDir, 'src', 'index.ts'),
+      script: path.join(coachWorkerDir, 'scripts', 'pm2-start.js'),
       cwd: coachWorkerDir,
       instances: 1,
       exec_mode: 'fork',
+      windowsHide: true,
       env: {
         NODE_ENV: 'production',
-        COACH_WORKER_PORT: 3021,
+        COACH_WORKER_PORT: 1338,
       },
       autorestart: true,
       watch: false,

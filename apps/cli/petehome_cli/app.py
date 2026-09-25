@@ -25,7 +25,7 @@ from textual.widgets import (
 )
 from textual_autocomplete import AutoComplete, DropdownItem
 
-from petehome_cli.commands import coach, dev, git, migrate, pm2
+from petehome_cli.commands import coach, dev, git, migrate, pm2, setlist
 
 
 class DropUp(AutoComplete):
@@ -58,6 +58,7 @@ def _build_registry() -> None:
     dev.register(REGISTRY)
     migrate.register(REGISTRY)
     coach.register(REGISTRY)
+    setlist.register(REGISTRY)
 
 
 # ---------------------------------------------------------------------------
@@ -68,17 +69,17 @@ _COMMAND_DEFS: list[tuple[str, str]] = [
     # PM2
     ("status", "Show PM2 process status"),
     ("start main", "Start main server"),
-    ("start coach", "Start petehome worker"),
-    ("start all", "Start all services (incl. coach)"),
+    ("start worker", "Start petehome worker"),
+    ("start all", "Start all services (incl. worker)"),
     ("stop main", "Stop main server"),
-    ("stop coach", "Stop petehome worker"),
+    ("stop worker", "Stop petehome worker"),
     ("stop all", "Stop all services"),
     ("restart main", "Restart main server"),
-    ("restart coach", "Restart petehome worker"),
+    ("restart worker", "Restart petehome worker"),
     ("restart all", "Restart all services"),
     ("logs", "Stream all PM2 logs"),
     ("logs main", "Stream main logs"),
-    ("logs coach", "Stream petehome worker logs"),
+    ("logs worker", "Stream petehome worker logs"),
     # petehome
     ("coach", "petehome help"),
     ("coach start", "Start petehome-worker"),
@@ -105,6 +106,8 @@ _COMMAND_DEFS: list[tuple[str, str]] = [
     ("coach ask", "Ask petehome a question"),
     ("coach open", "Open /coach in browser"),
     ("pc", "petehome alias"),
+    # Setlist → Spotify
+    ("setlist", "Likely setlist → Spotify playlist"),
     # Git shortcuts
     ("gs", "Git status"),
     ("ga", "Git add all"),
@@ -231,7 +234,7 @@ class HelpScreen(Screen):
                     "Services (PM2)",
                     [
                         ("status / s", "Show PM2 status"),
-                        ("start <name>", "Start (main/coach/all)"),
+                        ("start <name>", "Start (main/worker/all)"),
                         ("stop <name>", "Stop service"),
                         ("restart <name>", "Restart service"),
                         ("logs [name]", "Stream logs"),
@@ -248,6 +251,7 @@ class HelpScreen(Screen):
                         ("coach today / ask", "Today view / chat"),
                         ("coach open", "Open /coach PWA"),
                         ("pc", "Alias for coach"),
+                        ("setlist <bands…>", "Likely setlist → Spotify"),
                     ],
                     border_style="bright_green",
                 ),

@@ -180,7 +180,7 @@ export class CalendarService {
     if (config.google.isConfigured) {
       const finalRedirectUri = redirectUri
         || process.env.GOOGLE_REDIRECT_URI
-        || "http://localhost:3000/api/calendar/callback"
+        || "http://localhost:1337/api/calendar/callback"
 
       this.oauth2Client = new auth.OAuth2(
         config.google.clientId,

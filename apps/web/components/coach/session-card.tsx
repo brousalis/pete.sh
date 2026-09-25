@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import { SessionActivityGlance } from '@/components/coach/session-activity-glance'
 import { Disclosure, Panel } from '@/components/coach/ui/panel'
+import { TermTip } from '@/components/coach/ui/term-tip'
 import { sportClasses } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
 import type { TodaySession } from '@/lib/types/coach-ui.types'
@@ -153,7 +154,13 @@ export function SessionCard({
                       <span className="t-num t-num-sm text-ink-1">
                         {fact.value}
                       </span>
-                      <span className="t-micro text-ink-3">{fact.unit}</span>
+                      {fact.unit === 'TSS' ? (
+                        <TermTip term="tss" className="t-micro text-ink-3">
+                          {fact.unit}
+                        </TermTip>
+                      ) : (
+                        <span className="t-micro text-ink-3">{fact.unit}</span>
+                      )}
                     </span>
                   ))}
                 </div>

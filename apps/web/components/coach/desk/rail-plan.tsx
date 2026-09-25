@@ -1,14 +1,25 @@
 'use client'
 
-import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
+import { AlertTriangle, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
 import { LoadSection } from '@/components/coach/desk/load-section'
+import { PlanDatePicker } from '@/components/coach/desk/plan-date-picker'
 import { SessionCard } from '@/components/coach/session-card'
 import { Chip, EmptyNote, Panel, Section } from '@/components/coach/ui/panel'
+import { TermTip } from '@/components/coach/ui/term-tip'
 import { sportClasses } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
+import {
+  addDays,
+  alignedWeekOffset,
+  chicagoMondayOf,
+  chicagoToday,
+  isValidIsoDate,
+  shiftChicagoDate,
+} from '@/lib/coach-dates'
 import type { PlanWeekView, TodaySession, YearPlanView } from '@/lib/types/coach-ui.types'
 import { SPORT_LABELS } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
@@ -20,20 +31,54 @@ const SLOT_ORDER = ['morning', 'afternoon', 'evening', 'anytime', 'primary']
 const TOTAL_WEEKS = 48
 
 export function RailPlan() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const dateFromUrl = searchParams.get('date')
+
   const [weeks, setWeeks] = useState<PlanWeekView[]>([])
   const [yearPlan, setYearPlan] = useState<YearPlanView | null>(null)
   const [loading, setLoading] = useState(true)
-  const [offset, setOffset] = useState(0)
+  const [offset, setOffset] = useState(() =>
+    isValidIsoDate(dateFromUrl) ? alignedWeekOffset(dateFromUrl) : 0
+  )
   const [showMore, setShowMore] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(() =>
+    isValidIsoDate(dateFromUrl) ? dateFromUrl : null
+  )
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [movingSession, setMovingSession] = useState<TodaySession | null>(null)
   const [moving, setMoving] = useState(false)
   const [moveResult, setMoveResult] = useState<string | null>(null)
 
+  const setDateParam = useCallback(
+    (date: string | null) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('panel', 'plan')
+      if (date) params.set('date', date)
+      else params.delete('date')
+      router.replace(`/coach?${params.toString()}`, { scroll: false })
+    },
+    [router, searchParams]
+  )
+
+  const jumpToDate = useCallback(
+    (date: string, opts?: { syncUrl?: boolean }) => {
+      const nextOffset = alignedWeekOffset(date)
+      const windowStart = addDays(chicagoMondayOf(chicagoToday()), nextOffset * 7)
+      const firstWeekEnd = addDays(windowStart, 6)
+      setSelectedDate(date)
+      setOffset(nextOffset)
+      // Expand the strip when the day isn't in the first visible week.
+      setShowMore(date > firstWeekEnd)
+      if (opts?.syncUrl !== false) setDateParam(date)
+    },
+    [setDateParam]
+  )
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const from = mondayOffset(offset)
+      const from = addDays(chicagoMondayOf(chicagoToday()), offset * 7)
       const to = addDays(from, 27)
       const response = await fetch(`/api/coach/plan?from=${from}&to=${to}`, {
         credentials: 'include',
@@ -44,12 +89,14 @@ export function RailPlan() {
         setWeeks(loaded)
         setYearPlan((payload.data.yearPlan as YearPlanView | null) ?? null)
 
-        // The day detail is the substance of this screen, so open one by
-        // default instead of leaving an empty column.
         setSelectedDate((current) => {
-          if (current) return current
+          if (current && current >= from && current <= to) return current
+          // Week pager moved past the selection — drop it rather than show
+          // an empty day detail for a date that isn't in this window.
+          if (current && (current < from || current > to)) return null
+
           const dated = loaded.flatMap((week) => week.sessions)
-          const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+          const today = chicagoToday()
           if (dated.some((session) => session.sessionDate === today)) return today
           return dated.find((session) => session.sessionDate)?.sessionDate ?? null
         })
@@ -62,6 +109,23 @@ export function RailPlan() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Deep-link: URL date wins when it changes externally.
+  useEffect(() => {
+    if (!isValidIsoDate(dateFromUrl)) return
+    if (dateFromUrl === selectedDate) return
+    jumpToDate(dateFromUrl, { syncUrl: false })
+    // Intentionally only react to URL changes, not selectedDate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- URL → state only
+  }, [dateFromUrl])
+
+  // Keep ?date= aligned with the open day.
+  useEffect(() => {
+    const urlDate = searchParams.get('date')
+    if (selectedDate === urlDate) return
+    if (!selectedDate && !urlDate) return
+    setDateParam(selectedDate)
+  }, [selectedDate, searchParams, setDateParam])
 
   async function moveSession(session: TodaySession, toDate: string) {
     setMoving(true)
@@ -111,7 +175,7 @@ export function RailPlan() {
       if (applied?.data?.applied) {
         setMoveResult(null)
         setMovingSession(null)
-        setSelectedDate(toDate)
+        jumpToDate(toDate)
         await load()
       } else {
         setMoveResult(applied?.data?.summary ?? 'The move was rejected.')
@@ -150,6 +214,20 @@ export function RailPlan() {
     setSelectedDate((current) => (current === date ? null : date))
   }
 
+  function goToday() {
+    jumpToDate(chicagoToday())
+  }
+
+  const headerDate = selectedDate ?? chicagoToday()
+  const headerIsToday = headerDate === chicagoToday()
+  const headerLabel = headerIsToday
+    ? 'Today'
+    : new Date(`${headerDate}T12:00:00`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+
   return (
     <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -174,9 +252,19 @@ export function RailPlan() {
             <Button
               size="sm"
               variant="ghost"
+              className="h-8 gap-1.5 px-2.5 t-label font-medium text-ink-2"
+              onClick={() => setPickerOpen(true)}
+              aria-label="Jump to date"
+            >
+              <CalendarDays className="size-3.5" />
+              {headerLabel}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               className="h-8 px-3 t-label font-medium text-ink-2"
-              onClick={() => setOffset(0)}
-              disabled={offset === 0}
+              onClick={goToday}
+              disabled={offset === 0 && headerIsToday && selectedDate === chicagoToday()}
             >
               Today
             </Button>
@@ -193,6 +281,14 @@ export function RailPlan() {
         </div>
       </header>
 
+      <PlanDatePicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        date={selectedDate}
+        onSelect={(date) => jumpToDate(date)}
+      />
+
+      {loading && !yearPlan ? <YearPlanSummarySkeleton /> : null}
       {yearPlan ? <YearPlanSummary plan={yearPlan} /> : null}
 
       {moveResult ? (
@@ -231,10 +327,19 @@ export function RailPlan() {
           <Loader2 className="size-4 animate-spin text-ink-3" />
         </div>
       ) : weeks.length === 0 ? (
-        <div className="border-t border-line pt-6">
+        <div className="space-y-6 border-t border-line pt-6">
           <EmptyNote>
             No sessions in this window. The Sunday planning job fills the coming week.
           </EmptyNote>
+          {selectedDate && !movingSession ? (
+            <DayDetail
+              date={selectedDate}
+              sessions={[]}
+              onMove={() => undefined}
+              onClose={() => setSelectedDate(null)}
+              onShiftDay={(delta) => jumpToDate(shiftChicagoDate(selectedDate, delta))}
+            />
+          ) : null}
         </div>
       ) : (
         <div className="space-y-6 border-t border-line pt-6">
@@ -272,6 +377,7 @@ export function RailPlan() {
                 setMovingSession(session)
               }}
               onClose={() => setSelectedDate(null)}
+              onShiftDay={(delta) => jumpToDate(shiftChicagoDate(selectedDate, delta))}
             />
           ) : null}
         </div>
@@ -285,32 +391,58 @@ function DayDetail({
   sessions,
   onMove,
   onClose,
+  onShiftDay,
 }: {
   date: string
   sessions: TodaySession[]
   onMove: (session: TodaySession) => void
   onClose: () => void
+  onShiftDay: (delta: number) => void
 }) {
   const plannedTss = sessions.reduce((sum, session) => sum + (session.plannedLoad ?? 0), 0)
   const minutes = sessions.reduce((sum, session) => sum + (session.durationMinutes ?? 0), 0)
+  const isToday = date === chicagoToday()
 
   return (
     <section className="space-y-3.5 border-t border-line pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h2 className="t-title">
-            {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </h2>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="flex items-center gap-0.5 rounded-control bg-surface-1 p-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-8 text-ink-2"
+              aria-label="Previous day"
+              onClick={() => onShiftDay(-1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <h2 className="min-w-[10rem] px-1 text-center t-title">
+              {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </h2>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-8 text-ink-2"
+              aria-label="Next day"
+              onClick={() => onShiftDay(1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
           {sessions.length > 0 ? (
             <div className="flex items-baseline gap-3">
               {minutes > 0 ? <Tally value={minutes} unit="min" /> : null}
-              {plannedTss > 0 ? <Tally value={plannedTss} unit="TSS" /> : null}
+              {plannedTss > 0 ? <Tally value={plannedTss} unit="TSS" tip="tss" /> : null}
             </div>
           ) : null}
+          {isToday ? <Chip tone="brand">Today</Chip> : null}
         </div>
         <button
           type="button"
@@ -343,12 +475,53 @@ function DayDetail({
   )
 }
 
-function Tally({ value, unit }: { value: number; unit: string }) {
+function Tally({ value, unit, tip }: { value: number; unit: string; tip?: 'tss' }) {
   return (
     <span className="inline-flex items-baseline gap-1">
       <span className="t-num t-num-sm text-ink-1">{value}</span>
-      <span className="t-micro text-ink-3">{unit}</span>
+      {tip ? (
+        <TermTip term={tip} className="t-micro text-ink-3">
+          {unit}
+        </TermTip>
+      ) : (
+        <span className="t-micro text-ink-3">{unit}</span>
+      )}
     </span>
+  )
+}
+
+/** Reserves the year-plan panel height so the calendar doesn't jump when data arrives. */
+function YearPlanSummarySkeleton() {
+  return (
+    <Panel className="px-5 py-5" aria-hidden>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 space-y-2">
+          <div className="h-5 w-44 animate-pulse rounded-chip bg-surface-3" />
+          <div className="h-3.5 w-64 max-w-full animate-pulse rounded-chip bg-surface-3" />
+        </div>
+        <div className="flex items-baseline gap-4">
+          <div className="space-y-1.5 text-right">
+            <div className="ml-auto h-7 w-12 animate-pulse rounded-chip bg-surface-3" />
+            <div className="ml-auto h-3 w-14 animate-pulse rounded-chip bg-surface-3" />
+          </div>
+          <div className="space-y-1.5 text-right">
+            <div className="ml-auto h-7 w-14 animate-pulse rounded-chip bg-surface-3" />
+            <div className="ml-auto h-3 w-10 animate-pulse rounded-chip bg-surface-3" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 flex gap-0.5">
+        {[18, 22, 28, 16].map((span, index) => (
+          <div key={index} className="min-w-0 flex-none" style={{ flexBasis: `${span}%` }}>
+            <div className="h-1.5 animate-pulse rounded-full bg-surface-3" />
+            <div className="mt-1.5 h-3 w-3/4 animate-pulse rounded-chip bg-surface-3" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 border-t border-line pt-3.5">
+        <div className="h-4 w-56 max-w-full animate-pulse rounded-chip bg-surface-3" />
+      </div>
+    </Panel>
   )
 }
 
@@ -513,7 +686,7 @@ function WeekBlock({
   onDayClick: (date: string) => void
 }) {
   const days = Array.from({ length: 7 }, (_, index) => addDays(week.weekStart, index))
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+  const today = chicagoToday()
 
   return (
     <Section
@@ -524,7 +697,9 @@ function WeekBlock({
       action={
         <span className="inline-flex items-baseline gap-1">
           <span className="t-num t-num-sm text-ink-1">{week.plannedTss}</span>
-          <span className="t-micro text-ink-3">TSS planned</span>
+          <TermTip term="tss" className="t-micro text-ink-3">
+            TSS planned
+          </TermTip>
         </span>
       }
     >
@@ -667,18 +842,4 @@ function DayCell({
 function slotRank(slot: string): number {
   const index = SLOT_ORDER.indexOf(slot)
   return index === -1 ? SLOT_ORDER.length : index
-}
-
-function mondayOffset(weekOffset: number): string {
-  const date = new Date()
-  const day = date.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  date.setDate(date.getDate() + diff + weekOffset * 7)
-  return date.toLocaleDateString('en-CA')
-}
-
-function addDays(date: string, days: number): string {
-  const result = new Date(`${date}T00:00:00Z`)
-  result.setUTCDate(result.getUTCDate() + days)
-  return result.toISOString().slice(0, 10)
 }

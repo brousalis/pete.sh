@@ -10,4 +10,4 @@
 // `$()` breaks the `//` so https URLs survive xcconfig parsing.
 
 PETEHOME_API_KEY = replace-with-machine-api-key
-PETEHOME_SERVER_URL = https:/$()/192.168.1.4:3000
+PETEHOME_SERVER_URL = https:/$()/192.168.1.4:1337

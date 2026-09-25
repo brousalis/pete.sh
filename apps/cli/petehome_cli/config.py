@@ -18,18 +18,20 @@ load_dotenv(WEB_APP_PATH / ".env")
 STATE_DIR = Path.home() / ".petehome"
 COACH_CONVERSATION_FILE = STATE_DIR / "coach-cli-conversation.json"
 
-# PM2 process names
+# PM2 process names (short CLI aliases → pm2 process name)
 PM2_PROCESSES: dict[str, str] = {
     "main": "petehome",
+    "worker": "petehome-worker",
+    # Backward-compatible alias for `start coach` / older docs
     "coach": "petehome-worker",
 }
 
 # Dev server settings
-DEV_SERVER_PORT = int(os.getenv("PORT", "3000"))
+DEV_SERVER_PORT = int(os.getenv("PORT", "1337"))
 DEV_SERVER_HOST = os.getenv("HOSTNAME", "0.0.0.0")
 
 # petehome
-COACH_WORKER_PORT = int(os.getenv("COACH_WORKER_PORT", "3021"))
+COACH_WORKER_PORT = int(os.getenv("COACH_WORKER_PORT", "1338"))
 COACH_API_KEY = os.getenv("COACH_API_KEY", "")
 COACH_API_BASE = os.getenv(
     "COACH_CLI_BASE_URL",
@@ -43,8 +45,8 @@ COACH_UI_URL = os.getenv(
 
 # Monitored ports for process cleanup
 MONITORED_PORTS: dict[str, dict[str, object]] = {
-    "dev-server": {"base": 3000, "range": 5, "group": "web"},
-    "coach-worker": {"base": 3021, "range": 1, "group": "coach"},
+    "dev-server": {"base": 1337, "range": 5, "group": "web"},
+    "coach-worker": {"base": 1338, "range": 1, "group": "worker"},
 }
 
 

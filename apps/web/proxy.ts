@@ -8,10 +8,10 @@ import { NextResponse } from 'next/server'
  */
 
 const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'https://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://127.0.0.1:3000',
+  'http://localhost:1337',
+  'https://localhost:1337',
+  'http://127.0.0.1:1337',
+  'https://127.0.0.1:1337',
 ]
 
 function isLocalOrigin(origin: string): boolean {
@@ -49,15 +49,16 @@ export async function proxy(request: NextRequest) {
   const isCoachPage = pathname === '/coach' || pathname.startsWith('/coach/')
   const isAppleHealth = pathname.startsWith('/api/apple-health')
   const isHealth = pathname === '/api/health'
+  const isCron = pathname.startsWith('/api/cron')
 
-  if (isCoachApi || isCoachPage || isAppleHealth || isHealth) {
+  if (isCoachApi || isCoachPage || isAppleHealth || isHealth || isCron) {
     if (request.method === 'OPTIONS') {
       return withCors(new NextResponse(null, { status: 204 }), origin)
     }
 
     const response = NextResponse.next()
     response.headers.set('Cache-Control', 'no-store, private')
-    return isCoachApi || isAppleHealth || isHealth
+    return isCoachApi || isAppleHealth || isHealth || isCron
       ? withCors(response, origin)
       : response
   }

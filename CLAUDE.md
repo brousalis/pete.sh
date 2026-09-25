@@ -5,13 +5,14 @@ repository.
 
 ## Project Overview
 
-**petehome `apps/web` is the local PWA** — coaching UI + APIs only. The old smart-home dashboard
+**petehome `apps/web`** — coaching PWA + APIs, deployed on Vercel. The old smart-home dashboard
 (Hue, Spotify, CTA, coffee, maple, cooking AI chef, unified assistant, climber-physique AI Coach,
-fitness routine editor, blog, homework) has been removed. There is no Vercel publish path for this
-app anymore.
+fitness routine editor, blog, homework) has been removed.
 
-- **Web App** (`apps/web/`) — petehome PWA at `/coach` plus `/api/coach/*` and `/api/apple-health/*`
-- **Coach worker** (`apps/coach-worker/`) — PM2 scheduled jobs + activity LISTEN (`petehome-worker`)
+- **Web App** (`apps/web/`) — petehome PWA at `/coach` plus `/api/coach/*`, `/api/apple-health/*`,
+  and `/api/cron/*` (Vercel Cron)
+- **Coach worker** (`apps/coach-worker/`) — CLI only (`yarn coach:job`); do not run the old PM2
+  scheduler alongside production
 - **Shared core** (`packages/coach-core/`) — analytics, guardrails, prompts, tools
 - **iOS** (`apps/ios/`) — petehome watch + phone HealthKit sync (installed build may still point at
   pete.sh)
@@ -43,11 +44,12 @@ packages/coach-core/     Shared, no framework deps. Imported by web AND worker.
   cost/                  CostGovernor: model routing, caps, accounting
   evals/                 Golden scenarios
 
-apps/web/lib/services/coach/   Data access + runtime, backed by Supabase
+apps/web/lib/services/coach/   Data access + runtime + jobs.service, backed by Supabase
 apps/web/app/api/coach/        HTTP surface (chat, plan, watch, MCP, ICS)
+apps/web/app/api/cron/         Vercel Cron job triggers
 apps/web/app/api/apple-health/ petehome ingest
 apps/web/app/(dashboard)/coach/  PWA (route-group name only — not a home dashboard)
-apps/coach-worker/       PM2 worker: scheduled jobs, activity listener
+apps/coach-worker/       CLI job runner (scheduler disabled; crons on Vercel)
 ```
 
 ### Rules that are easy to break accidentally
@@ -69,9 +71,8 @@ apps/coach-worker/       PM2 worker: scheduled jobs, activity listener
 ```bash
 yarn coach:test           # analytics + guardrail unit tests
 yarn coach:type-check
-yarn coach:worker         # run the worker in watch mode
-yarn coach:job briefing   # run any scheduled job now (from apps/coach-worker)
-yarn p:start:coach        # start the worker under PM2
+yarn coach:job briefing   # run any job now (from apps/coach-worker CLI)
+# Scheduled jobs: Vercel Cron → /api/cron/[job] (see apps/web/vercel.json)
 
 cd apps/web
 yarn coach:eval           # golden scenarios against the live model
@@ -84,18 +85,16 @@ yarn type-check
 
 `ANTHROPIC_API_KEY`, `COACH_SESSION_SECRET` (32+ chars), `COACH_ACCESS_CODE`,
 `COACH_API_KEY` and/or `PETEWATCH_API_KEY` (aliases — one machine key is enough),
-`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (worker). Optional: `VOYAGE_API_KEY`,
-`VAPID_*`, `APNS_*`.
+`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET` (Vercel Cron bearer). Optional: `VOYAGE_API_KEY`,
+`VAPID_*`, `APNS_*`. Local CLI may still use `SUPABASE_DB_URL`; cron jobs do not need it.
 
 ## Common Commands
 
 ```bash
 # Development (from root)
-yarn dev                    # Start web on 0.0.0.0:3000
+yarn dev                    # Start web on 0.0.0.0:1337
 yarn build                  # Build web app
 yarn p:start                # Start local Next via PM2 (apps/web)
-yarn p:start:coach          # Start petehome-worker via PM2
-yarn p:logs:coach
 yarn p:status
 
 # Code Quality
@@ -108,9 +107,10 @@ yarn type-check
 yarn clean
 ```
 
-`yarn p:start` runs local Next for `apps/web`. `yarn p:start:coach` runs the worker.
+`yarn p:start` runs local Next for `apps/web`. Scheduled coach jobs run on Vercel Cron — do not
+leave `petehome-worker` scheduling alongside production.
 
-Dev serves plain HTTP on `http://localhost:3000`. TLS is opt-in — `yarn dev:https`, or
+Dev serves plain HTTP on `http://localhost:1337`. TLS is opt-in — `yarn dev:https`, or
 `PETEHOME_HTTPS=1` for the PM2 app — and needs mkcert certs in `apps/web/certs/`.
 
 ## Architecture
@@ -123,14 +123,15 @@ petehome/
 │   ├── web/                    # Next.js petehome PWA + apple-health APIs
 │   │   ├── app/(dashboard)/coach/  Coach UI
 │   │   ├── app/api/coach/          Coach HTTP
+│   │   ├── app/api/cron/           Vercel Cron jobs
 │   │   ├── app/api/apple-health/   petehome ingest
 │   │   ├── app/api/health/         Liveness
 │   │   ├── components/coach/       Coach UI
 │   │   ├── components/ui/          Shared primitives still used by coach
-│   │   ├── lib/services/coach/     Coach data + runtime
+│   │   ├── lib/services/coach/     Coach data + runtime + jobs
 │   │   ├── data/knowledge/         Corpus for ingest
 │   │   └── supabase/               Migrations (coach_* + orphaned legacy tables)
-│   ├── coach-worker/           PM2 scheduled coach jobs
+│   ├── coach-worker/           CLI job runner (crons on Vercel)
 │   ├── ios/                    petehome HealthKit
 │   └── …
 ├── packages/coach-core/        Shared analytics, guardrails, prompts, tools
@@ -141,10 +142,11 @@ petehome/
 ### Web App Structure (`apps/web/`)
 
 - `app/` — App Router. Pages are `/` → `/coach`, coach routes, and `/coach/login`.
-- `app/api/` — **only** `coach`, `apple-health`, and `health`.
+- `app/api/` — `coach`, `cron`, `apple-health`, and `health`.
 - `components/coach/` — PWA UI; `components/ui/` — button/card/sheet/etc.
 - `lib/services/` — `coach/*`, `apple-health.service`, `calendar.service`, `token-storage`
 - `lib/config.ts` — Zod-validated env (Google Calendar for `get_calendar`, weather, coach keys)
+- `vercel.json` — cron schedules for `/api/cron/*`
 - `proxy.ts` — CORS + no-store for coach / apple-health / health (local + LAN origins)
 
 ### Key Patterns
@@ -159,14 +161,15 @@ petehome/
 - **Apple Health / petehome** — ingest into `apple_health_*`
 - **Google Calendar** — coach `get_calendar` tool (optional OAuth tokens in `.tokens.json`)
 - **Weather / lake** — Open-Meteo, NWS, NOAA for environment tools
-- **Anthropic** — chat + worker jobs via AI SDK
+- **Anthropic** — chat + cron jobs via AI SDK
 - **Voyage** — optional embeddings for knowledge/memory
 
 ## Runtime
 
-- **Local Next** for `/coach` and APIs (`yarn dev` / PM2 `petehome`), plain HTTP by default
-- **PM2 `petehome-worker`** for cron + NOTIFY debriefs
-- Supabase Postgres for data + pg-boss
+- **Vercel** for `/coach`, APIs, and cron (`apps/web/vercel.json`)
+- **Local Next** optional for LAN (`yarn dev` / PM2 `petehome`)
+- Supabase Postgres for data
+- Do not run the old PM2 coach-worker scheduler alongside production crons
 
 ## Code Style
 

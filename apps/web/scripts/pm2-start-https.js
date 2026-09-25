@@ -47,10 +47,9 @@ if (useHttps) args.push('--https')
 
 console.log(`Starting Next.js server over ${useHttps ? 'HTTPS' : 'HTTP'}...`)
 
-const child = spawn('node', args, {
+const child = spawn(process.execPath, args, {
   cwd: path.join(__dirname, '..'),
   stdio: 'inherit',
-  shell: true,
   windowsHide: true,
   env: {
     ...process.env,

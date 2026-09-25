@@ -58,12 +58,4 @@ export interface FuelDraft {
   source: FuelSource
 }
 
-export function chicagoToday(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
-}
-
-export function shiftChicagoDate(date: string, deltaDays: number): string {
-  const [y, m, d] = date.split('-').map(Number)
-  const utc = new Date(Date.UTC(y!, m! - 1, d! + deltaDays))
-  return utc.toISOString().slice(0, 10)
-}
+export { chicagoToday, shiftChicagoDate } from '@/lib/coach-dates'

@@ -11,7 +11,7 @@ from petehome_cli.config import COACH_API_BASE, COACH_HEALTHZ_URL, PM2_PROCESSES
 from petehome_cli.services import coach as coach_svc
 from petehome_cli.services.pm2 import PM2Service
 
-COACH_NAME = PM2_PROCESSES["coach"]
+COACH_NAME = PM2_PROCESSES["worker"]
 
 _USAGE = """\
 [dim]coach / pc — petehome

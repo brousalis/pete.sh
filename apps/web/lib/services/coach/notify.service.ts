@@ -91,8 +91,6 @@ async function sendWebPush(
   }
 
   try {
-    // Imported lazily: web-push is a worker dependency and is not bundled
-    // into the Next.js server build.
     const webpush = (await import('web-push')).default
     webpush.setVapidDetails(subject, publicKey, privateKey)
 

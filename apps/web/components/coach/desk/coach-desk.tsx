@@ -38,6 +38,7 @@ function CoachDeskInner() {
       else params.set('panel', next)
       params.delete('focus')
       if (next !== 'activity') params.delete('workout')
+      if (next !== 'plan') params.delete('date')
       const query = params.toString()
       router.replace(query ? `/coach?${query}` : '/coach', { scroll: false })
     },

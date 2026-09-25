@@ -16,6 +16,7 @@ import {
 
 import { Metric, MetricRow, StatLine } from '@/components/coach/ui/metric'
 import { Chip, EmptyNote, Panel, PanelHeader, Track } from '@/components/coach/ui/panel'
+import { TermTip } from '@/components/coach/ui/term-tip'
 import { acwrTone, tsbTone, toneClasses } from '@/components/coach/ui/tone'
 import type { LoadSummary } from '@petehome/coach-core'
 import { cn } from '@/lib/utils'
@@ -42,9 +43,9 @@ interface ProjectionView {
 }
 
 const SERIES = [
-  { key: 'fitness', label: 'Fitness (CTL)', colour: 'var(--sport-swim)' },
-  { key: 'fatigue', label: 'Fatigue (ATL)', colour: 'var(--sport-run)' },
-  { key: 'form', label: 'Form (TSB)', colour: 'var(--ink-3)' },
+  { key: 'fitness', label: 'Fitness (CTL)', tip: 'ctl' as const, colour: 'var(--sport-swim)' },
+  { key: 'fatigue', label: 'Fatigue (ATL)', tip: 'atl' as const, colour: 'var(--sport-run)' },
+  { key: 'form', label: 'Form (TSB)', tip: 'tsb' as const, colour: 'var(--ink-3)' },
 ]
 
 /** Load + race projection block — rendered above the Plan calendar. */
@@ -70,8 +71,27 @@ export function LoadSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="size-4 animate-spin text-ink-3" />
+      <div className="space-y-6" aria-busy aria-label="Loading training load">
+        <Panel className="px-5 py-5" aria-hidden>
+          <div className="grid grid-flow-col auto-cols-fr divide-x divide-line">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="space-y-2 px-3 first:pl-0 last:pr-0">
+                <div className="h-8 w-14 animate-pulse rounded-chip bg-surface-3" />
+                <div className="h-3 w-16 animate-pulse rounded-chip bg-surface-3" />
+                <div className="h-3 w-12 animate-pulse rounded-chip bg-surface-3" />
+              </div>
+            ))}
+          </div>
+        </Panel>
+        <Panel className="px-3 py-4" aria-hidden>
+          <div className="mb-3 flex items-center justify-between gap-3 px-2">
+            <div className="h-3 w-40 animate-pulse rounded-chip bg-surface-3" />
+            <div className="h-3 w-48 animate-pulse rounded-chip bg-surface-3" />
+          </div>
+          <div className="flex h-56 items-center justify-center">
+            <Loader2 className="size-4 animate-spin text-ink-3" />
+          </div>
+        </Panel>
       </div>
     )
   }
@@ -97,8 +117,15 @@ export function LoadSection() {
               value={load.current?.ctl ?? null}
               size="lg"
               hint="CTL · 42d"
+              tip="ctl"
             />
-            <Metric label="Fatigue" value={load.current?.atl ?? null} size="lg" hint="ATL · 7d" />
+            <Metric
+              label="Fatigue"
+              value={load.current?.atl ?? null}
+              size="lg"
+              hint="ATL · 7d"
+              tip="atl"
+            />
             <Metric
               label="Form"
               value={load.current?.tsb ?? null}
@@ -106,6 +133,7 @@ export function LoadSection() {
               signed
               tone={tsbTone(load.current?.tsb)}
               hint="TSB"
+              tip="tsb"
             />
             <Metric
               label="Ramp"
@@ -114,6 +142,7 @@ export function LoadSection() {
               decimals={2}
               tone={acwr}
               hint="ACWR"
+              tip="acwr"
             />
           </MetricRow>
         </Panel>
@@ -121,7 +150,9 @@ export function LoadSection() {
 
       <Panel className="px-3 py-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-2">
-          <p className="t-micro text-ink-3">Performance management · 42 days</p>
+          <TermTip term="pmc" className="t-micro text-ink-3">
+            Performance management · 42 days
+          </TermTip>
           <div className="flex flex-wrap items-center gap-3">
             {SERIES.map((series) => (
               <span key={series.key} className="inline-flex items-center gap-1.5 t-label text-ink-3">
@@ -130,7 +161,9 @@ export function LoadSection() {
                   style={{ backgroundColor: series.colour }}
                   aria-hidden
                 />
-                {series.label}
+                <TermTip term={series.tip} className="t-label text-ink-3">
+                  {series.label}
+                </TermTip>
               </span>
             ))}
           </div>
@@ -211,12 +244,14 @@ export function LoadSection() {
               label="Ramp rate"
               value={load.acwr?.toFixed(2) ?? '—'}
               tone={acwr}
+              tip="acwr"
               note={acwrNote(load.acwr)}
             />
             <StatLine
               label="Monotony"
               value={load.monotony?.toFixed(1) ?? '—'}
               tone={monotony}
+              tip="monotony"
               note={
                 load.monotony != null && load.monotony > 2
                   ? 'Make the easy days easier.'

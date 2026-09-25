@@ -23,6 +23,13 @@ const envSchema = z.object({
 
   ANTHROPIC_API_KEY: z.string().optional(),
 
+  // Spotify (setlist playlist script)
+  NEXT_SPOTIFY_CLIENT_ID: z.string().optional(),
+  NEXT_SPOTIFY_CLIENT_SECRET: z.string().optional(),
+
+  // setlist.fm
+  SETLISTFM_API_KEY: z.string().optional(),
+
   COACH_SESSION_SECRET: z.string().min(32).optional(),
   COACH_ACCESS_CODE: z.string().min(8).optional(),
   COACH_API_KEY: z.string().min(24).optional(),
@@ -63,6 +70,23 @@ export const config = {
     longitude: env.WEATHER_LONGITUDE
       ? parseFloat(env.WEATHER_LONGITUDE)
       : -87.6298,
+  },
+  spotify: {
+    clientId: env.NEXT_SPOTIFY_CLIENT_ID,
+    clientSecret: env.NEXT_SPOTIFY_CLIENT_SECRET,
+    isConfigured: Boolean(
+      env.NEXT_SPOTIFY_CLIENT_ID && env.NEXT_SPOTIFY_CLIENT_SECRET
+    ),
+    scopes: [
+      'playlist-modify-private',
+      'playlist-modify-public',
+      'playlist-read-private',
+      'user-read-private',
+    ],
+  },
+  concerts: {
+    setlistfmApiKey: env.SETLISTFM_API_KEY,
+    isSetlistfmConfigured: Boolean(env.SETLISTFM_API_KEY),
   },
   coach: {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
