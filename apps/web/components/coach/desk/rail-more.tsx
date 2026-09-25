@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import { GearSection } from '@/components/coach/desk/gear-section'
 import { RailKnee } from '@/components/coach/desk/rail-knee'
+import { RailSleepCompare } from '@/components/coach/desk/rail-sleep-compare'
 import { Chip, Panel, Section, Track } from '@/components/coach/ui/panel'
 import { type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
@@ -106,6 +107,8 @@ export function RailMore() {
       <h1 className="t-display">More</h1>
 
       <RailKnee />
+
+      <RailSleepCompare />
 
       {loading ? (
         <div className="flex items-center justify-center py-10">

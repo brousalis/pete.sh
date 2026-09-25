@@ -147,6 +147,70 @@ export interface SleepCompareView {
   bias: SleepCompareBias | null
 }
 
+/** Verdict for the More sleep-devices lean panel. */
+export type SleepCompareLeanVerdict =
+  | 'agree'
+  | 'polar_longer'
+  | 'polar_shorter'
+  | 'stages_diverge'
+  | 'insufficient'
+
+export interface SleepCompareLean {
+  verdict: SleepCompareLeanVerdict
+  headline: string
+  bullets: string[]
+}
+
+export interface SleepCompareDetailSummary {
+  meanAsleepDeltaH: number | null
+  medianBedOffsetMin: number | null
+  medianWakeOffsetMin: number | null
+  meanDeepPctDelta: number | null
+  meanPolarScore: number | null
+  closeNightPct: number | null
+}
+
+export interface SleepCompareSeriesPoint {
+  date: string
+  appleHours: number | null
+  polarHours: number | null
+  appleDeepPct: number | null
+  polarDeepPct: number | null
+}
+
+export interface SleepStageAverageMinutes {
+  deepMinutes: number | null
+  remMinutes: number | null
+  /** Apple core or Polar light. */
+  lightOrCoreMinutes: number | null
+  awakeMinutes: number | null
+  unrecognizedMinutes: number | null
+}
+
+export type SleepNightAgreement = 'close' | 'off' | 'polar_only' | 'apple_only'
+
+export interface SleepNightCompareRow {
+  date: string
+  agreement: SleepNightAgreement
+  apple: LastNightSleepView | null
+  polar: PolarSleepNightView | null
+  deltas: SleepCompareDeltas | null
+  polarContinuity: number | null
+}
+
+export interface SleepCompareDetailView {
+  days: number
+  overlappingNights: number
+  lean: SleepCompareLean
+  summary: SleepCompareDetailSummary
+  series: SleepCompareSeriesPoint[]
+  stageAverages: {
+    apple: SleepStageAverageMinutes
+    polar: SleepStageAverageMinutes
+  }
+  nights: SleepNightCompareRow[]
+}
+
 export interface ConditionsView {
   summary: string
   temperatureF: number | null
