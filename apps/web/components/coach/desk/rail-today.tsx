@@ -25,7 +25,12 @@ import { Metric, MetricRow } from '@/components/coach/ui/metric'
 import { Chip, Panel, PanelHeader, Section } from '@/components/coach/ui/panel'
 import { acwrTone, tsbTone, type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
-import type { LastNightSleepView, PtProtocolView, TodayResponse } from '@/lib/types/coach-ui.types'
+import type {
+  LastNightSleepView,
+  PtProtocolView,
+  SleepCompareView,
+  TodayResponse,
+} from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
 export function RailToday({
@@ -182,7 +187,9 @@ export function RailToday({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
         <div className="min-w-0 space-y-6">
           <ReadinessPanel readiness={data.readiness} />
-          {data.lastNightSleep ? <LastNightSleepCard sleep={data.lastNightSleep} /> : null}
+          {data.lastNightSleep ? (
+            <LastNightSleepCard sleep={data.lastNightSleep} compare={data.sleepCompare} />
+          ) : null}
 
           <Section title={restDay ? 'Sessions · rest day' : 'Sessions'}>
             {restDay ? (
@@ -237,8 +244,20 @@ export function RailToday({
             <Panel>
               <PanelHeader label="Load" className="mb-3" />
               <MetricRow>
-                <Metric label="CTL" value={data.load.ctl} size="sm" align="center" />
-                <Metric label="ATL" value={data.load.atl} size="sm" align="center" />
+                <Metric
+                  label="CTL"
+                  value={data.load.ctl}
+                  size="sm"
+                  align="center"
+                  tip="ctl"
+                />
+                <Metric
+                  label="ATL"
+                  value={data.load.atl}
+                  size="sm"
+                  align="center"
+                  tip="atl"
+                />
                 <Metric
                   label="TSB"
                   value={data.load.tsb}
@@ -246,6 +265,7 @@ export function RailToday({
                   align="center"
                   signed
                   tone={tsbTone(data.load.tsb)}
+                  tip="tsb"
                 />
                 <Metric
                   label="ACWR"
@@ -254,6 +274,7 @@ export function RailToday({
                   align="center"
                   decimals={2}
                   tone={acwrTone(data.load.acwr)}
+                  tip="acwr"
                 />
               </MetricRow>
             </Panel>
@@ -328,13 +349,61 @@ function Fact({ icon, children }: { icon: React.ReactNode; children: React.React
   )
 }
 
-function LastNightSleepCard({ sleep }: { sleep: LastNightSleepView }) {
+function formatSigned(value: number, unit: string, decimals = 0): string {
+  const rounded =
+    decimals > 0 ? value.toFixed(decimals) : String(Math.round(value))
+  const sign = value > 0 ? '+' : ''
+  return `${sign}${rounded}${unit}`
+}
+
+function LastNightSleepCard({
+  sleep,
+  compare,
+}: {
+  sleep: LastNightSleepView
+  compare: SleepCompareView | null | undefined
+}) {
   const stages = [
     sleep.deepMinutes != null ? `Deep ${sleep.deepMinutes}m` : null,
     sleep.remMinutes != null ? `REM ${sleep.remMinutes}m` : null,
     sleep.coreMinutes != null ? `Core ${sleep.coreMinutes}m` : null,
     sleep.awakeMinutes != null ? `Awake ${sleep.awakeMinutes}m` : null,
   ].filter(Boolean)
+
+  const deltas = compare?.deltas
+  const polar = compare?.polar
+  const bias = compare?.bias
+  const deltaBits =
+    deltas != null
+      ? [
+          deltas.asleepHours != null
+            ? `Asleep ${formatSigned(deltas.asleepHours, 'h', 1)}`
+            : null,
+          deltas.deepMinutes != null
+            ? `Deep ${formatSigned(deltas.deepMinutes, 'm')}`
+            : null,
+          deltas.remMinutes != null
+            ? `REM ${formatSigned(deltas.remMinutes, 'm')}`
+            : null,
+          deltas.bedtimeOffsetMinutes != null
+            ? `Bed ${formatSigned(deltas.bedtimeOffsetMinutes, 'm')}`
+            : null,
+          polar?.sleepScore != null ? `Score ${polar.sleepScore}` : null,
+        ].filter(Boolean)
+      : []
+
+  const biasBits =
+    bias != null && bias.nights > 0
+      ? [
+          bias.meanAsleepHoursDelta != null
+            ? `Polar ${formatSigned(bias.meanAsleepHoursDelta, 'h', 1)} asleep avg`
+            : null,
+          bias.meanDeepPctDelta != null
+            ? `${formatSigned(bias.meanDeepPctDelta, 'pp')} deep`
+            : null,
+          `${bias.nights}n`,
+        ].filter(Boolean)
+      : []
 
   return (
     <Panel>
@@ -362,6 +431,15 @@ function LastNightSleepCard({ sleep }: { sleep: LastNightSleepView }) {
       ) : null}
       {sleep.breathingDisturbancesElevated ? (
         <p className="mt-1.5 t-label text-tone-caution">Elevated breathing disturbances</p>
+      ) : null}
+      {deltaBits.length > 0 ? (
+        <div className="mt-3 border-t border-hairline pt-2.5">
+          <p className="t-label text-ink-3">vs Polar Loop</p>
+          <p className="mt-1 t-label text-ink-2">{deltaBits.join(' · ')}</p>
+          {biasBits.length > 0 ? (
+            <p className="mt-1 t-label text-ink-3">{biasBits.join(' · ')}</p>
+          ) : null}
+        </div>
       ) : null}
     </Panel>
   )

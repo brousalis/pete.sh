@@ -23,6 +23,7 @@
     "coach:eval": "tsx scripts/coach-eval.ts",
     "coach:ingest": "tsx scripts/coach-ingest-knowledge.ts",
     "coach:doctor": "tsx scripts/coach-doctor.ts",
+    "polar:oauth": "tsx scripts/polar-oauth.ts",
     "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts"
   },
   "dependencies": {

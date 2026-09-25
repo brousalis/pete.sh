@@ -22,6 +22,7 @@ import {
 } from '@/lib/services/coach/coach-data.service'
 import { getLakeConditions, getWeatherContext } from '@/lib/services/coach/environment.service'
 import { enrichSessionsWithActivity } from '@/lib/services/coach/session-activity-glance.service'
+import { buildSleepCompare } from '@/lib/services/coach/sleep-compare.service'
 import { readinessGuidance } from '@petehome/coach-core'
 
 export const runtime = 'nodejs'
@@ -44,6 +45,12 @@ export async function GET(request: NextRequest) {
     ])
 
     // These can each fail without making the screen useless.
+    const metricsFrom = (() => {
+      const [y, m, d] = date.split('-').map(Number)
+      const utc = Date.UTC(y!, m! - 1, d!)
+      return new Date(utc - 13 * 86_400_000).toISOString().slice(0, 10)
+    })()
+
     const [readiness, load, weather, lake, completions, briefing, dailyMetrics] = await Promise.all([
       computeAndStoreReadiness(date).catch(() => null),
       getLoadSummary(60).catch(() => null),
@@ -62,12 +69,12 @@ export async function GET(request: NextRequest) {
         .maybeSingle()
         .then((result: { data: { entry?: string } | null }) => result.data?.entry ?? null)
         .catch(() => null),
-      getDailyMetrics(date, date).catch(() => []),
+      getDailyMetrics(metricsFrom, date).catch(() => []),
     ])
 
-    const night = dailyMetrics[0]
+    const night = dailyMetrics.find((m) => m.metricDate === date) ?? dailyMetrics[dailyMetrics.length - 1]
     const lastNightSleep =
-      night?.sleepSeconds != null
+      night?.metricDate === date && night.sleepSeconds != null
         ? {
             hours: Math.round((night.sleepSeconds / 3600) * 10) / 10,
             inBedHours:
@@ -88,6 +95,7 @@ export async function GET(request: NextRequest) {
           }
         : null
 
+    const sleepCompare = await buildSleepCompare(date, dailyMetrics).catch(() => null)
     const completed = new Map<string, boolean>(
       (completions ?? []).map((row: { protocol_id: string; skipped: boolean }) => [
         row.protocol_id,
@@ -113,6 +121,7 @@ export async function GET(request: NextRequest) {
         ? { ...readiness, guidance: readinessGuidance(readiness.level) }
         : null,
       lastNightSleep,
+      sleepCompare,
       sessions: uiSessions,
       ptProtocols: applicableProtocols.map((protocol) => ({
         id: protocol.id,

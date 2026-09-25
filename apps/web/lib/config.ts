@@ -38,6 +38,11 @@ const envSchema = z.object({
   COACH_MONTHLY_BUDGET_USD: z.string().regex(/^\d+(\.\d+)?$/).optional(),
   VOYAGE_API_KEY: z.string().optional(),
   NOAA_STATION_ID: z.string().optional(),
+
+  // Polar AccessLink (Loop sleep comparison — Apple remains coach SoT)
+  POLAR_CLIENT_ID: z.string().optional(),
+  POLAR_CLIENT_SECRET: z.string().optional(),
+  POLAR_REDIRECT_URI: z.string().url().optional(),
 })
 
 const parseEnv = () => {
@@ -101,6 +106,12 @@ export const config = {
     isConfigured: Boolean(env.ANTHROPIC_API_KEY),
     isAuthConfigured: true,
     isEmbeddingConfigured: Boolean(env.VOYAGE_API_KEY),
+  },
+  polar: {
+    clientId: env.POLAR_CLIENT_ID,
+    clientSecret: env.POLAR_CLIENT_SECRET,
+    redirectUri: env.POLAR_REDIRECT_URI || 'http://127.0.0.1:18765/callback',
+    isConfigured: Boolean(env.POLAR_CLIENT_ID && env.POLAR_CLIENT_SECRET),
   },
 } as const
 

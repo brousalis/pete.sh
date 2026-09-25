@@ -106,6 +106,47 @@ export interface LastNightSleepView {
   breathingDisturbancesElevated: boolean | null
 }
 
+/** Polar Loop night mapped for display (light ≈ Apple core). */
+export interface PolarSleepNightView {
+  date: string
+  hours: number | null
+  efficiencyPct: number | null
+  lightMinutes: number | null
+  deepMinutes: number | null
+  remMinutes: number | null
+  awakeMinutes: number | null
+  unrecognizedMinutes: number | null
+  sleepScore: number | null
+  start: string | null
+  end: string | null
+}
+
+/** Polar − Apple for last night (positive = Polar higher / later). */
+export interface SleepCompareDeltas {
+  asleepHours: number | null
+  deepMinutes: number | null
+  remMinutes: number | null
+  lightVsCoreMinutes: number | null
+  awakeMinutes: number | null
+  bedtimeOffsetMinutes: number | null
+  wakeOffsetMinutes: number | null
+}
+
+/** Rolling bias over overlapping nights (Polar − Apple). */
+export interface SleepCompareBias {
+  nights: number
+  meanAsleepHoursDelta: number | null
+  meanDeepPctDelta: number | null
+  polarHigherAsleepNights: number
+  polarLowerAsleepNights: number
+}
+
+export interface SleepCompareView {
+  polar: PolarSleepNightView | null
+  deltas: SleepCompareDeltas | null
+  bias: SleepCompareBias | null
+}
+
 export interface ConditionsView {
   summary: string
   temperatureF: number | null
@@ -125,6 +166,7 @@ export interface TodayResponse {
   briefing: string | null
   readiness: ReadinessView | null
   lastNightSleep: LastNightSleepView | null
+  sleepCompare: SleepCompareView | null
   sessions: TodaySession[]
   ptProtocols: PtProtocolView[]
   symptomsToday: {
