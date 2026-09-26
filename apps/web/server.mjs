@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
-const port = parseInt(process.env.PORT || '1337', 10)
+const port = parseInt(process.env.PORT || '7331', 10)
 
 // Plain HTTP by default. localhost is a secure context in every browser, so
 // service workers, push, and the PWA install prompt all still work; pass

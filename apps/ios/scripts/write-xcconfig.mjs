@@ -31,7 +31,7 @@ const key = env.PETEWATCH_API_KEY || env.COACH_API_KEY || ''
 const server =
   env.PETEHOME_SERVER_URL ||
   env.COACH_CLI_UI_URL?.replace(/\/coach\/?$/, '') ||
-  'https://192.168.1.4:1337'
+  'https://192.168.1.4:7331'
 
 function xcLine(name, value) {
   if (value.includes('//') || value.includes('=')) {

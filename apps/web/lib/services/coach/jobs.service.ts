@@ -16,8 +16,6 @@ import {
   readinessGuidance,
 } from '@petehome/coach-core'
 
-import { syncPolarSleep } from '@/lib/services/polar.service'
-
 import { linkWorkoutToPlannedSession, refreshWeekActualLoad } from './adherence.service'
 import { computeActivityLoad, computeAndStoreReadiness, getLoadSummary, getRaceProjection, nightlyRecompute } from './analytics.service'
 import {
@@ -617,41 +615,6 @@ export async function runPtReminder(timeOfDay: 'morning' | 'evening'): Promise<J
   })
 
   return { job: `pt_${timeOfDay}`, ok: true, summary: `Reminded: ${protocol.name}.` }
-}
-
-// ---------------------------------------------------------------------------
-// Polar sleep sync (comparison only — Apple remains coach SoT)
-// ---------------------------------------------------------------------------
-
-/**
- * Pull Polar Loop sleep via AccessLink into polar_sleep_nights.
- * Soft-skips when Polar env or OAuth tokens are missing.
- */
-export async function runPolarSleepSync(): Promise<JobResult> {
-  try {
-    const result = await syncPolarSleep()
-    if (result.skipped) {
-      return {
-        job: 'polar-sleep',
-        ok: true,
-        summary: `Skipped: ${result.reason ?? 'unconfigured'}`,
-        detail: result,
-      }
-    }
-    return {
-      job: 'polar-sleep',
-      ok: true,
-      summary: `Upserted ${result.upserted} Polar sleep night(s)${result.reason ? ` — ${result.reason}` : ''}`,
-      detail: result,
-    }
-  } catch (error) {
-    console.error('[coach] Polar sleep sync failed:', error)
-    return {
-      job: 'polar-sleep',
-      ok: false,
-      summary: error instanceof Error ? error.message : String(error),
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------

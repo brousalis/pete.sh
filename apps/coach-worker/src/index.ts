@@ -18,7 +18,7 @@ loadEnv({ path: fileURLToPath(new URL('../.env', import.meta.url)) })
 loadEnv({ path: fileURLToPath(new URL('../../web/.env.local', import.meta.url)) })
 loadEnv({ path: fileURLToPath(new URL('../../web/.env', import.meta.url)) })
 
-const PORT = Number(process.env.COACH_WORKER_PORT ?? 1338)
+const PORT = Number(process.env.COACH_WORKER_PORT ?? 7332)
 
 function log(message: string): void {
   console.log(`[coach-worker] ${new Date().toISOString()} ${message}`)

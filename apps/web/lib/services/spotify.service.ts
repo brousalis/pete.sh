@@ -21,7 +21,7 @@ export class SpotifyService {
   private redirectUri: string
 
   constructor(redirectUri?: string) {
-    this.redirectUri = redirectUri || 'http://localhost:1337/spotify/callback'
+    this.redirectUri = redirectUri || 'http://localhost:7331/spotify/callback'
   }
 
   private get clientId(): string | undefined {

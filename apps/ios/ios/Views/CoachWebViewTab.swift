@@ -132,7 +132,9 @@ struct CoachWebViewTab: View {
 
         if shouldSync {
             Task {
-                _ = await syncManager.syncDailyMetrics(days: 1)
+                // Today + yesterday: Watch sleep often lands after the first
+                // morning pass, and "yesterday" is the night that just ended.
+                _ = await syncManager.syncDailyMetrics(days: 2)
             }
         }
     }

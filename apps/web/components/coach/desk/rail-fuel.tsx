@@ -283,7 +283,7 @@ export function RailFuel() {
 
   return (
     <div className="min-h-full">
-      <div className="space-y-4 px-5 pt-6 pb-8 md:px-8 md:pt-8 md:pb-10">
+      <div className="space-y-5 px-5 pt-6 pb-8 md:px-8 md:pt-8 md:pb-10">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -331,48 +331,62 @@ export function RailFuel() {
           </div>
         </header>
 
-        <FuelComposer
-          estimating={estimating}
-          resetToken={composerReset}
-          onEstimate={(description) => void estimate(description)}
-          onManual={(description) => openManual(description)}
-        />
-
-        {error ? (
-          <Chip tone="caution">{error}</Chip>
-        ) : null}
-
         {loading && !nutrition ? (
           <div className="flex justify-center py-16">
             <Loader2 className="size-4 animate-spin text-ink-3" />
           </div>
-        ) : null}
+        ) : (
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+            <div className="min-w-0 space-y-4">
+              <FuelComposer
+                estimating={estimating}
+                resetToken={composerReset}
+                onEstimate={(description) => void estimate(description)}
+                onManual={(description) => openManual(description)}
+              />
 
-        {nutrition ? (
-          <FuelDayHero
-            nutrition={nutrition}
-            addingStapleId={addingStapleId}
-            onAddStaple={(id) => void addStaple(id)}
-          />
-        ) : null}
+              {error ? <Chip tone="caution">{error}</Chip> : null}
 
-        <Section
-          title="Log"
-          action={
-            entries.length > 0 ? (
-              <span className="t-micro text-ink-3">
-                {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-              </span>
-            ) : null
-          }
-        >
-          <FuelEntryList
-            entries={entries}
-            onSelect={openEdit}
-            onDelete={(entry) => void deleteEntry(entry)}
-            deletingId={deletingId}
-          />
-        </Section>
+              {nutrition ? (
+                <div className="lg:hidden">
+                  <FuelDayHero
+                    nutrition={nutrition}
+                    addingStapleId={addingStapleId}
+                    onAddStaple={(id) => void addStaple(id)}
+                  />
+                </div>
+              ) : null}
+
+              <Section
+                title="Log"
+                action={
+                  entries.length > 0 ? (
+                    <span className="t-micro text-ink-3">
+                      {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+                    </span>
+                  ) : null
+                }
+              >
+                <FuelEntryList
+                  entries={entries}
+                  onSelect={openEdit}
+                  onDelete={(entry) => void deleteEntry(entry)}
+                  deletingId={deletingId}
+                />
+              </Section>
+            </div>
+
+            {nutrition ? (
+              <aside className="hidden min-w-0 lg:sticky lg:top-4 lg:block lg:self-start">
+                <FuelDayHero
+                  nutrition={nutrition}
+                  addingStapleId={addingStapleId}
+                  onAddStaple={(id) => void addStaple(id)}
+                />
+              </aside>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <FuelConfirmSheet

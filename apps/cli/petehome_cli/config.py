@@ -27,11 +27,11 @@ PM2_PROCESSES: dict[str, str] = {
 }
 
 # Dev server settings
-DEV_SERVER_PORT = int(os.getenv("PORT", "1337"))
+DEV_SERVER_PORT = int(os.getenv("PORT", "7331"))
 DEV_SERVER_HOST = os.getenv("HOSTNAME", "0.0.0.0")
 
 # petehome
-COACH_WORKER_PORT = int(os.getenv("COACH_WORKER_PORT", "1338"))
+COACH_WORKER_PORT = int(os.getenv("COACH_WORKER_PORT", "7332"))
 COACH_API_KEY = os.getenv("COACH_API_KEY", "")
 COACH_API_BASE = os.getenv(
     "COACH_CLI_BASE_URL",
@@ -45,8 +45,8 @@ COACH_UI_URL = os.getenv(
 
 # Monitored ports for process cleanup
 MONITORED_PORTS: dict[str, dict[str, object]] = {
-    "dev-server": {"base": 1337, "range": 5, "group": "web"},
-    "coach-worker": {"base": 1338, "range": 1, "group": "worker"},
+    "dev-server": {"base": 7331, "range": 5, "group": "web"},
+    "coach-worker": {"base": 7332, "range": 1, "group": "worker"},
 }
 
 

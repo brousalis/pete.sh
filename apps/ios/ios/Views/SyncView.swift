@@ -98,8 +98,8 @@ struct SyncView: View {
             Button {
                 syncResult = nil
                 Task {
-                    let workoutResult = await syncManager.syncHistoricalWorkouts(days: 1)
-                    let metricsCount = await syncManager.syncDailyMetrics(days: 1)
+                    let workoutResult = await syncManager.syncHistoricalWorkouts(days: 2)
+                    let metricsCount = await syncManager.syncDailyMetrics(days: 2)
 
                     if workoutResult.failed == 0 {
                         syncResult = .success("\(workoutResult.synced) workout(s) + \(metricsCount) day metrics synced")
@@ -115,7 +115,7 @@ struct SyncView: View {
                     } else {
                         Image(systemName: "arrow.triangle.2.circlepath")
                     }
-                    Text("Sync Today")
+                    Text("Sync Today + Yesterday")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(.white)

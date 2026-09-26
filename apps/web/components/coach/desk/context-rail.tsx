@@ -55,7 +55,7 @@ export function ContextRail({
   onTodayReload: () => void
   onSessionStatus?: (
     sessionId: string,
-    status: 'completed' | 'skipped'
+    status: 'completed' | 'skipped' | 'planned'
   ) => Promise<void>
   className?: string
 }) {
@@ -149,10 +149,7 @@ export function ContextRail({
           <div
             key={panel}
             className={cn(
-              'animate-fade-in mx-auto min-h-full w-full pb-20 md:pb-0',
-              panel === 'today' || panel === 'plan' || panel === 'activity'
-                ? 'max-w-[72rem]'
-                : 'max-w-[46rem]'
+              'animate-fade-in mx-auto min-h-full w-full max-w-[72rem] pb-20 md:pb-0'
             )}
           >
             {panel === 'today' ? (

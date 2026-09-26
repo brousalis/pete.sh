@@ -90,8 +90,9 @@ export function mapPlannedSessionToToday(
 export async function enrichSessionsWithActivity(
   sessions: PlannedSession[]
 ): Promise<TodaySession[]> {
-  // Self-heal: Mark-done after sync (or ingest before the session existed)
-  // leaves completed_activity_id null even when Activity has the workout.
+  // Self-heal: completed sessions missing a link still get a same-day matching
+  // workout attached (Mark-done after sync). Planned sessions are left alone
+  // so athlete Undo sticks.
   const linked = await reconcileSessionActivityLinks(sessions)
 
   const ids = linked

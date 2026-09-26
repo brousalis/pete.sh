@@ -1,9 +1,10 @@
 /**
- * PATCH /api/coach/sessions/[id] — athlete mark-done / skip
+ * PATCH /api/coach/sessions/[id] — athlete mark-done / skip / undo
  *
- * Records that a planned session was completed or skipped. Idempotent: posting
- * the same status twice succeeds without rewriting. Plan mutations (move,
- * cancel, replace) still go through /api/coach/plan → applyProposal.
+ * Records that a planned session was completed or skipped, or clears that
+ * mark (`planned`). Idempotent: posting the same status twice succeeds without
+ * rewriting. Plan mutations (move, cancel, replace) still go through
+ * /api/coach/plan → applyProposal.
  */
 
 import { NextRequest } from 'next/server'
@@ -17,7 +18,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const patchSchema = z.object({
-  status: z.enum(['completed', 'skipped']),
+  status: z.enum(['completed', 'skipped', 'planned']),
 })
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -68,7 +69,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to update session.'
       if (message.includes('not found')) return errorResponse(message, 404)
-      if (message.includes('already')) return errorResponse(message, 409)
+      if (message.includes('already') || message.includes('only completed')) {
+        return errorResponse(message, 409)
+      }
       throw error
     }
   } catch (error) {

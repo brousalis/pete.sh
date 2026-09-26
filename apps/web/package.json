@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server.mjs",
     "dev:https": "node server.mjs --https",
-    "dev:next": "next dev -H 0.0.0.0 -p 1337",
+    "dev:next": "next dev -H 0.0.0.0 -p 7331",
     "build": "next build",
     "start": "next start",
     "start:network": "next start -H 0.0.0.0",
@@ -23,7 +23,6 @@
     "coach:eval": "tsx scripts/coach-eval.ts",
     "coach:ingest": "tsx scripts/coach-ingest-knowledge.ts",
     "coach:doctor": "tsx scripts/coach-doctor.ts",
-    "polar:oauth": "tsx scripts/polar-oauth.ts",
     "setlist:spotify": "tsx scripts/setlistfm-to-spotify-playlist.ts"
   },
   "dependencies": {

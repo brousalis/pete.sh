@@ -91,8 +91,9 @@ final class BackgroundSyncManager {
             }
         }
 
-        // Perform the sync
-        let syncedCount = await syncManager.syncDailyMetrics(days: 1)
+        // Perform the sync — today + yesterday so lagging overnight sleep
+        // still lands when iOS finally runs the refresh.
+        let syncedCount = await syncManager.syncDailyMetrics(days: 2)
         let success = syncedCount > 0
         task.setTaskCompleted(success: success)
         print("[BackgroundSync] Completed sync: \(syncedCount) day(s) synced, success: \(success)")
@@ -104,6 +105,6 @@ final class BackgroundSyncManager {
     /// In production, background syncs are triggered by the system
     func triggerSyncNow() async {
         print("[BackgroundSync] Manually triggered sync")
-        _ = await syncManager.syncDailyMetrics(days: 1)
+        _ = await syncManager.syncDailyMetrics(days: 2)
     }
 }

@@ -34,6 +34,7 @@ import {
   getAdherenceSummary,
   getRecentSessionFeedback,
 } from './adherence.service'
+import { getRecentAudibles } from './audible.service'
 import {
   coachDb,
   getActiveInjuries,
@@ -109,7 +110,7 @@ export async function buildCoachContext(
   ])
 
   // These can fail independently without breaking the turn.
-  const [readiness, projection, weather, lake, memories, knowledge, ptCompletions, feedback, adherence, fuelCtx] =
+  const [readiness, projection, weather, lake, memories, knowledge, ptCompletions, feedback, adherence, fuelCtx, recentAudibles] =
     await Promise.all([
       computeAndStoreReadiness(today).catch(() => null),
       getRaceProjection().catch(() => null),
@@ -133,6 +134,7 @@ export async function buildCoachContext(
       getRecentSessionFeedback(14).catch(() => []),
       getAdherenceSummary(14).catch(() => null),
       getFuelContextForDay(today).catch(() => null),
+      getRecentAudibles(14, 12).catch(() => []),
     ])
 
   const completedProtocolIds = new Set(
@@ -256,6 +258,15 @@ export async function buildCoachContext(
           ptStreakDays: adherence.ptStreakDays,
         }
       : null,
+    recentAudibles: recentAudibles.map((row) => ({
+      createdAt: row.createdAt,
+      actor: row.actor,
+      changeType: row.changeType,
+      reason: row.reason,
+      autoApplied: row.autoApplied,
+      beforeSummary: row.beforeSummary,
+      afterSummary: row.afterSummary,
+    })),
     fuel: fuelCtx
       ? {
           fuellingWindow: fuelCtx.targets.fuellingWindow,

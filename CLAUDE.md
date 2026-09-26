@@ -92,7 +92,7 @@ yarn type-check
 
 ```bash
 # Development (from root)
-yarn dev                    # Start web on 0.0.0.0:1337
+yarn dev                    # Start web on 0.0.0.0:7331
 yarn build                  # Build web app
 yarn p:start                # Start local Next via PM2 (apps/web)
 yarn p:status
@@ -110,7 +110,7 @@ yarn clean
 `yarn p:start` runs local Next for `apps/web`. Scheduled coach jobs run on Vercel Cron — do not
 leave `petehome-worker` scheduling alongside production.
 
-Dev serves plain HTTP on `http://localhost:1337`. TLS is opt-in — `yarn dev:https`, or
+Dev serves plain HTTP on `http://localhost:7331`. TLS is opt-in — `yarn dev:https`, or
 `PETEHOME_HTTPS=1` for the PM2 app — and needs mkcert certs in `apps/web/certs/`.
 
 ## Architecture

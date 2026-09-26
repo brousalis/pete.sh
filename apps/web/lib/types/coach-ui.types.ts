@@ -106,111 +106,6 @@ export interface LastNightSleepView {
   breathingDisturbancesElevated: boolean | null
 }
 
-/** Polar Loop night mapped for display (light ≈ Apple core). */
-export interface PolarSleepNightView {
-  date: string
-  hours: number | null
-  efficiencyPct: number | null
-  lightMinutes: number | null
-  deepMinutes: number | null
-  remMinutes: number | null
-  awakeMinutes: number | null
-  unrecognizedMinutes: number | null
-  sleepScore: number | null
-  start: string | null
-  end: string | null
-}
-
-/** Polar − Apple for last night (positive = Polar higher / later). */
-export interface SleepCompareDeltas {
-  asleepHours: number | null
-  deepMinutes: number | null
-  remMinutes: number | null
-  lightVsCoreMinutes: number | null
-  awakeMinutes: number | null
-  bedtimeOffsetMinutes: number | null
-  wakeOffsetMinutes: number | null
-}
-
-/** Rolling bias over overlapping nights (Polar − Apple). */
-export interface SleepCompareBias {
-  nights: number
-  meanAsleepHoursDelta: number | null
-  meanDeepPctDelta: number | null
-  polarHigherAsleepNights: number
-  polarLowerAsleepNights: number
-}
-
-export interface SleepCompareView {
-  polar: PolarSleepNightView | null
-  deltas: SleepCompareDeltas | null
-  bias: SleepCompareBias | null
-}
-
-/** Verdict for the More sleep-devices lean panel. */
-export type SleepCompareLeanVerdict =
-  | 'agree'
-  | 'polar_longer'
-  | 'polar_shorter'
-  | 'stages_diverge'
-  | 'insufficient'
-
-export interface SleepCompareLean {
-  verdict: SleepCompareLeanVerdict
-  headline: string
-  bullets: string[]
-}
-
-export interface SleepCompareDetailSummary {
-  meanAsleepDeltaH: number | null
-  medianBedOffsetMin: number | null
-  medianWakeOffsetMin: number | null
-  meanDeepPctDelta: number | null
-  meanPolarScore: number | null
-  closeNightPct: number | null
-}
-
-export interface SleepCompareSeriesPoint {
-  date: string
-  appleHours: number | null
-  polarHours: number | null
-  appleDeepPct: number | null
-  polarDeepPct: number | null
-}
-
-export interface SleepStageAverageMinutes {
-  deepMinutes: number | null
-  remMinutes: number | null
-  /** Apple core or Polar light. */
-  lightOrCoreMinutes: number | null
-  awakeMinutes: number | null
-  unrecognizedMinutes: number | null
-}
-
-export type SleepNightAgreement = 'close' | 'off' | 'polar_only' | 'apple_only'
-
-export interface SleepNightCompareRow {
-  date: string
-  agreement: SleepNightAgreement
-  apple: LastNightSleepView | null
-  polar: PolarSleepNightView | null
-  deltas: SleepCompareDeltas | null
-  polarContinuity: number | null
-}
-
-export interface SleepCompareDetailView {
-  days: number
-  overlappingNights: number
-  lean: SleepCompareLean
-  summary: SleepCompareDetailSummary
-  series: SleepCompareSeriesPoint[]
-  stageAverages: {
-    apple: SleepStageAverageMinutes
-    polar: SleepStageAverageMinutes
-  }
-  nights: SleepNightCompareRow[]
-}
-
 export interface ConditionsView {
   summary: string
   temperatureF: number | null
@@ -225,13 +120,27 @@ export interface ConditionsView {
   lakeNote: string | null
 }
 
+/** Uploaded workout for a calendar day (linked or unmatched to a planned session). */
+export interface DayActualView {
+  id: string
+  activityDate: string
+  sport: Sport
+  rawType: string
+  title: string
+  durationSeconds: number
+  distanceMeters: number | null
+  tss: number | null
+  linkedSessionId: string | null
+}
+
 export interface TodayResponse {
   date: string
   briefing: string | null
   readiness: ReadinessView | null
   lastNightSleep: LastNightSleepView | null
-  sleepCompare: SleepCompareView | null
   sessions: TodaySession[]
+  /** Same-day uploads so unmatched work is visible before an audible. */
+  dayActuals: DayActualView[]
   ptProtocols: PtProtocolView[]
   symptomsToday: {
     id: string
@@ -262,6 +171,15 @@ export interface PlanWeekView {
   weekStart: string
   plannedTss: number
   sessions: TodaySession[]
+}
+
+export interface PlanResponse {
+  from: string
+  to: string
+  weeks: PlanWeekView[]
+  /** Uploaded workouts in range, keyed by YYYY-MM-DD. */
+  dayActualsByDate: Record<string, DayActualView[]>
+  yearPlan: YearPlanView | null
 }
 
 /** 48-week periodization skeleton (petehome.md). Later blocks are not all seeded yet. */

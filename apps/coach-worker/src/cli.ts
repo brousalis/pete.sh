@@ -9,7 +9,6 @@
  *   yarn job debrief --activity <uuid>
  *   yarn job weekly-plan
  *   yarn job nightly
- *   yarn job polar-sleep
  */
 
 import { fileURLToPath } from 'node:url'
@@ -29,7 +28,6 @@ petehome job runner
   weekly-plan                  Generate next week
   block-review                 Review the current block
   nightly                      Analytics recompute and memory maintenance
-  polar-sleep                  Sync Polar Loop sleep (comparison only)
   pt-morning | pt-evening      PT block reminder
 `
 
@@ -67,9 +65,6 @@ async function main(): Promise<void> {
 
     case 'nightly':
       return report(await jobs.runNightlyMaintenance())
-
-    case 'polar-sleep':
-      return report(await jobs.runPolarSleepSync())
 
     case 'pt-morning':
       return report(await jobs.runPtReminder('morning'))

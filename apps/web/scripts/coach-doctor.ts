@@ -45,17 +45,43 @@ function checkEnvironment(): void {
   }
 
   const secret = process.env.COACH_SESSION_SECRET
-  if (secret) {
-    record('COACH_SESSION_SECRET', 'ok', 'set (unused — coach gate is open)')
+  const code = process.env.COACH_ACCESS_CODE
+  const onVercelProd = process.env.VERCEL_ENV === 'production'
+  const gateWouldEnforce =
+    Boolean(secret && secret.length >= 32 && code && code.length >= 4) &&
+    (onVercelProd || (!process.env.VERCEL_ENV && process.env.NODE_ENV === 'production'))
+
+  if (!secret) {
+    record(
+      'COACH_SESSION_SECRET',
+      onVercelProd ? 'fail' : 'warn',
+      onVercelProd
+        ? 'missing — production /coach is unauthenticated'
+        : 'missing — set on Vercel production to enable the access-code gate',
+      'openssl rand -base64 48'
+    )
+  } else if (secret.length < 32) {
+    record('COACH_SESSION_SECRET', 'fail', `only ${secret.length} chars; 32 minimum`)
   } else {
-    record('COACH_SESSION_SECRET', 'ok', 'not required — coach gate is open')
+    record(
+      'COACH_SESSION_SECRET',
+      'ok',
+      gateWouldEnforce ? 'set (gate enforced)' : 'set (gate idle until production)'
+    )
   }
 
-  const code = process.env.COACH_ACCESS_CODE
-  if (code) {
-    record('COACH_ACCESS_CODE', 'ok', 'set (unused — coach gate is open)')
+  if (!code) {
+    record(
+      'COACH_ACCESS_CODE',
+      onVercelProd ? 'fail' : 'warn',
+      onVercelProd
+        ? 'missing — cannot sign in to /coach'
+        : 'missing — set on Vercel production (4+ chars)'
+    )
+  } else if (code.length < 4) {
+    record('COACH_ACCESS_CODE', 'fail', 'shorter than 4 characters')
   } else {
-    record('COACH_ACCESS_CODE', 'ok', 'not required — coach gate is open')
+    record('COACH_ACCESS_CODE', 'ok', 'set')
   }
 
   const apiKey = process.env.COACH_API_KEY || process.env.PETEWATCH_API_KEY
@@ -266,7 +292,7 @@ async function checkWorker(): Promise<void> {
     )
   }
 
-  const port = process.env.COACH_WORKER_PORT ?? '1338'
+  const port = process.env.COACH_WORKER_PORT ?? '7332'
   try {
     const response = await fetch(`http://localhost:${port}/healthz`, {
       signal: AbortSignal.timeout(3000),

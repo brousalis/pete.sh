@@ -4,7 +4,7 @@ Legacy Electron wrapper that used to open the petehome web UI.
 
 **Note:** `apps/web` is now a local petehome PWA only (`/coach`). It is not published to
 pete.sh / Vercel. This desktop shell is outdated unless you retarget it at a local origin
-(e.g. `http://localhost:1337/coach`). Prefer the browser for daily coaching.
+(e.g. `http://localhost:7331/coach`). Prefer the browser for daily coaching.
 
 ## Features (historical)
 

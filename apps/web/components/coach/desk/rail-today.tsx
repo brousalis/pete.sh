@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Cloud,
   Loader2,
+  Sun,
   Thermometer,
   Waves,
   Wind,
@@ -15,6 +16,11 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { CheckInSheet } from '@/components/coach/check-in-sheet'
+import { DayActualsStrip } from '@/components/coach/day-actuals-strip'
+import {
+  SessionAudibleSheet,
+  type AudibleSheetTarget,
+} from '@/components/coach/session-audible-sheet'
 import {
   SessionFeedbackSheet,
   type SessionFeedbackTarget,
@@ -22,14 +28,14 @@ import {
 import { ReadinessPanel } from '@/components/coach/readiness-panel'
 import { SessionCard } from '@/components/coach/session-card'
 import { Metric, MetricRow } from '@/components/coach/ui/metric'
-import { Chip, Panel, PanelHeader, Section } from '@/components/coach/ui/panel'
-import { acwrTone, tsbTone, type Tone } from '@/components/coach/ui/tone'
+import { Chip, Disclosure, Panel, PanelHeader, Section } from '@/components/coach/ui/panel'
+import { acwrTone, toneClasses, tsbTone, type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
 import type {
   LastNightSleepView,
   PtProtocolView,
-  SleepCompareView,
   TodayResponse,
+  TodaySession,
 } from '@/lib/types/coach-ui.types'
 import { cn } from '@/lib/utils'
 
@@ -47,33 +53,46 @@ export function RailToday({
   onReload: () => void
   onSessionStatus?: (
     sessionId: string,
-    status: 'completed' | 'skipped'
+    status: 'completed' | 'skipped' | 'planned'
   ) => Promise<void>
   onCheckInOpen?: (open: boolean) => void
 }) {
   const [checkInOpen, setCheckInOpen] = useState(false)
   const [busySessionId, setBusySessionId] = useState<string | null>(null)
   const [sessionFeedback, setSessionFeedback] = useState<SessionFeedbackTarget | null>(null)
+  const [audibleTarget, setAudibleTarget] = useState<AudibleSheetTarget | null>(null)
 
   function setCheckIn(open: boolean) {
     setCheckInOpen(open)
     onCheckInOpen?.(open)
   }
 
+  function openAudible(focusSession?: TodaySession | null) {
+    if (!data) return
+    setAudibleTarget({
+      date: data.date,
+      focusSession: focusSession ?? null,
+      sessions: data.sessions,
+      dayActuals: data.dayActuals ?? [],
+    })
+  }
+
   async function handleSessionStatus(
     sessionId: string,
-    status: 'completed' | 'skipped'
+    status: 'completed' | 'skipped' | 'planned'
   ): Promise<void> {
     if (!onSessionStatus || busySessionId) return
     const session = data?.sessions.find((row) => row.id === sessionId)
     setBusySessionId(sessionId)
     try {
       await onSessionStatus(sessionId, status)
-      setSessionFeedback({
-        sessionId,
-        title: session?.title ?? 'Session',
-        status,
-      })
+      if (status === 'completed' || status === 'skipped') {
+        setSessionFeedback({
+          sessionId,
+          title: session?.title ?? 'Session',
+          status,
+        })
+      }
     } finally {
       setBusySessionId(null)
     }
@@ -187,9 +206,6 @@ export function RailToday({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
         <div className="min-w-0 space-y-6">
           <ReadinessPanel readiness={data.readiness} />
-          {data.lastNightSleep ? (
-            <LastNightSleepCard sleep={data.lastNightSleep} compare={data.sleepCompare} />
-          ) : null}
 
           <Section title={restDay ? 'Sessions · rest day' : 'Sessions'}>
             {restDay ? (
@@ -215,11 +231,23 @@ export function RailToday({
                         ? (sessionId) => void handleSessionStatus(sessionId, 'skipped')
                         : undefined
                     }
+                    onUndo={
+                      onSessionStatus
+                        ? (sessionId) => void handleSessionStatus(sessionId, 'planned')
+                        : undefined
+                    }
+                    onAudible={(row) => openAudible(row)}
                   />
                 ))}
               </div>
             )}
           </Section>
+
+          <DayActualsStrip
+            actuals={data.dayActuals ?? []}
+            restDayHint={restDay}
+            onAudible={() => openAudible(null)}
+          />
 
           {data.ptProtocols.length > 0 ? (
             <Section
@@ -280,6 +308,8 @@ export function RailToday({
             </Panel>
           ) : null}
 
+          {data.lastNightSleep ? <LastNightSleepCard sleep={data.lastNightSleep} /> : null}
+
           {data.briefing ? <MorningBriefing text={data.briefing} /> : null}
 
           {data.conditions ? <ConditionsPanel conditions={data.conditions} /> : null}
@@ -293,6 +323,13 @@ export function RailToday({
           if (!open) setSessionFeedback(null)
         }}
         onSubmitted={onReload}
+      />
+      <SessionAudibleSheet
+        target={audibleTarget}
+        onOpenChange={(open) => {
+          if (!open) setAudibleTarget(null)
+        }}
+        onApplied={onReload}
       />
     </div>
   )
@@ -349,126 +386,162 @@ function Fact({ icon, children }: { icon: React.ReactNode; children: React.React
   )
 }
 
-function formatSigned(value: number, unit: string, decimals = 0): string {
-  const rounded =
-    decimals > 0 ? value.toFixed(decimals) : String(Math.round(value))
-  const sign = value > 0 ? '+' : ''
-  return `${sign}${rounded}${unit}`
+function formatSleepClock(iso: string | null): string | null {
+  if (!iso) return null
+  try {
+    return new Date(iso).toLocaleTimeString('en-US', {
+      timeZone: 'America/Chicago',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  } catch {
+    return null
+  }
 }
 
-function LastNightSleepCard({
-  sleep,
-  compare,
-}: {
-  sleep: LastNightSleepView
-  compare: SleepCompareView | null | undefined
-}) {
+function sleepEfficiencyTone(pct: number | null | undefined): Tone {
+  if (pct == null) return 'neutral'
+  if (pct < 80) return 'caution'
+  if (pct >= 90) return 'good'
+  return 'neutral'
+}
+
+function LastNightSleepCard({ sleep }: { sleep: LastNightSleepView }) {
   const stages = [
-    sleep.deepMinutes != null ? `Deep ${sleep.deepMinutes}m` : null,
-    sleep.remMinutes != null ? `REM ${sleep.remMinutes}m` : null,
-    sleep.coreMinutes != null ? `Core ${sleep.coreMinutes}m` : null,
-    sleep.awakeMinutes != null ? `Awake ${sleep.awakeMinutes}m` : null,
-  ].filter(Boolean)
+    { key: 'deep', label: 'Deep', minutes: sleep.deepMinutes, swatch: 'bg-[var(--accent-azure)]' },
+    { key: 'rem', label: 'REM', minutes: sleep.remMinutes, swatch: 'bg-[var(--accent-violet)]' },
+    { key: 'core', label: 'Core', minutes: sleep.coreMinutes, swatch: 'bg-[var(--accent-slate)]' },
+    {
+      key: 'awake',
+      label: 'Awake',
+      minutes: sleep.awakeMinutes,
+      swatch: 'bg-tone-caution',
+    },
+  ].filter((stage): stage is typeof stage & { minutes: number } => stage.minutes != null && stage.minutes > 0)
 
-  const deltas = compare?.deltas
-  const polar = compare?.polar
-  const bias = compare?.bias
-  const deltaBits =
-    deltas != null
-      ? [
-          deltas.asleepHours != null
-            ? `Asleep ${formatSigned(deltas.asleepHours, 'h', 1)}`
-            : null,
-          deltas.deepMinutes != null
-            ? `Deep ${formatSigned(deltas.deepMinutes, 'm')}`
-            : null,
-          deltas.remMinutes != null
-            ? `REM ${formatSigned(deltas.remMinutes, 'm')}`
-            : null,
-          deltas.bedtimeOffsetMinutes != null
-            ? `Bed ${formatSigned(deltas.bedtimeOffsetMinutes, 'm')}`
-            : null,
-          polar?.sleepScore != null ? `Score ${polar.sleepScore}` : null,
-        ].filter(Boolean)
-      : []
+  const stageTotal = stages.reduce((sum, stage) => sum + stage.minutes, 0)
+  const bed = formatSleepClock(sleep.start)
+  const wake = formatSleepClock(sleep.end)
+  const windowLabel = bed && wake ? `${bed}–${wake}` : null
 
-  const biasBits =
-    bias != null && bias.nights > 0
-      ? [
-          bias.meanAsleepHoursDelta != null
-            ? `Polar ${formatSigned(bias.meanAsleepHoursDelta, 'h', 1)} asleep avg`
-            : null,
-          bias.meanDeepPctDelta != null
-            ? `${formatSigned(bias.meanDeepPctDelta, 'pp')} deep`
-            : null,
-          `${bias.nights}n`,
-        ].filter(Boolean)
-      : []
+  const showEfficiency =
+    sleep.efficiencyPct != null &&
+    sleep.inBedHours != null &&
+    sleep.hours != null &&
+    sleep.inBedHours > sleep.hours
+  const effTone = sleepEfficiencyTone(sleep.efficiencyPct)
 
   return (
-    <Panel>
-      <PanelHeader label="Last night" className="mb-3" />
-      <MetricRow>
-        <Metric label="Asleep" value={sleep.hours} unit="h" size="sm" align="center" decimals={1} />
-        <Metric
-          label="In bed"
-          value={sleep.inBedHours}
-          unit="h"
-          size="sm"
-          align="center"
-          decimals={1}
-        />
-        <Metric
-          label="Efficiency"
-          value={sleep.efficiencyPct}
-          unit="%"
-          size="sm"
-          align="center"
-        />
-      </MetricRow>
-      {stages.length > 0 ? (
-        <p className="mt-2.5 t-label text-ink-3">{stages.join(' · ')}</p>
-      ) : null}
-      {sleep.breathingDisturbancesElevated ? (
-        <p className="mt-1.5 t-label text-tone-caution">Elevated breathing disturbances</p>
-      ) : null}
-      {deltaBits.length > 0 ? (
-        <div className="mt-3 border-t border-hairline pt-2.5">
-          <p className="t-label text-ink-3">vs Polar Loop</p>
-          <p className="mt-1 t-label text-ink-2">{deltaBits.join(' · ')}</p>
-          {biasBits.length > 0 ? (
-            <p className="mt-1 t-label text-ink-3">{biasBits.join(' · ')}</p>
-          ) : null}
+    <Panel className="px-3.5 py-3">
+      <PanelHeader
+        label="Last night"
+        action={
+          windowLabel ? <span className="t-micro tabular-nums text-ink-3">{windowLabel}</span> : undefined
+        }
+        className="mb-2"
+      />
+
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="t-num t-num-lg text-ink-1 leading-none">
+            {sleep.hours != null ? sleep.hours.toFixed(1) : '—'}
+            {sleep.hours != null ? (
+              <span className="ml-0.5 text-[0.55em] font-normal text-ink-3">h</span>
+            ) : null}
+          </p>
+          <p className="mt-1 t-micro text-ink-3">asleep</p>
         </div>
+        {showEfficiency ? (
+          <div className="text-right">
+            <p className={cn('t-num t-num-sm leading-none', toneClasses(effTone).text)}>
+              {Math.round(sleep.efficiencyPct!)}%
+            </p>
+            <p className="mt-1 t-micro text-ink-3">efficiency</p>
+          </div>
+        ) : null}
+      </div>
+
+      {stageTotal > 0 ? (
+        <div className="mt-2.5 space-y-1.5">
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-surface-3">
+            {stages.map((stage) => (
+              <div
+                key={stage.key}
+                className={cn('h-full', stage.swatch)}
+                style={{ width: `${(stage.minutes / stageTotal) * 100}%` }}
+                title={`${stage.label} ${stage.minutes}m`}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+            {stages.map((stage) => (
+              <span key={stage.key} className="inline-flex items-center gap-1 t-micro text-ink-3">
+                <span className={cn('size-1.5 rounded-full', stage.swatch)} aria-hidden />
+                {stage.label} {stage.minutes}m
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {sleep.breathingDisturbancesElevated ? (
+        <p className="mt-2 t-micro text-tone-caution">Elevated breathing disturbances</p>
       ) : null}
     </Panel>
   )
 }
 
+/** Split coach prose into a lede (what to do) and the supporting remainder. */
+function splitBriefing(text: string): { lede: string; rest: string | null } {
+  const trimmed = text.trim()
+  if (!trimmed) return { lede: '', rest: null }
+
+  const blocks = trimmed.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean)
+  if (blocks.length > 1) {
+    return { lede: blocks[0]!, rest: blocks.slice(1).join('\n\n') }
+  }
+
+  const match = trimmed.match(/^(.+?[.!?])(?:\s+)([\s\S]+)$/)
+  if (match?.[1] && match[2]?.trim()) {
+    return { lede: match[1].trim(), rest: match[2].trim() }
+  }
+
+  return { lede: trimmed, rest: null }
+}
+
+function BriefingBody({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  if (paragraphs.length <= 1) {
+    return <p className="whitespace-pre-wrap t-body leading-relaxed text-ink-2">{text}</p>
+  }
+  return (
+    <div className="space-y-2.5">
+      {paragraphs.map((paragraph, index) => (
+        <p key={index} className="whitespace-pre-wrap t-body leading-relaxed text-ink-2">
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  )
+}
+
 function MorningBriefing({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
-  const long = text.length > 260
+  const { lede, rest } = splitBriefing(text)
 
   return (
-    <Panel>
-      <PanelHeader
-        label="This morning"
-        action={
-          long ? (
-            <button
-              type="button"
-              onClick={() => setOpen((value) => !value)}
-              className="t-label font-medium text-ink-3 transition-colors hover:text-ink-1"
-            >
-              {open ? 'Less' : 'Read all'}
-            </button>
-          ) : undefined
-        }
-        className="mb-2"
-      />
-      <p className={cn('whitespace-pre-wrap t-body text-ink-2', !open && long && 'line-clamp-5')}>
-        {text}
-      </p>
+    <Panel className="px-4 py-4">
+      <div className="mb-2.5 flex items-center gap-1.5">
+        <Sun className="size-3.5 shrink-0 text-ink-3" aria-hidden />
+        <p className="t-micro text-ink-3">Briefing</p>
+      </div>
+
+      <p className="whitespace-pre-wrap t-subtitle text-ink-1">{lede}</p>
+
+      {rest ? (
+        <Disclosure label="Read more" openLabel="Show less" className="mt-2">
+          <BriefingBody text={rest} />
+        </Disclosure>
+      ) : null}
     </Panel>
   )
 }
@@ -659,7 +732,7 @@ export function useTodayData() {
   }, [])
 
   const setSessionStatus = useCallback(
-    async (sessionId: string, status: 'completed' | 'skipped') => {
+    async (sessionId: string, status: 'completed' | 'skipped' | 'planned') => {
       const response = await fetch(`/api/coach/sessions/${sessionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -671,7 +744,8 @@ export function useTodayData() {
         throw new Error(payload.error ?? 'Unable to update session')
       }
 
-      // Reload so linked workout glances appear after Mark done attaches an activity.
+      // Reload so linked workout glances appear after Mark done attaches an activity,
+      // and so Undo clears the completed/skipped chrome immediately.
       await load()
     },
     [load]

@@ -2252,7 +2252,9 @@ final class HealthKitSyncManager {
     struct SleepWindow {
         let start: Date
         let end: Date
-        let inBedSeconds: Int
+        /// Nil when HealthKit has no inBed samples. Do not substitute asleep time —
+        /// that makes efficiency look like 100%.
+        let inBedSeconds: Int?
         let asleepSeconds: Int
         let stages: PetehomeSleepStages
     }
@@ -2338,7 +2340,7 @@ final class HealthKitSyncManager {
         return SleepWindow(
             start: start,
             end: end,
-            inBedSeconds: inBed > 0 ? inBed : asleep,
+            inBedSeconds: inBed > 0 ? inBed : nil,
             asleepSeconds: asleep,
             stages: PetehomeSleepStages(
                 awake: awake,

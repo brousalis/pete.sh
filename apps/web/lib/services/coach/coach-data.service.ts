@@ -508,12 +508,15 @@ export async function getSessionsInRange(from: string, to: string): Promise<Plan
   return (data ?? []).map(mapSession)
 }
 
-export type AthleteSessionStatus = 'completed' | 'skipped'
+export type AthleteSessionStatus = 'completed' | 'skipped' | 'planned'
 
 /**
- * Athlete-facing status flip (mark done / skip). Idempotent: repeating the
- * same status is a no-op success. Does not go through applyProposal — this is
- * recording what happened, not rewriting the prescription.
+ * Athlete-facing status flip (mark done / skip / undo). Idempotent: repeating
+ * the same status is a no-op success. Does not go through applyProposal — this
+ * is recording what happened, not rewriting the prescription.
+ *
+ * `planned` clears a completed/skipped mark (and any linked activity +
+ * session-scoped feedback) so the session can be marked again.
  */
 export async function setSessionAthleteStatus(
   sessionId: string,
@@ -534,6 +537,38 @@ export async function setSessionAthleteStatus(
 
   const current = mapSession(existing.data)
   if (current.status === status) return current
+
+  if (status === 'planned') {
+    if (current.status !== 'completed' && current.status !== 'skipped') {
+      throw new Error(
+        `Session is ${current.status}; only completed or skipped sessions can be unmarked.`
+      )
+    }
+
+    const { data, error } = await db()
+      .from('coach_planned_session')
+      .update({ status: 'planned', completed_activity_id: null })
+      .eq('id', sessionId)
+      .select('*')
+      .single()
+
+    if (error) throw new Error(`Failed to update session status: ${error.message}`)
+
+    // Drop mark-done / skip feedback tied to this session so a later mark-done
+    // doesn't leave stale RPE/pain attached.
+    const feedback = await db()
+      .from('coach_session_feedback')
+      .delete()
+      .eq('session_id', sessionId)
+    if (feedback.error) {
+      console.error(
+        '[coach] Failed to clear session feedback on undo:',
+        feedback.error.message
+      )
+    }
+
+    return mapSession(data)
+  }
 
   if (current.status !== 'planned' && current.status !== 'modified') {
     throw new Error(

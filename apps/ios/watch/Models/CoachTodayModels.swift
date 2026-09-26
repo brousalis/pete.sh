@@ -11,8 +11,15 @@ struct CoachTodayResponse: Codable {
 struct CoachTodayPayload: Codable {
     let date: String
     let readiness: CoachTodayReadiness?
+    let sleep: CoachTodaySleep?
     let sessions: [CoachTodaySession]
     let ptBlocks: [CoachTodayPTBlock]
+}
+
+struct CoachTodaySleep: Codable {
+    let hours: Double
+    let start: String?
+    let end: String?
 }
 
 struct CoachTodayReadiness: Codable {

@@ -135,7 +135,12 @@ export async function buildGuardrailContext(
  */
 export async function applyProposal(
   proposal: unknown,
-  options: { force?: boolean; actor?: 'coach' | 'athlete' | 'guardrail'; autoApplied?: boolean } = {}
+  options: {
+    force?: boolean
+    actor?: 'coach' | 'athlete' | 'guardrail'
+    autoApplied?: boolean
+    trigger?: string
+  } = {}
 ): Promise<ApplyProposalResult> {
   const parsed = planProposalSchema.safeParse(proposal)
 
@@ -220,7 +225,11 @@ function collectDates(changes: PlanChange[]): string[] {
 async function persistChanges(
   changes: PlanChange[],
   report: GuardrailReport,
-  options: { actor?: 'coach' | 'athlete' | 'guardrail'; autoApplied?: boolean }
+  options: {
+    actor?: 'coach' | 'athlete' | 'guardrail'
+    autoApplied?: boolean
+    trigger?: string
+  }
 ): Promise<string[]> {
   const db = coachDb()
   const applied: string[] = []
@@ -461,7 +470,7 @@ async function recordAudible(
   reason: string,
   before: unknown,
   after: unknown,
-  options: { autoApplied?: boolean }
+  options: { autoApplied?: boolean; trigger?: string }
 ): Promise<void> {
   const { error } = await coachDb()
     .from('coach_audible')
@@ -469,6 +478,7 @@ async function recordAudible(
       session_id: sessionId,
       actor,
       change_type: changeType,
+      trigger: options.trigger ?? null,
       reason,
       before_state: before ?? null,
       after_state: after ?? null,

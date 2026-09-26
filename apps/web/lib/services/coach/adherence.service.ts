@@ -342,18 +342,15 @@ export async function linkPlannedSessionToMatchingWorkout(input: {
 }
 
 /**
- * For sessions missing completed_activity_id, try to attach a same-day matching
- * workout. Returns updated PlannedSession objects (mutates link fields only).
+ * For completed sessions missing completed_activity_id, try to attach a same-day
+ * matching workout. Does not auto-complete planned/modified sessions — that
+ * would fight athlete Undo. Ingest linking and Mark-done still attach workouts.
  */
 export async function reconcileSessionActivityLinks(
   sessions: PlannedSession[]
 ): Promise<PlannedSession[]> {
   const needsLink = sessions.filter(
-    (session) =>
-      !session.completedActivityId &&
-      (session.status === 'planned' ||
-        session.status === 'modified' ||
-        session.status === 'completed')
+    (session) => !session.completedActivityId && session.status === 'completed'
   )
   if (needsLink.length === 0) return sessions
 

@@ -28,7 +28,7 @@ module.exports = {
       windowsHide: true,
       env: {
         NODE_ENV: 'development',
-        PORT: 1337,
+        PORT: 7331,
         HOSTNAME: '0.0.0.0',
       },
       autorestart: true,
@@ -54,7 +54,7 @@ module.exports = {
       windowsHide: true,
       env: {
         NODE_ENV: 'production',
-        COACH_WORKER_PORT: 1338,
+        COACH_WORKER_PORT: 7332,
       },
       autorestart: true,
       watch: false,

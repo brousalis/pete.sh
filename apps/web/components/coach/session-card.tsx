@@ -8,6 +8,8 @@ import {
   Check,
   Dumbbell,
   Footprints,
+  Megaphone,
+  RotateCcw,
   Waves,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -33,7 +35,9 @@ export function SessionCard({
   session,
   onComplete,
   onSkip,
+  onUndo,
   onMove,
+  onAudible,
   onOpenActivity,
   busy = false,
   compact = false,
@@ -43,7 +47,9 @@ export function SessionCard({
   session: TodaySession
   onComplete?: (sessionId: string) => void
   onSkip?: (sessionId: string) => void
+  onUndo?: (sessionId: string) => void
   onMove?: (session: TodaySession) => void
+  onAudible?: (session: TodaySession) => void
   onOpenActivity?: (activityId: string) => void
   busy?: boolean
   compact?: boolean
@@ -56,6 +62,7 @@ export function SessionCard({
   const sport = sportClasses(session.sport)
   const done = session.status === 'completed'
   const skipped = session.status === 'skipped'
+  const cancelled = session.status === 'cancelled'
   const linked = done && session.activity != null
   const blocked =
     session.guardrail != null && !session.guardrail.passed && !done
@@ -86,6 +93,26 @@ export function SessionCard({
     params.set('panel', 'activity')
     params.set('workout', activityId)
     router.replace(`/coach?${params.toString()}`, { scroll: false })
+  }
+
+  // Audibled-away sessions are history, not work — one quiet row.
+  if (cancelled) {
+    return (
+      <div
+        className={cn(
+          'rounded-control border-line/40 flex items-center gap-2.5 border px-3 py-2 opacity-60'
+        )}
+      >
+        <Ban className="text-ink-3 size-3.5 shrink-0" aria-hidden />
+        <p className="t-label text-ink-2 min-w-0 flex-1 truncate line-through decoration-ink-3/60">
+          {session.title}
+        </p>
+        <span className="t-micro text-ink-3 shrink-0">
+          {SPORT_LABELS[session.sport] ?? session.sport}
+        </span>
+        <span className="t-micro text-ink-3 shrink-0">Cancelled</span>
+      </div>
+    )
   }
 
   return (
@@ -128,7 +155,7 @@ export function SessionCard({
             <span className={cn('t-micro', sport.text)}>
               {SPORT_LABELS[session.sport] ?? session.sport}
             </span>
-            {session.status !== 'planned' && !done ? (
+            {session.status !== 'planned' && !done && !skipped ? (
               <span className="t-micro text-ink-3">{session.status}</span>
             ) : null}
           </div>
@@ -219,8 +246,8 @@ export function SessionCard({
       ) : null}
 
       {(session.status === 'planned' || session.status === 'modified') &&
-      (onComplete || onSkip || onMove) ? (
-        <div className="mt-3.5 flex gap-2">
+      (onComplete || onSkip || onMove || onAudible) ? (
+        <div className="mt-3.5 flex flex-wrap gap-2">
           {onComplete ? (
             <Button
               size="sm"
@@ -230,6 +257,18 @@ export function SessionCard({
             >
               <Check className="mr-1.5 size-3.5" />
               {busy ? 'Saving…' : 'Mark done'}
+            </Button>
+          ) : null}
+          {onAudible ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-ink-2"
+              disabled={busy}
+              onClick={() => onAudible(session)}
+            >
+              <Megaphone className="mr-1.5 size-3.5" />
+              Audible
             </Button>
           ) : null}
           {onSkip ? (
@@ -247,8 +286,11 @@ export function SessionCard({
           {onMove ? (
             <Button
               size="sm"
-              variant={onComplete || onSkip ? 'ghost' : 'outline'}
-              className={cn('text-ink-2', !onComplete && !onSkip && 'flex-1')}
+              variant={onComplete || onSkip || onAudible ? 'ghost' : 'outline'}
+              className={cn(
+                'text-ink-2',
+                !onComplete && !onSkip && !onAudible && 'flex-1'
+              )}
               disabled={busy}
               onClick={() => onMove(session)}
             >
@@ -256,6 +298,21 @@ export function SessionCard({
               Move
             </Button>
           ) : null}
+        </div>
+      ) : null}
+
+      {(done || skipped) && onUndo ? (
+        <div className="mt-3.5 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-ink-2"
+            disabled={busy}
+            onClick={() => onUndo(session.id)}
+          >
+            <RotateCcw className="mr-1.5 size-3.5" />
+            {busy ? 'Saving…' : done ? 'Undo done' : 'Undo skip'}
+          </Button>
         </div>
       ) : null}
     </Panel>

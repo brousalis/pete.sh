@@ -22,7 +22,7 @@ loadDotenv({ path: '.env' })
 
 const DEFAULT_SHOWS = 5
 const DEFAULT_MIN_FREQ = 0.5
-/** Dedicated CLI callback — does not fight the web app on :1337. */
+/** Dedicated CLI callback — does not fight the web app on :7331. */
 const DEFAULT_AUTH_REDIRECT_URI = 'http://127.0.0.1:8765/callback'
 
 function getAuthRedirectUri(): string {

@@ -107,6 +107,16 @@ export interface AdherenceCard {
   ptStreakDays: number
 }
 
+export interface AudibleCard {
+  createdAt: string
+  actor: string
+  changeType: string
+  reason: string
+  autoApplied: boolean
+  beforeSummary: string | null
+  afterSummary: string | null
+}
+
 export interface FuelCard {
   fuellingWindow: 'high' | 'moderate' | 'low'
   plannedTss: number
@@ -141,6 +151,8 @@ export interface AssembleInput {
   ptProtocols: { name: string; timeOfDay: string; itemCount: number; completedToday: boolean }[]
   recentFeedback: FeedbackCard[]
   adherence: AdherenceCard | null
+  /** Recent plan audibles (athlete / coach / guardrail) for deviation patterns. */
+  recentAudibles?: AudibleCard[]
   /** Today's fuelling — folded into the Today section, not a separate priority band. */
   fuel?: FuelCard | null
   today: string
@@ -204,6 +216,15 @@ export function assembleContext(
     priority: 6,
     content: renderRecentTraining(input.recentActivities, input.recentFeedback, input.adherence),
   })
+
+  // 6b. Recent audibles — why the plan diverged (patterns matter for load).
+  if (input.recentAudibles?.length) {
+    sections.push({
+      title: 'recent_audibles',
+      priority: 6.5,
+      content: renderRecentAudibles(input.recentAudibles),
+    })
+  }
 
   // 7. Conversation summary, so a long thread keeps its thread.
   if (input.conversationSummary) {
@@ -574,6 +595,32 @@ function renderRecentTraining(
       parts.push(`drift ${activity.decouplingPct > 0 ? '+' : ''}${activity.decouplingPct.toFixed(1)}%`)
     }
 
+    lines.push(`  ${parts.join(' · ')}`)
+  }
+
+  return lines.join('\n')
+}
+
+function renderRecentAudibles(audibles: AudibleCard[]): string {
+  const lines = [
+    '## Recent audibles (last 14 days)',
+    'Plan deviations the athlete or system applied. Use these when interpreting adherence and proposing load — the calendar already reflects the after-state.',
+  ]
+
+  for (const row of audibles.slice(0, 12)) {
+    const date = row.createdAt.slice(0, 10)
+    const transition =
+      row.beforeSummary && row.afterSummary
+        ? `${row.beforeSummary} → ${row.afterSummary}`
+        : row.afterSummary ?? row.beforeSummary ?? null
+    const parts = [
+      date,
+      row.changeType,
+      `by ${row.actor}`,
+      row.autoApplied ? 'auto' : null,
+      transition,
+      `— ${row.reason.slice(0, 160)}`,
+    ].filter(Boolean)
     lines.push(`  ${parts.join(' · ')}`)
   }
 

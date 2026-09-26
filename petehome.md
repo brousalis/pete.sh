@@ -70,7 +70,7 @@ petehome Watch
         │ HealthKit
         ▼
 petehome iOS ──POST /api/apple-health/{sync,workout,daily}──►  apps/web (Vercel)
-        │         (or local :1337 for LAN)
+        │         (or local :7331 for LAN)
         │ WorkoutKit / APNs (source exists; not shipped)
         ▼
    Apple Watch
@@ -156,7 +156,7 @@ coach.
    yd, Functional Strength, worn overnight).
 2. petehome iOS POSTs `/api/apple-health/{sync,workout,daily}` with the shared machine
    key (`PETEHOME_API_KEY` / `PETEWATCH_API_KEY`). Prefer local
-   `https://boufos.local:1337` via `Config.xcconfig` so ingest and coach hit the same host.
+   `https://boufos.local:7331` via `Config.xcconfig` so ingest and coach hit the same host.
 3. Rows land in `apple_health_workouts` / samples / `apple_health_daily_metrics`.
 4. Migration 038 `NOTIFY coach_activity` on insert. The worker LISTENs, waits ~2 minutes for late
    samples, then queues a singleton debrief.

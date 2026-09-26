@@ -12,7 +12,6 @@ export {
   runEveningNudge,
   runMorningBriefing,
   runNightlyMaintenance,
-  runPolarSleepSync,
   runPtReminder,
   runWeeklyPlan,
   type JobResult,

@@ -51,7 +51,16 @@ struct CoachTodayView: View {
                 Button {
                     showReadinessInfo = true
                 } label: {
-                    ReadinessStrip(readiness: readiness)
+                    VStack(alignment: .leading, spacing: 4) {
+                        ReadinessStrip(readiness: readiness)
+                        if let glance = sleepGlance(payload.sleep) {
+                            Text(glance)
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .padding(.leading, 10)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
                 .listRowBackground(Color.clear)
@@ -166,6 +175,31 @@ struct CoachTodayView: View {
             .font(.system(size: 13, weight: .semibold, design: .rounded))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// `6.0h · 12:32–7:04` in Chicago. Nil when the night has no duration.
+    private func sleepGlance(_ sleep: CoachTodaySleep?) -> String? {
+        guard let sleep else { return nil }
+        let hours = String(format: "%.1fh", sleep.hours)
+        let bed = sleepClock(sleep.start)
+        let wake = sleepClock(sleep.end)
+        if let bed, let wake {
+            return "\(hours) · \(bed)–\(wake)"
+        }
+        return hours
+    }
+
+    private func sleepClock(_ iso: String?) -> String? {
+        guard let iso else { return nil }
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = parser.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        guard let date else { return nil }
+        let display = DateFormatter()
+        display.locale = Locale(identifier: "en_US_POSIX")
+        display.timeZone = TimeZone(identifier: "America/Chicago")
+        display.dateFormat = "h:mm"
+        return display.string(from: date)
     }
 
     private func formattedDate(_ iso: String) -> String {

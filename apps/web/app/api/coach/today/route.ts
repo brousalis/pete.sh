@@ -21,8 +21,8 @@ import {
   getBenchmarks,
 } from '@/lib/services/coach/coach-data.service'
 import { getLakeConditions, getWeatherContext } from '@/lib/services/coach/environment.service'
+import { getDayActuals } from '@/lib/services/coach/day-actuals.service'
 import { enrichSessionsWithActivity } from '@/lib/services/coach/session-activity-glance.service'
-import { buildSleepCompare } from '@/lib/services/coach/sleep-compare.service'
 import { readinessGuidance } from '@petehome/coach-core'
 
 export const runtime = 'nodejs'
@@ -45,12 +45,6 @@ export async function GET(request: NextRequest) {
     ])
 
     // These can each fail without making the screen useless.
-    const metricsFrom = (() => {
-      const [y, m, d] = date.split('-').map(Number)
-      const utc = Date.UTC(y!, m! - 1, d!)
-      return new Date(utc - 13 * 86_400_000).toISOString().slice(0, 10)
-    })()
-
     const [readiness, load, weather, lake, completions, briefing, dailyMetrics] = await Promise.all([
       computeAndStoreReadiness(date).catch(() => null),
       getLoadSummary(60).catch(() => null),
@@ -69,10 +63,10 @@ export async function GET(request: NextRequest) {
         .maybeSingle()
         .then((result: { data: { entry?: string } | null }) => result.data?.entry ?? null)
         .catch(() => null),
-      getDailyMetrics(metricsFrom, date).catch(() => []),
+      getDailyMetrics(date, date).catch(() => []),
     ])
 
-    const night = dailyMetrics.find((m) => m.metricDate === date) ?? dailyMetrics[dailyMetrics.length - 1]
+    const night = dailyMetrics.find((m) => m.metricDate === date)
     const lastNightSleep =
       night?.metricDate === date && night.sleepSeconds != null
         ? {
@@ -82,7 +76,7 @@ export async function GET(request: NextRequest) {
                 ? Math.round((night.sleepInBed / 3600) * 10) / 10
                 : null,
             efficiencyPct:
-              night.sleepInBed != null && night.sleepInBed > 0
+              night.sleepInBed != null && night.sleepInBed > night.sleepSeconds
                 ? Math.round((night.sleepSeconds / night.sleepInBed) * 100)
                 : null,
             deepMinutes: night.sleepDeep != null ? Math.round(night.sleepDeep / 60) : null,
@@ -95,7 +89,6 @@ export async function GET(request: NextRequest) {
           }
         : null
 
-    const sleepCompare = await buildSleepCompare(date, dailyMetrics).catch(() => null)
     const completed = new Map<string, boolean>(
       (completions ?? []).map((row: { protocol_id: string; skipped: boolean }) => [
         row.protocol_id,
@@ -112,7 +105,10 @@ export async function GET(request: NextRequest) {
       return true
     })
 
-    const uiSessions = await enrichSessionsWithActivity(sessions)
+    const [uiSessions, dayActuals] = await Promise.all([
+      enrichSessionsWithActivity(sessions),
+      getDayActuals(date, date).catch(() => []),
+    ])
 
     return successResponse({
       date,
@@ -121,8 +117,8 @@ export async function GET(request: NextRequest) {
         ? { ...readiness, guidance: readinessGuidance(readiness.level) }
         : null,
       lastNightSleep,
-      sleepCompare,
       sessions: uiSessions,
+      dayActuals,
       ptProtocols: applicableProtocols.map((protocol) => ({
         id: protocol.id,
         slug: protocol.slug,

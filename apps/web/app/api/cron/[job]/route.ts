@@ -18,7 +18,6 @@ import {
   runEveningNudge,
   runMorningBriefing,
   runNightlyMaintenance,
-  runPolarSleepSync,
   runPtReminder,
   runWeeklyPlan,
   type JobResult,
@@ -38,7 +37,6 @@ type JobName =
   | 'debrief-sweep'
   | 'debrief'
   | 'block-review'
-  | 'polar-sleep'
 
 function authorize(request: NextRequest): boolean {
   const token = extractBearerToken(
@@ -67,8 +65,6 @@ async function runJob(job: string, request: NextRequest): Promise<JobResult> {
       return runWeeklyPlan()
     case 'nightly':
       return runNightlyMaintenance()
-    case 'polar-sleep':
-      return runPolarSleepSync()
     case 'debrief-sweep':
       return runDebriefSweep()
     case 'block-review':
@@ -96,7 +92,7 @@ async function runJob(job: string, request: NextRequest): Promise<JobResult> {
       return {
         job,
         ok: false,
-        summary: `Unknown job "${job}". Try briefing, pt-morning, pt-evening, nudge, weekly-plan, nightly, polar-sleep, debrief-sweep, debrief, block-review.`,
+        summary: `Unknown job "${job}". Try briefing, pt-morning, pt-evening, nudge, weekly-plan, nightly, debrief-sweep, debrief, block-review.`,
       }
   }
 }

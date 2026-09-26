@@ -564,18 +564,16 @@ export function createToolDeps(): CoachToolDeps {
     },
 
     async scheduleReminder(input) {
-      const { error } = await coachDb()
-        .from('coach_audible')
-        .insert({
-          actor: 'coach',
-          change_type: 'add',
-          trigger: 'manual',
-          reason: `Reminder scheduled for ${input.at}: ${input.message}`,
-          after_state: { reminder: input.message, at: input.at },
-        })
-
-      if (error) return { scheduled: false, error: error.message }
-      return { scheduled: true, at: input.at }
+      // Push reminders are not wired; do not pollute coach_audible (plan audit log).
+      console.warn(
+        '[coach] schedule_reminder is not configured yet:',
+        input.at,
+        input.message
+      )
+      return {
+        scheduled: false,
+        error: 'Push reminders are not configured yet.',
+      }
     },
   }
 }

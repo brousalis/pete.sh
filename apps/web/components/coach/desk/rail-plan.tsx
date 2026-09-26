@@ -15,7 +15,12 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { LoadSection } from '@/components/coach/desk/load-section'
 import { PlanDatePicker } from '@/components/coach/desk/plan-date-picker'
+import { DayActualsStrip } from '@/components/coach/day-actuals-strip'
 import { SessionCard } from '@/components/coach/session-card'
+import {
+  SessionAudibleSheet,
+  type AudibleSheetTarget,
+} from '@/components/coach/session-audible-sheet'
 import { Chip, EmptyNote, Panel, Section } from '@/components/coach/ui/panel'
 import { TermTip } from '@/components/coach/ui/term-tip'
 import { sportClasses } from '@/components/coach/ui/tone'
@@ -29,6 +34,7 @@ import {
   shiftChicagoDate,
 } from '@/lib/coach-dates'
 import type {
+  DayActualView,
   PlanWeekView,
   TodaySession,
   YearPlanView,
@@ -51,6 +57,9 @@ export function RailPlan() {
 
   const [weeks, setWeeks] = useState<PlanWeekView[]>([])
   const [yearPlan, setYearPlan] = useState<YearPlanView | null>(null)
+  const [dayActualsByDate, setDayActualsByDate] = useState<
+    Record<string, DayActualView[]>
+  >({})
   const [loading, setLoading] = useState(true)
   const [offset, setOffset] = useState(() =>
     isValidIsoDate(dateFromUrl) ? alignedWeekOffset(dateFromUrl) : 0
@@ -63,6 +72,9 @@ export function RailPlan() {
   const [movingSession, setMovingSession] = useState<TodaySession | null>(null)
   const [moving, setMoving] = useState(false)
   const [moveResult, setMoveResult] = useState<string | null>(null)
+  const [audibleTarget, setAudibleTarget] = useState<AudibleSheetTarget | null>(
+    null
+  )
   const detailRef = useRef<HTMLElement | null>(null)
   const revealDetailRef = useRef(false)
 
@@ -107,6 +119,10 @@ export function RailPlan() {
         const loaded = payload.data.weeks as PlanWeekView[]
         setWeeks(loaded)
         setYearPlan((payload.data.yearPlan as YearPlanView | null) ?? null)
+        setDayActualsByDate(
+          (payload.data.dayActualsByDate as Record<string, DayActualView[]>) ??
+            {}
+        )
 
         setSelectedDate(current => {
           if (current && current >= from && current <= to) return current
@@ -371,7 +387,16 @@ export function RailPlan() {
             <DayDetail
               date={selectedDate}
               sessions={[]}
+              dayActuals={dayActualsByDate[selectedDate] ?? []}
               onMove={() => undefined}
+              onAudible={session =>
+                setAudibleTarget({
+                  date: selectedDate,
+                  focusSession: session,
+                  sessions: [],
+                  dayActuals: dayActualsByDate[selectedDate] ?? [],
+                })
+              }
               onClose={() => setSelectedDate(null)}
               onShiftDay={delta =>
                 jumpToDate(shiftChicagoDate(selectedDate, delta))
@@ -413,11 +438,20 @@ export function RailPlan() {
             <DayDetail
               date={selectedDate}
               sessions={selectedSessions}
+              dayActuals={dayActualsByDate[selectedDate] ?? []}
               sectionRef={detailRef}
               onMove={session => {
                 setMoveResult(null)
                 setMovingSession(session)
               }}
+              onAudible={session =>
+                setAudibleTarget({
+                  date: selectedDate,
+                  focusSession: session,
+                  sessions: selectedSessions,
+                  dayActuals: dayActualsByDate[selectedDate] ?? [],
+                })
+              }
               onClose={() => setSelectedDate(null)}
               onShiftDay={delta =>
                 jumpToDate(shiftChicagoDate(selectedDate, delta))
@@ -426,6 +460,14 @@ export function RailPlan() {
           ) : null}
         </div>
       )}
+
+      <SessionAudibleSheet
+        target={audibleTarget}
+        onOpenChange={open => {
+          if (!open) setAudibleTarget(null)
+        }}
+        onApplied={() => void load()}
+      />
     </div>
   )
 }
@@ -433,15 +475,19 @@ export function RailPlan() {
 function DayDetail({
   date,
   sessions,
+  dayActuals,
   sectionRef,
   onMove,
+  onAudible,
   onClose,
   onShiftDay,
 }: {
   date: string
   sessions: TodaySession[]
+  dayActuals: DayActualView[]
   sectionRef: RefObject<HTMLElement | null>
   onMove: (session: TodaySession) => void
+  onAudible: (session: TodaySession | null) => void
   onClose: () => void
   onShiftDay: (delta: number) => void
 }) {
@@ -521,10 +567,21 @@ function DayDetail({
               session={session}
               defaultShowSteps
               onMove={session.status === 'planned' ? onMove : undefined}
+              onAudible={
+                session.status === 'planned' || session.status === 'modified'
+                  ? onAudible
+                  : undefined
+              }
             />
           ))}
         </div>
       )}
+
+      <DayActualsStrip
+        actuals={dayActuals}
+        restDayHint={sessions.length === 0}
+        onAudible={() => onAudible(null)}
+      />
     </section>
   )
 }
@@ -897,25 +954,34 @@ function DayCell({
         ) : (
           sessions.map(session => {
             const sport = sportClasses(session.sport)
+            const cancelled = session.status === 'cancelled'
             const linked =
               session.status === 'completed' && session.activity != null
             const actualMin =
               linked && session.activity
                 ? Math.round(session.activity.durationSeconds / 60)
                 : null
-            const durationLabel = actualMin ?? session.durationMinutes
-            const load =
-              linked &&
-              session.activity?.tss != null &&
-              session.activity.tss > 0
+            const durationLabel = cancelled
+              ? null
+              : (actualMin ?? session.durationMinutes)
+            const load = cancelled
+              ? 0
+              : linked &&
+                  session.activity?.tss != null &&
+                  session.activity.tss > 0
                 ? session.activity.tss
                 : (session.plannedLoad ?? 0)
             return (
               <span
                 key={session.id}
-                title={`${session.title}${load ? ` · ${Math.round(load)} TSS` : ''}`}
+                title={
+                  cancelled
+                    ? `${session.title} · cancelled`
+                    : `${session.title}${load ? ` · ${Math.round(load)} TSS` : ''}`
+                }
                 className={cn(
                   'block min-w-0',
+                  cancelled && 'opacity-40',
                   session.status === 'completed' && !linked && 'opacity-50'
                 )}
               >
@@ -923,11 +989,18 @@ function DayCell({
                   <span
                     className={cn(
                       'size-1.5 shrink-0 translate-y-[-1px] rounded-full',
-                      sport.dot
+                      cancelled ? 'bg-ink-3' : sport.dot
                     )}
                     aria-hidden
                   />
-                  <span className="t-label text-ink-1 truncate">
+                  <span
+                    className={cn(
+                      't-label truncate',
+                      cancelled
+                        ? 'text-ink-3 line-through decoration-ink-3/50'
+                        : 'text-ink-1'
+                    )}
+                  >
                     {SPORT_LABELS[session.sport] ?? session.sport}
                   </span>
                   {durationLabel ? (
@@ -938,14 +1011,24 @@ function DayCell({
                 </span>
                 {/* Bar length encodes load (actual when linked), so the weekly
                     shape is visible without opening a single day. */}
-                <span className="bg-surface-3 block h-1.5 overflow-hidden rounded-full sm:mt-1 sm:h-[3px]">
-                  <span
-                    className={cn('block h-full rounded-full', sport.bar)}
-                    style={{
-                      width: `${Math.max(12, peakTss > 0 ? (load / peakTss) * 100 : 12)}%`,
-                    }}
-                  />
-                </span>
+                {cancelled ? (
+                  <>
+                    {/* Mobile: faint stub so the day still shows something was planned. */}
+                    <span className="bg-ink-3/25 block h-1 w-1/3 rounded-full sm:hidden" />
+                    <span className="t-micro text-ink-3/80 hidden sm:block">
+                      cancelled
+                    </span>
+                  </>
+                ) : (
+                  <span className="bg-surface-3 block h-1.5 overflow-hidden rounded-full sm:mt-1 sm:h-[3px]">
+                    <span
+                      className={cn('block h-full rounded-full', sport.bar)}
+                      style={{
+                        width: `${Math.max(12, peakTss > 0 ? (load / peakTss) * 100 : 12)}%`,
+                      }}
+                    />
+                  </span>
+                )}
               </span>
             )
           })

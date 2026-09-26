@@ -16,6 +16,7 @@ import { handleApiError, successResponse } from '@/lib/api/utils'
 import { computeAndStoreReadiness } from '@/lib/services/coach/analytics.service'
 import {
   coachDb,
+  getDailyMetrics,
   getPtProtocols,
   getSessionsInRange,
 } from '@/lib/services/coach/coach-data.service'
@@ -29,9 +30,10 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams.get('date') ??
       new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
 
-    const [sessions, protocols] = await Promise.all([
+    const [sessions, protocols, daily] = await Promise.all([
       getSessionsInRange(date, date),
       getPtProtocols(),
+      getDailyMetrics(date, date).catch(() => []),
     ])
 
     // Readiness is nice to have on the watch face but must not block the
@@ -51,11 +53,22 @@ export async function GET(request: NextRequest) {
 
     const hasRun = sessions.some((session) => session.sport === 'run')
 
+    const night = daily.find((metric) => metric.metricDate === date)
+    const sleep =
+      night?.sleepSeconds != null
+        ? {
+            hours: Math.round((night.sleepSeconds / 3600) * 10) / 10,
+            start: night.sleepStart ?? null,
+            end: night.sleepEnd ?? null,
+          }
+        : null
+
     return successResponse({
       date,
       readiness: readiness
         ? { score: readiness.score, level: readiness.level, blocked: readiness.score < 38 }
         : null,
+      sleep,
       sessions: sessions
         .filter((session) => session.status !== 'cancelled')
         .map((session) => ({

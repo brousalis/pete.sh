@@ -15,6 +15,7 @@ import {
   getMacrocycle,
   getSessionsInRange,
 } from '@/lib/services/coach/coach-data.service'
+import { getDayActualsByDate } from '@/lib/services/coach/day-actuals.service'
 import { applyProposal, buildGuardrailContext } from '@/lib/services/coach/plan.service'
 import { enrichSessionsWithActivity } from '@/lib/services/coach/session-activity-glance.service'
 import { YEAR_PLAN_PHASES } from '@/lib/types/coach-ui.types'
@@ -32,10 +33,11 @@ export async function GET(request: NextRequest) {
     const from = params.get('from') ?? isoWeekStart(today)
     const to = params.get('to') ?? addDays(from, 27)
 
-    const [sessions, macrocycle, block] = await Promise.all([
+    const [sessions, macrocycle, block, dayActualsByDate] = await Promise.all([
       getSessionsInRange(from, to),
       getMacrocycle(),
       getCurrentBlock(),
+      getDayActualsByDate(from, to).catch(() => ({})),
     ])
 
     const uiSessions = await enrichSessionsWithActivity(sessions)
@@ -58,6 +60,7 @@ export async function GET(request: NextRequest) {
           plannedTss: weekSessions.reduce((sum, session) => sum + (session.plannedLoad ?? 0), 0),
           sessions: weekSessions,
         })),
+      dayActualsByDate,
       yearPlan: macrocycle ? buildYearPlan(macrocycle, block, today) : null,
     })
   } catch (error) {

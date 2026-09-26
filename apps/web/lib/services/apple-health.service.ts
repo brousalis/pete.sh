@@ -1024,29 +1024,46 @@ export class AppleHealthService {
     }
 
     if (ownsSleepColumns) {
-      metricsInsert.hrv_overnight_avg = metrics.hrvOvernightAvg ?? null
-      metricsInsert.hrv_morning = metrics.hrvMorning ?? null
-      metricsInsert.hrv_sample_count = metrics.hrvSampleCount ?? null
-      metricsInsert.hrv_rmssd = metrics.hrvRmssd ?? null
-      metricsInsert.hrv_rmssd_overnight_avg = metrics.hrvRmssdOvernightAvg ?? null
-      metricsInsert.hrv_rmssd_morning = metrics.hrvRmssdMorning ?? null
-      metricsInsert.hrv_rmssd_sample_count = metrics.hrvRmssdSampleCount ?? null
-      metricsInsert.sleep_duration = metrics.sleepDuration || null
-      metricsInsert.sleep_in_bed = metrics.sleepInBed ?? null
-      metricsInsert.sleep_start = metrics.sleepStart ?? null
-      metricsInsert.sleep_end = metrics.sleepEnd ?? null
-      metricsInsert.sleep_awake = metrics.sleepStages?.awake || null
-      metricsInsert.sleep_rem = metrics.sleepStages?.rem || null
-      metricsInsert.sleep_core = metrics.sleepStages?.core || null
-      metricsInsert.sleep_deep = metrics.sleepStages?.deep || null
-      metricsInsert.sleep_unspecified = metrics.sleepStages?.unspecified || null
-      metricsInsert.respiratory_rate = metrics.respiratoryRate ?? null
-      metricsInsert.wrist_temp_delta = metrics.wristTempDelta ?? null
-      metricsInsert.oxygen_saturation = metrics.oxygenSaturation ?? null
-      metricsInsert.breathing_disturbances = metrics.breathingDisturbances ?? null
-      metricsInsert.breathing_disturbances_elevated =
-        metrics.breathingDisturbancesElevated ?? null
-      metricsInsert.sleep_apnea_event_count = metrics.sleepApneaEventCount ?? null
+      // Watch / HealthKit often finalises overnight sleep after the first morning
+      // sync. Never write null sleep (or sleep-scoped overnight vitals) — omit
+      // those keys so an early upsert cannot wipe a later good night.
+      const hasSleep =
+        (typeof metrics.sleepDuration === 'number' && metrics.sleepDuration > 0) ||
+        (typeof metrics.sleepInBed === 'number' && metrics.sleepInBed > 0)
+
+      if (hasSleep) {
+        metricsInsert.hrv_overnight_avg = metrics.hrvOvernightAvg ?? null
+        metricsInsert.hrv_morning = metrics.hrvMorning ?? null
+        metricsInsert.hrv_sample_count = metrics.hrvSampleCount ?? null
+        metricsInsert.hrv_rmssd = metrics.hrvRmssd ?? null
+        metricsInsert.hrv_rmssd_overnight_avg = metrics.hrvRmssdOvernightAvg ?? null
+        metricsInsert.hrv_rmssd_morning = metrics.hrvRmssdMorning ?? null
+        metricsInsert.hrv_rmssd_sample_count = metrics.hrvRmssdSampleCount ?? null
+        metricsInsert.sleep_duration = metrics.sleepDuration ?? null
+        metricsInsert.sleep_in_bed = metrics.sleepInBed ?? null
+        metricsInsert.sleep_start = metrics.sleepStart ?? null
+        metricsInsert.sleep_end = metrics.sleepEnd ?? null
+        metricsInsert.sleep_awake = metrics.sleepStages?.awake || null
+        metricsInsert.sleep_rem = metrics.sleepStages?.rem || null
+        metricsInsert.sleep_core = metrics.sleepStages?.core || null
+        metricsInsert.sleep_deep = metrics.sleepStages?.deep || null
+        metricsInsert.sleep_unspecified = metrics.sleepStages?.unspecified || null
+        metricsInsert.respiratory_rate = metrics.respiratoryRate ?? null
+        metricsInsert.wrist_temp_delta = metrics.wristTempDelta ?? null
+        metricsInsert.oxygen_saturation = metrics.oxygenSaturation ?? null
+        metricsInsert.breathing_disturbances = metrics.breathingDisturbances ?? null
+        metricsInsert.breathing_disturbances_elevated =
+          metrics.breathingDisturbancesElevated ?? null
+        metricsInsert.sleep_apnea_event_count = metrics.sleepApneaEventCount ?? null
+      } else if (metrics.hrvMorning != null || metrics.hrvRmssdMorning != null) {
+        // Morning HRV can land before sleep stages are ready — allow that alone.
+        if (metrics.hrvMorning != null) {
+          metricsInsert.hrv_morning = metrics.hrvMorning
+        }
+        if (metrics.hrvRmssdMorning != null) {
+          metricsInsert.hrv_rmssd_morning = metrics.hrvRmssdMorning
+        }
+      }
     }
 
     const { error } = await db

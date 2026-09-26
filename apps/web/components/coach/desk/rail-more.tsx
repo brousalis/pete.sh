@@ -1,12 +1,20 @@
 'use client'
 
-import { Bell, ChevronRight, History, Loader2, RefreshCw, Settings, Smartphone } from 'lucide-react'
+import {
+  Bell,
+  ChevronRight,
+  History,
+  Loader2,
+  LogOut,
+  RefreshCw,
+  Settings,
+  Smartphone,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { GearSection } from '@/components/coach/desk/gear-section'
 import { RailKnee } from '@/components/coach/desk/rail-knee'
-import { RailSleepCompare } from '@/components/coach/desk/rail-sleep-compare'
 import { Chip, Panel, Section, Track } from '@/components/coach/ui/panel'
 import { type Tone } from '@/components/coach/ui/tone'
 import { Button } from '@/components/ui/button'
@@ -25,9 +33,19 @@ export function RailMore() {
   const [pushState, setPushState] = useState<'unknown' | 'granted' | 'denied' | 'unsupported'>(
     'unknown'
   )
+  const [gateEnforced, setGateEnforced] = useState(false)
 
   useEffect(() => {
     void (async () => {
+      try {
+        const authRes = await fetch('/api/coach/auth', { credentials: 'include' })
+        const authPayload = (await authRes.json()) as {
+          data?: { gate?: string }
+        }
+        if (authPayload.data?.gate === 'enforced') setGateEnforced(true)
+      } catch {
+        // Gate status is best-effort; the rest of More still loads.
+      }
       try {
         const spendRes = await fetch('/api/coach/spend', { credentials: 'include' }).then((r) =>
           r.json()
@@ -102,169 +120,205 @@ export function RailMore() {
     }
   }
 
+  async function signOut() {
+    await fetch('/api/coach/auth', { method: 'DELETE', credentials: 'include' })
+    window.location.href = '/coach/login'
+  }
+
   return (
-    <div className="space-y-6 px-5 py-6 md:px-8 md:py-8">
-      <h1 className="t-display">More</h1>
+    <div className="space-y-5 px-5 pt-6 pb-8 md:px-8 md:pt-8 md:pb-10">
+      <header>
+        <h1 className="t-display">More</h1>
+        <p className="mt-1 t-label text-ink-3">Knee, gear, and device settings</p>
+      </header>
 
-      <RailKnee />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+        <div className="min-w-0 space-y-6">
+          <RailKnee />
 
-      <RailSleepCompare />
-
-      {loading ? (
-        <div className="flex items-center justify-center py-10">
-          <Loader2 className="size-4 animate-spin text-ink-3" />
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="size-4 animate-spin text-ink-3" />
+            </div>
+          ) : (
+            <GearSection />
+          )}
         </div>
-      ) : null}
 
-      {!loading ? <GearSection /> : null}
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+          {!loading && spend ? (
+            <Section title="Claude budget">
+              <Panel className="space-y-4">
+                {spend.state !== 'normal' ? (
+                  <Chip tone={spend.state === 'capped' ? 'alert' : 'caution'}>
+                    {spend.state === 'capped'
+                      ? 'Budget exhausted — chat paused'
+                      : 'Degraded models in use'}
+                  </Chip>
+                ) : null}
 
-      {!loading && spend ? (
-        <Section title="Claude budget">
-          <Panel className="space-y-4">
-            {spend.state !== 'normal' ? (
-              <Chip tone={spend.state === 'capped' ? 'alert' : 'caution'}>
-                {spend.state === 'capped'
-                  ? 'Budget exhausted — chat paused'
-                  : 'Degraded models in use'}
-              </Chip>
-            ) : null}
-
-            <SpendBar label="Today" spent={spend.day.spent} cap={spend.day.cap} pct={spend.day.pct} />
-            <SpendBar
-              label="This month"
-              spent={spend.month.spent}
-              cap={spend.month.cap}
-              pct={spend.month.pct}
-              projection={spend.projectedMonthEnd}
-            />
-
-            <div className="flex items-end gap-3 border-t border-line pt-3.5">
-              <div className="min-w-0 flex-1">
-                <Label className="t-micro text-ink-3">Daily cap $</Label>
-                <Input
-                  type="number"
-                  value={dailyCap}
-                  onChange={(e) => setDailyCap(e.target.value)}
-                  className="mt-1.5 h-9 t-num"
-                  min={1}
+                <SpendBar
+                  label="Today"
+                  spent={spend.day.spent}
+                  cap={spend.day.cap}
+                  pct={spend.day.pct}
                 />
-              </div>
-              <div className="min-w-0 flex-1">
-                <Label className="t-micro text-ink-3">Monthly cap $</Label>
-                <Input
-                  type="number"
-                  value={monthlyCap}
-                  onChange={(e) => setMonthlyCap(e.target.value)}
-                  className="mt-1.5 h-9 t-num"
-                  min={10}
+                <SpendBar
+                  label="This month"
+                  spent={spend.month.spent}
+                  cap={spend.month.cap}
+                  pct={spend.month.pct}
+                  projection={spend.projectedMonthEnd}
                 />
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9"
-                onClick={() => void saveCaps()}
-                disabled={saving}
-              >
-                {saving ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
-                Save
-              </Button>
-            </div>
-          </Panel>
-        </Section>
-      ) : null}
 
-      {native.isNative ? (
-        <Section title="iPhone">
-          <Panel className="divide-y divide-line py-0">
-            <div className="flex items-center gap-3 py-3.5">
-              <Smartphone className="size-4 shrink-0 text-ink-3" />
-              <div className="min-w-0 flex-1">
-                <p className="t-body text-ink-1">HealthKit sync</p>
-                <p className="mt-0.5 t-label text-ink-3">
-                  {native.syncStatus?.inProgress
-                    ? 'Syncing…'
-                    : native.syncStatus?.error
-                      ? native.syncStatus.error
-                      : native.syncStatus?.lastSync
-                        ? `Last synced ${formatSyncAge(native.syncStatus.lastSync)}`
-                        : 'Not yet synced this session'}
-                </p>
-              </div>
-              {native.syncStatus?.inProgress ? (
-                <RefreshCw className="size-4 animate-spin text-brand" />
-              ) : null}
-            </div>
-            <div className="flex items-center gap-3 py-3.5">
-              <RefreshCw className="size-4 shrink-0 text-ink-3" />
-              <div className="min-w-0 flex-1">
-                <p className="t-body text-ink-1">Sync now</p>
-                <p className="mt-0.5 t-label text-ink-3">Recent workouts + today's metrics</p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={native.syncNow}
-                disabled={native.syncStatus?.inProgress}
-              >
-                Sync
-              </Button>
-            </div>
-            <div className="flex items-center gap-3 py-3.5">
-              <History className="size-4 shrink-0 text-ink-3" />
-              <div className="min-w-0 flex-1">
-                <p className="t-body text-ink-1">Full sync sheet</p>
-                <p className="mt-0.5 t-label text-ink-3">Sync history, advanced controls</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={native.openSync}>
-                Open
-              </Button>
-            </div>
-            <div className="flex items-center gap-3 py-3.5">
-              <Settings className="size-4 shrink-0 text-ink-3" />
-              <div className="min-w-0 flex-1">
-                <p className="t-body text-ink-1">iPhone settings</p>
-                <p className="mt-0.5 t-label text-ink-3">Server URL, API key</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={native.openSettings}>
-                Open
-              </Button>
-            </div>
-          </Panel>
-        </Section>
-      ) : null}
+                <div className="flex flex-col gap-3 border-t border-line pt-3.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="min-w-0">
+                      <Label className="t-micro text-ink-3">Daily cap $</Label>
+                      <Input
+                        type="number"
+                        value={dailyCap}
+                        onChange={(e) => setDailyCap(e.target.value)}
+                        className="mt-1.5 h-9 t-num"
+                        min={1}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <Label className="t-micro text-ink-3">Monthly cap $</Label>
+                      <Input
+                        type="number"
+                        value={monthlyCap}
+                        onChange={(e) => setMonthlyCap(e.target.value)}
+                        className="mt-1.5 h-9 t-num"
+                        min={10}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 w-full"
+                    onClick={() => void saveCaps()}
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
+                    Save caps
+                  </Button>
+                </div>
+              </Panel>
+            </Section>
+          ) : null}
 
-      {!loading ? (
-        <Section title="Device">
-          <Panel className="divide-y divide-line py-0">
-            <div className="flex items-center gap-3 py-3.5">
-              <Bell className="size-4 shrink-0 text-ink-3" />
-              <div className="min-w-0 flex-1">
-                <p className="t-body text-ink-1">Push notifications</p>
-                <p className="mt-0.5 t-label text-ink-3">
-                  {pushState === 'granted'
-                    ? 'Enabled on this device.'
-                    : pushState === 'unsupported'
-                      ? 'Not supported in this browser.'
-                      : pushState === 'denied'
-                        ? 'Blocked — enable in browser settings.'
-                        : 'Briefings and guardrail alerts.'}
-                </p>
-              </div>
-              {pushState === 'granted' ? (
-                <Chip tone="good">On</Chip>
-              ) : pushState === 'unsupported' ? null : (
-                <Button size="sm" variant="outline" onClick={() => void enablePush()}>
-                  Enable
-                </Button>
-              )}
-            </div>
+          {native.isNative ? (
+            <Section title="iPhone">
+              <Panel className="divide-y divide-line py-0">
+                <div className="flex items-center gap-3 py-3.5">
+                  <Smartphone className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">HealthKit sync</p>
+                    <p className="mt-0.5 t-label text-ink-3">
+                      {native.syncStatus?.inProgress
+                        ? 'Syncing…'
+                        : native.syncStatus?.error
+                          ? native.syncStatus.error
+                          : native.syncStatus?.lastSync
+                            ? `Last synced ${formatSyncAge(native.syncStatus.lastSync)}`
+                            : 'Not yet synced this session'}
+                    </p>
+                  </div>
+                  {native.syncStatus?.inProgress ? (
+                    <RefreshCw className="size-4 animate-spin text-brand" />
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-3 py-3.5">
+                  <RefreshCw className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">Sync now</p>
+                    <p className="mt-0.5 t-label text-ink-3">Recent workouts + today&apos;s metrics</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={native.syncNow}
+                    disabled={native.syncStatus?.inProgress}
+                  >
+                    Sync
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3 py-3.5">
+                  <History className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">Full sync sheet</p>
+                    <p className="mt-0.5 t-label text-ink-3">Sync history, advanced controls</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={native.openSync}>
+                    Open
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3 py-3.5">
+                  <Settings className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">iPhone settings</p>
+                    <p className="mt-0.5 t-label text-ink-3">Server URL, API key</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={native.openSettings}>
+                    Open
+                  </Button>
+                </div>
+              </Panel>
+            </Section>
+          ) : null}
 
-            <NavRow href="/coach/onboard" label="Intake interview" />
-            <NavRow href="/coach/tests" label="Baseline tests" />
-          </Panel>
-        </Section>
-      ) : null}
+          {!loading ? (
+            <Section title="Device">
+              <Panel className="divide-y divide-line py-0">
+                <div className="flex items-center gap-3 py-3.5">
+                  <Bell className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">Push notifications</p>
+                    <p className="mt-0.5 t-label text-ink-3">
+                      {pushState === 'granted'
+                        ? 'Enabled on this device.'
+                        : pushState === 'unsupported'
+                          ? 'Not supported in this browser.'
+                          : pushState === 'denied'
+                            ? 'Blocked — enable in browser settings.'
+                            : 'Briefings and guardrail alerts.'}
+                    </p>
+                  </div>
+                  {pushState === 'granted' ? (
+                    <Chip tone="good">On</Chip>
+                  ) : pushState === 'unsupported' ? null : (
+                    <Button size="sm" variant="outline" onClick={() => void enablePush()}>
+                      Enable
+                    </Button>
+                  )}
+                </div>
+
+                <NavRow href="/coach/onboard" label="Intake interview" />
+                <NavRow href="/coach/tests" label="Baseline tests" />
+              </Panel>
+            </Section>
+          ) : null}
+
+          {gateEnforced ? (
+            <Section title="Session">
+              <Panel className="py-0">
+                <div className="flex items-center gap-3 py-3.5">
+                  <LogOut className="size-4 shrink-0 text-ink-3" />
+                  <div className="min-w-0 flex-1">
+                    <p className="t-body text-ink-1">Sign out</p>
+                    <p className="mt-0.5 t-label text-ink-3">Clears this device&apos;s PIN session</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => void signOut()}>
+                    Sign out
+                  </Button>
+                </div>
+              </Panel>
+            </Section>
+          ) : null}
+        </aside>
+      </div>
     </div>
   )
 }
